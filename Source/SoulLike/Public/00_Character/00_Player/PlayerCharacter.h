@@ -105,6 +105,7 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 public:
+	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	
@@ -168,7 +169,7 @@ public:
 	void ShowRender(bool bIsVisible);
 	/**********************************************입력*********************************************************/
 protected:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,BlueprintReadOnly)
 	UInputDataAsset* InputDataAsset;
 
 	//이동키를 누르면 참입니다.
@@ -368,17 +369,26 @@ protected:
 	 * 상호작용 가능한 NPC를 틱마다 찾습니다.
 	 */
 	void FindInteractableNPC();
+	bool FindLadder();
+public:
 	/**
 	 * 상호작용에 필요한 키와 액션을 표시해줍니다.
 	 * @param Target 상호작용할 대상
 	 * @param Action 상호작용할 액션 정보
 	 * @param ActionName 키 이름
 	 */
-	void ShowInteractionWidget(const AActor* Target, const UInputAction* Action, const FString& ActionName);
+	UFUNCTION(BlueprintCallable)
+	class UWidgetComponent* ShowInteractionWidget(const AActor* Target, const UInputAction* Action, const FString& ActionName);
+	UFUNCTION(BlueprintCallable)
+	//보여주진 않고 그냥 가져만 옵니다. Visiblity를 켜야 보입니다.
+	class UWidgetComponent* GetInteractionWidget(const AActor* Target, const UInputAction* Action, const FString& ActionName);
+	UFUNCTION(BlueprintCallable)
+	void HideInteractionWidget();
 
+	class UInputDataAsset* GetInputDataAsset() const {return InputDataAsset;}
 protected:
 	//키를 표시해주는 위젯 컴포넌트를 가져옵니다.
-	class UWidgetComponent* GetPressKeyWidget(FName KeyName, const FString& ActionName);
+	class UWidgetComponent* GetPressKeyWidget(FName KeyName=NAME_None, const FString& ActionName= "");
 
 	virtual void ChangeMovementState(EMovementState Type, float Multiplier) override;
 	/**********************************************입력방향*********************************************************/

@@ -7,17 +7,19 @@
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "GameplayTagContainer.h"
+
+#define LADDER_IGNORE_MOVE_TAG FGameplayTag::RequestGameplayTag("Common.PlayerInput.Ignore.Move.FromLadder")
 
 // Sets default values for this component's properties
 ULadderMovementComponent::ULadderMovementComponent()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 
 	// ...
 }
-
 
 // Called when the game starts
 void ULadderMovementComponent::BeginPlay()
@@ -28,45 +30,21 @@ void ULadderMovementComponent::BeginPlay()
 	Pawn = GetOwner<ABaseCharacter>();
 }
 
-
-// Called every frame
-void ULadderMovementComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-                                             FActorComponentTickFunction* ThisTickFunction)
+void ULadderMovementComponent::SetUseLadderMovement(bool Value)
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// 틱으로 캐릭터의 위치를 체크해서 사다리에서 언제 나올지 체크합니다.
-}
-
-void ULadderMovementComponent::SetUseLadderMovement(bool Value, ALadder* LadderToUse)
-{
-	
-	bUseLadderMovement = Value;
-	LadderActor = LadderToUse;
-
-	if (bUseLadderMovement)
+	if(Pawn)
 	{
-		SetComponentTickEnabled(true);
-		//사다리를 오르려고 하나요?(첫 상호작용을 하면 오르는 것입니다. 캐릭터의 위치와, 사다리의 아래, 위 진입포인트를 비교합니다.)
-		float btm = FVector::Distance(LadderActor->GetEnterBottom()->GetComponentLocation(), Pawn->GetActorLocation());
-		float top = FVector::Distance(LadderActor->GetEnterTop()->GetComponentLocation(), Pawn->GetActorLocation());
-
-		Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(this,&ULadderMovementComponent::OnPlayMontageBlendOutEvent);
-		//아래에서 올라가려고 하는 경우
-		if (btm < top)
+		bUseLadderMovement = Value;
+		Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(
+						this, &ULadderMovementComponent::OnPlayMontageBlendOutEvent);
+		if (bUseLadderMovement)
 		{
-			Pawn->PlayAnimMontage(LadderEnter_BottomMontage);
+			Pawn->GetCharacterMovement()->SetMovementMode(MOVE_Flying);
 		}
-		//위에서 내려가려고 하는 경우
 		else
 		{
-			Pawn->PlayAnimMontage(LadderEnter_TopMontage);
+			bIsMoving = false;
 		}
-	}
-	else
-	{
-		SetComponentTickEnabled(false);
-		bIsMoving = false;
 	}
 }
 
@@ -82,14 +60,15 @@ FVector ULadderMovementComponent::GetClimbMoveLocation()
 		for (auto i = 1; i <= 6; i++)
 		{
 			FVector startFirst;
-			if(LadderMoveType == ELadderMove::DOWN)
+			if (LadderMoveType == ELadderMove::DOWN)
 			{
 				startFirst = Pawn->GetActorLocation() + FVector(0, 0, 100.f) + FVector(0, 0, i * -10);
-			}else
+			}
+			else
 			{
 				startFirst = Pawn->GetActorLocation() + FVector(0, 0, 120.f) + FVector(0, 0, i * 10);
 			}
-			
+
 			const FVector& endFirst = startFirst + UKismetMathLibrary::GetForwardVector(Pawn->GetActorRotation()) *
 				50.f;
 
@@ -102,10 +81,9 @@ FVector ULadderMovementComponent::GetClimbMoveLocation()
 			                                            UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
 			                                            ignoreActors, EDrawDebugTrace::ForDuration, hitFirst, true))
 			{
-				DrawDebugPoint(GetWorld(),hitFirst.ImpactPoint,50.f,FColor::Emerald);
+				DrawDebugPoint(GetWorld(), hitFirst.ImpactPoint, 50.f, FColor::Emerald);
 				if (hitFirst.ImpactNormal.Z < 0.1f)
 				{
-								
 					const FVector& start = hitFirst.ImpactPoint + FVector(0, 0, 20);
 					const FVector& end = start - FVector(0, 0, 25.f);
 
@@ -115,6 +93,7 @@ FVector ULadderMovementComponent::GetClimbMoveLocation()
 					                                            UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
 					                                            ignoreActors, EDrawDebugTrace::None, hit, true))
 					{
+						UKismetSystemLibrary::PrintString(this,hit.GetActor()->GetActorNameOrLabel());
 						if (!hit.bStartPenetrating)
 						{
 							FVector resultVector;
@@ -134,36 +113,134 @@ FVector ULadderMovementComponent::GetClimbMoveLocation()
 	return FVector::ZeroVector;
 }
 
+bool ULadderMovementComponent::CanDown()
+{
+	if (Pawn)
+	{
+		for (auto i = 1; i <= 6; i++)
+		{
+			const FVector& startFirst = Pawn->GetActorLocation() - FVector(0, 0, 100.f) + FVector(0, 0, i * -10);
+			const FVector& endFirst = startFirst + UKismetMathLibrary::GetForwardVector(Pawn->GetActorRotation()) *
+				50.f;
+
+			TArray<AActor*> ignoreActors;
+			ignoreActors.Emplace(Pawn);
+
+			FHitResult hitFirst;
+			//플레이어 전방 뱡향으로 아래 방향으로 트레이스를 몇개 차곡차곡 그립니다.
+			if (UKismetSystemLibrary::SphereTraceSingle(this, startFirst, endFirst, 5.f,
+			                                            UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
+			                                            ignoreActors, EDrawDebugTrace::ForDuration, hitFirst, true))
+			{
+				if (hitFirst.GetActor() == LadderActor)
+				{
+					return true;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+void ULadderMovementComponent::ReadyToLadderClimbUp(ALadder* Ladder)
+{
+	LadderActor = Ladder;
+	LadderClimbType = ELadderClimbType::EnterFromBottom;
+
+	Pawn->SetIgnoreMoveInput(true, Ladder,LADDER_IGNORE_MOVE_TAG);
+	Pawn->GetCharacterMovement()->Velocity = FVector::Zero();
+	Pawn->GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+
+	Pawn->PlayAnimMontage(LadderEnter_BottomMontage);
+
+	FLatentActionInfo latentInfo;
+	latentInfo.Linkage = 1;
+	latentInfo.CallbackTarget = this;
+	latentInfo.ExecutionFunction = "ActivateLadderClimbMode";
+	auto capsuleComp = Pawn->GetCapsuleComponent();
+	capsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	//타고 올라가는 설정입니다.
+	FVector targetLocation = FVector(0, 0, capsuleComp->GetScaledCapsuleHalfHeight()) + Ladder->GetActorLocation();
+	UKismetSystemLibrary::MoveComponentTo(capsuleComp, targetLocation, Ladder->GetActorRotation(), false, false,
+	                                      ClimbTime, false, EMoveComponentAction::Move, latentInfo);
+}
+
+void ULadderMovementComponent::ReadyToLadderClimbDown(ALadder* Ladder)
+{
+	LadderActor = Ladder;
+	LadderClimbType = ELadderClimbType::EnterFromTop;
+
+	Pawn->SetIgnoreMoveInput(true, Ladder,LADDER_IGNORE_MOVE_TAG);
+	Pawn->GetCharacterMovement()->Velocity = FVector::Zero();
+	Pawn->GetCharacterMovement()->SetMovementMode(MOVE_Flying);
+
+	Pawn->PlayAnimMontage(LadderEnter_TopMontage);
+
+	FLatentActionInfo latentInfo;
+	latentInfo.Linkage = 1;
+	latentInfo.CallbackTarget = this;
+	latentInfo.ExecutionFunction = "ActivateLadderClimbMode";
+
+	auto capsuleComp = Pawn->GetCapsuleComponent();
+	capsuleComp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+	//위치를 맞추기 위해서 전방백터에서 일부를 곱해서 제거합니다.
+	const FVector& topLoc = LadderActor->GetEnterTop()->GetComponentLocation() + Pawn->GetActorForwardVector() * -15.f;
+	UKismetSystemLibrary::MoveComponentTo(capsuleComp, topLoc, Ladder->GetActorRotation(), false, false,
+										  ClimbTime, false, EMoveComponentAction::Move, latentInfo);
+}
+
+ELadderMove ULadderMovementComponent::GetClimbLadderType(ALadder* Ladder)
+{
+	float btm = FVector::Distance(Ladder->GetEnterBottom()->GetComponentLocation(), Pawn->GetActorLocation());
+	float top = FVector::Distance(Ladder->GetEnterTop()->GetComponentLocation(), Pawn->GetActorLocation());
+
+	//아래에서 올라가려고 하는 경우
+	if (btm < top)
+	{
+		return ELadderMove::UP;
+	}
+	//위에서 내려가려고 하는 경우
+	return ELadderMove::DOWN;
+}
+
 FVector ULadderMovementComponent::GetNextHandLocation()
 {
 	if (Pawn)
 	{
 		for (auto i = 1; i <= 6; i++)
 		{
-			
 			FVector startFirst;
-			if(LadderHandOrder == ELadderHandOrder::LEFT)
+			if (LadderHandOrder == ELadderHandOrder::LEFT)
 			{
-				if(LadderMoveType == ELadderMove::DOWN)
+				if (LadderMoveType == ELadderMove::DOWN)
 				{
-					startFirst = Pawn->GetMesh()->GetSocketLocation("hand_l") + FVector(0, 0, -1 * FindNextDownHandLocation_ZOffset) + FVector(0, 0, i * -10);
-				}else
-				{
-					startFirst = Pawn->GetMesh()->GetSocketLocation("hand_l") + FVector(0, 0, FindNextDownHandLocation_ZOffset) + FVector(0, 0, i * 10);
+					startFirst = Pawn->GetMesh()->GetSocketLocation("hand_l") + FVector(
+						0, 0, -1 * FindNextDownHandLocation_ZOffset) + FVector(0, 0, i * -10);
 				}
-			}else
-			{
-				if(LadderMoveType == ELadderMove::DOWN)
+				else
 				{
-					startFirst = Pawn->GetMesh()->GetSocketLocation("hand_r") + FVector(0, 0, -1 * FindNextUpHandLocation_ZOffset) + FVector(0, 0, i * -10);
-				}else
-				{
-					startFirst = Pawn->GetMesh()->GetSocketLocation("hand_r") + FVector(0, 0, FindNextUpHandLocation_ZOffset) + FVector(0, 0, i * 10);
+					startFirst = Pawn->GetMesh()->GetSocketLocation("hand_l") + FVector(
+						0, 0, FindNextDownHandLocation_ZOffset) + FVector(0, 0, i * 10);
 				}
-				
 			}
-			
-			const FVector& endFirst = startFirst + UKismetMathLibrary::GetForwardVector(Pawn->GetActorRotation()) * 50.f;
+			else
+			{
+				if (LadderMoveType == ELadderMove::DOWN)
+				{
+					startFirst = Pawn->GetMesh()->GetSocketLocation("hand_r") + FVector(
+						0, 0, -1 * FindNextUpHandLocation_ZOffset) + FVector(0, 0, i * -10);
+				}
+				else
+				{
+					startFirst = Pawn->GetMesh()->GetSocketLocation("hand_r") + FVector(
+						0, 0, FindNextUpHandLocation_ZOffset) + FVector(0, 0, i * 10);
+				}
+			}
+
+			const FVector& endFirst = startFirst + UKismetMathLibrary::GetForwardVector(Pawn->GetActorRotation()) *
+				50.f;
 
 			TArray<AActor*> ignoreActors;
 			ignoreActors.Emplace(Pawn);
@@ -171,10 +248,10 @@ FVector ULadderMovementComponent::GetNextHandLocation()
 			FHitResult hitFirst;
 			//플레이어 전방 뱡향으로 머리위에서 트레이스를 몇개 차곡차곡 그립니다.
 			if (UKismetSystemLibrary::SphereTraceSingle(this, startFirst, endFirst, 5.f,
-														UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
-														ignoreActors, EDrawDebugTrace::ForDuration, hitFirst, true))
+			                                            UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
+			                                            ignoreActors, EDrawDebugTrace::ForDuration, hitFirst, true))
 			{
-				DrawDebugPoint(GetWorld(),hitFirst.ImpactPoint,25.f,FColor::Emerald,true,5.f);
+				DrawDebugPoint(GetWorld(), hitFirst.ImpactPoint, 25.f, FColor::Emerald, true, 5.f);
 				return hitFirst.ImpactPoint + HandIKOffset;
 			}
 		}
@@ -185,16 +262,16 @@ FVector ULadderMovementComponent::GetNextHandLocation()
 
 void ULadderMovementComponent::AddLadderMovementInput(float ScaleValue)
 {
-	if(ScaleValue == 0)
+	if (ScaleValue == 0)
 	{
 		return;
 	}
 
-	if(Pawn->GetMesh()->GetAnimInstance()->IsAnyMontagePlaying())
+	if (Pawn->GetMesh()->GetAnimInstance()->IsAnyMontagePlaying())
 	{
 		return;
 	}
-	
+
 	if (!bIsMoving)
 	{
 		bIsMoving = true;
@@ -204,62 +281,67 @@ void ULadderMovementComponent::AddLadderMovementInput(float ScaleValue)
 		latentInfo.ExecutionFunction = "MoveFinish";
 		latentInfo.Linkage = 0;
 
-		UKismetSystemLibrary::PrintString(this,FString::Printf(TEXT("사용중인 손 : %s"),*StaticEnum<ELadderHandOrder>()->GetValueAsString(LadderHandOrder)));
 		FVector moveLocation;
-		if(ScaleValue>0)
+		if (ScaleValue > 0)
 		{
 			LadderMoveType = ELadderMove::UP;
 			moveLocation = GetClimbMoveLocation();
-		}else
+		}
+		else
 		{
 			LadderMoveType = ELadderMove::DOWN;
 			moveLocation = GetClimbMoveLocation();
 
 			//더 이상 내려갈 수 없으면 탈출합니다.
+			if (!CanDown())
+			{
+				LadderClimbType = ELadderClimbType::EscapeFromBottom;
+				Pawn->PlayAnimMontage(LadderExit_BottomMontage);
+				return;
+			}
 		}
 
-
-		if(moveLocation == FVector::ZeroVector)
+		if(GetNextHandLocation() == FVector::ZeroVector)
 		{
-			//마지막까지 올라간것이 됩니다.
-			Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(this,&ULadderMovementComponent::OnPlayMontageBlendOutEvent);
+			LadderClimbType = ELadderClimbType::EscapeFromTop;
 			Pawn->PlayAnimMontage(LadderExit_TopMontage);
 			return;
 		}
 
-		
+		if (moveLocation == FVector::ZeroVector)
+		{
+			LadderClimbType = ELadderClimbType::EscapeFromTop;
+			Pawn->PlayAnimMontage(LadderExit_TopMontage);
+			return;
+		}
+
+
 		UKismetSystemLibrary::MoveComponentTo(Pawn->GetCapsuleComponent(), moveLocation,
-											  LadderActor->GetActorRotation(), false, false, MoveTime , false,
-											  EMoveComponentAction::Move, latentInfo);
+		                                      LadderActor->GetActorRotation(), false, false, MoveTime, false,
+		                                      EMoveComponentAction::Move, latentInfo);
 	}
 }
 
 void ULadderMovementComponent::OnPlayMontageBlendOutEvent(UAnimMontage* Montage, bool bInterrupted)
 {
-	if(Montage == LadderEnter_BottomMontage)
+	if (Montage == LadderExit_TopMontage || Montage == LadderExit_BottomMontage)
 	{
-		Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.RemoveDynamic(this,&ULadderMovementComponent::OnPlayMontageBlendOutEvent);
-	}
-	
-	if(Montage == LadderExit_TopMontage)
-	{
-	
-		if(LadderActor)
+		if (LadderActor)
 		{
+			auto capsuleComp = Pawn->GetCapsuleComponent();
+			capsuleComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+			
+			Pawn->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 			IInteractionInterface::Execute_FinishInteraction(LadderActor);
 			LadderActor = nullptr;
 		}
-		Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.RemoveDynamic(this,&ULadderMovementComponent::OnPlayMontageBlendOutEvent);
-		
+
+		Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.RemoveAll(this);
 	}
 }
 
-float ULadderMovementComponent::GetLadderGap()
+void ULadderMovementComponent::ActivateLadderClimbMode()
 {
-	if(LadderActor!=nullptr)
-	{
-		return LadderActor->LadderGap;
-	}
-
-	return 0;
+	Pawn->SetIgnoreMoveInput(false, LadderActor,LADDER_IGNORE_MOVE_TAG);
+	SetUseLadderMovement(true);
 }

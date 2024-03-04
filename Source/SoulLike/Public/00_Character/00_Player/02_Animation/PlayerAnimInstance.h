@@ -30,11 +30,26 @@ class SOULLIKE_API UPlayerAnimInstance : public UBaseAnimInstance
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	TObjectPtr<class ULadderMovementComponent> LadderMovementComponent;
 
+	UPROPERTY(Transient)
+	bool bShouldUpdateNewLadderLocation = false;
+
 	virtual void NativeInitializeAnimation() override;
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
-	
 	virtual void ChangeBoneTransform_Implementation(float DeltaTime) override;
+	void CreateNewLadderLocation();
 
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
+	FVector LadderNewLocation;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
+	FVector LadderOldLocation;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
+	bool bStartClimbLadder;
+	
+	//다 올라갔을 때,
+	void OnLadderEscapeFromTop();
+	//다시 내려가려고 할 때
+	void OnLadderEnterFromTop();
 protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void AnimNotify_OnLadderIdleEnter();
@@ -51,4 +66,13 @@ protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void AnimNotify_OnLadderLeftExit();
 	virtual void AnimNotify_OnLadderLeftExit_Implementation();
+
+
+	UFUNCTION(BlueprintNativeEvent)
+	void AnimNotify_OnStartClimbLadder();
+	virtual void AnimNotify_OnStartClimbLadder_Implementation();
+
+	UFUNCTION(BlueprintNativeEvent)
+	void AnimNotify_OnEndClimbLadder();
+	virtual void AnimNotify_OnEndClimbLadder_Implementation();
 };

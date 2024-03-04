@@ -26,7 +26,8 @@
 #include "00_Character/01_Component/AbilityComponent.h"
 #include "00_Character/01_Component/AttributeComponent.h"
 #include "00_Character/01_Component/InventoryComponent.h"
-#include "00_Character/04_NPC/NPCBase.h"
+
+#include "92_Tools/Ladder.h"
 
 #include "03_Widget/MainWidget.h"
 #include "03_Widget/KeyWidget.h"
@@ -302,7 +303,7 @@ void APlayerCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	FindInteractableNPC();
-
+	
 	//처형 가능한 몬스터를 찾습니다.
 	CheckExecutionMonster();
 
@@ -607,7 +608,13 @@ void APlayerCharacter::AbilityQuickSlot5()
 
 void APlayerCharacter::Interaction()
 {
-
+	
+	if(InteractableActor.IsValid())
+	{
+		IInteractionInterface::Execute_Interaction(InteractableActor.Get(), this);
+		return;
+	}
+	
 	const float& halfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 	const float& radius = GetCapsuleComponent()->GetScaledCapsuleRadius();
 
@@ -619,7 +626,7 @@ void APlayerCharacter::Interaction()
 	ignoreActors.Add(this);
 
 	TArray<FHitResult> hits;
-	if (UKismetSystemLibrary::CapsuleTraceMultiByProfile(this, targetLoc, targetLoc, radius, halfHeight, "NPC", false,
+	if (UKismetSystemLibrary::CapsuleTraceMulti(this, targetLoc, targetLoc, radius, halfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
 														 ignoreActors, EDrawDebugTrace::ForOneFrame, hits, true))
 	{
 		for (auto h : hits)
@@ -780,44 +787,138 @@ void APlayerCharacter::FindInteractableNPC()
 
 	
 	TArray<FHitResult> hits;
+	TArray<AActor*> ignoreActors;
+	ignoreActors.Emplace(this);
+	
 	if (UKismetSystemLibrary::CapsuleTraceMulti(GetWorld(), targetLoc, targetLoc, radius, halfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility),
-	                                            false, TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, hits,
-	                                            true))
+												false,ignoreActors , EDrawDebugTrace::ForOneFrame, hits,
+												true))
 	{
-		for(auto hit : hits)
+		for(const auto& hit : hits)
 		{
 			if (hit.GetActor()->IsValidLowLevel() && UKismetSystemLibrary::DoesImplementInterface(hit.GetActor(),UInteractionInterface::StaticClass()))
 			{
 				InteractableActor = hit.GetActor();
-				ShowInteractionWidget(hit.GetActor(), InputDataAsset->InteractAction,
-									   IInteractionInterface::Execute_GetActionName(InteractableActor.Get()).ToString());
+				if(IInteractionInterface::Execute_ShowInteractionWidgetDirectly(InteractableActor.Get()))
+				{
+					ShowInteractionWidget(hit.GetActor(), InputDataAsset->InteractAction,
+										   IInteractionInterface::Execute_GetActionName(InteractableActor.Get()).ToString());
+				}
 				break;
 			}
 		}
-	}
-	else
+	}else
 	{
-		if (InteractableActor.IsValid())
+
+		//찾은게 없다면 발 아래 사다리가 있는지 찾습니다.
+		if(!FindLadder())
 		{
-			if (GetPressKeyWidget("", "")->IsAttachedTo(InteractableActor->GetRootComponent()))
+			if (InteractableActor.IsValid())
 			{
-				GetPressKeyWidget("", "")->SetVisibility(false);
+				/*if (GetPressKeyWidget()->IsAttachedTo(InteractableActor->GetRootComponent()))
+				{
+					GetPressKeyWidget()->SetVisibility(false);
+				}*/
+				UKismetSystemLibrary::PrintString(this,TEXT("숨김!!"));
+				GetPressKeyWidget()->SetVisibility(false);
+				InteractableActor = nullptr;
 			}
-			InteractableActor = nullptr;
 		}
 	}
 }
 
-void APlayerCharacter::ShowInteractionWidget(const AActor* Target, const UInputAction* Action,
-                                             const FString& ActionName)
+bool APlayerCharacter::FindLadder()
 {
+	const FVector& start = GetActorLocation() - FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 1.5f) + GetActorForwardVector() * 10.f;
+	const FVector& end = start + GetActorForwardVector() * -10;
+
+	TArray<AActor*> ignoreActors;
+	ignoreActors.Emplace(this);
+	
+	TArray<FHitResult> hits;
+	if(UKismetSystemLibrary::SphereTraceMulti(this,start,end,35.f,UEngineTypes::ConvertToTraceType(ECC_Visibility),false,ignoreActors,EDrawDebugTrace::ForOneFrame,hits,true))
+	{
+		for(const auto& hit : hits)
+		{
+			if (hit.GetActor()->IsValidLowLevel() && UKismetSystemLibrary::DoesImplementInterface(hit.GetActor(),UInteractionInterface::StaticClass()))
+			{
+				if(hit.GetActor()->IsA<ALadder>())
+				{
+					InteractableActor = hit.GetActor();
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+UWidgetComponent* APlayerCharacter::ShowInteractionWidget(const AActor* Target, const UInputAction* Action,
+                                                          const FString& ActionName)
+{
+	if(ActionName.IsEmpty())
+	{
+		UE_LOGFMT(LogTemp,Error,"인터렉션 위젯의 액션이름이 비었습니다.");
+		return nullptr;
+	}
+	
 	auto keys = GetLocalInputSystem()->QueryKeysMappedToAction(Action);
 	if (keys.IsValidIndex(0))
 	{
-		//UE_LOGFMT(LogTemp, Log, "{0} / {1} ", Action->ActionDescription.ToString(), keys[0].GetFName());
-
-		GetPressKeyWidget(keys[0].GetFName(), ActionName)->AttachToComponent(
+		if(keys[0].GetFName().IsEqual(NAME_None))
+		{
+			UE_LOGFMT(LogTemp,Error,"인터렉션 위젯의 키 이름이 비정상입니다.");
+			return nullptr;
+		}
+		
+		if(auto widget = GetPressKeyWidget(keys[0].GetFName(), ActionName))
+		{
+			widget->AttachToComponent(
 			Target->GetRootComponent(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true));
+
+			return widget;
+		}
+	}
+
+	return nullptr;
+}
+
+UWidgetComponent* APlayerCharacter::GetInteractionWidget(const AActor* Target, const UInputAction* Action,
+	const FString& ActionName)
+{
+	if(ActionName.IsEmpty())
+	{
+		UE_LOGFMT(LogTemp,Error,"인터렉션 위젯의 액션이름이 비었습니다.");
+		return nullptr;
+	}
+	
+	auto keys = GetLocalInputSystem()->QueryKeysMappedToAction(Action);
+	if (keys.IsValidIndex(0))
+	{
+		if(keys[0].GetFName().IsEqual(NAME_None))
+		{
+			UE_LOGFMT(LogTemp,Error,"인터렉션 위젯의 키 이름이 비정상입니다.");
+			return nullptr;
+		}
+		
+		if(auto widget = GetPressKeyWidget(keys[0].GetFName(), ActionName))
+		{
+			widget->SetVisibility(false);
+			
+			widget->AttachToComponent(
+			Target->GetRootComponent(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true));
+
+			return widget;
+		}
+	}
+
+	return nullptr;
+}
+
+void APlayerCharacter::HideInteractionWidget()
+{
+	if(auto widget = GetPressKeyWidget()){
+		widget->SetVisibility(false);
 	}
 }
 

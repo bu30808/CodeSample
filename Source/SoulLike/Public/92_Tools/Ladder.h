@@ -8,7 +8,9 @@
 #include "GameFramework/Actor.h"
 #include "Ladder.generated.h"
 
-UCLASS()
+enum class ELadderClimbType : uint8;
+
+UCLASS(DefaultToInstanced)
 class SOULLIKE_API ALadder : public AActor, public IInteractionInterface
 {
 	GENERATED_BODY()
@@ -20,15 +22,8 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	virtual void PostInitializeComponents() override;
 
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
-protected:
-
-	/*UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
-	class USceneComponent* SceneRootComponent;*/
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	class USceneComponent* PoleRootComponent;
@@ -62,6 +57,8 @@ protected:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	class UBillboardComponent* LadderExit_Top;
 
+	UPROPERTY()
+	ELadderClimbType LadderClimbType;
 
 public:
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
@@ -71,4 +68,21 @@ public:
 	class USceneComponent* GetEnterTop() const {return LadderEnter_Top;}
 	class USceneComponent* GetExitBottom() const {return LadderExit_Bottom;}
 	class USceneComponent* GetExitTop() const {return LadderExit_Top;}
+
+protected:
+
+	UPROPERTY()
+	TObjectPtr<class APlayerCharacter> OverlappedPlayer;
+	UPROPERTY()
+	TObjectPtr<class APlayerCharacter> InteractionPlayer;
+	
+ 	UFUNCTION()
+	void OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
+	                                           bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+	void OnBoxComponentEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+
+	virtual void Interaction_Implementation(ABaseCharacter* Start) override;
+	virtual void FinishInteraction_Implementation() override;
+	
 };
