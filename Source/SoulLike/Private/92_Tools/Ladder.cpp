@@ -5,6 +5,7 @@
 
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/00_Player/01_Component/LadderMovementComponent.h"
+#include "96_Library/MathHelperLibrary.h"
 #include "Components/BillboardComponent.h"
 #include "Components/BoxComponent.h"
 #include "Components/HierarchicalInstancedStaticMeshComponent.h"
@@ -31,9 +32,11 @@ ALadder::ALadder()
 
 	TopBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("LadderTop"));
 	TopBoxComponent->SetupAttachment(PoleRootComponent);
+	TopBoxComponent->SetCollisionProfileName("ForPlayerMovement");
 
 	BottomBoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("LadderBottom"));
 	BottomBoxComponent->SetupAttachment(PoleRootComponent);
+	BottomBoxComponent->SetCollisionProfileName("ForPlayerMovement");
 
 	BarInstancedStaticMeshComponent = CreateDefaultSubobject<UInstancedStaticMeshComponent>(
 		TEXT("BarInstancedStaticMeshComponent"));
@@ -54,7 +57,6 @@ ALadder::ALadder()
 	LadderExit_Bottom->SetupAttachment(RootComponent);
 	LadderExit_Top = CreateDefaultSubobject<UBillboardComponent>(TEXT("LadderExit_Top"));
 	LadderExit_Top->SetupAttachment(RootComponent);
-	
 }
 
 // Called when the game starts or when spawned
@@ -66,7 +68,7 @@ void ALadder::BeginPlay()
 void ALadder::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	
+
 	if (BottomBoxComponent)
 	{
 		BottomBoxComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &ALadder::OnBoxComponentBeginOverlapEvent);
@@ -91,9 +93,8 @@ void ALadder::OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedCom
 		if (OverlappedComponent == TopBoxComponent)
 		{
 			//UKismetSystemLibrary::PrintString(this, FString::SanitizeFloat(dot));
-			if (FVector::DotProduct(
-				OverlappedPlayer->GetActorForwardVector(),
-				TopBoxComponent->GetForwardVector()) < 0)
+			if (UMathHelperLibrary::SameDirection(OverlappedPlayer->GetActorForwardVector(),
+			                                      TopBoxComponent->GetForwardVector()))
 			{
 				LadderClimbType = ELadderClimbType::EnterFromTop;
 				//같은 방향을 바라보는 경우
@@ -104,8 +105,8 @@ void ALadder::OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedCom
 					widget->SetWorldLocation(TopBoxComponent->GetComponentLocation());
 					widget->SetVisibility(true);
 				}
-				
-			}else
+			}
+			else
 			{
 				OverlappedPlayer->HideInteractionWidget();
 				LadderClimbType = ELadderClimbType::None;
@@ -115,9 +116,8 @@ void ALadder::OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedCom
 		if (OverlappedComponent == BottomBoxComponent)
 		{
 			//UKismetSystemLibrary::PrintString(this, FString::SanitizeFloat(dot));
-			if (FVector::DotProduct(
-				OverlappedPlayer->GetActorForwardVector(),
-				BottomBoxComponent->GetForwardVector()) >= 0)
+			if (UMathHelperLibrary::SameDirection(OverlappedPlayer->GetActorForwardVector(),
+			                                      BottomBoxComponent->GetForwardVector()) == false)
 			{
 				LadderClimbType = ELadderClimbType::EnterFromBottom;
 				//다른 방향을 바라보는 경우
@@ -129,7 +129,8 @@ void ALadder::OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedCom
 					widget->SetWorldLocation(BottomBoxComponent->GetComponentLocation());
 					widget->SetVisibility(true);
 				}
-			}else
+			}
+			else
 			{
 				OverlappedPlayer->HideInteractionWidget();
 				LadderClimbType = ELadderClimbType::None;
@@ -151,28 +152,28 @@ void ALadder::OnBoxComponentEndOverlapEvent(UPrimitiveComponent* OverlappedCompo
 
 void ALadder::Interaction_Implementation(ABaseCharacter* Start)
 {
-	if(LadderClimbType == ELadderClimbType::EnterFromTop)
+	if (LadderClimbType == ELadderClimbType::EnterFromTop)
 	{
-		if (FVector::DotProduct(
+		if (UMathHelperLibrary::SameDirection(
 			OverlappedPlayer->GetActorForwardVector(),
-			TopBoxComponent->GetForwardVector()) >= 0)
+			TopBoxComponent->GetForwardVector()) == false)
 		{
 			LadderClimbType = ELadderClimbType::None;
 			return;
 		}
 	}
 
-	if(LadderClimbType == ELadderClimbType::EnterFromBottom)
+	if (LadderClimbType == ELadderClimbType::EnterFromBottom)
 	{
-		if (FVector::DotProduct(
+		if (UMathHelperLibrary::SameDirection(
 			OverlappedPlayer->GetActorForwardVector(),
-			BottomBoxComponent->GetForwardVector()) < 0)
+			BottomBoxComponent->GetForwardVector()))
 		{
 			LadderClimbType = ELadderClimbType::None;
 			return;
 		}
 	}
-	
+
 	InteractionPlayer = Cast<APlayerCharacter>(Start);
 	if (InteractionPlayer)
 	{

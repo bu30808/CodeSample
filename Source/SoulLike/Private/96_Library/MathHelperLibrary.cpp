@@ -93,3 +93,10 @@ FVector UMathHelperLibrary::GetControllerInputDir(FRotator ControlRotation, FVec
 
 	return (rightDir + leftDir).GetSafeNormal();
 }
+
+bool UMathHelperLibrary::SameDirection(FVector A_ForwardVector, FVector B_ForwardVector)
+{
+	//Dot 연산의 결과가 음수라면 같은 방향을 바라보는것이 됩니다.
+	//결과가 양수인 경우 다른 방향을 바라보고 있다고 할 수 있습니다.
+	return FVector::DotProduct(	A_ForwardVector,B_ForwardVector) < 0;
+}

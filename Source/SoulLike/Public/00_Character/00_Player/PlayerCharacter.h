@@ -133,7 +133,8 @@ protected:
 	class UWidgetComponent* ExecutionWidgetComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class ULadderMovementComponent* LadderMovementComponent;
-	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UJumpMovementComponent* JumpMovementComponent;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UGFurComponent* FurComponent;
@@ -146,6 +147,7 @@ protected:
 	
 
 public:
+	FORCEINLINE class UJumpMovementComponent* GetJumpMovementComponent() const {return JumpMovementComponent;};
 	FORCEINLINE class ULadderMovementComponent* GetLadderMovementComponent() const {return LadderMovementComponent;};
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }

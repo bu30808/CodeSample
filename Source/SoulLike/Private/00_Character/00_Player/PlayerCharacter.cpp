@@ -46,6 +46,7 @@
 #include "FurComponent.h"
 #include "MoviePlayer.h"
 #include "00_Character/00_Player/OrbBackgroundActor.h"
+#include "00_Character/00_Player/01_Component/JumpMovementComponent.h"
 #include "00_Character/00_Player/01_Component/LadderMovementComponent.h"
 #include "99_Subsystem/WidgetInteractionSubsystem.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
@@ -53,6 +54,9 @@
 
 
 class UWidgetInteractionSubsystem;
+
+#define ECC_INTERACTION ECC_GameTraceChannel7
+
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
@@ -128,6 +132,7 @@ APlayerCharacter::APlayerCharacter()
 	AbilityTalentComponent = CreateDefaultSubobject<UAbilityTalentComponent>(TEXT("AbilityTalentComponent"));
 
 	LadderMovementComponent = CreateDefaultSubobject<ULadderMovementComponent>(TEXT("LadderMovementComponent"));
+	JumpMovementComponent = CreateDefaultSubobject<UJumpMovementComponent>(TEXT("JumpMovementComponent"));
 	
 }
 
@@ -626,7 +631,7 @@ void APlayerCharacter::Interaction()
 	ignoreActors.Add(this);
 
 	TArray<FHitResult> hits;
-	if (UKismetSystemLibrary::CapsuleTraceMulti(this, targetLoc, targetLoc, radius, halfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
+	if (UKismetSystemLibrary::CapsuleTraceMulti(this, targetLoc, targetLoc, radius, halfHeight, UEngineTypes::ConvertToTraceType(ECC_INTERACTION), false,
 														 ignoreActors, EDrawDebugTrace::ForOneFrame, hits, true))
 	{
 		for (auto h : hits)
@@ -790,7 +795,7 @@ void APlayerCharacter::FindInteractableNPC()
 	TArray<AActor*> ignoreActors;
 	ignoreActors.Emplace(this);
 	
-	if (UKismetSystemLibrary::CapsuleTraceMulti(GetWorld(), targetLoc, targetLoc, radius, halfHeight, UEngineTypes::ConvertToTraceType(ECC_Visibility),
+	if (UKismetSystemLibrary::CapsuleTraceMulti(GetWorld(), targetLoc, targetLoc, radius, halfHeight, UEngineTypes::ConvertToTraceType(ECC_INTERACTION),
 												false,ignoreActors , EDrawDebugTrace::ForOneFrame, hits,
 												true))
 	{
@@ -815,11 +820,6 @@ void APlayerCharacter::FindInteractableNPC()
 		{
 			if (InteractableActor.IsValid())
 			{
-				/*if (GetPressKeyWidget()->IsAttachedTo(InteractableActor->GetRootComponent()))
-				{
-					GetPressKeyWidget()->SetVisibility(false);
-				}*/
-				UKismetSystemLibrary::PrintString(this,TEXT("숨김!!"));
 				GetPressKeyWidget()->SetVisibility(false);
 				InteractableActor = nullptr;
 			}
@@ -836,7 +836,7 @@ bool APlayerCharacter::FindLadder()
 	ignoreActors.Emplace(this);
 	
 	TArray<FHitResult> hits;
-	if(UKismetSystemLibrary::SphereTraceMulti(this,start,end,35.f,UEngineTypes::ConvertToTraceType(ECC_Visibility),false,ignoreActors,EDrawDebugTrace::ForOneFrame,hits,true))
+	if(UKismetSystemLibrary::SphereTraceMulti(this,start,end,35.f,UEngineTypes::ConvertToTraceType(ECC_INTERACTION),false,ignoreActors,EDrawDebugTrace::ForOneFrame,hits,true))
 	{
 		for(const auto& hit : hits)
 		{

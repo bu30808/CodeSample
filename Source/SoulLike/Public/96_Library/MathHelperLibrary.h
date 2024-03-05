@@ -35,4 +35,13 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static FVector GetControllerInputDir(FRotator ControlRotation, FVector MovementInputVector);
+
+	/**
+	 * 두개의 전방백터를 이용하여 같은 방향을 바라보고 있는지 확인합니다.
+	 * @param A_ForwardVector 
+	 * @param B_ForwardVector 
+	 * @return 
+	 */
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	static bool SameDirection(FVector A_ForwardVector,FVector B_ForwardVector);
 };
