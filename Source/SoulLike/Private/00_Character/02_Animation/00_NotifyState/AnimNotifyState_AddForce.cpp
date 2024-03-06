@@ -86,6 +86,22 @@ void UAnimNotifyState_AddForce::NotifyBegin(USkeletalMeshComponent* MeshComp, UA
 	}
 }
 
+void UAnimNotifyState_AddForce::StopMovementWhenFalling()
+{
+	//아래로 트레이스를 그려 뭔가 없으면 중지하도록 합시다.
+	const float& halfHeight = Owner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
+	const float& radius = Owner->GetCapsuleComponent()->GetScaledCapsuleRadius();
+	const FVector& targetLoc = Owner->GetActorLocation() - FVector(0,0,halfHeight);
+
+	FHitResult hit;
+	if(!UKismetSystemLibrary::CapsuleTraceSingle(Owner.Get(),  targetLoc, targetLoc, radius, halfHeight,
+	                                             UEngineTypes::ConvertToTraceType(ECC_Visibility), false, TArray<AActor*>(),
+	                                             EDrawDebugTrace::ForOneFrame, hit, true))
+	{
+		Owner->GetCharacterMovement()->StopMovementImmediately();
+	}
+}
+
 void UAnimNotifyState_AddForce::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
                                            float FrameDeltaTime, const FAnimNotifyEventReference& EventReference)
 {
@@ -102,6 +118,7 @@ void UAnimNotifyState_AddForce::NotifyTick(USkeletalMeshComponent* MeshComp, UAn
 			//특정 상태이상에 걸려서 움직이지 못 하는 상황인지 확인합니다.
 			if(UAbilityHelperLibrary::IsMovementBlockedByStatusEffect(Owner.Get()) == false)
 			{
+				
 				switch(ForceApplicationMode)
 				{
 				case EForceApplicationMode::InputDirection:
@@ -111,16 +128,9 @@ void UAnimNotifyState_AddForce::NotifyTick(USkeletalMeshComponent* MeshComp, UAn
 					ApplyForceByDirectionValue(FrameDeltaTime);
 					break;
 				default: ;
-					
-				}/*
-				if (IsPlayerCharacter())
-				{
-					ApplyForceByInputDirection(FrameDeltaTime);
 				}
-				else
-				{
-					ApplyForceByDirectionValue(FrameDeltaTime);
-				}*/
+
+				StopMovementWhenFalling();
 			}
 		}
 	}

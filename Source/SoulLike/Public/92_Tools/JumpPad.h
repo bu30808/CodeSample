@@ -16,6 +16,16 @@ enum class EJumpMoveType : uint8
 	NONE
 };
 
+UENUM(BlueprintType)
+enum class EJumpProcess : uint8
+{
+	JUMP_START,
+	JUMPING,
+	JUMP_LAND,
+	JUMP_END,
+	NONE
+};
+
 UCLASS()
 class SOULLIKE_API AJumpPad : public AActor,public IInteractionInterface
 {
@@ -42,8 +52,9 @@ protected:
 
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
 	bool bIsActivated = false;
+	//컴포넌트 무브 함수를 통해서 플레이어를 강제 이동시킬 때, 이동 시간입니다. 짧을수록 빠르게 움직입니다.
 	UPROPERTY(EditAnywhere,BlueprintReadWrite)
-	float MoveTime = 0.5f;
+	float ComponentMoveTime = 0.5f;
 
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<class APlayerCharacter> OverlappedPlayer;
@@ -51,7 +62,17 @@ protected:
 	TObjectPtr<UPrimitiveComponent> CurOverlappedComponent;
 	UPROPERTY(Transient,VisibleAnywhere)
 	EJumpMoveType JumpMoveType = EJumpMoveType::NONE;
-
+	UPROPERTY(Transient,VisibleAnywhere)
+	EJumpProcess JumpProcess = EJumpProcess::NONE;
+	
+	UPROPERTY(Transient)
+	FVector MoveTargetPoint;
+	//점프중 이동하게되는 속도입니다.
+	UPROPERTY(EditAnywhere)
+	float MoveSpeed = 1000.f;
+	//점프로 이동중 목표지점과의 거리가 이 수치 이하가 된다면, 이동완료처리를 합니다.
+	UPROPERTY(EditAnywhere)
+	float MoveCompleteCheckDistance = 25.f;
 public:	
 	// Sets default values for this actor's properties
 	AJumpPad();
@@ -60,6 +81,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void PostInitializeComponents() override;
+	virtual void Tick(float DeltaSeconds) override;
+	
 	void TryActivatePad();
 
 	virtual void Interaction_Implementation(ABaseCharacter* Start) override;
@@ -71,7 +94,9 @@ protected:
 	UFUNCTION()
 	void OnBoxComponentEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
-	UWidgetComponent* SetInteractionWidget();
+	UWidgetComponent* ShowInteractionWidget();
+	void HideInteractionWidget();
+	
 	bool IsNearActivateMesh(UPrimitiveComponent* CheckTargetComponent,UPrimitiveComponent* CompareComponent);
 
 
@@ -80,9 +105,9 @@ protected:
 	UFUNCTION()
 	void JumpMove();
 	UFUNCTION()
-	void JumpLand();
+	void JumpDown();
 	UFUNCTION()
-	void JumpEnd();
+	void JumpLand();
 	
 	UFUNCTION()
 	void StartActivatePad();

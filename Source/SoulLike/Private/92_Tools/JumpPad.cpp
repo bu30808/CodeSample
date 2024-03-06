@@ -21,7 +21,7 @@
 AJumpPad::AJumpPad()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 	RootComponent = RootSceneComponent;
@@ -48,12 +48,15 @@ AJumpPad::AJumpPad()
 	ActivateParticleComponent->SetupAttachment(ActivateMeshComponent, "FireSocket");
 	ActivateParticleComponent->SetRelativeScale3D(FVector(0.25, 0.25, 0.25));
 	ActivateParticleComponent->SetVisibility(false);
+
+	SetActorTickEnabled(false);
 }
 
 // Called when the game starts or when spawned
 void AJumpPad::BeginPlay()
 {
 	Super::BeginPlay();
+	SetActorTickEnabled(false);
 }
 
 void AJumpPad::PostInitializeComponents()
@@ -71,6 +74,110 @@ void AJumpPad::PostInitializeComponents()
 		TopBoxComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &AJumpPad::OnBoxComponentBeginOverlapEvent);
 		TopBoxComponent->OnComponentEndOverlap.AddUniqueDynamic(this, &AJumpPad::OnBoxComponentEndOverlapEvent);
 	}
+}
+
+void AJumpPad::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+	if(OverlappedPlayer)
+	{
+		
+		const FVector& curLoc = OverlappedPlayer->GetActorLocation();
+		switch (JumpMoveType) {
+		case EJumpMoveType::UP:
+			{
+				UKismetSystemLibrary::PrintString(this,FString::SanitizeFloat(FVector::Dist(curLoc,MoveTargetPoint)));
+				//상단 포인트에 도착했는지 확인합니다.
+				if(JumpProcess == EJumpProcess::JUMPING)
+				{
+					if(FVector::Dist(curLoc,MoveTargetPoint) <= MoveCompleteCheckDistance)
+					{
+						UKismetSystemLibrary::PrintString(this,TEXT("멈춰!!!!!!!!!!!!!!!!!!!!!!!!!!!"),true,true,FColor::Red);
+						//도착했으면 즉시 멈추고,
+						OverlappedPlayer->GetCharacterMovement()->StopMovementImmediately();
+						SetActorTickEnabled(false);
+						//착지를 시도합니다.
+						JumpDown();
+					}
+				}
+				
+				if(JumpProcess == EJumpProcess::JUMP_LAND)
+				{
+					UKismetSystemLibrary::PrintString(this,FString::SanitizeFloat(FVector::Dist(curLoc,MoveTargetPoint)));
+					if(FVector::Dist(curLoc,MoveTargetPoint) <= MoveCompleteCheckDistance)
+					{
+						//도착했으면 즉시 멈추고,
+						OverlappedPlayer->GetCharacterMovement()->StopMovementImmediately();
+						SetActorTickEnabled(false);
+						JumpLand();
+					}
+				}
+			}
+			break;
+		case EJumpMoveType::DOWN:
+			{
+				UKismetSystemLibrary::PrintString(this,FString::SanitizeFloat(FVector::Dist(curLoc,MoveTargetPoint)));
+				//상단 포인트에 도착했는지 확인합니다.
+				if(JumpProcess == EJumpProcess::JUMPING)
+				{
+					if(FVector::Dist(curLoc,MoveTargetPoint) <= MoveCompleteCheckDistance)
+					{
+						//도착했으면 즉시 멈추고,
+						OverlappedPlayer->GetCharacterMovement()->StopMovementImmediately();
+						SetActorTickEnabled(false);
+						//착지를 시도합니다.
+						JumpDown();
+					}
+				}
+				
+				if(JumpProcess == EJumpProcess::JUMP_LAND)
+				{
+					if(FVector::Dist(curLoc,MoveTargetPoint) <= MoveCompleteCheckDistance)
+					{
+						//도착했으면 즉시 멈추고,
+						OverlappedPlayer->GetCharacterMovement()->StopMovementImmediately();
+						SetActorTickEnabled(false);
+						JumpLand();
+					}
+				}
+			}
+			
+			break;
+		case EJumpMoveType::NONE:
+			{
+				if(bIsActivated)
+				{
+					if (CurOverlappedComponent == TopBoxComponent)
+					{
+						if(UMathHelperLibrary::SameDirection(OverlappedPlayer->GetActorForwardVector(),
+														  TopBoxComponent->GetForwardVector()))
+						{
+							ShowInteractionWidget()->SetWorldLocation(TopBoxComponent->GetComponentLocation());
+						}else
+						{
+							HideInteractionWidget();
+						}
+					}
+
+					if (CurOverlappedComponent == BottomBoxComponent)
+					{
+						if(!UMathHelperLibrary::SameDirection(OverlappedPlayer->GetActorForwardVector(),
+														  BottomBoxComponent->GetForwardVector()))
+						{
+							ShowInteractionWidget()->SetWorldLocation(BottomBoxComponent->GetComponentLocation());
+						}else
+						{
+							HideInteractionWidget();
+						}
+					}
+				}
+				
+			}
+			break;
+		}
+	}
+	
 }
 
 void AJumpPad::TryActivatePad()
@@ -127,42 +234,81 @@ void AJumpPad::JumpMove()
 {
 	if (OverlappedPlayer)
 	{
-		OverlappedPlayer->GetJumpMovementComponent()->bJumping = true;
+		JumpProcess= EJumpProcess::JUMPING;
 		UKismetSystemLibrary::PrintString(this,TEXT("점프시작"));
-		
-		FVector jumpTarget;
 
 		switch (JumpMoveType)
 		{
 		case EJumpMoveType::UP:
 			{
-				//시작지점과 착지지점을 상단에서 내려봤을 때, 착지지점에 가까운 1/3지점을 구합니다.
-				FVector LocA = FVector(OverlappedPlayer->GetActorLocation().X,OverlappedPlayer->GetActorLocation().Y,TopBoxComponent->GetComponentLocation().Z);
-				FVector LocB = TopBoxComponent->GetComponentLocation();
-				FVector AToB = LocB-LocA;
-				jumpTarget = LocB - AToB/3.f + FVector(0,0,100.f);
+				//착지할 상단 위치에서 1/3지점을 구합니다.
+				FVector locA = FVector(OverlappedPlayer->GetActorLocation().X,OverlappedPlayer->GetActorLocation().Y,TopBoxComponent->GetComponentLocation().Z);
+				FVector locB = TopBoxComponent->GetComponentLocation()+FVector(0,0,200.f);
+				FVector AToB = locB-locA;
+				MoveTargetPoint = locB - AToB/3.f;
 			}
 			break;
 		case EJumpMoveType::DOWN:
 			{
-				FVector LocA = FVector(BottomBoxComponent->GetComponentLocation().X,BottomBoxComponent->GetComponentLocation().Y,OverlappedPlayer->GetActorLocation().Z);
-				FVector LocB =  TopBoxComponent->GetComponentLocation();
-				FVector AToB = LocB-LocA;
-				jumpTarget = LocB - AToB * 2/3.f + FVector(0,0,100.f);
+				FVector locA = FVector(BottomBoxComponent->GetComponentLocation().X,BottomBoxComponent->GetComponentLocation().Y,OverlappedPlayer->GetActorLocation().Z);
+				FVector locB =  TopBoxComponent->GetComponentLocation() + FVector(0,0,200.f);
+				FVector AToB = locB-locA;
+				MoveTargetPoint = locB - AToB * 2/3.f;
 			}
 			break;
 		case EJumpMoveType::NONE:
 			break;
+		default: ;
 		}
 
+		
+		//캐릭터가 이동할 방향을 구합니다.
+		FVector launchVelocity = (MoveTargetPoint - OverlappedPlayer->GetActorLocation()).GetSafeNormal();
+		launchVelocity*= MoveSpeed;
 
-		FLatentActionInfo latentInfo;
-		latentInfo.CallbackTarget = this;
-		latentInfo.Linkage = 3;
-		latentInfo.ExecutionFunction = "JumpLand";
-		UKismetSystemLibrary::MoveComponentTo(OverlappedPlayer->GetCapsuleComponent(), jumpTarget,
-		                                      OverlappedPlayer->GetActorRotation(), true, true, MoveTime, false,
-		                                      EMoveComponentAction::Move, latentInfo);
+		//상단 포인트에 도착했는지 확인하기 위해 틱을 활성화 합니다.
+		SetActorTickEnabled(true);
+		//중력을 끄고,
+		OverlappedPlayer->GetCharacterMovement()->GravityScale = 0;
+		//발사합니다.
+		OverlappedPlayer->LaunchCharacter(launchVelocity, true, true);
+		
+	}
+	else
+	{
+		UKismetSystemLibrary::PrintString(this,TEXT("플레이어캐릭터가 널포인터입니다."));
+	}
+}
+
+void AJumpPad::JumpDown()
+{
+	if (OverlappedPlayer)
+	{
+		JumpProcess = EJumpProcess::JUMP_LAND;
+		
+		switch (JumpMoveType)
+		{
+		case EJumpMoveType::UP:
+			{
+				MoveTargetPoint = TopBoxComponent->GetComponentLocation();
+				SetActorTickEnabled(true);
+				const FVector& launchVelocity =  (TopBoxComponent->GetComponentLocation() - OverlappedPlayer->GetActorLocation()).GetSafeNormal() * MoveSpeed;
+				OverlappedPlayer->LaunchCharacter(launchVelocity, true, true);
+			}
+			break;
+		case EJumpMoveType::DOWN:
+			{
+				MoveTargetPoint = BottomBoxComponent->GetComponentLocation();
+				SetActorTickEnabled(true);
+				const FVector& launchVelocity =  (BottomBoxComponent->GetComponentLocation() - OverlappedPlayer->GetActorLocation()).GetSafeNormal() * MoveSpeed;
+				OverlappedPlayer->LaunchCharacter(launchVelocity, true, true);
+			}
+			break;
+		case EJumpMoveType::NONE:
+			break;
+		default: ;
+		}
+	
 	}
 	else
 	{
@@ -172,46 +318,15 @@ void AJumpPad::JumpMove()
 
 void AJumpPad::JumpLand()
 {
-	if (OverlappedPlayer)
-	{
-		FVector jumpTarget;
-		
-		switch (JumpMoveType)
-		{
-		case EJumpMoveType::UP:
-			jumpTarget = TopBoxComponent->GetComponentLocation();
-			break;
-		case EJumpMoveType::DOWN:
-			jumpTarget = BottomBoxComponent->GetComponentLocation();
-			break;
-		case EJumpMoveType::NONE:
-			break;
-		default: ;
-		}
+	JumpProcess = EJumpProcess::JUMP_END;
+	JumpMoveType = EJumpMoveType::NONE;
 	
-
-		FLatentActionInfo latentInfo;
-		latentInfo.CallbackTarget = this;
-		latentInfo.Linkage = 4;
-		latentInfo.ExecutionFunction = "JumpEnd";
-		
-		UKismetSystemLibrary::MoveComponentTo(OverlappedPlayer->GetCapsuleComponent(), jumpTarget,
-		                                      OverlappedPlayer->GetActorRotation(), true, true, MoveTime, false,
-		                                      EMoveComponentAction::Move, latentInfo);
-	}
-	else
-	{
-		UKismetSystemLibrary::PrintString(this,TEXT("플레이어캐릭터가 널포인터입니다."));
-	}
-}
-
-void AJumpPad::JumpEnd()
-{
+	OverlappedPlayer->GetCharacterMovement()->GravityScale = 1.f;
+	OverlappedPlayer->GetCharacterMovement()->StopMovementImmediately();
 	OverlappedPlayer->GetJumpMovementComponent()->PlayJumpLandMontage();
-	OverlappedPlayer->GetJumpMovementComponent()->bJumping = false;
+	
 	OverlappedPlayer->SetIgnoreMoveInput(false, this,LADDER_IGNORE_MOVE_TAG);
 	UKismetSystemLibrary::PrintString(this,TEXT("점프 종료"));
-	JumpMoveType = EJumpMoveType::NONE;
 	
 	Execute_FinishInteraction(this);
 }
@@ -225,7 +340,8 @@ void AJumpPad::Interaction_Implementation(ABaseCharacter* Start)
 	else
 	{
 		if(OverlappedPlayer){
-			
+
+			JumpProcess = EJumpProcess::JUMP_START;
 			OverlappedPlayer->SetIgnoreMoveInput(true, this,LADDER_IGNORE_MOVE_TAG);
 			auto capsuleComp = OverlappedPlayer->GetCapsuleComponent();
 
@@ -266,15 +382,17 @@ void AJumpPad::FinishInteraction_Implementation()
 	
 }
 
-
 void AJumpPad::OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                                                UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
                                                const FHitResult& SweepResult)
 {
 	if (OtherActor->IsA<APlayerCharacter>())
 	{
+		UKismetSystemLibrary::PrintString(this,TEXT("겹침"));
 		CurOverlappedComponent = OverlappedComponent;
 		OverlappedPlayer = Cast<APlayerCharacter>(OtherActor);
+		SetActorTickEnabled(true);
+		
 		if (OverlappedComponent == TopBoxComponent)
 		{
 			if (UMathHelperLibrary::SameDirection(OverlappedPlayer->GetActorForwardVector(),
@@ -285,12 +403,12 @@ void AJumpPad::OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedCo
 					//이 위치가 활성화 스테틱 매시 근처인지 확인합니다.
 					if (IsNearActivateMesh(TopBoxComponent, BottomBoxComponent))
 					{
-						SetInteractionWidget()->SetWorldLocation(TopBoxComponent->GetComponentLocation());
+						ShowInteractionWidget()->SetWorldLocation(TopBoxComponent->GetComponentLocation());
 					}
 				}
 				else
 				{
-					SetInteractionWidget()->SetWorldLocation(TopBoxComponent->GetComponentLocation());
+					ShowInteractionWidget()->SetWorldLocation(TopBoxComponent->GetComponentLocation());
 				}
 			}
 		}
@@ -305,12 +423,12 @@ void AJumpPad::OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedCo
 					//이 위치가 활성화 스테틱 매시 근처인지 확인합니다.
 					if (IsNearActivateMesh(BottomBoxComponent, TopBoxComponent))
 					{
-						SetInteractionWidget()->SetWorldLocation(BottomBoxComponent->GetComponentLocation());
+						ShowInteractionWidget()->SetWorldLocation(BottomBoxComponent->GetComponentLocation());
 					}
 				}
 				else
 				{
-					SetInteractionWidget()->SetWorldLocation(BottomBoxComponent->GetComponentLocation());
+					ShowInteractionWidget()->SetWorldLocation(BottomBoxComponent->GetComponentLocation());
 				}
 			}
 		}
@@ -322,17 +440,18 @@ void AJumpPad::OnBoxComponentEndOverlapEvent(UPrimitiveComponent* OverlappedComp
 {
 	if (OtherActor == OverlappedPlayer)
 	{
-		if (OverlappedPlayer->GetJumpMovementComponent()->bJumping == false)
+		if (JumpProcess == EJumpProcess::NONE)
 		{
 			UKismetSystemLibrary::PrintString(this,TEXT("플레이어 포인터 비움!!!!"));
 			CurOverlappedComponent = nullptr;
-			OverlappedPlayer->HideInteractionWidget();
+			HideInteractionWidget();
 			OverlappedPlayer = nullptr;
+			SetActorTickEnabled(false);
 		}
 	}
 }
 
-UWidgetComponent* AJumpPad::SetInteractionWidget()
+UWidgetComponent* AJumpPad::ShowInteractionWidget()
 {
 	if (OverlappedPlayer)
 	{
@@ -341,6 +460,14 @@ UWidgetComponent* AJumpPad::SetInteractionWidget()
 	}
 
 	return nullptr;
+}
+
+void AJumpPad::HideInteractionWidget()
+{
+	if (OverlappedPlayer)
+	{
+		OverlappedPlayer->HideInteractionWidget();
+	}
 }
 
 bool AJumpPad::IsNearActivateMesh(UPrimitiveComponent* CheckTargetComponent, UPrimitiveComponent* CompareComponent)
@@ -378,5 +505,5 @@ void AJumpPad::SetActivate()
 {
 	bIsActivated = true;
 	ActivateParticleComponent->SetVisibility(true);
-	SetInteractionWidget();
+	ShowInteractionWidget();
 }

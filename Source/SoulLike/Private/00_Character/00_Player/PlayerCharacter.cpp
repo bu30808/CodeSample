@@ -820,7 +820,7 @@ void APlayerCharacter::FindInteractableNPC()
 		{
 			if (InteractableActor.IsValid())
 			{
-				GetPressKeyWidget()->SetVisibility(false);
+				HideInteractionWidget();
 				InteractableActor = nullptr;
 			}
 		}

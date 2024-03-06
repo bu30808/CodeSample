@@ -21,10 +21,6 @@ protected:
 	class UAnimMontage* JumpStartMontage;
 	UPROPERTY(EditAnywhere)
 	class UAnimMontage* LandMontage;
-
-	//지금 점프중이면 참입니다.
-	UPROPERTY(Transient,BlueprintReadWrite)
-	bool bJumping;
 	
 	UPROPERTY()
 	TObjectPtr<class APlayerCharacter> Pawn;
