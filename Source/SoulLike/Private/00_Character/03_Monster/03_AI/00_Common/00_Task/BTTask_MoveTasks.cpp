@@ -39,18 +39,18 @@ EBTNodeResult::Type UBTTask_MoveRandomPoint::ExecuteTask(UBehaviorTreeComponent&
 	if (auto character = OwnerComp.GetAIOwner()->GetPawn())
 	{
 		AICon = OwnerComp.GetAIOwner();
-		
-		UNavigationSystemV1* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-
-		FNavLocation result;
-		if (NavSystem->GetRandomReachablePointInRadius(character->GetActorLocation(), Radius, result))
+		if(UNavigationSystemV1* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(AICon->GetWorld()))
 		{
-			DrawDebugPoint(character->GetWorld(), result.Location, 100.f, FColor::Blue);
-			OwnerComp.GetAIOwner()->ReceiveMoveCompleted.AddUniqueDynamic(this,&UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
-			// 이동 명령을 내립니다.
-			OwnerComp.GetAIOwner()->MoveToLocation(result.Location);
+			FNavLocation result;
+			if (NavSystem->GetRandomReachablePointInRadius(character->GetActorLocation(), Radius, result))
+			{
+				DrawDebugPoint(character->GetWorld(), result.Location, 100.f, FColor::Blue);
+				OwnerComp.GetAIOwner()->ReceiveMoveCompleted.AddUniqueDynamic(this,&UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
+				// 이동 명령을 내립니다.
+				OwnerComp.GetAIOwner()->MoveToLocation(result.Location,50.f);
 
-			return EBTNodeResult::InProgress;
+				return EBTNodeResult::InProgress;
+			}
 		}
 	}
 
@@ -58,25 +58,6 @@ EBTNodeResult::Type UBTTask_MoveRandomPoint::ExecuteTask(UBehaviorTreeComponent&
 	return EBTNodeResult::Failed;
 }
 
-/*
-void UBTTask_MoveRandomPoint::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
-{
-	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
-
-	// AI 컨트롤러를 가져옵니다.
-	if (AAIController* AIController = OwnerComp.GetAIOwner())
-	{
-		// AI의 이동 상태를 확인합니다.
-		auto MoveStatus = AIController->GetMoveStatus();
-		//UE_LOGFMT(LogTemp,Log,"움직임 상태 : {0}",StaticEnum<EPathFollowingStatus::Type>()->GetValueAsString(MoveStatus));
-		if (MoveStatus != EPathFollowingStatus::Type::Moving)
-		{
-			// 이동이 완료되면 Task를 종료합니다.
-			FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
-		}
-	}
-}
-*/
 
 EBTNodeResult::Type UBTTask_MoveRandomPoint::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {

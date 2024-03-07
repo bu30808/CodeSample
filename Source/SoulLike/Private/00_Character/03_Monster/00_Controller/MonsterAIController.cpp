@@ -220,6 +220,40 @@ void AMonsterAIController::BeginPlay()
 	}
 }
 
+void AMonsterAIController::DrawSightDebugLine()
+{
+	if(auto pawn = GetPawn()){
+		
+		if (auto sight = PerceptionComponent->GetSenseConfig(UAISense::GetSenseID<UAISense_Sight>()))
+		{
+			auto sightConfig = Cast<UAISenseConfig_Sight>(sight);
+			
+			DrawDebugCircle(GetWorld(), pawn->GetActorLocation(), sightConfig->SightRadius, 32, FColor::Red, false, 0.1f, 0, .5f,FVector(0,1,0),FVector(1,0,0));
+
+			const FVector& forwardVector = UKismetMathLibrary::GetForwardVector(GetControlRotation());
+			//Z축을 기준으로 방향백터를 시야만큼 회전시킵니다.
+			const FVector& right = UKismetMathLibrary::RotateAngleAxis(forwardVector,sightConfig->PeripheralVisionAngleDegrees,FVector(0,0,1)) * sightConfig->SightRadius + pawn->GetActorLocation();
+			DrawDebugLine(GetWorld(),pawn->GetActorLocation(),right,FColor::Blue, false, 0.1f, 0, 1.0f);
+
+			//Z축을 기준으로 방향백터를 시야만큼 회전시킵니다.
+			const FVector& left = UKismetMathLibrary::RotateAngleAxis(forwardVector,sightConfig->PeripheralVisionAngleDegrees * -1,FVector(0,0,1)) * sightConfig->SightRadius + pawn->GetActorLocation();
+			DrawDebugLine(GetWorld(),pawn->GetActorLocation(),left,FColor::Blue, false, 0.1f, 0, 1.0f);
+			
+		}
+	
+	}
+}
+
+void AMonsterAIController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+#if WITH_EDITOR
+	DrawSightDebugLine();
+#endif
+	
+}
+
 void AMonsterAIController::UpdateControlRotation(float DeltaTime, bool bUpdatePawn)
 {
 	Super::UpdateControlRotation(DeltaTime, false);

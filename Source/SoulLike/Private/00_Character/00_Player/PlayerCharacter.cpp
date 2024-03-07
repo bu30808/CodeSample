@@ -1098,7 +1098,7 @@ ABaseMonster* APlayerCharacter::GetPlayerForwardMonster(FVector& HitLocation)
 	                                            UEngineTypes::ConvertToTraceType(ECC_Visibility),
 	                                            false, ignoreActors, EDrawDebugTrace::ForOneFrame, hit, true))
 	{
-		if (hit.GetActor()->IsA<ABaseMonster>())
+		if (hit.GetActor()!=nullptr && hit.GetActor()->IsA<ABaseMonster>())
 		{
 			HitLocation = hit.ImpactPoint;
 			return Cast<ABaseMonster>(hit.GetActor());

@@ -118,7 +118,6 @@ void UAnimNotifyState_AddForce::NotifyTick(USkeletalMeshComponent* MeshComp, UAn
 			//특정 상태이상에 걸려서 움직이지 못 하는 상황인지 확인합니다.
 			if(UAbilityHelperLibrary::IsMovementBlockedByStatusEffect(Owner.Get()) == false)
 			{
-				
 				switch(ForceApplicationMode)
 				{
 				case EForceApplicationMode::InputDirection:
