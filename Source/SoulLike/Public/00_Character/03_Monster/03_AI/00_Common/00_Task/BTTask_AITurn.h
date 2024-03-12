@@ -99,12 +99,10 @@ protected:
 	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTNodeResult::Type TaskResult) override;
 	
 	void Turn();
-
-	/*UFUNCTION()
-	void OnTurnMontageStartedEvent(UAnimMontage* Montage);*/
 	
 	UFUNCTION()
 	void OnTurnMontageBlendOutEvent(UAnimMontage* Montage, bool bInterrupted);
+
 	
 };
 

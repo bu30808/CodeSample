@@ -106,10 +106,9 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 					{
 						GetPawn<ABaseMonster>()->SetMonsterState(EMonsterState::Beware);
 					}
-
+					
 					if (UKismetSystemLibrary::DoesImplementInterface(GetPawn(), UBossMonsterInterface::StaticClass()))
 					{
-						//Cast<IBossMonsterInterface>(GetPawn())->ShowBossWidget(GetPawn<ABaseMonster>(), Target);
 						IBossMonsterInterface::Execute_ShowBossWidget(GetPawn(), GetPawn<ABaseMonster>(), Target);
 					}
 				}
@@ -250,6 +249,14 @@ void AMonsterAIController::Tick(float DeltaSeconds)
 
 #if WITH_EDITOR
 	DrawSightDebugLine();
+
+	if (UKismetSystemLibrary::DoesImplementInterface(GetPawn(), UAIInterface::StaticClass()))
+	{
+		float range;
+		IAIInterface::Execute_GetAttackRange(GetPawn(),range);
+		DrawDebugCircle(GetWorld(), GetPawn()->GetActorLocation(),range , 32, FColor::Magenta, false, 0.1f, 0, .5f,FVector(0,1,0),FVector(1,0,0));
+	}
+	
 #endif
 	
 }

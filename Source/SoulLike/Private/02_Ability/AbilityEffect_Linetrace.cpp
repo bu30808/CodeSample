@@ -4,15 +4,16 @@
 #include "02_Ability/AbilityEffect_Linetrace.h"
 
 #include "GenericTeamAgentInterface.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "00_Character/BaseCharacter.h"
-#include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/01_Component/AbilityComponent.h"
-#include "00_Character/01_Component/AttributeComponent.h"
 #include "02_Ability/01_Task/GameplayTask_LaunchEvent.h"
 #include "96_Library/AbilityHelperLibrary.h"
 #include "Components/PrimitiveComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "Engine/World.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Logging/StructuredLog.h"
 
@@ -48,15 +49,14 @@ void UAbilityEffect_Linetrace::OnHitActorEvent_Implementation(const FHitResult& 
 
 	if (Hit.GetActor() != nullptr)
 	{
-
-		if(bIgnoreSelf)
+		if (bIgnoreSelf)
 		{
-			if(TickOwner == Hit.GetActor())
+			if (TickOwner == Hit.GetActor())
 			{
 				return;
 			}
 		}
-		
+
 		UE_LOGFMT(LogEffect, Warning, "{0}이 히트를 감지했습니다 : {1}, {2}, {3}", Target->GetActorNameOrLabel(),
 		          Hit.GetActor()->GetActorNameOrLabel(), Hit.Location.ToString(), Hit.ImpactPoint.ToString());
 
@@ -64,20 +64,19 @@ void UAbilityEffect_Linetrace::OnHitActorEvent_Implementation(const FHitResult& 
 		{
 			if (auto character = Cast<ABaseCharacter>(Hit.GetActor()))
 			{
-
 				//아군 무시 옵션이 켜져있을 경우, 팀을 확인합니다.
-				if(bIgnoreAlly)
+				if (bIgnoreAlly)
 				{
 					//걸린 대상의 팀
 					const auto& targetTeam = UAbilityHelperLibrary::GetTeam(character);
-					const auto& ownerTeam =  UAbilityHelperLibrary::GetTeam(TickOwner.Get());
+					const auto& ownerTeam = UAbilityHelperLibrary::GetTeam(TickOwner.Get());
 
-					if(targetTeam.GetId() == ownerTeam.GetId())
+					if (targetTeam.GetId() == ownerTeam.GetId())
 					{
 						return;
 					}
 				}
-				
+
 				UpdateAttributeEffectsAffectedByOwnersAttribute(Target);
 
 				const auto addInfo = CreateAdditionalInfo();
@@ -85,16 +84,17 @@ void UAbilityEffect_Linetrace::OnHitActorEvent_Implementation(const FHitResult& 
 				addInfo->HitBy = Target;
 				addInfo->bTriggerHitAnimation = bTriggerHitAnimation;
 
-				bool bSucc =false;
+				bool bSucc = false;
 
-				if(bSplitDamageOverTime)
+				if (bSplitDamageOverTime)
 				{
 					bSucc = ApplyInstantEffect(character, addInfo, GetDeltaTime());
-				}else
+				}
+				else
 				{
 					bSucc = ApplyInstantEffect(character, addInfo);
 				}
-				
+
 				if (bSucc)
 				{
 					//피해를 입은 대상에서 impact 큐를 생성해 적용합니다.
@@ -105,9 +105,8 @@ void UAbilityEffect_Linetrace::OnHitActorEvent_Implementation(const FHitResult& 
 					ApplyCueInstance(character);
 				}
 
-				Target->OnLineTraceEffectHitActor.Broadcast(Hit,Target);
+				Target->OnLineTraceEffectHitActor.Broadcast(Hit, Target);
 			}
-			
 		}
 		else
 		{
@@ -267,6 +266,7 @@ void UAbilityEffect_Linetrace::CopyValues(UAbilityEffect* Effect)
 	CapsuleHalfHeight = linetraceData->CapsuleHalfHeight;
 	SphereRadius = linetraceData->SphereRadius;
 }
+
 #endif
 
 /*
@@ -380,11 +380,35 @@ void UAbilityEffect_Linetrace::AddHitActors(TArray<FHitResult> HitArray, ABaseCh
 {
 	for (const auto& Hit : HitArray)
 	{
-		if (!HitActors.ContainsByPredicate([&](const FHitResult& Inner) { return Inner.GetActor() == Hit.GetActor(); }))
+		if (Hit.GetActor()->IsA<ABaseCharacter>())
 		{
-			HitActors.Add(Hit);
-			OnHitActor.Broadcast(Hit, Target);
+			if (!HitActors.ContainsByPredicate([&](const FHitResult& Inner)
+			{
+				return Inner.GetActor() == Hit.GetActor();
+			}))
+			{
+				UKismetSystemLibrary::PrintString(
+					Target, FString::Printf(TEXT("히트 액터 추가됨 : %s"), *Hit.GetActor()->GetActorNameOrLabel()));
+				HitActors.Add(Hit);
+				OnHitActor.Broadcast(Hit, Target);
+			}
 		}
+		else
+		{
+			if (bSpawnNiagaraWhenHitNonCharacter)
+			{
+				SpawnStaticHitParticle(Target, Hit.Location, Hit.ImpactNormal);
+			}
+		}
+	}
+}
+
+void UAbilityEffect_Linetrace::SpawnStaticHitParticle(const AActor* Target, const FVector& HitLocation,
+                                                      const FVector& ImpactNormal) const
+{
+	if (auto system = UNiagaraFunctionLibrary::SpawnSystemAtLocation(Target, NiagaraEmitter, HitLocation))
+	{
+		system->SetVectorParameter("ForceDirection", ImpactNormal);
 	}
 }
 
@@ -491,7 +515,7 @@ void UAbilityEffect_Linetrace::TraceOtherSocketAtSameTime(ABaseCharacter* Target
 	}
 }
 
-void UAbilityEffect_Linetrace::TraceOtherSocketAtDiffrentTime(ABaseCharacter* Target)
+void UAbilityEffect_Linetrace::TraceOtherSocketAtDifferentTime(ABaseCharacter* Target)
 {
 	for (auto Socket1 : Sockets)
 	{
@@ -705,12 +729,262 @@ bool UAbilityEffect_Linetrace::IsContainActor(AActor* Actor) const
 	});
 }
 
-void UAbilityEffect_Linetrace::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy,UAbilityBase* From)
+void UAbilityEffect_Linetrace::ActivateNiagaraSpawnTrace(AActor* Target)
+{
+	LastKnownNiagaraSpawnSocketLocation.Empty();
+	
+	for (auto Socket : Sockets)
+	{
+		LastKnownNiagaraSpawnSocketLocation.Emplace(Socket, MeshComponent->GetSocketLocation(Socket));
+	}
+	
+	if(!EffectSpawnTickTask.IsValid()){
+		EffectSpawnTickTask = UGameplayTask_LaunchEvent::LaunchEvent(Target,nullptr,NiagaraSpawnTraceTickRate);
+	}
+
+	NiagaraSpawnTarget = Target;
+
+	EffectSpawnTickTask->OnTaskTick.AddUniqueDynamic(this,&UAbilityEffect_Linetrace::CreateSpawnNiagaraEffectTrace);
+	EffectSpawnTickTask->Activate();
+}
+
+void UAbilityEffect_Linetrace::CreateSpawnNiagaraEffectTrace()
+{
+	const class UWorld* world = NiagaraSpawnTarget->GetWorld();
+	if(world == nullptr)
+	{
+		return;
+	}
+	
+	for (auto Socket1 : Sockets)
+	{
+		for (auto Socket2 : Sockets)
+		{
+			if (LastKnownSocketLocation.Contains(Socket2) == false)
+			{
+				UE_LOGFMT(LogEffect, Error, "{0} {1}", __FUNCTION__, __LINE__);
+				return;
+			}
+
+			TArray<FHitResult> OutHits1;
+			FVector Start = MeshComponent->GetSocketLocation(Socket1);
+			FVector End = *LastKnownSocketLocation.Find(Socket2);
+
+			if (TraceType == ETraceType::BY_CHANNEL)
+			{
+				switch (TraceShapeType)
+				{
+				case ETraceShapeType::LINE:
+					{
+						UKismetSystemLibrary::LineTraceMulti(world, Start, End, TraceChannel,
+						                                     bTraceComplex,
+						                                     IgnoreActors, DrawDebugType, OutHits1, bIgnoreSelf,
+						                                     TraceColor, TraceHitColor, DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::BOX:
+					{
+						UKismetSystemLibrary::BoxTraceMulti(world, Start, End, BoxHalfSize, BoxOrientation,
+						                                    TraceChannel,
+						                                    bTraceComplex, IgnoreActors, DrawDebugType, OutHits1,
+						                                    bIgnoreSelf, TraceColor, TraceHitColor, DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::CAPSULE:
+					{
+						UKismetSystemLibrary::CapsuleTraceMulti(world, Start, End, CapsuleHalfHeight,
+						                                        CapsuleRadius,
+						                                        TraceChannel, bTraceComplex, IgnoreActors,
+						                                        DrawDebugType, OutHits1, bIgnoreSelf, TraceColor,
+						                                        TraceHitColor, DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::SPHERE:
+					{
+						UKismetSystemLibrary::SphereTraceMulti(world, Start, End, SphereRadius,
+						                                       TraceChannel,
+						                                       bTraceComplex, IgnoreActors, DrawDebugType, OutHits1,
+						                                       bIgnoreSelf, TraceColor, TraceHitColor, DrawTime);
+						break;
+					}
+				}
+			}
+			else
+			{
+				switch (TraceShapeType)
+				{
+				case ETraceShapeType::LINE:
+					{
+						UKismetSystemLibrary::LineTraceMultiForObjects(world, Start, End, ObjectTypes,
+						                                               bTraceComplex,
+						                                               IgnoreActors, DrawDebugType, OutHits1,
+						                                               bIgnoreSelf, TraceColor, TraceHitColor,
+						                                               DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::BOX:
+					{
+						UKismetSystemLibrary::BoxTraceMultiForObjects(world, Start, End, BoxHalfSize,
+						                                              BoxOrientation,
+						                                              ObjectTypes, bTraceComplex, IgnoreActors,
+						                                              DrawDebugType, OutHits1, bIgnoreSelf, TraceColor,
+						                                              TraceHitColor, DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::CAPSULE:
+					{
+						UKismetSystemLibrary::CapsuleTraceMultiForObjects(
+							world, Start, End, CapsuleHalfHeight, CapsuleRadius, ObjectTypes, bTraceComplex,
+							IgnoreActors, DrawDebugType, OutHits1, bIgnoreSelf, TraceColor, TraceHitColor, DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::SPHERE:
+					{
+						UKismetSystemLibrary::SphereTraceMultiForObjects(
+							world, Start, End, SphereRadius, ObjectTypes, bTraceComplex, IgnoreActors,
+							DrawDebugType,
+							OutHits1, bIgnoreSelf, TraceColor, TraceHitColor, DrawTime);
+						break;
+					}
+				}
+			}
+
+			SpawnNiagaraEffect(OutHits1);
+		}
+
+		for (auto Socket3 : Sockets)
+		{
+			TArray<FHitResult> OutHits2;
+			FVector Start = *LastKnownSocketLocation.Find(Socket3);
+			FVector End = MeshComponent->GetSocketLocation(Socket1);
+
+			if (TraceType == ETraceType::BY_CHANNEL)
+			{
+				switch (TraceShapeType)
+				{
+				case ETraceShapeType::LINE:
+					{
+						UKismetSystemLibrary::LineTraceMulti(world, Start, End, TraceChannel,
+						                                     bTraceComplex,
+						                                     IgnoreActors, DrawDebugType, OutHits2, bIgnoreSelf,
+						                                     TraceColor, TraceHitColor, DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::BOX:
+					{
+						UKismetSystemLibrary::BoxTraceMulti(world, Start, End, BoxHalfSize, BoxOrientation,
+						                                    TraceChannel,
+						                                    bTraceComplex, IgnoreActors, DrawDebugType, OutHits2,
+						                                    bIgnoreSelf, TraceColor, TraceHitColor, DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::CAPSULE:
+					{
+						UKismetSystemLibrary::CapsuleTraceMulti(world, Start, End, CapsuleHalfHeight,
+						                                        CapsuleRadius,
+						                                        TraceChannel, bTraceComplex, IgnoreActors,
+						                                        DrawDebugType, OutHits2, bIgnoreSelf, TraceColor,
+						                                        TraceHitColor, DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::SPHERE:
+					{
+						UKismetSystemLibrary::SphereTraceMulti(world, Start, End, SphereRadius,
+						                                       TraceChannel,
+						                                       bTraceComplex, IgnoreActors, DrawDebugType, OutHits2,
+						                                       bIgnoreSelf, TraceColor, TraceHitColor, DrawTime);
+						break;
+					}
+				}
+			}
+			else
+			{
+				switch (TraceShapeType)
+				{
+				case ETraceShapeType::LINE:
+					{
+						UKismetSystemLibrary::LineTraceMultiForObjects(world, Start, End, ObjectTypes,
+						                                               bTraceComplex,
+						                                               IgnoreActors, DrawDebugType, OutHits2,
+						                                               bIgnoreSelf, TraceColor, TraceHitColor,
+						                                               DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::BOX:
+					{
+						UKismetSystemLibrary::BoxTraceMultiForObjects(world, Start, End, BoxHalfSize,
+						                                              BoxOrientation,
+						                                              ObjectTypes, bTraceComplex, IgnoreActors,
+						                                              DrawDebugType, OutHits2, bIgnoreSelf, TraceColor,
+						                                              TraceHitColor, DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::CAPSULE:
+					{
+						UKismetSystemLibrary::CapsuleTraceMultiForObjects(
+							world, Start, End, CapsuleHalfHeight, CapsuleRadius, ObjectTypes,
+							bTraceComplex,
+							IgnoreActors, DrawDebugType, OutHits2, bIgnoreSelf, TraceColor, TraceHitColor, DrawTime);
+						break;
+					}
+
+				case ETraceShapeType::SPHERE:
+					{
+						UKismetSystemLibrary::SphereTraceMultiForObjects(
+							world, Start, End, SphereRadius, ObjectTypes, bTraceComplex, IgnoreActors,
+							DrawDebugType,
+							OutHits2, bIgnoreSelf, TraceColor, TraceHitColor, DrawTime);
+						break;
+					}
+				}
+			}
+
+			SpawnNiagaraEffect(OutHits2);
+		}
+	}
+
+	UpdateLastNiagaraSpawnSocketLocation();
+}
+
+void UAbilityEffect_Linetrace::SpawnNiagaraEffect(const TArray<FHitResult>& Hits) const
+{
+	for(const auto& iter : Hits)
+	{
+		SpawnNiagaraEffect(iter);
+	}
+}
+
+void UAbilityEffect_Linetrace::SpawnNiagaraEffect(const FHitResult& Hit) const
+{
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(NiagaraSpawnTarget->GetWorld(),NiagaraEmitter,Hit.Location);
+}
+
+void UAbilityEffect_Linetrace::UpdateLastNiagaraSpawnSocketLocation()
+{
+	for (auto Socket : Sockets)
+	{
+		LastKnownNiagaraSpawnSocketLocation.Add(Socket, MeshComponent->GetSocketLocation(Socket));
+	}
+}
+
+void UAbilityEffect_Linetrace::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy,
+                                                            UAbilityBase* From)
 {
 	if (bUseWithCustomSockets)
 	{
 		if (bUseOtherMeshComponent)
-		{			
+		{
 			InitWithSockets(Target->GetPrimitiveComponentForLineTrace());
 		}
 		else
@@ -734,13 +1008,18 @@ void UAbilityEffect_Linetrace::ProcessEffect_Implementation(ABaseCharacter* Targ
 	ChainSetting(Target);
 
 	RegisterEffectTag(Target);
+	if(bSpawnNiagaraWhenHitNonCharacter)
+	{
+		ActivateNiagaraSpawnTrace(Target);
+	}
+	
 	ActivateTrace(true, Target);
 }
 
 void UAbilityEffect_Linetrace::OnTaskTickEvent_Implementation(float DeltaTime)
 {
 	TickEffectDeltaTime = DeltaTime;
-	
+
 	if (TickOwner.IsValid() == false)
 	{
 		UE_LOGFMT(LogEffect, Error, "틱 오너가 유효하지 않습니다 : {0} {1}", __FUNCTION__, __LINE__);
@@ -764,7 +1043,7 @@ void UAbilityEffect_Linetrace::OnTaskTickEvent_Implementation(float DeltaTime)
 
 		if (bTraceOtherSocketsAtDifferentTime)
 		{
-			TraceOtherSocketAtDiffrentTime(TickOwner.Get());
+			TraceOtherSocketAtDifferentTime(TickOwner.Get());
 		}
 
 		UpdateLastSocketLocation();
@@ -776,6 +1055,12 @@ void UAbilityEffect_Linetrace::EndEffect_Implementation(ABaseCharacter* Target)
 	//UE_LOGFMT(LogTemp, Warning, "UAbilityEffect_Linetrace {0}이 소유한 {1}의 이팩트 종료됨 : {2}",Target->GetController()->GetActorNameOrLabel(),Target->GetActorNameOrLabel(), UniqueEffectTag.ToString());
 
 	ActivateTrace(false, Target);
+
+	if(EffectSpawnTickTask.IsValid())
+	{
+		EffectSpawnTickTask->EndTask();
+		EffectSpawnTickTask.Reset();
+	}
 
 	Super::EndEffect_Implementation(Target);
 }
@@ -796,40 +1081,41 @@ bool UAbilityEffect_Linetrace::IsAlreadyHit(AActor* Actor)
 	});
 }
 
-void UAbilityEffect_Linetrace::ApplyKnockDown(const FHitResult& Hit,class ABaseCharacter* EffectedBy, FGameplayTag KnockdownTag,bool bRotationToHitPoint, bool bReset)
+void UAbilityEffect_Linetrace::ApplyKnockDown(const FHitResult& Hit, class ABaseCharacter* EffectedBy,
+                                              FGameplayTag KnockdownTag, bool bRotationToHitPoint, bool bReset)
 {
-	if(const auto hitActor = Hit.GetActor())
+	if (const auto hitActor = Hit.GetActor())
 	{
-		if(hitActor->IsA<ABaseCharacter>())
+		if (hitActor->IsA<ABaseCharacter>())
 		{
 			const auto character = Cast<ABaseCharacter>(hitActor);
 			const auto abComp = character->GetAbilityComponent();
-			if(abComp->IsInvincible()==false)
+			if (abComp->IsInvincible() == false)
 			{
-				if(!bReset)
+				if (!bReset)
 				{
 					//넉다운이 이미 적용되어있는지 확인합니다.
-					if(abComp->HasAnyActivateAbilityTags(FGameplayTagContainer(KnockdownTag)))
+					if (abComp->HasAnyActivateAbilityTags(FGameplayTagContainer(KnockdownTag)))
 					{
 						return;
 					}
-				}else
+				}
+				else
 				{
-					if(abComp->HasAnyActivateAbilityTags(FGameplayTagContainer(KnockdownTag)))
+					if (abComp->HasAnyActivateAbilityTags(FGameplayTagContainer(KnockdownTag)))
 					{
 						abComp->ForceEndAbility(KnockdownTag);
 					}
 				}
-				
-				if(bRotationToHitPoint)
+
+				if (bRotationToHitPoint)
 				{
-					auto rot = UKismetMathLibrary::FindLookAtRotation(character->GetActorLocation(),Hit.Location);
-					character->SetActorRotation(FRotator(0,rot.Yaw,0));
+					auto rot = UKismetMathLibrary::FindLookAtRotation(character->GetActorLocation(), Hit.Location);
+					character->SetActorRotation(FRotator(0, rot.Yaw, 0));
 				}
 
-				abComp->ActivateAbility(KnockdownTag,character);
+				abComp->ActivateAbility(KnockdownTag, character);
 			}
 		}
 	}
-	
 }

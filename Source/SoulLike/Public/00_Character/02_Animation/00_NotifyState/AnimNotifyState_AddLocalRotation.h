@@ -14,6 +14,15 @@ class SOULLIKE_API UAnimNotifyState_AddLocalRotation : public UAnimNotifyState
 {
 	GENERATED_BODY()
 
-	virtual void NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
-	                        float FrameDeltaTime) override;
+protected:
+	UPROPERTY(EditAnywhere)
+	float Degree = 360.f;
+	UPROPERTY(Transient)
+	float TargetYaw;
+	UPROPERTY(Transient)
+	float TotalYaw;
+
+	virtual void NotifyBegin(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation, float TotalDuration, const FAnimNotifyEventReference& EventReference) override;
+	virtual void NotifyTick(USkeletalMeshComponent * MeshComp, UAnimSequenceBase * Animation, float FrameDeltaTime, const FAnimNotifyEventReference& EventReference) override;
+	virtual void NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
 };

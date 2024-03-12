@@ -127,6 +127,9 @@ protected:
 	class UWidgetComponent* HealthBarWidgetComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class UItemDropComponent* ItemDropComponent;
+	//보스몬스터 전용
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	class UAudioComponent* MusicComponent;
 public:
 	class UWidgetComponent* GetHealthBarWidgetComponent() const { return HealthBarWidgetComponent; }
 
@@ -226,4 +229,19 @@ protected:
 	void SetRandomRotationYaw();
 
 	virtual void TriggerHitAnimation_Implementation(UAbilityEffectAdditionalInformation* AdditionalInformation) override;
+
+
+	/**********************************************사운드*********************************************************/
+
+	//보스 인터페이스를 상속중이라면, 음악을 재생합니다.
+	UFUNCTION(BlueprintCallable)
+	void PlayMusic(class USoundBase* Music);
+	
+	/**
+	 * AdjustVolumeDuration에 걸쳐서 볼륨을 0으로 만든 후, 컴포넌트를 파괴합니다.
+	 * @param AdjustVolumeDuration 
+	 */
+	UFUNCTION(BlueprintCallable)
+	void StopMusic(float AdjustVolumeDuration);
+	
 };

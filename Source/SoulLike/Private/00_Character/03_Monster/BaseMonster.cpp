@@ -18,6 +18,7 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
+#include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -408,5 +409,33 @@ void ABaseMonster::TriggerHitAnimation_Implementation(UAbilityEffectAdditionalIn
 				Cast<UBehaviorTreeComponent>(aicon->GetBrainComponent())->StopTree();
 			}
 		}
+	}
+}
+
+void ABaseMonster::PlayMusic(USoundBase* Music)
+{
+	if(UKismetSystemLibrary::DoesImplementInterface(this,UBossMonsterInterface::StaticClass()))
+	{
+		if(MusicComponent== nullptr)
+		{
+			MusicComponent = NewObject<UAudioComponent>(this);
+			MusicComponent->RegisterComponent();
+			MusicComponent->SetUISound(true);
+			MusicComponent->SetSound(Music);
+			MusicComponent->Play();
+		}
+	}
+}
+
+void ABaseMonster::StopMusic(float AdjustVolumeDuration)
+{
+	if(MusicComponent != nullptr)
+	{
+		MusicComponent->AdjustVolume(AdjustVolumeDuration,0.f);
+
+		const FTimerDelegate destroyDel = FTimerDelegate::CreateUObject(MusicComponent,&UAudioComponent::DestroyComponent,false);
+		FTimerHandle destroyTimerHandle;
+		GetWorldTimerManager().SetTimer(destroyTimerHandle,destroyDel,AdjustVolumeDuration,false);
+		
 	}
 }

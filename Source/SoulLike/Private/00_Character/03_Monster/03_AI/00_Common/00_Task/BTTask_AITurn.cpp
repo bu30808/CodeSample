@@ -11,6 +11,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Logging/StructuredLog.h"
 
+#define PLAYER_TRACE_CHANNEL ECC_GameTraceChannel5
 
 UBTTask_AITurn::UBTTask_AITurn()
 {
@@ -71,24 +72,24 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 
 	if (auto target = Cast<AActor>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(GetSelectedBlackboardKey())))
 	{
-		if( TurnType != EAITaskTurnType::RootMontage)
+		if (TurnType != EAITaskTurnType::RootMontage)
 		{
 			if (auto aiPawn = OwnersAIController->GetPawn<ABaseCharacter>())
 			{
 				// 회전 목표 각도를 설정합니다.
 				float TargetYaw = UKismetMathLibrary::FindLookAtRotation(aiPawn->GetActorLocation(),
-																		 target->GetActorLocation()).Yaw;
+				                                                         target->GetActorLocation()).Yaw;
 				float CurrentYaw = aiPawn->GetActorRotation().Yaw; // 현재 몬스터의 각도
 
 				// 회전 목표 각도와 현재 각도를 비교하여 회전해야 할 각도를 계산합니다.
 				//예전에 각 구해다가 -180을 빼거나 더했던 그 작업입니다.
 				float DeltaYaw = FMath::FindDeltaAngleDegrees(CurrentYaw, TargetYaw);
-				
+
 
 				FRotator LerpRot = FMath::RInterpTo(aiPawn->GetActorRotation(),
-													UKismetMathLibrary::FindLookAtRotation(
-														aiPawn->GetActorLocation(), target->GetActorLocation()),
-													DeltaSeconds, InterpSpeed);
+				                                    UKismetMathLibrary::FindLookAtRotation(
+					                                    aiPawn->GetActorLocation(), target->GetActorLocation()),
+				                                    DeltaSeconds, InterpSpeed);
 				LerpRot.Pitch = aiPawn->GetActorRotation().Pitch;
 				LerpRot.Roll = aiPawn->GetActorRotation().Roll;
 				aiPawn->SetActorRotation(LerpRot);
@@ -104,12 +105,13 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 			}
 			else
 			{
-				UE_LOGFMT(LogAICon, Error, "{0} AI의 폰을 가져올 수 없습니다. 종료합니다.", OwnerComp.GetAIOwner()->GetActorNameOrLabel());
+				UE_LOGFMT(LogAICon, Error, "{0} AI의 폰을 가져올 수 없습니다. 종료합니다.",
+				          OwnerComp.GetAIOwner()->GetActorNameOrLabel());
 				FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 			}
 		}
 
-	
+
 		if (bUseStopTrace)
 		{
 			if (auto aiPawn = OwnersAIController->GetPawn<ABaseCharacter>())
@@ -122,8 +124,9 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 				case EStopTraceType::ControlDirection:
 					{
 						startLoc = UKismetMathLibrary::GetForwardVector(OwnersAIController->GetControlRotation()) +
-					aiPawn->GetActorLocation();
-						endLoc = startLoc + (UKismetMathLibrary::GetForwardVector(OwnersAIController->GetControlRotation()) *
+							aiPawn->GetActorLocation();
+						endLoc = startLoc + (UKismetMathLibrary::GetForwardVector(
+								OwnersAIController->GetControlRotation()) *
 							20000.f + aiPawn->GetActorLocation());
 					}
 					break;
@@ -144,27 +147,33 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 					break;
 				default: ;
 				}
-		
+
+
 				TArray<AActor*> ignoreActors;
 				ignoreActors.Emplace(Cast<AActor>(ABaseMonster::StaticClass()));
-
-				TArray<FHitResult> hits;
-				bool bHit = UKismetSystemLibrary::BoxTraceMulti(target->GetWorld(), startLoc, endLoc,FVector(1,1,500),FRotator::ZeroRotator,
-																 UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
-																 ignoreActors, EDrawDebugTrace::ForOneFrame, hits, true);
-
-				if (bHit)
+				
 				{
-					for (auto iter : hits)
+					
+					FHitResult hit;
+					TArray<TEnumAsByte<EObjectTypeQuery>> objectTypes;
+					objectTypes.Emplace(UEngineTypes::ConvertToObjectType(PLAYER_TRACE_CHANNEL));
+					
+					bool bHit = UKismetSystemLibrary::BoxTraceSingleForObjects(target->GetWorld(), startLoc, endLoc,
+					                                                           FVector(10, 10, 500), FRotator::ZeroRotator,
+					                                                           objectTypes, false,
+					                                                           ignoreActors, EDrawDebugTrace::ForOneFrame, hit,
+					                                                           true);
+					if (bHit)
 					{
-						if (iter.GetActor() == target)
+						//UKismetSystemLibrary::PrintString(OwnersAIController,hit.GetActor()->GetActorNameOrLabel());
+						if (hit.GetActor() == target)
 						{
-							DrawDebugPoint(OwnersAIController->GetWorld(), iter.Location, 50.f, FColor::Red, true, 3.f);
+							DrawDebugPoint(OwnersAIController->GetWorld(), hit.Location, 50.f, FColor::Red, true, 3.f);
 							FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
-							break;
 						}
 					}
 				}
+				
 			}
 		}
 	}
@@ -179,7 +188,7 @@ void UBTTask_AITurn::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* No
                                     EBTNodeResult::Type TaskResult)
 {
 	UE_LOGFMT(LogAICon, Log, "{0}의 회전 테스크 종료!", OwnerComp.GetAIOwner()->GetActorNameOrLabel());
-	if(auto pawn = OwnersAIController->GetPawn<ABaseMonster>())
+	if (auto pawn = OwnersAIController->GetPawn<ABaseMonster>())
 	{
 		if (auto instance = pawn->GetMesh()->GetAnimInstance())
 		{

@@ -3,20 +3,67 @@
 
 #include "00_Character/02_Animation/00_NotifyState/AnimNotifyState_AddLocalRotation.h"
 
-void UAnimNotifyState_AddLocalRotation::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
-                                                   float FrameDeltaTime)
+#include "GameFramework/Character.h"
+#include "Kismet/KismetSystemLibrary.h"
+
+
+void UAnimNotifyState_AddLocalRotation::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+                                                    float TotalDuration, const FAnimNotifyEventReference& EventReference)
 {
+	Super::NotifyBegin(MeshComp, Animation, TotalDuration, EventReference);
+	TargetYaw = Degree/EventReference.GetNotify()->Duration;
+	TotalYaw = 0;
+}
+
+void UAnimNotifyState_AddLocalRotation::NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+                                                   float FrameDeltaTime, const FAnimNotifyEventReference& EventReference)
+{
+	Super::NotifyTick(MeshComp, Animation, FrameDeltaTime, EventReference);
 	if (!MeshComp)
 	{
 		return;
 	}
+	
 
-	// 로컬 로테이션을 가져옵니다.
-	FRotator LocalRotation = MeshComp->GetRelativeRotation();
+	if(auto pawn = MeshComp->GetOwner<ACharacter>())
+	{
+		if(const auto animInstance = MeshComp->GetAnimInstance())
+		{
+			const float playRate = animInstance->Montage_GetPlayRate(animInstance->GetCurrentActiveMontage());
+			const float addYaw  = ((Degree/EventReference.GetNotify()->Duration)) * playRate * FrameDeltaTime;
+			//UKismetSystemLibrary::PrintString(MeshComp,FString::Printf(TEXT("더해야 할 요 : %f , 현재 플레이 속도 : %f"),addYaw,playRate));
+			TotalYaw+= FMath::Abs(addYaw);
+			if(TotalYaw > FMath::Abs(TargetYaw))
+			{
+				pawn->SetActorRotation(FRotator(0,TargetYaw,0));
+				return;
+			}
+			pawn->AddActorWorldRotation(FRotator(0,addYaw,0));
+			return;
+		}
+	}
 
-	// 로컬 로테이션의 Yaw 값을 360만큼 더합니다.
-	LocalRotation.Yaw += 360.0f * FrameDeltaTime; // FrameDeltaTime을 사용하여 각도를 더해줍니다.
+#if WITH_EDITOR
+	{
+		const float playRate = MeshComp->GetAnimInstance()->Montage_GetPlayRate(MeshComp->GetAnimInstance()->GetCurrentActiveMontage());
+		const float addYaw = (Degree/EventReference.GetNotify()->Duration) * playRate * FrameDeltaTime;
+		//UKismetSystemLibrary::PrintString(MeshComp,FString::Printf(TEXT("더해야 할 요 : %f , 현재 플레이 속도 : %f"),addYaw,playRate));
+		TotalYaw+= FMath::Abs(addYaw);
+		if(TotalYaw > FMath::Abs(TargetYaw))
+		{
+			MeshComp->SetWorldRotation(FRotator(0,TargetYaw,0));
+			return;
+		}
+		MeshComp->AddWorldRotation(FRotator(0,addYaw,0));
+	}
+#endif
 
-	// 수정된 로컬 로테이션을 설정합니다.
-	MeshComp->SetRelativeRotation(LocalRotation);
 }
+
+void UAnimNotifyState_AddLocalRotation::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+	const FAnimNotifyEventReference& EventReference)
+{
+	Super::NotifyEnd(MeshComp, Animation, EventReference);
+	//UKismetSystemLibrary::PrintString(MeshComp,FString::Printf(TEXT("더한 요의 합계 : %f"),TotalYaw));
+}
+

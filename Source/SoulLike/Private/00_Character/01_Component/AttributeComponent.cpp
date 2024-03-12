@@ -12,6 +12,7 @@
 #include "Logging/StructuredLog.h"
 #include "03_Widget/03_LevelUp/AttributePreviewWidget.h"
 #include "96_Library/AbilityHelperLibrary.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 UStatusEffectValueHandler::UStatusEffectValueHandler()
 {
@@ -131,6 +132,11 @@ void UAttributeComponent::BeginPlay()
 	Super::BeginPlay();
 
 	OnUpdateStatusEffect.AddUniqueDynamic(this, &UAttributeComponent::OnUpdateStatusEffectEvent);
+
+	if(GetOwner())
+	{
+		GetOwner<ACharacter>()->GetCharacterMovement()->MaxWalkSpeed = GetMoveSpeed();
+	}
 }
 
 void UAttributeComponent::PostInitProperties()

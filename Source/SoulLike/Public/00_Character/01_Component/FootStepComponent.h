@@ -8,7 +8,7 @@
 #include "PhysicalMaterials/PhysicalMaterial.h"
 #include "FootStepComponent.generated.h"
 
-
+DECLARE_LOG_CATEGORY_EXTERN(LogFootStep, Log, All);
 UCLASS(BlueprintType)
 class SOULLIKE_API UFootStepDataAsset : public UDataAsset
 {
@@ -39,18 +39,21 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	UFootStepDataAsset* FootStepDataAsset;
-
+	UPROPERTY(EditAnywhere)
+	float TraceLength = 50.f;
+	UPROPERTY(EditAnywhere)
+	FVector StartOffset = FVector(0,0,30.f);
 	UPROPERTY()
 	TWeakObjectPtr<class ABaseCharacter> Owner;
-	/*
-	UPROPERTY(EditAnywhere)
-	class USoundBase* FootStepSound;
 
-	UPROPERTY(EditAnywhere)
-	TMap<TEnumAsByte<EPhysicalSurface>, class UNiagaraSystem*> FootStepNiagara;
-	*/
+	bool CreateFootStepTrace(FName SocketName, FHitResult& OutHit);
+	void SpawnSoundAndEffect(const FHitResult& OutHit);
+	//Deep은 물의 깊이이며, 숫자가 클 수록 깊습니다. 0~2의 값을 가질수 있습니다.
+	void SpawnWaterSoundAndEffect(const FHitResult& OutHit,const int32& Deep);
+	bool CheckWaterDeep(FHitResult& WaterHit);
 
 public:
+	
 	//사운드와 파티클을 생성합니다.
 	UFUNCTION(BlueprintCallable)
 	void MakeFootStep(FName SocketName);

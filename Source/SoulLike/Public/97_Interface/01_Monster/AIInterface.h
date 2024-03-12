@@ -22,7 +22,7 @@ class SOULLIKE_API IAIInterface
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 protected:
-	UFUNCTION(BlueprintNativeEvent)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void GetAttackRange(float& Range);
 public:
 	//ai 크기에 맞춰 스케일링한 뒤, 캡슐반지름을 더한 값을 리턴합니다.

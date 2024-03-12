@@ -727,7 +727,7 @@ void UAbilityEffect::ApplyTickEffect(ABaseCharacter* Target)
 
 	if (TickTask.IsValid() == false)
 	{
-		TickTask = UGameplayTask_LaunchEvent::LaunchEvent(Target);
+		TickTask = UGameplayTask_LaunchEvent::LaunchEvent(Target,nullptr,TickRate);
 		UE_LOGFMT(LogTemp, Warning, "{0},{1}에서 테스크를 생성합니다", UniqueEffectTag.ToString(), GetName());
 	}
 

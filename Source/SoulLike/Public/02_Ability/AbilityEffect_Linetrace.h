@@ -51,12 +51,26 @@ protected:
 public:
 	//한 틱에 서로 다른 소켓끼리에 대해서 트레이스를 하려면 체크하세요.
 	UPROPERTY(EditAnywhere, Category="TraceSetting")
-	bool bTraceOtherSocketsAtSameTime = true;
+	bool bTraceOtherSocketsAtSameTime = false;
 	//이전 틱의 서로다른 소켓과 현 틱의 서로 다른 소켓끼리에 대해서 트레이스를 하려면 체크하세요
 	UPROPERTY(EditAnywhere, Category="TraceSetting")
 	bool bTraceOtherSocketsAtDifferentTime = true;
 
-	//체널을 기준으로 트레이스 할 것인지, 오브젝트를 기준으로 트레이스 할 것인지 정합니다.
+	//이 값이 참이면, 캐릭터가 아닌 다른 지형을 감지했을 때, 해당 위치에 파티클을 스폰합니다.
+	UPROPERTY(EditAnywhere, Category="NiagaraTraceSetting")
+	bool bSpawnNiagaraWhenHitNonCharacter = false;
+	//이팩트를 스폰할 트레이스를 그리는 시간 주기를 설정합니다.
+	UPROPERTY(EditAnywhere, Category="NiagaraTraceSetting")
+	float NiagaraSpawnTraceTickRate = 0.15f;
+	UPROPERTY(EditAnywhere, Category="NiagaraTraceSetting",meta=(EditCondition="bSpawnNiagaraWhenHitNonCharacter"))
+	class UNiagaraSystem* NiagaraEmitter;
+
+	UPROPERTY()
+	TWeakObjectPtr<class UGameplayTask_LaunchEvent> EffectSpawnTickTask;
+	UPROPERTY()
+	TWeakObjectPtr<class AActor> NiagaraSpawnTarget;
+
+	//체널을 기준으로 트레이스 할 것인지, 오브젝트를 기준으로 트레이스 할 것인지 정합니다.s
 	UPROPERTY(EditAnywhere, Category = "TraceSetting")
 	ETraceType TraceType;
 	UPROPERTY(EditAnywhere, Category="TraceSetting", meta=(EditCondition="TraceType == ETraceType::BY_CHANNEL"))
@@ -173,6 +187,7 @@ public:
 	virtual void CopyValues(UAbilityEffect* Effect) override;
 #endif
 
+
 protected:
 	/*/**
 	 * 어트리뷰트값이 적용된 수치를 계산된 이후 호출됩니다.
@@ -192,13 +207,15 @@ protected:
 	//피격된 대상들을 배열에 추가합니다. 배열을 비워주지 않는 이상 다시 피격되지 않습니다.
 	void AddHitActors(TArray<FHitResult> HitArray, ABaseCharacter* Target);
 
+	void SpawnStaticHitParticle(const AActor* Target, const FVector& HitLocation, const FVector& ImpactNormal) const;
+
 	//한 틱당 서로 다른 소켓에 대해서 트레이스 합니다.
 	UFUNCTION(BlueprintCallable)
 	void TraceOtherSocketAtSameTime(ABaseCharacter* Target);
 
 	//이전 틱의 서로 다른 소켓과 현재 틱의 서로다른 소켓에 대해서 트레이스 합니다.
 	UFUNCTION(BlueprintCallable)
-	void TraceOtherSocketAtDiffrentTime(ABaseCharacter* Target);
+	void TraceOtherSocketAtDifferentTime(ABaseCharacter* Target);
 
 public:
 	//피격 리스트를 초기화 합니다. 이로써 대상들이 다시 피격 가능해집니다.
@@ -208,6 +225,17 @@ public:
 	bool IsContainActor(AActor* Actor) const;
 
 protected:
+	//소켓의 이전 프레임의 위치를 기억하는 맵입니다.
+	UPROPERTY()
+	TMap<FName, FVector> LastKnownNiagaraSpawnSocketLocation;
+	
+	void ActivateNiagaraSpawnTrace(AActor* Target);
+	UFUNCTION()
+	void CreateSpawnNiagaraEffectTrace();
+	void SpawnNiagaraEffect(const TArray<FHitResult>& Hits) const;
+	void SpawnNiagaraEffect(const FHitResult& Hit) const;
+	void UpdateLastNiagaraSpawnSocketLocation();
+	
 	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy,UAbilityBase* From) override;
 	virtual void OnTaskTickEvent_Implementation(float DeltaTime) override;
 	virtual void EndEffect_Implementation(ABaseCharacter* Target) override;
