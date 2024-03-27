@@ -149,7 +149,7 @@ bool UEnhancementComponent::CanEnhance(const ABaseCharacter* Character, const FI
 				const FInventoryItem* item = invenComp->GetItemByTag(iter.Key);
 				if (item->ItemCount < iter.Value)
 				{
-					UE_LOGFMT(LogTemp, Error, "필요한 아이템의 갯수가 모자람 :{0}", item->GetItemInformation()->Item_Name);
+					UE_LOGFMT(LogTemp, Error, "필요한 아이템의 갯수가 모자람 :{0}", item->GetItemInformation()->Item_Name.ToString());
 					return false;
 				}
 			}

@@ -109,9 +109,9 @@ UStatusEffect_Freeze::UStatusEffect_Freeze()
 	}
 }
 
-void UStatusEffect_Freeze::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From)
+void UStatusEffect_Freeze::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData)
 {
-	Super::ProcessEffect_Implementation(Target, EffectBy, From);
+	Super::ProcessEffect_Implementation(Target, EffectBy, From, AdditionalData);
 
 
 	AccruedBy = EffectBy;

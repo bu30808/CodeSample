@@ -93,10 +93,7 @@ void UStatusEffectValueHandler::ReduceAccValue(float DeltaTime)
 	}
 }
 
-UStatusEffectValueHandler::~UStatusEffectValueHandler()
-{
-	UE_LOGFMT(LogTemp, Error, "!!!!!!!!!!!!!!!!!!!!!!!!!! 핸들러 GC됨.");
-}
+
 
 // Sets default values for this component's properties
 UAttributeComponent::UAttributeComponent()
@@ -220,14 +217,31 @@ void UAttributeComponent::InitAttributes()
 	EXP.Init(0);
 }
 
-void UAttributeComponent::LoadAttribute(TMap<EAttributeType, FAttribute> SavedAttribute)
+void UAttributeComponent::LoadAttributeNotIncludeLevelUpPoint(const TMap<EAttributeType, FAttribute>& SavedAttribute, bool ShouldUpdateProgressBar, bool bIsRespawn)
 {
 	for (auto iter : SavedAttribute)
 	{
 		AttributesNotIncludeLevelUpPoint[iter.Key]->Load(iter.Value);
 	}
-	InitProgressWidget();
+
+	if(bIsRespawn)
+	{
+		SetHP(GetMaxHP());
+	}
+	
+	if(ShouldUpdateProgressBar)
+	{
+		InitProgressWidget();
+	}
 	OnCharacterInformationUpdate.Broadcast();
+}
+
+void UAttributeComponent::LoadLevelUpPointAttributes(const TMap<EAttributeType, FAttribute>& LevelUpPoint)
+{
+	for (auto iter : LevelUpPoint)
+	{
+		LevelUpPointAttributes[iter.Key]->Load(iter.Value);
+	}
 }
 
 void UAttributeComponent::InitAttributePerPoint()
@@ -648,7 +662,7 @@ void UAttributeComponent::OnUpdateStatusEffectEvent(EStatusEffect StatusEffect, 
 						if (StatusEffectData != nullptr)
 						{
 							abComp->K2_ApplyEffect(StatusEffectData->StatusEffect[StatusEffect], GetOwner(),
-							                       FOnEffectExpired());
+							                       FOnEffectExpired(), nullptr);
 						}
 					}
 				}
@@ -667,7 +681,7 @@ void UAttributeComponent::OnUpdateStatusEffectEvent(EStatusEffect StatusEffect, 
 							if (StatusEffectData != nullptr)
 							{
 								abComp->K2_ApplyEffect(StatusEffectData->StatusEffect[EStatusEffect::FREEZE],
-								                       GetOwner(), FOnEffectExpired());
+								                       GetOwner(), FOnEffectExpired(), nullptr);
 							}
 						}
 					}
@@ -690,7 +704,7 @@ void UAttributeComponent::OnUpdateStatusEffectEvent(EStatusEffect StatusEffect, 
 					if (StatusEffectData != nullptr)
 					{
 						abComp->K2_ApplyEffect(StatusEffectData->StatusEffect[StatusEffect], GetOwner(),
-						                       FOnEffectExpired());
+						                       FOnEffectExpired(), nullptr);
 					}
 				}
 			}

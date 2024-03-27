@@ -86,127 +86,207 @@ bool UItemHelperLibrary::IsOrbFragment(const FInventoryItem& Info)
 	return false;
 }
 
-FString UItemHelperLibrary::GetItemToolTipString(const FInventoryItem& Item, UInventoryComponent* InventoryComponent)
+#define LOCTEXT_NAMESPACE "ItemToolTipHelper"
+FText UItemHelperLibrary::GetItemToolTipText(const FInventoryItem& Item, UInventoryComponent* InventoryComponent)
 {
-	FString msg = Item.GetFormattedDescription();
-	
+	FText msg = FText::Format(NSLOCTEXT("ItemToolTipHelper", "BaseDescription", "{0}"), Item.GetFormattedDescription());
 	if (Item.GetItemInformation()->bSellable)
 	{
-		msg += "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
-			FString::FormatAsNumber(Item.GetItemInformation()->Item_Price) + "</>";
+		msg = FText::Format(NSLOCTEXT("ItemToolTipHelper", "SellablePrice", "{0}\n{1} <price>{2}</>"), msg,
+		                    FText::FromString(AttributeTypeToImageString(EAttributeType::EXP)),
+		                    FText::AsNumber(Item.GetItemInformation()->Item_Price));
 	}
 	else
 	{
-		msg += TEXT("\n<error>판매불가</>");
+		FText notSellableText = NSLOCTEXT("ItemToolTipHelper", "NotSellableText", "판매불가");
+		msg = FText::Format(NSLOCTEXT("ItemToolTipHelper", "NotSellable", "{0}\n<error>{1}</>"), msg, notSellableText);
 	}
 
 	if (InventoryComponent->IsEquipped(
 		Item.UniqueID))
 	{
-		msg += TEXT("\n<equipped>장착됨</>");
+		FText equippedText = NSLOCTEXT("ItemToolTipHelper", "EquippedText", "장착됨");
+		msg = FText::Format(
+			NSLOCTEXT("ItemToolTipHelper", "CheckEquipped", "{0}\n<equipped>{1}</>"), msg, equippedText);
 	}
 
 	return msg;
 }
+#undef LOCTEXT_NAMESPACE
 
-FString UItemHelperLibrary::GetFragmentToolTipString(const FInventoryItem& Item)
+#define LOCTEXT_NAMESPACE "FragmentToolTipHelper"
+
+FText UItemHelperLibrary::GetFragmentToolTipText(const FInventoryItem& Item)
 {
-
-	if(auto itemInfo = Item.GetItemInformation())
+		
+	if (const auto itemInfo = Item.GetItemInformation())
 	{
-		auto msg = "<orb.name>" + itemInfo->Item_Name + "</>";
-
+		FFormatOrderedArguments args;
+		args.Add(FText::FromString("<orb.name>"+itemInfo->Item_Name.ToString()+"</>)"));// -1
+		
 		if (IsOrbFragment(Item))
 		{
 			const auto frag = static_cast<const FOrbFragmentInformation*>(itemInfo);
-			msg += "\n" + SlotTypeToDecoText(frag->SlotType) + SlotTypeToString(frag->SlotType) + "</>";
+			
+			args.Add(SlotTypeToDecoText(frag->SlotType)); //0
+			args.Add(OrbMatrixSlotTypeToText(frag->SlotType));//1
+			args.Add(RarityToDecoText(frag->Rarity));//2
+			args.Add(RarityToText(frag->Rarity));//3
+			
+			/*msg += "\n" + SlotTypeToDecoText(frag->SlotType) + SlotTypeToString(frag->SlotType) + "</>";
 			msg += "\n" + RarityToDecoText(frag->Rarity);
-			msg += RarityToString(frag->Rarity) + "</>\n";
+			msg += RarityToString(frag->Rarity) + "</>\n";*/
 
-			msg += "\n" + Item.GetFormattedDescription();
+			args.Add(Item.GetFormattedDescription());//4
+			
+			FText additionalAbilityText = NSLOCTEXT("FragmentToolTipHelper", "FragmentAdditionalAbilityText","추가 특성");
+			args.Add(FText::FromString(additionalAbilityText.ToString()+"\n"));//5
+			
 			if (frag->Abilities.Num() > 0)
 			{
-				msg += TEXT("\n<orb.information>추가 특성</>\n");
+				FString abilitys = "";
+				
 				for (auto ab : frag->Abilities)
 				{
-					msg += "<orb.talent>" + ab.GetDefaultObject()->GetAbilityInformation().AbilityName + "</>\n";
-					msg += "<orb.talent.desc>" + ab.GetDefaultObject()->GetAbilityInformation().AbilityDescription +
-						"</>\n";
+					abilitys += "<orb.talent>" + ab.GetDefaultObject()->GetAbilityInformation().AbilityName.ToString() + "</>\n";
+					abilitys += "<orb.talent.desc>"+ab.GetDefaultObject()->GetAbilityInformation().AbilityDescription.ToString()+ "</>\n";
 				}
-			}
-			if(auto equip = Cast<AEquipmentItemActor>(Item.GetSpawndItemActor()))
+
+				args.Add(FText::FromString(abilitys));//6
+			}else
 			{
-				msg += equip->GetAttributeDescription() +"\n";
-				msg += equip->GetEnhancedLevelDescription()+"\n\n";
-				msg += equip->GetEnhancedAttributeDescription()+"\n";
+				args.Add(FText::FromString("-\n"));//6
+			}
+			
+		
+			FText equipmentInfoText = NSLOCTEXT("FragmentToolTipHelper", "equipmentInfoText","장비 정보");
+			args.Add(FText::FromString(equipmentInfoText.ToString()+"\n"));//7
+			
+			if (auto equip = Cast<AEquipmentItemActor>(Item.GetSpawndItemActor()))
+			{
+				FString equipment = "";
+				equipment += equip->GetAttributeDescription().ToString() +"\n";
+				equipment += equip->GetEnhancedLevelDescription().ToString()+"\n\n";
+				equipment += equip->GetEnhancedAttributeDescription().ToString()+"\n";
+				args.Add(FText::FromString(equipment));//8
+				
+				/*resultMsg += equip->GetAttributeDescription() +"\n";
+				resultMsg += equip->GetEnhancedLevelDescription()+"\n\n";
+				resultMsg += equip->GetEnhancedAttributeDescription()+"\n";*/
+			}else
+			{
+				args.Add(FText::FromString("-"));//8
 			}
 
 			if (Item.GetItemInformation()->bSellable)
 			{
-				msg += "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
+				FString sell = "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
 					FString::FormatAsNumber(itemInfo->Item_Price) + "</>";
+				args.Add(FText::FromString(sell));//9
+				/*
+				resultMsg += "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
+					FString::FormatAsNumber(itemInfo->Item_Price) + "</>";*/
 			}
 			else
 			{
-				msg += TEXT("\n<error>판매불가</>");
+				FText notSellableText =  NSLOCTEXT("FragmentToolTipHelper", "NotSellableText", "판매불가");
+				args.Add(FText::FromString("\n<error>"+notSellableText.ToString()+"</>"));//9
+				//resultMsg += TEXT("\n<error>판매불가</>");
 			}
 
 			if (Cast<ABaseCharacter>(Item.GetSpawndItemActor()->GetOwner())->GetInventoryComponent()->IsEquipped(
 				Item.UniqueID))
 			{
-				msg += TEXT("\n<equipped>장착됨</>");
+				FText equippedText =  NSLOCTEXT("FragmentToolTipHelper", "EquippedText", "장착됨");
+				args.Add(FText::FromString("\n<equipped>"+equippedText.ToString()+"</>"));//10
+				//resultMsg += TEXT("\n<equipped>장착됨</>");
+			}else
+			{
+				args.Add(FText::GetEmpty());//10
 			}
+
+			
 		}
 
-	return msg;
+		/*FString ItemName = TEXT("Magic Sword");
+		float ItemPrice = 99.99f;
+		FFormatOrderedArguments Args;
+		Args.Add(FText::FromString(ItemName));
+		Args.Add(FText::AsNumber(ItemPrice));
+
+		FText FormattedText = FText::Format(
+			NSLOCTEXT("YourNamespace", "ItemSale", "Item: {0}, Price: ${1}"),
+			Args
+		);
+		*/
+		return FText::Format(NSLOCTEXT("FragmentToolTipHelper","FragmentToolTipText","{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}"),args);
 	}
 
-	return "ERROR";
+	return FText::FromString("ERROR");
 }
+#undef LOCTEXT_NAMESPACE
 
-FString UItemHelperLibrary::GetItemDetailString(const FInventoryItem& Item, UInventoryComponent* InventoryComponent)
+#define LOCTEXT_NAMESPACE "ItemDetaulTextHelper"
+FText UItemHelperLibrary::GetItemDetailText(const FInventoryItem& Item, UInventoryComponent* InventoryComponent)
 {
-	FString msg;
+
+	FFormatOrderedArguments args;
 	
-	if(IsEquipment(Item))
+	if (IsEquipment(Item))
 	{
-		if(auto equip = Cast<AEquipmentItemActor>(Item.GetSpawndItemActor()))
+		if (auto equip = Cast<AEquipmentItemActor>(Item.GetSpawndItemActor()))
 		{
-			msg += equip->GetAttributeDescription() +"\n";
-			msg += equip->GetEnhancedLevelDescription()+"\n\n";
-			msg += equip->GetEnhancedAttributeDescription()+"\n";
+			FString msg;
+			msg += equip->GetAttributeDescription().ToString() + "\n";
+			msg += equip->GetEnhancedLevelDescription().ToString() + "\n\n";
+			msg += equip->GetEnhancedAttributeDescription().ToString() + "\n";
+
+			args.Add(FText::FromString(msg));//0
 		}
+	}else
+	{
+		args.Add(FText::FromString(""));//0
 	}
 
-	if(IsHPPotion(Item) || IsMPPotion(Item))
+	if (IsHPPotion(Item) || IsMPPotion(Item))
 	{
-		if(auto potion = Cast<APotionItemActor>(Item.GetSpawndItemActor()))
+		if (auto potion = Cast<APotionItemActor>(Item.GetSpawndItemActor()))
 		{
-			/*msg+= Item.GetFormattedDescription()+"\n\n";*/
-			msg+= potion->GetEnhancedDescription()+"\n";
+			FString msg = potion->GetEnhancedDescription().ToString() + "\n";
+			args.Add(FText::FromString(msg));//1
 		}
+	}else
+	{
+		args.Add(FText::FromString(""));//1
 	}
-	
 
-	
+
 	if (Item.GetItemInformation()->bSellable)
 	{
-		msg += "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
+		FString msg =  "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
 			FString::FormatAsNumber(Item.GetItemInformation()->Item_Price) + "</>";
+
+		args.Add(FText::FromString(msg));//2
 	}
 	else
 	{
-		msg += TEXT("\n<error>판매불가</>");
+		FText defaultStatText =  NSLOCTEXT("ItemDetaulTextHelper", "NotSellableText", "판매불가");
+		args.Add(FText::FromString("\n<error>"+defaultStatText.ToString()+"</>"));//2
 	}
 
 	if (InventoryComponent->IsEquipped(
 		Item.UniqueID))
 	{
-		msg += TEXT("\n<equipped>장착됨</>");
+		FText equippedText =  NSLOCTEXT("ItemDetaulTextHelper", "EquippedText", "장착됨");
+		args.Add(FText::FromString("\n<equipped>"+equippedText.ToString()+"</>"));//3
+	}else
+	{
+		args.Add(FText::FromString(""));//3
 	}
 
-	return msg;
+	return FText::Format(NSLOCTEXT("ItemDetaulTextHelper","ItemDetailText","{0}{1}{2}{3}"),args);
 }
+#undef LOCTEXT_NAMESPACE
 
 bool UItemHelperLibrary::IsOrbItem(const FInventoryItem& Item)
 {
@@ -288,34 +368,37 @@ bool UItemHelperLibrary::IsEnhancement(const FInventoryItem& Item)
 
 bool UItemHelperLibrary::IsHPPotion(const FInventoryItem& Item)
 {
-	return Item.GetItemInformation()->Item_Tag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Item.Consume.Potion.Hp"));
+	return Item.GetItemInformation()->Item_Tag.MatchesTagExact(
+		FGameplayTag::RequestGameplayTag("Item.Consume.Potion.Hp"));
 }
 
 bool UItemHelperLibrary::IsMPPotion(const FInventoryItem& Item)
 {
-	return Item.GetItemInformation()->Item_Tag.MatchesTagExact(FGameplayTag::RequestGameplayTag("Item.Consume.Potion.Mp"));
+	return Item.GetItemInformation()->Item_Tag.MatchesTagExact(
+		FGameplayTag::RequestGameplayTag("Item.Consume.Potion.Mp"));
 }
-
-FString UItemHelperLibrary::ItemTypeToString(const FItemInformation* ItemInformation)
+#define LOCTEXT_NAMESPACE "ItemTypeToText"
+FText UItemHelperLibrary::ItemTypeToText(const FItemInformation* ItemInformation)
 {
-	switch (ItemInformation->Item_Type) {
+	switch (ItemInformation->Item_Type)
+	{
 	case EItemType::NONE:
 		break;
 	case EItemType::CONSUME:
-		return TEXT("소비");
+		return NSLOCTEXT("ItemTypeToText","ConsumeText","소비");
 	case EItemType::EQUIPMENT:
-		return TEXT("장비");
+		return NSLOCTEXT("ItemTypeToText","EquipmentText","장비");
 	case EItemType::ABILITY:
-		return TEXT("어빌리티");
+		return NSLOCTEXT("ItemTypeToText","AbilityText","어빌리티");
 	case EItemType::ENHANCEMENT:
-		return TEXT("강화소재");
+		return NSLOCTEXT("ItemTypeToText","EnhancmentText","강화소재");
 	case EItemType::ETC:
-		return TEXT("기타");
+	return NSLOCTEXT("ItemTypeToText","ETCText","기타");
 	}
 
-	return "ERROR";
+	return FText::FromString("ERROR");
 }
-
+#undef LOCTEXT_NAMESPACE
 void UItemHelperLibrary::PotionReplenishment(APlayerCharacter* Player)
 {
 	if (auto invenComp = Player->GetInventoryComponent())
@@ -323,25 +406,23 @@ void UItemHelperLibrary::PotionReplenishment(APlayerCharacter* Player)
 		if (const auto inventoryItem = invenComp->GetItemByTag(
 			FGameplayTag::RequestGameplayTag("Item.Consume.Potion.Hp")))
 		{
-
-			
-			auto potionInfo =	static_cast<const FPotionInformation*>(inventoryItem->GetItemInformation());
+			auto potionInfo = static_cast<const FPotionInformation*>(inventoryItem->GetItemInformation());
 			const_cast<FInventoryItem*>(inventoryItem)->ItemCount = potionInfo->Enhancement.CurEnhancement + 1;
 
-			
+
 			invenComp->OnInventoryWidgetUpdate.Broadcast(inventoryItem->UniqueID, inventoryItem->ItemCount);
 			invenComp->OnItemQuickSlotUpdate.Broadcast(inventoryItem->UniqueID,
-													   inventoryItem->ItemCount);
+			                                           inventoryItem->ItemCount);
 		}
-		
+
 		if (const auto inventoryItem = invenComp->GetItemByTag(
 			FGameplayTag::RequestGameplayTag("Item.Consume.Potion.Mp")))
 		{
-			auto potionInfo =	static_cast<const FPotionInformation*>(inventoryItem->GetItemInformation());
+			auto potionInfo = static_cast<const FPotionInformation*>(inventoryItem->GetItemInformation());
 			const_cast<FInventoryItem*>(inventoryItem)->ItemCount = potionInfo->Enhancement.CurEnhancement + 1;
 			invenComp->OnInventoryWidgetUpdate.Broadcast(inventoryItem->UniqueID, inventoryItem->ItemCount);
 			invenComp->OnItemQuickSlotUpdate.Broadcast(inventoryItem->UniqueID,
-													   inventoryItem->ItemCount);
+			                                           inventoryItem->ItemCount);
 		}
 	}
 }

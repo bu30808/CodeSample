@@ -16,7 +16,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
 
-
+#define LOCTEXT_NAMESPACE "OrbMatrixSlotOpenComponent"
 // Sets default values for this component's properties
 UOrbMatrixSlotOpenComponent::UOrbMatrixSlotOpenComponent()
 {
@@ -146,14 +146,16 @@ void UOrbMatrixSlotOpenComponent::UnLock(APlayerController* PlayerController,
 			}
 			else
 			{
+				const FText warningText =  NSLOCTEXT("OrbMatrixSlotOpenComponent","OrbMatrixSlotOpenCostWarningText","개방에 필요한 비용이 부족합니다.");
 				UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::Warning,
-				                                   TEXT("개방에 필요한 비용이 부족합니다."), FOnButtonClicked());
+				                                   warningText, FOnButtonClicked());
 			}
 		}
 		else
 		{
+			const FText warningText =  NSLOCTEXT("OrbMatrixSlotOpenComponent","OrbMatrixSlotOpenWarningText","이전 슬롯이 먼저 개방되어야 합니다.");
 			UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::Warning,
-			                                   TEXT("이전 슬롯이 먼저 개방되어야 합니다."), FOnButtonClicked());
+			                                   warningText, FOnButtonClicked());
 		}
 	}
 }
@@ -181,7 +183,7 @@ void UOrbMatrixSlotOpenComponent::GivePhysicalLineCompleteReward(APlayerControll
 
 			for (const auto& iter : SlotOpenRewardDataAsset->PhysicalLineReward)
 			{
-				msg += iter.GetDefaultObject()->GetAbilityInformation().AbilityName + "\n";
+				msg += iter.GetDefaultObject()->GetAbilityInformation().AbilityName.ToString() + "\n";
 				abComp->GiveAbility(iter);
 				abComp->ActivateAbility(iter.GetDefaultObject()->GetAbilityTag(), PlayerController->GetPawn());
 			}
@@ -189,8 +191,9 @@ void UOrbMatrixSlotOpenComponent::GivePhysicalLineCompleteReward(APlayerControll
 
 			if (bShowAlert)
 			{
+				const FText alertText =FText::Format( NSLOCTEXT("OrbMatrixSlotOpenComponent","PhysicalLineCompleteRewardText","물리 라인을 완성하여 다음 능력을 얻었습니다 : {0}"),FText::FromString(msg));
 				UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::NoUseDeco,
-				                                   TEXT("물리 라인을 완성하여 다음 능력을 얻었습니다") + msg, FOnButtonClicked());
+				                                  alertText, FOnButtonClicked());
 			}
 		}
 	}
@@ -205,15 +208,17 @@ void UOrbMatrixSlotOpenComponent::GiveMagicalLineCompleteReward(APlayerControlle
 			FString msg = "\n";
 			for (const auto& iter : SlotOpenRewardDataAsset->MagicalLineReward)
 			{
-				msg += iter.GetDefaultObject()->GetAbilityInformation().AbilityName + "\n";
+				msg += iter.GetDefaultObject()->GetAbilityInformation().AbilityName.ToString() + "\n";
 				abComp->GiveAbility(iter);
 				abComp->ActivateAbility(iter.GetDefaultObject()->GetAbilityTag(), PlayerController->GetPawn());
 			}
 
 			if (bShowAlert)
 			{
+				const FText alertText =FText::Format( NSLOCTEXT("OrbMatrixSlotOpenComponent","MagicalLineCompleteRewardText","마법 라인을 완성하여 다음 능력을 얻었습니다 : {0}"),FText::FromString(msg));
+			
 				UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::NoUseDeco,
-				                                   TEXT("마법 라인을 완성하여 다음 능력을 얻었습니다") + msg, FOnButtonClicked());
+				                                 alertText, FOnButtonClicked());
 			}
 		}
 	}
@@ -228,7 +233,7 @@ void UOrbMatrixSlotOpenComponent::GiveDefenceLineCompleteReward(APlayerControlle
 			FString msg = "\n";
 			for (const auto& iter : SlotOpenRewardDataAsset->DefenceLineReward)
 			{
-				msg += iter.GetDefaultObject()->GetAbilityInformation().AbilityName + "\n";
+				msg += iter.GetDefaultObject()->GetAbilityInformation().AbilityName.ToString() + "\n";
 				abComp->GiveAbility(iter);
 				abComp->ActivateAbility(iter.GetDefaultObject()->GetAbilityTag(), PlayerController->GetPawn());
 			}
@@ -236,8 +241,10 @@ void UOrbMatrixSlotOpenComponent::GiveDefenceLineCompleteReward(APlayerControlle
 
 			if (bShowAlert)
 			{
+				const FText alertText =FText::Format( NSLOCTEXT("OrbMatrixSlotOpenComponent","DefenceLineCompleteRewardText","방어 라인을 완성하여 다음 능력을 얻었습니다 : {0}"),FText::FromString(msg));
+			
 				UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::NoUseDeco,
-				                                   TEXT("방어 라인을 완성하여 다음 능력을 얻었습니다") + msg, FOnButtonClicked());
+				                                  alertText, FOnButtonClicked());
 			}
 		}
 	}
@@ -252,15 +259,17 @@ void UOrbMatrixSlotOpenComponent::GiveFreeLineCompleteReward(APlayerController* 
 			FString msg = "\n";
 			for (const auto& iter : SlotOpenRewardDataAsset->FreeLineReward)
 			{
-				msg += iter.GetDefaultObject()->GetAbilityInformation().AbilityName + "\n";
+				msg += iter.GetDefaultObject()->GetAbilityInformation().AbilityName.ToString() + "\n";
 				abComp->GiveAbility(iter);
 				abComp->ActivateAbility(iter.GetDefaultObject()->GetAbilityTag(), PlayerController->GetPawn());
 			}
 
 			if (bShowAlert)
 			{
+				const FText alertText =FText::Format( NSLOCTEXT("OrbMatrixSlotOpenComponent","FreeLineCompleteRewardText","방어 라인을 완성하여 다음 능력을 얻었습니다 : {0}"),FText::FromString(msg));
+			
 				UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::NoUseDeco,
-				                                   TEXT("자유 라인을 완성하여 다음 능력을 얻었습니다") + msg, FOnButtonClicked());
+				                                   alertText, FOnButtonClicked());
 			}
 		}
 	}
@@ -376,3 +385,4 @@ TArray<FOrbMatrixElementInfo> UOrbMatrixSlotOpenComponent::GetLine(UOrbMatrix* C
 
 	return TArray<FOrbMatrixElementInfo>();
 }
+#undef LOCTEXT_NAMESPACE

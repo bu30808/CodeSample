@@ -13,10 +13,10 @@ void UItemInfoWidget::SetInfo(const FInventoryItem& Item)
 	if(auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
 	{
 		Image_Item->SetBrushFromSoftTexture(Item.GetItemInformation()->Item_Image);
-		TextBlock_ItemName->SetText(FText::FromString(Item.GetItemInformation()->Item_Name));
+		TextBlock_ItemName->SetText(Item.GetItemInformation()->Item_Name);
 		TextBlock_ItemCount->SetText(FText::AsNumber(Item.ItemCount));
-		TextBlock_ItemType->SetText(FText::FromString(UItemHelperLibrary::ItemTypeToString(Item.GetItemInformation())));
-		RichTextBlock_ItemInfo->SetText(FText::FromString(Item.GetFormattedDescription()));
-		RichTextBlock_ItemDetail->SetText(FText::FromString(UItemHelperLibrary::GetItemDetailString(Item,invenComp)));
+		TextBlock_ItemType->SetText(UItemHelperLibrary::ItemTypeToText(Item.GetItemInformation()));
+		RichTextBlock_ItemInfo->SetText(Item.GetFormattedDescription());
+		RichTextBlock_ItemDetail->SetText(UItemHelperLibrary::GetItemDetailText(Item,invenComp));
 	}
 }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GenericTeamAgentInterface.h"
 #include "00_Character/BaseCharacter.h"
 #include "97_Interface/InteractionInterface.h"
 #include "Components/Button.h"
@@ -124,4 +125,6 @@ private:
 	void OnLoadedItemList(UObject* ItemTable);
 	UFUNCTION()
 	void OnLoadedAbilityList(UObject* AbilityTable);
+	
+
 };

@@ -15,6 +15,15 @@
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 
+#define LOCTEXT_NAMESPACE "EnhancementButtonWidget"
+
+namespace GlobalEnhancementButtonWidgetText
+{
+	const FText noEnhancementItemText = NSLOCTEXT("EnhancementButtonWidget","NoEnhancementItemTxt","강화할 아이템을 올려주세요");
+
+}
+#undef LOCTEXT_NAMESPACE
+
 void UEnhancementButtonWidget::SetInfoFromInventoryButton(const UItemButtonWidget* InventoryButton)
 {
 	const auto& item = Cast<UItemData>(InventoryButton->GetInventoryData())->InventoryItem;
@@ -22,10 +31,10 @@ void UEnhancementButtonWidget::SetInfoFromInventoryButton(const UItemButtonWidge
 	Image->SetBrushFromSoftTexture(item.GetItemInformation()->Item_Image);
 	EnhancementItemType = EEnhancementItemType::FromInventory;
 	ItemUniqueID = item.UniqueID;
-	TextBlock_ItemName->SetText(FText::FromString(item.GetItemInformation()->Item_Name));
+	TextBlock_ItemName->SetText(item.GetItemInformation()->Item_Name);
 	
-	UWidgetHelperLibrary::SetToolTipWidget(this,  UItemHelperLibrary::GetItemDetailString(
-		item, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
+	UWidgetHelperLibrary::SetToolTipWidget(this,  UItemHelperLibrary::GetItemDetailText(
+		                                       item, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
 
 	EnhancementWidget->SetEnhancementInfo(item);
 }
@@ -44,10 +53,10 @@ void UEnhancementButtonWidget::SetInfoFromOrbButton(UOrbListButtonWidget* OrbLis
 	}
 
 	ItemUniqueID = item.UniqueID;
-	TextBlock_ItemName->SetText(FText::FromString(item.GetItemInformation()->Item_Name));
+	TextBlock_ItemName->SetText(item.GetItemInformation()->Item_Name);
 	
-	UWidgetHelperLibrary::SetToolTipWidget(this,  UItemHelperLibrary::GetItemDetailString(
-		item, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
+	UWidgetHelperLibrary::SetToolTipWidget(this,  UItemHelperLibrary::GetItemDetailText(
+		                                       item, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
 
 
 	EnhancementWidget->SetEnhancementInfo(item);
@@ -58,7 +67,7 @@ void UEnhancementButtonWidget::Clear()
 	Image->SetBrushFromSoftTexture(DefaultImage);
 	ItemUniqueID = FGuid();
 	EnhancementItemType = EEnhancementItemType::None;
-	TextBlock_ItemName->SetText(FText::FromString(TEXT("강화할 아이템을 올려주세요")));
+	TextBlock_ItemName->SetText(GlobalEnhancementButtonWidgetText::noEnhancementItemText);
 	if (EnhancementWidget.IsValid())
 	{
 		EnhancementWidget->VerticalBox_Materials->SetVisibility(ESlateVisibility::Hidden);
@@ -108,14 +117,13 @@ FReply UEnhancementButtonWidget::NativeOnMouseButtonDown(const FGeometry& InGeom
 
 void UEnhancementButtonWidget::SetDefaultToolTip()
 {
-	const FString msg = TEXT("강화할 아이템을 올려주세요");
 	if (GetToolTip() == nullptr)
 	{
-		SetToolTip(UWidgetHelperLibrary::GetSimpleToolTipWidget(GetOwningPlayer(), msg));
+		SetToolTip(UWidgetHelperLibrary::GetSimpleToolTipWidget(GetOwningPlayer(), GlobalEnhancementButtonWidgetText::noEnhancementItemText));
 	}
 	else
 	{
-		Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(msg);
+		Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(GlobalEnhancementButtonWidgetText::noEnhancementItemText);
 	}
 }
 
@@ -134,6 +142,6 @@ void UEnhancementButtonWidget::SetOwnerWidget(UEnhancementWidget* E_Widget)
 
 void UEnhancementButtonWidget::OverrideToolTip(const FInventoryItem& RefreshedItem)
 {
-	UWidgetHelperLibrary::SetToolTipWidget(this,  UItemHelperLibrary::GetItemDetailString(
-	RefreshedItem, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
+	UWidgetHelperLibrary::SetToolTipWidget(this,  UItemHelperLibrary::GetItemDetailText(
+		                                       RefreshedItem, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
 }

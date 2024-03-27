@@ -12,29 +12,44 @@
 #include "Components/VerticalBox.h"
 #include "Logging/StructuredLog.h"
 
+#define LOCTEXT_NAMESPACE "NPCWidget"
 
-FString UNPCWidget::NPCActionTypeToString(ENPCActionType ActionType)
+namespace GlobalNPCWidgetText
+{
+	const FText talkText = NSLOCTEXT("EnhancementButtonWidget","TalkText","대화");
+	const FText merchantText = NSLOCTEXT("EnhancementButtonWidget","MerchantText","상점");
+	const FText levelUpText = NSLOCTEXT("EnhancementButtonWidget","LevelUpText","레벨업");
+	const FText enhancementText = NSLOCTEXT("EnhancementButtonWidget","EnhancementText","강화");
+	const FText potionEnhancementText = NSLOCTEXT("EnhancementButtonWidget","PotionEnhancementText","회복약 업그레이드");
+	const FText orbMatrixSlotOpenText = NSLOCTEXT("EnhancementButtonWidget","OrbMatrixSlotOpenText","신력 슬롯 개방");
+	const FText teleportBonfireText = NSLOCTEXT("EnhancementButtonWidget","TeleportBonfireText","이동");
+	const FText exitText = NSLOCTEXT("EnhancementButtonWidget","ExitText","나가기");
+	const FText noText = NSLOCTEXT("EnhancementButtonWidget","NoText","없는 액션 타입입니다.");
+}
+#undef LOCTEXT_NAMESPACE
+
+FText UNPCWidget::NPCActionTypeToText(ENPCActionType ActionType)
 {
 	switch (ActionType)
 	{
 	case ENPCActionType::Talk:
-		return TEXT("대화");
+		return GlobalNPCWidgetText::talkText;
 	case ENPCActionType::Merchant:
-		return TEXT("상점");
+		return GlobalNPCWidgetText::merchantText;
 	case ENPCActionType::LevelUp:
-		return TEXT("레벨업");
+		return GlobalNPCWidgetText::levelUpText;
 	case ENPCActionType::Enhancement:
-		return TEXT("강화");
+		return GlobalNPCWidgetText::enhancementText;
 	case ENPCActionType::PotionEnhancement:
-		return TEXT("회복약 업그레이드");
+		return GlobalNPCWidgetText::potionEnhancementText;
 	case ENPCActionType::OrbMatrixSlotOpen:
-		return TEXT("신력 슬롯 개방");
+		return GlobalNPCWidgetText::orbMatrixSlotOpenText;
 	case ENPCActionType::TeleportBonfire:
-		return TEXT("이동");
+		return GlobalNPCWidgetText::teleportBonfireText;
 	default: ;
 	}
 
-	return TEXT("없는 액션 타입입니다.");
+	return GlobalNPCWidgetText::noText;
 }
 
 
@@ -64,7 +79,7 @@ void UNPCWidget::CreateActionList()
 		{
 			if (auto b = CreateWidget<UNPCActionButtonWidget>(this, NPCActionButtonObject))
 			{
-				b->SetActionName(NPCActionTypeToString(a));
+				b->SetActionName(NPCActionTypeToText(a));
 				ScrollBox_ActionList->AddChild(b);
 				NPCActionButtons.Add(a, b);
 			}
@@ -72,7 +87,7 @@ void UNPCWidget::CreateActionList()
 
 		if (auto b = CreateWidget<UNPCActionButtonWidget>(this, NPCActionButtonObject))
 		{
-			b->SetActionName(TEXT("나가기"));
+			b->SetActionName(GlobalNPCWidgetText::exitText);
 			ScrollBox_ActionList->AddChild(b);
 			ExitButton = b;
 		}

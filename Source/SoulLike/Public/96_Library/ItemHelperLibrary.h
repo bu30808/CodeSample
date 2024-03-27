@@ -23,10 +23,10 @@ public:
 	static bool IsOrbCore(const FInventoryItem& Info);
 	static bool IsOrbCore(const FGuid& ID, UInventoryComponent* InventoryComponent);
 	static bool IsOrbFragment(const FInventoryItem& Info);
-	static FString GetItemToolTipString(const FInventoryItem& Item, UInventoryComponent* InventoryComponent);
-	static FString GetFragmentToolTipString(const FInventoryItem& Item);
+	static FText GetItemToolTipText(const FInventoryItem& Item, UInventoryComponent* InventoryComponent);
+	static FText GetFragmentToolTipText(const FInventoryItem& Item);
 	//아이템 정보 출력 위젯에 세부정보 표시에 사용할 문자열을 만들어 리턴함.
-	static FString GetItemDetailString(const FInventoryItem& Item, UInventoryComponent* InventoryComponent);
+	static FText GetItemDetailText(const FInventoryItem& Item, UInventoryComponent* InventoryComponent);
 	//오브 코어 혹은 프래그먼트인지 확인함
 	static bool IsOrbItem(const FInventoryItem& Item);
 	static bool IsWeapon(const FInventoryItem& Item);
@@ -37,7 +37,7 @@ public:
 	static bool IsEnhancement(const FInventoryItem& Item);
 	static bool IsHPPotion(const FInventoryItem& Item);
 	static bool IsMPPotion(const FInventoryItem& Item);
-	static FString ItemTypeToString(const FItemInformation* ItemInformation);
+	static FText ItemTypeToText(const FItemInformation* ItemInformation);
 
 	static void PotionReplenishment(APlayerCharacter* Player);
 	

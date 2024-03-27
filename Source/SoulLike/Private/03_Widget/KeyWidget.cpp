@@ -12,8 +12,8 @@ void UKeyWidget::NativePreConstruct()
 	SetKeyAndAction(KeyName, ActionName);
 }
 
-void UKeyWidget::SetKeyAndAction(FName Key, FString Action)
+void UKeyWidget::SetKeyAndAction(FName Key, FText Action)
 {
 	TextBlock_Key->SetText(FText::FromName(Key));
-	TextBlock_Action->SetText(FText::FromString(Action));
+	TextBlock_Action->SetText(Action);
 }

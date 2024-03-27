@@ -45,7 +45,7 @@ protected:
 	void CreateList(class UBonfireComponent* BonfireComponent);
 	
 	//해당 포인트가 활성화 되어있는 포인트인지 확인합니다.
-	bool IsActivated(const FString& SafeName);
+	bool IsActivated(const FString& LevelName, const FString& SafeName);
 public:
 	void SetPreviewImage(const TSoftObjectPtr<UTexture2D>& LocationImage);
 	void SetSelectedInformation(class UTeleportElementWidget* TeleportElementWidget);

@@ -7,15 +7,15 @@
 #include "Components/TextBlock.h"
 #include "Logging/StructuredLog.h"
 
-void USimpleToolTipWidget::SetDescriptionText(FString Msg)
+void USimpleToolTipWidget::SetDescriptionText(FText Msg)
 {
-	RichTextBlock_Description->SetText(FText::FromString(Msg));
+	RichTextBlock_Description->SetText(Msg);
 }
 
-void USimpleToolTipWidget::AddDescriptionText(const FString& AddDescription)
+void USimpleToolTipWidget::AddDescriptionText(const FText& AddDescription)
 {
 	auto cur = RichTextBlock_Description->GetText().ToString();
-	cur += AddDescription;
+	cur += AddDescription.ToString();
 
 	RichTextBlock_Description->SetText(FText::FromString(cur));
 }

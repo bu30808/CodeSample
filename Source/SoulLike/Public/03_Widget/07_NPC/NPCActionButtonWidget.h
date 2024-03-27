@@ -23,5 +23,5 @@ protected:
 	class UTextBlock* TextBlock_ActionName;
 
 public:
-	void SetActionName(const FString& NewAction);
+	void SetActionName(const FText& NewAction);
 };

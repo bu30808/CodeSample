@@ -73,7 +73,6 @@ public:
 	class UInputAction* EquipmentAction;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	class UInputAction* InventoryAction;
-
 };
 
 UENUM(BlueprintType)
@@ -86,31 +85,60 @@ enum class EPlayerCharacterState : uint8
 
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUseQuickSlot, class UInputAction*, InputAction);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangePlayerState, EPlayerCharacterState, State);
+
 UCLASS()
 class SOULLIKE_API APlayerCharacter : public ABaseCharacter
 {
 	GENERATED_BODY()
-		
+
 	/**********************************************기본 상속 함수*********************************************************/
 public:
 	// Sets default values for this character's properties
 	APlayerCharacter();
+
 protected:
-	
 	virtual void PostInitializeComponents() override;
 	virtual void PossessedBy(AController* NewController) override;
+
+	UPROPERTY(Transient)
+	TArray<class UMaterialInstanceDynamic*> BodyMaterialInstance;
+	
+	void CreateBodyMaterialInstance();
+	
+	void LoadGame();
+	void OnAfterLoadGame();
+	UFUNCTION(BlueprintCallable)
+	void CreateSoulTomb();
+
+	UPROPERTY(Transient)
+	FVector LastGroundedLocation;
+	FTimerHandle GroundLocationSaveTimerHandle;
+	UFUNCTION()
+	void SaveLastGroundedLocation();
+public:
+	const FVector& GetLastGroundedLocation() const {return LastGroundedLocation;}
+protected:
 	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+	//플레이어가 착지할 수 없는 지점에서 떨어진 경우, 보통 파괴됩니다.
+	UFUNCTION()
+	void OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayReason);
+
 public:
-	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-	
+
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+
+	UPROPERTY(Transient)
+	TObjectPtr<class ADynamicSkyActor> DynamicSkyActor;
+	class ADynamicSkyActor* GetDynamicSky() const { return DynamicSkyActor; }
 
 
 	/**********************************************컴포넌트*********************************************************/
@@ -135,7 +163,7 @@ protected:
 	class ULadderMovementComponent* LadderMovementComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UJumpMovementComponent* JumpMovementComponent;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UGFurComponent* FurComponent;
 	UPROPERTY()
@@ -144,11 +172,10 @@ protected:
 	//씬캡쳐2d 랜더용
 	UPROPERTY()
 	TObjectPtr<class UTextureRenderTarget2D> RenderTextureTarget;
-	
 
 public:
-	FORCEINLINE class UJumpMovementComponent* GetJumpMovementComponent() const {return JumpMovementComponent;};
-	FORCEINLINE class ULadderMovementComponent* GetLadderMovementComponent() const {return LadderMovementComponent;};
+	FORCEINLINE class UJumpMovementComponent* GetJumpMovementComponent() const { return JumpMovementComponent; };
+	FORCEINLINE class ULadderMovementComponent* GetLadderMovementComponent() const { return LadderMovementComponent; };
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 	FORCEINLINE class ULockOnComponent* GetLockOnComponent() const { return LockOnComponent; }
@@ -166,29 +193,30 @@ public:
 	FTransform SceneCaptureBoomTr;
 	UPROPERTY()
 	FTransform SceneCaptureTr;
-	
+
 	void ResetSceneCaptureCamera() const;
 	void ShowRender(bool bIsVisible);
 	/**********************************************입력*********************************************************/
 protected:
-	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	UInputDataAsset* InputDataAsset;
 
 	//이동키를 누르면 참입니다.
-	UPROPERTY(Transient,BlueprintReadOnly)
+	UPROPERTY(Transient, BlueprintReadOnly)
 	bool bPressMove;
+
 public:
 	UFUNCTION(BlueprintCallable)
 	void SetDefaultMappingContext();
 
 	class UEnhancedInputLocalPlayerSubsystem* GetLocalInputSystem() const;
-	
-	bool GetPressMove() const {return bPressMove;}
+
+	bool GetPressMove() const { return bPressMove; }
 	/**********************************************움직임 입력*********************************************************/
 protected:
 	void PressMove();
 	void ReleaseMove();
-	
+
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 	/**********************************************시점 입력*********************************************************/
@@ -197,6 +225,7 @@ protected:
 
 	virtual void AddControllerYawInput(float Val) override;
 	virtual void AddControllerPitchInput(float Val) override;
+
 public:
 	//좌 우 입력에 대한 입력값을 방향백터로 변경한 변수입니다.
 	UPROPERTY(BlueprintReadOnly)
@@ -212,10 +241,10 @@ protected:
 
 	UPROPERTY()
 	FTimerHandle SprintTimerHandle;
-	
+
 	void PressSprint();
 	void ReleaseSprint();
-	
+
 	void NormalAttack();
 	void StrongAttack();
 	void Dodge();
@@ -229,7 +258,7 @@ protected:
 
 	void ChangeConsumeQuickSlot();
 	void ChangeAbilityQuickSlot();
-	
+
 	void Interaction();
 	void ShowMouseCursor();
 
@@ -240,7 +269,7 @@ protected:
 	/*void OpenCharacterInfo();
 	void OpenEquipment();
 	void OpenInventory();*/
-	
+
 	/**********************************************오버렙 처리*********************************************************/
 private:
 	UPROPERTY()
@@ -251,7 +280,6 @@ protected:
 	void OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* OtherActor);
 	UFUNCTION()
 	void OnActorEndOverlapEvent(AActor* OverlappedActor, AActor* OtherActor);
-	
 
 
 	/**********************************************퀵슬롯 이벤트*********************************************************/
@@ -296,10 +324,11 @@ protected:
 		 */
 	UPROPERTY(EditAnywhere, Category=Default)
 	TSubclassOf<class AOrbBackgroundActor> OrbBackgroundActorObject;
+
 public:
 	UPROPERTY()
 	AOrbBackgroundActor* OrbBackgroundActor;
-	
+
 	/**********************************************레벨업*********************************************************/
 protected:
 	/**
@@ -319,12 +348,14 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category=Default)
 	class UAnimMontage* TeleportMontage;
-	
-	
+
+
 	virtual void OnUpdateDeadDissolveTimeLine(float Value) override;
 	virtual void OnFinishDissolveTimeLine() override;
+
 public:
 	TSubclassOf<class UAnimInstance> GetDefaultAnimInstance() const { return DefaultAnimationInstance; }
+
 protected:
 	virtual void OnTriggerHitAnimationEnterEvent(class ABaseCharacter* DamagedCharacter, AActor* HitBy) override;
 	virtual void OnTriggerHitAnimationExitEvent(class ABaseCharacter* DamagedCharacter, AActor* HitBy) override;
@@ -343,18 +374,20 @@ public:
 	//다운당했을때, 특성이 부여되어 있으면, 회피로 연계합니다.
 	UFUNCTION(BlueprintCallable)
 	void OnWaitKnockDownDodgeKeyPress(const FKeyPressedInfo& ActionInfo);
+
 protected:
 	//회피 어빌리티를 강제종료합니다.
 	void ForceEndDodge();
-	
+
 	/**********************************************위젯*********************************************************/
 protected:
 	UPROPERTY()
 	TWeakObjectPtr<class UMainWidget> MainWidget;
 
 	void SetMainWidget();
+
 public:
-	UMainWidget* GetMainWidget() const {return MainWidget.Get();}
+	UMainWidget* GetMainWidget() const { return MainWidget.Get(); }
 	/**********************************************인터렉션*********************************************************/
 protected:
 	UPROPERTY(EditAnywhere)
@@ -370,8 +403,9 @@ protected:
 	/**
 	 * 상호작용 가능한 NPC를 틱마다 찾습니다.
 	 */
-	void FindInteractableNPC();
+	void FindInteractActor();
 	bool FindLadder();
+
 public:
 	/**
 	 * 상호작용에 필요한 키와 액션을 표시해줍니다.
@@ -380,17 +414,21 @@ public:
 	 * @param ActionName 키 이름
 	 */
 	UFUNCTION(BlueprintCallable)
-	class UWidgetComponent* ShowInteractionWidget(const AActor* Target, const UInputAction* Action, const FString& ActionName);
+	class UWidgetComponent* ShowInteractionWidget(const AActor* Target, const UInputAction* Action,
+												  const FText& ActionName);
 	UFUNCTION(BlueprintCallable)
 	//보여주진 않고 그냥 가져만 옵니다. Visiblity를 켜야 보입니다.
-	class UWidgetComponent* GetInteractionWidget(const AActor* Target, const UInputAction* Action, const FString& ActionName);
+	class UWidgetComponent* GetInteractionWidget(const AActor* Target, const UInputAction* Action,
+												 const FText& ActionName);
 	UFUNCTION(BlueprintCallable)
 	void HideInteractionWidget();
 
-	class UInputDataAsset* GetInputDataAsset() const {return InputDataAsset;}
+	class UInputDataAsset* GetInputDataAsset() const { return InputDataAsset; }
+
 protected:
 	//키를 표시해주는 위젯 컴포넌트를 가져옵니다.
-	class UWidgetComponent* GetPressKeyWidget(FName KeyName=NAME_None, const FString& ActionName= "");
+	class UWidgetComponent* GetPressKeyWidget(FName KeyName, const FText& ActionName);
+	
 
 	virtual void ChangeMovementState(EMovementState Type, float Multiplier) override;
 	/**********************************************입력방향*********************************************************/
@@ -429,42 +467,52 @@ public:
 protected:
 	UPROPERTY(EditAnywhere)
 	FGameplayTag CharacterTag;
+
 public:
-	const FGameplayTag& GetCharacterTag() const {return CharacterTag;}
+	const FGameplayTag& GetCharacterTag() const { return CharacterTag; }
 
 	/**********************************************플레이어 상태 정의*********************************************************/
 private:
-	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (AllowPrivateAccess = "true"),Transient)
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"), Transient)
 	EPlayerCharacterState CurrentState = EPlayerCharacterState::Peaceful;
-	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	float PeaceCheckTime = 15.f;
-	UPROPERTY(VisibleAnywhere,BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
+	float PeaceCheckTime = 5.f;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	float CombatCheckTraceRadius = 1500.f;
 
 	UPROPERTY()
 	FTimerHandle PeaceTimerHandle;
-public:
 
-	UPROPERTY(BlueprintAssignable,BlueprintCallable)
+public:
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnChangePlayerState OnChangePlayerState;
-	
+
 	//주기적으로 주변에 몬스터가 있는지 확인해서 평화상태로 되돌리는 기능을 할 함수입니다.
 	void CheckAroundExistMonster();
 	UFUNCTION(BlueprintCallable)
 	void SetPlayerState(EPlayerCharacterState NewState);
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
-	bool IsPeaceState() const {return CurrentState == EPlayerCharacterState::Peaceful;}
+	UPROPERTY(Transient, VisibleAnywhere)
+	TSet<AActor*> ChangeCombatStateFrom;
+	UFUNCTION(BlueprintCallable)
+	void SetPlayerStateBy(EPlayerCharacterState NewState, AActor* By);
+
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsPeaceState();
 
 	//이동속도 어트리뷰트가 변경되면 호출됩니다.
 	UFUNCTION()
 	void OnChangedMoveSpeedAttributeEvent();
 
 	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy) override;
+
 private:
 	//이동할 다른 화톳불이 있는 레벨 이름입니다.
 	UPROPERTY()
 	FName OtherBonfireLevelName;
+
 public:
 	//다른 화톳불로 이동하는 함수입니다.
 	void TeleportToOtherBonfire(FName LevelName);

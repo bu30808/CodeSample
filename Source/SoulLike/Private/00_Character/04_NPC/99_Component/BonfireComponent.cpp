@@ -5,17 +5,14 @@
 
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/01_Component/AttributeComponent.h"
-#include "00_Character/01_Component/InventoryComponent.h"
-#include "00_Character/03_Monster/BaseMonster.h"
 #include "01_GameMode/SoulLikeGameMode.h"
 #include "03_Widget/07_NPC/00_Bonfire/BonfireTeleportWidget.h"
-#include "04_Item/ItemActor.h"
 #include "96_Library/ItemHelperLibrary.h"
-#include "96_Library/WidgetHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
 
+DEFINE_LOG_CATEGORY(LogBonfire)
 
 // Sets default values for this component's properties
 UBonfireComponent::UBonfireComponent()
@@ -44,12 +41,12 @@ void UBonfireComponent::BeginPlay()
 	{
 		OnRest.AddUniqueDynamic(this, &UBonfireComponent::Recover);
 		OnRest.AddUniqueDynamic(this, &UBonfireComponent::PotionReplenishment);
-		//OnRest.AddUniqueDynamic(instance,&USoulLikeInstance::ClearDeadMonster);
-		//OnRest.AddUniqueDynamic(instance,&USoulLikeInstance::SaveGame);
+
 
 		if (auto gameMode = Cast<ASoulLikeGameMode>(UGameplayStatics::GetGameMode(GetWorld())))
 		{
 			OnRest.AddUniqueDynamic(gameMode, &ASoulLikeGameMode::RespawnMonsters);
+			OnRest.AddUniqueDynamic(gameMode, &ASoulLikeGameMode::ClearTemporarySavedMonsterData);
 		}
 		else
 		{
@@ -66,13 +63,10 @@ void UBonfireComponent::InitializeComponent()
 
 void UBonfireComponent::Rest(APlayerCharacter* Player)
 {
-	UE_LOGFMT(LogTemp, Log, "몬스터 상태 복구 / Rest");
 	OnRest.Broadcast(Player);
 
 	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 	{
-		//instance->ClearDeadMonster();
-		//UKismetSystemLibrary::PrintString(this,TEXT("오너 이름 : ")+GetOwner()->GetName());
 		instance->SaveWithLastSavePoint(Player, this);
 	}
 }

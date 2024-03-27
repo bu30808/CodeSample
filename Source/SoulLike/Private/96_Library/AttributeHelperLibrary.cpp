@@ -8,6 +8,7 @@
 #include "03_Widget/03_LevelUp/AttributePreviewWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "99_Subsystem/AttributeProcessSubsystem.h"
+#include "Logging/StructuredLog.h"
 
 EAttributeType UAttributeHelperLibrary::ConvertAttributePointTypeToAttributeType(EAttributePointType PointType)
 {
@@ -59,7 +60,9 @@ EStatusEffect UAttributeHelperLibrary::AttributeTypeToStatusEffect(EAttributeTyp
 		return EStatusEffect::BLEED;
 	case EAttributeType::PetrifactionAcc:
 		return EStatusEffect::PETRIFACTION;
+	default: ;
 	}
+	
 	return EStatusEffect::MAX;
 }
 
@@ -94,6 +97,7 @@ void UAttributeHelperLibrary::AttributeEffectElementToStatusEffectValues(UAttrib
 		ResistValue = AttributeComponent->GetPetrifactionResist();
 		break;
 	case EStatusEffect::MAX:
+		UE_LOGFMT(LogEffect,Error,"상태이상 이넘값으로 변환 실패함");
 		break;
 	default: ;
 	}

@@ -14,7 +14,7 @@ UToolTipWidgetSubsystem::UToolTipWidgetSubsystem()
 	}
 }
 
-USimpleToolTipWidget* UToolTipWidgetSubsystem::CreateSimpleToolTipWidget(class APlayerController* PC, FString Msg) const
+USimpleToolTipWidget* UToolTipWidgetSubsystem::CreateSimpleToolTipWidget(class APlayerController* PC, FText Msg) const
 {
 	if (SimpleToolTipWidgetObject)
 	{

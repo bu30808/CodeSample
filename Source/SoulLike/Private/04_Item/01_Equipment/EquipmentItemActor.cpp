@@ -13,6 +13,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
 #include "SoulLike/SoulLike.h"
+#define LOCTEXT_NAMESPACE "Equipment"
 
 void AEquipmentItemActor::PostInitializeComponents()
 {
@@ -25,19 +26,29 @@ void AEquipmentItemActor::PostInitializeComponents()
 	}
 }
 
-FString AEquipmentItemActor::GetEnhancedLevelDescription()
+FText AEquipmentItemActor::GetEnhancedLevelDescription()
 {
+	FText enhancedLevelDescription = NSLOCTEXT("Equipment", "EnhancedLevelDescriptionText", "강화단계");
+	FText enhancedMaxLevelDescription = NSLOCTEXT("Equipment", "EnhancedMaxLevelDescriptionText", "최대");
+	FText enhancedMaxLevel = NSLOCTEXT("Equipment", "EnhancedLevelText", "단계");
+
+	return FText::Format(
+		NSLOCTEXT("Equipment", "EnhancedLevelDescription", "<item.desc>{0} : {1}({2}{3}{4})</>"),
+		enhancedLevelDescription, FText::AsNumber(Enhancement.CurEnhancement), enhancedMaxLevelDescription,
+		FText::AsNumber(Enhancement.GetMaxEnhancement()), enhancedMaxLevel);
+	/*
 	return TEXT("<item.desc>강화 단계 : ") + FString::FormatAsNumber(Enhancement.CurEnhancement) +
-		TEXT(" (최대") + FString::FormatAsNumber(Enhancement.GetMaxEnhancement()) + TEXT("단계)</>");
+		TEXT(" (최대") + FString::FormatAsNumber(Enhancement.GetMaxEnhancement()) + TEXT("단계)</>");*/
 }
 
-FString AEquipmentItemActor::GetAttributeDescription()
+FText AEquipmentItemActor::GetAttributeDescription()
 {
 	if (auto info = static_cast<const FEquipmentInformation*>(GetItemInformation()))
 	{
 		auto attribute = info->EquipmentAttribute;
+		FText defaultStatText = NSLOCTEXT("Equipment", "DefaultStatText", "기본 능력치");
 
-		FString description = TEXT("<item.desc>기본 능력치</>\n");
+		FString description = "\n";
 		if (attribute.Num() > 0)
 		{
 			for (const auto iter : attribute)
@@ -66,18 +77,21 @@ FString AEquipmentItemActor::GetAttributeDescription()
 			description += "<item.desc>-</>\n";
 		}
 
-		return description;
+		return FText::Format(
+			NSLOCTEXT("Equipment", "AttributeDescription", "<item.desc>{0}</>{1}"), defaultStatText,
+			FText::FromString(description));
 	}
 
-	return "ERROR";
+	return FText::FromString("ERROR");
 }
 
-FString AEquipmentItemActor::GetEnhancedAttributeDescription()
+FText AEquipmentItemActor::GetEnhancedAttributeDescription()
 {
 	if (auto info = static_cast<const FEquipmentInformation*>(GetItemInformation()))
 	{
+		FText addStatText = NSLOCTEXT("Equipment", "AddStatText", "추가 능력치");
 		//강화로 추가된 능력치 정보를 표시합니다.
-		FString description = TEXT("<item.desc>추가 능력치</>\n");
+		FString description = /*TEXT("<item.desc>추가 능력치</>\n");*/"\n";
 		/*UKismetSystemLibrary::PrintString(this,TEXT("현 강화수치 :") + FString::FormatAsNumber(Enhancement.CurEnhancement));*/
 		if (Enhancement.CurEnhancement > 0)
 		{
@@ -104,19 +118,23 @@ FString AEquipmentItemActor::GetEnhancedAttributeDescription()
 					}
 				}
 
-				return description;
+				return FText::Format(
+					NSLOCTEXT("Equipment", "EnhancedAttributeDescription", "<item.desc>{0}</>\n{1}"), addStatText,
+					FText::FromString(description));
 			}
 		}
 		else
 		{
-			return description + TEXT("없음");
+			return FText::Format(
+				NSLOCTEXT("Equipment", "EnhancedAttributeNoDescription", "<item.desc>{0}</>\n{1}"), addStatText,
+				FText::FromString("-"));
 		}
 	}
 
-	return "ERROR";
+	return FText::FromString("ERROR");
 }
 
-FString AEquipmentItemActor::GetFormattedDescription_Implementation()
+FText AEquipmentItemActor::GetFormattedDescription_Implementation()
 {
 	if (auto info = static_cast<const FEquipmentInformation*>(GetItemInformation()))
 	{
@@ -189,7 +207,7 @@ void AEquipmentItemActor::OnOverrideSelfEffectEvent_Implementation(const TArray<
 			for (auto iter : attribute)
 			{
 				attributeEffects.Add(FAttributeEffect(iter.AttributeType, EAttributeApplyMethod::ADD, iter.Value));
-				UE_LOGFMT(LogTemp, Warning, "{0}이 덮어쓴 어트리뷰트 이팩트 : {1} : {2}",ItemTag.ToString(),
+				UE_LOGFMT(LogTemp, Warning, "{0}이 덮어쓴 어트리뷰트 이팩트 : {1} : {2}", ItemTag.ToString(),
 				          StaticEnum<EAttributeType>()->GetNameStringByIndex(static_cast<int32>(iter.AttributeType)),
 				          iter.Value);
 			}
@@ -211,7 +229,7 @@ void AEquipmentItemActor::UnEquip_Implementation(AActor* Target, const FGuid& Th
 bool AEquipmentItemActor::UseItem_Implementation(AActor* Target, const FGuid& ThisItemsUniqueID)
 {
 	Super::UseItem_Implementation(Target, ThisItemsUniqueID);
-	
+
 	ApplyEnhance(Target, EAttributeApplyMethod::ADD);
 	UpdateCharacterInfo(Target);
 
@@ -263,7 +281,9 @@ void AEquipmentItemActor::ApplyEnhance(AActor* Target, EAttributeApplyMethod Met
 	{
 		if (iter.Value > 0)
 		{
-			UE_LOGFMT(LogTemp, Warning, "장비 능력치 설정 : {0}을 {1}만큼 {2} 합니다.",StaticEnum<EAttributeType>()->GetValueAsString(iter.Key),iter.Value,StaticEnum<EAttributeApplyMethod>()->GetValueAsString(Method));
+			UE_LOGFMT(LogTemp, Warning, "장비 능력치 설정 : {0}을 {1}만큼 {2} 합니다.",
+			          StaticEnum<EAttributeType>()->GetValueAsString(iter.Key), iter.Value,
+			          StaticEnum<EAttributeApplyMethod>()->GetValueAsString(Method));
 			FAttributeEffect Effect(iter.Key, Method,
 			                        EnhancementSubsystem->GetAttributeValuePerEnhancement(iter.Key) * iter.Value);
 			AttributeSubsystem->GetProcessor(Method)->ProcessAttributeEffect(AttributeComponent, Effect);
@@ -292,7 +312,7 @@ void AEquipmentItemActor::ForceEndAbility(AActor* Target)
 			for (auto ab : info->Abilities)
 			{
 				const auto& tag = ab.GetDefaultObject()->GetAbilityTag();
-				UE_LOGFMT(LogTemp, Log, "ForceEndAbility : {0}",tag.ToString());
+				UE_LOGFMT(LogTemp, Log, "ForceEndAbility : {0}", tag.ToString());
 				//등록했던 어빌리티를 종료시킵니다. 아이템은 내부적으로 어빌리티 종료시 아이템이 적용한 어빌리티를 컴포넌트에서 제거합니다.
 				player->GetAbilityComponent()->ForceEndAbility(tag);
 			}
@@ -302,14 +322,14 @@ void AEquipmentItemActor::ForceEndAbility(AActor* Target)
 
 void AEquipmentItemActor::ForceApplyAbility(AActor* Target)
 {
-	UE_LOGFMT(LogTemp, Log, "ForceApplyAbility : {0}",ItemUniqueID.ToString());
-	UseItem(Target,ItemUniqueID);
+	UE_LOGFMT(LogTemp, Log, "ForceApplyAbility : {0}", ItemUniqueID.ToString());
+	UseItem(Target, ItemUniqueID);
 
-	if(auto attComp = Cast<ABaseCharacter>(Target)->GetAttributeComponent())
+	if (auto attComp = Cast<ABaseCharacter>(Target)->GetAttributeComponent())
 	{
-		UE_LOGFMT(LogTemp,Log,"재 사용후 체력수치 : {0}",attComp->GetMaxHP());
+		UE_LOGFMT(LogTemp, Log, "재 사용후 체력수치 : {0}", attComp->GetMaxHP());
 	}
-	
+
 	/*UseItem(Target, RealItemUniqueIDFromInventory);*/
 }
 
@@ -318,3 +338,5 @@ void AEquipmentItemActor::IncreaseEnhance(EAttributeType IncreaseAttribute)
 	Enhancement.IncreaseEnhance(IncreaseAttribute);
 	UKismetSystemLibrary::PrintString(this,TEXT("강화수치 증가 :") + FString::FormatAsNumber(Enhancement.CurEnhancement));
 }
+
+#undef LOCTEXT_NAMESPACE

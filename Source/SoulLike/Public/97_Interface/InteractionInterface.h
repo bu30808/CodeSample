@@ -54,6 +54,6 @@ public:
 	}
 
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	FName GetActionName();
-	virtual FName GetActionName_Implementation(){ return "인터페이스를 구현해 주세요."; }
+	FText GetActionName();
+	virtual FText GetActionName_Implementation(){ return FText::FromString("Missing interface implementation."); }
 };

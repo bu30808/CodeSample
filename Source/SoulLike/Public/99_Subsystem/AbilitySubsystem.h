@@ -42,4 +42,7 @@ public:
 	void AddProjectile(class ABaseCharacter* Owner, class AProjectileActor* Projectile);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	TArray<AProjectileActor*> GetProjectiles(ABaseCharacter* Owner);
+
+	UFUNCTION(BlueprintCallable)
+	void RemoveProjectiles(ABaseCharacter* Owner);
 };

@@ -8,19 +8,22 @@
 #include "00_Character/01_Component/AbilityComponent.h"
 #include "00_Character/03_Monster/BaseMonster.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIPerceptionComponent.h"
+#include "01_GameMode/SoulLikeGameMode.h"
+#include "96_Library/AbilityHelperLibrary.h"
+#include "96_Library/AIConHelperLibrary.h"
 #include "97_Interface/BossMonsterInterface.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Logging/StructuredLog.h"
-#include "Navigation/PathFollowingComponent.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Damage.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Perception/AISense_Hearing.h"
 #include "Perception/AISense_Sight.h"
-#include "Tasks/AITask_MoveTo.h"
+
 DEFINE_LOG_CATEGORY(LogAICon)
 
 #define ExecuteEffectTag FGameplayTag::RequestGameplayTag("Common.Active.Execute.Effect")
@@ -77,15 +80,21 @@ bool AMonsterAIController::ShouldForceCombatState()
 
 void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAIStimulus Stimulus)
 {
-	UKismetSystemLibrary::PrintString(this,TEXT("타겟을 감지했음"));
-
+	UE_LOGFMT(LogAICon, Log, "{0} OnTargetPerceptionUpdatedEvent : {1}", GetNameSafe(GetPawn()), GetNameSafe(Target));
 	if (Target != nullptr && Target->IsA<APlayerCharacter>())
 	{
-
-		if(ShouldForceCombatState())
+		UE_LOGFMT(LogAICon, Log, "{0} OnTargetPerceptionUpdatedEvent2", GetNameSafe(GetPawn()));
+		if (GetPawn<ABaseMonster>()->IsDead())
 		{
-			Cast<APlayerCharacter>(Target)->SetPlayerState(EPlayerCharacterState::Combat);
+			UE_LOGFMT(LogAICon, Error, "{0} OnTargetPerceptionUpdatedEvent3", GetNameSafe(GetPawn()));
+			return;
 		}
+
+		if (ShouldForceCombatState())
+		{
+			Cast<APlayerCharacter>(Target)->SetPlayerStateBy(EPlayerCharacterState::Combat, GetPawn());
+		}
+
 		if (GetBrainComponent() == nullptr)
 		{
 			StartBehavior();
@@ -95,9 +104,10 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 		{
 			if (bbComp->GetValueAsObject("Target") == nullptr)
 			{
-				UE_LOGFMT(LogAICon, Log, "{0}이 타겟을 감지했습니다 : {1}", GetPawn()->GetActorNameOrLabel(), Target->GetName());
+				UE_LOGFMT(LogAICon, Log, "{0}이 타겟을 감지했습니다 : {1}", GetNameSafe(GetPawn()), Target->GetName());
 				bbComp->SetValueAsObject("Target", Target);
-				if(const auto sense = UAIPerceptionSystem::GetSenseClassForStimulus(this, Stimulus)){
+				if (const auto sense = UAIPerceptionSystem::GetSenseClassForStimulus(this, Stimulus))
+				{
 					if (sense.GetDefaultObject()->IsA<UAISense_Damage>())
 					{
 						GetPawn<ABaseMonster>()->SetMonsterState(EMonsterState::Aggressive);
@@ -106,7 +116,7 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 					{
 						GetPawn<ABaseMonster>()->SetMonsterState(EMonsterState::Beware);
 					}
-					
+
 					if (UKismetSystemLibrary::DoesImplementInterface(GetPawn(), UBossMonsterInterface::StaticClass()))
 					{
 						IBossMonsterInterface::Execute_ShowBossWidget(GetPawn(), GetPawn<ABaseMonster>(), Target);
@@ -119,21 +129,32 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 
 void AMonsterAIController::OnTargetPerceptionForgottenEvent(AActor* Target)
 {
-	UKismetSystemLibrary::PrintString(this,TEXT("타겟을 잊음"));
-	if (Target != nullptr)
+	if (Target != nullptr && Target->IsA<APlayerCharacter>())
 	{
 		if (auto bbComp = GetBlackboardComponent())
 		{
-			UE_LOGFMT(LogAICon, Warning, "{0}이 타겟을 잊었습니다. : {1}", GetPawn()->GetActorNameOrLabel(), Target->GetName());
+			UE_LOGFMT(LogAICon, Warning, "{0}이 타겟을 잊었습니다. : {1}", GetNameSafe(GetPawn()), Target->GetName());
 			bbComp->SetValueAsObject("Target", nullptr);
 			GetPawn<ABaseMonster>()->SetMonsterState(EMonsterState::Peaceful);
+
+			UAIConHelperLibrary::ChangePlayerState(this, Target, EPlayerCharacterState::Peaceful);
 		}
 	}
 }
 
 void AMonsterAIController::OnDeadEvent(AActor* Who, AActor* DeadBy)
 {
-	PerceptionComponent->SetActive(false);
+	if (!DeadBy->IsA<APlayerCharacter>())
+	{
+		DeadBy = UGameplayStatics::GetPlayerCharacter(this, 0);
+	}
+	UAIConHelperLibrary::ChangePlayerState(this, DeadBy, EPlayerCharacterState::Combat);
+
+
+	PerceptionComponent->SetComponentTickEnabled(false);
+	PerceptionComponent->SetSenseEnabled(UAISense_Sight::StaticClass(), false);
+	PerceptionComponent->ForgetAll();
+	PerceptionComponent->Deactivate();
 }
 
 void AMonsterAIController::OnPossess(APawn* InPawn)
@@ -144,18 +165,22 @@ void AMonsterAIController::OnPossess(APawn* InPawn)
 
 void AMonsterAIController::StartBehavior()
 {
-	if (auto monster = Cast<ABaseMonster>(GetPawn()))
+	UE_LOGFMT(LogAICon, Log, "{0} : 비헤이비어 트리 실행 0 ", GetNameSafe(GetPawn()));
+	if (const auto monster = Cast<ABaseMonster>(GetPawn()))
 	{
-		if (monster->CharacterState == ECharacterState::DEAD)
+		if (monster->IsDead())
 		{
 			return;
 		}
 
-
 		if (monster->IsDead() == false && !monster->GetAbilityComponent()->HasEffectTag(ExecuteEffectTag))
 		{
-			UE_LOGFMT(LogTemp, Log, "{0} : 비헤이비어 트리 실행", monster->GetMonsterTag().GetTagName());
-			RunBehaviorTree(monster->MonsterDataAsset->BehaviorTree);
+			UE_LOGFMT(LogAICon, Log, "{0} : 비헤이비어 트리 실행 1 ", GetNameSafe(GetPawn()));
+			if (!RunBehaviorTree(monster->MonsterDataAsset->BehaviorTree))
+			{
+				UE_LOGFMT(LogAICon, Error, "{0} : 비헤이비어 트리 실행 실패!!", GetNameSafe(GetPawn()));
+				return;
+			}
 
 			if (auto bbComp = GetBlackboardComponent())
 			{
@@ -168,7 +193,19 @@ void AMonsterAIController::StartBehavior()
 					bbComp->SetValueAsFloat("AttackRange", range);
 				}
 			}
+
+			if (!PerceptionComponent->IsActive())
+			{
+				UE_LOGFMT(LogAICon, Log, "{0} : 퍼셉션 틱 활성화", GetNameSafe(GetPawn()));
+				PerceptionComponent->SetComponentTickEnabled(true);
+				PerceptionComponent->SetSenseEnabled(UAISense_Sight::StaticClass(), true);
+				PerceptionComponent->Activate();
+			}
 		}
+	}
+	else
+	{
+		UE_LOGFMT(LogAICon, Error, "{0} : 폰을 가져올 수 없어요!!", GetNameSafe(this));
 	}
 }
 
@@ -177,10 +214,10 @@ ETeamAttitude::Type AMonsterAIController::GetTeamAttitudeTowards(const AActor& O
 	if (const APawn* OtherPawn = Cast<APawn>(&Other))
 	{
 		// DEFAULT BEHAVIOR---------------------------------------------------
-		if (const IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController()))
+		/*if (const IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController()))
 		{
 			return Super::GetTeamAttitudeTowards(*OtherPawn->GetController());
-		}
+		}*/
 
 		//OR CUSTOM BEHAVIOUR--------------------------------------------------
 		if (const IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController()))
@@ -206,40 +243,55 @@ void AMonsterAIController::ResetBlackboard()
 	}
 }
 
-void AMonsterAIController::BeginPlay()
+void AMonsterAIController::StartImmediatelyBehavior()
 {
-	Super::BeginPlay();
-
 	if (auto pawn = GetPawn<ABaseMonster>())
 	{
-		if (pawn->IsStartBehaviorTreeImmediately())
+		if (auto gameMode = Cast<ASoulLikeGameMode>(UGameplayStatics::GetGameMode(this)))
 		{
-			StartBehavior();
+			if (gameMode->IsContainDeadList(pawn) == false)
+			{
+				if (pawn->IsStartBehaviorTreeImmediately())
+				{
+					StartBehavior();
+				}
+			}
 		}
 	}
 }
 
+void AMonsterAIController::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
 void AMonsterAIController::DrawSightDebugLine()
 {
-	if(auto pawn = GetPawn()){
-		
-		if (auto sight = PerceptionComponent->GetSenseConfig(UAISense::GetSenseID<UAISense_Sight>()))
+	if (auto pawn = GetPawn<ABaseMonster>())
+	{
+		if (pawn->IsDead() == false)
 		{
-			auto sightConfig = Cast<UAISenseConfig_Sight>(sight);
-			
-			DrawDebugCircle(GetWorld(), pawn->GetActorLocation(), sightConfig->SightRadius, 32, FColor::Red, false, 0.1f, 0, .5f,FVector(0,1,0),FVector(1,0,0));
+			if (auto sight = PerceptionComponent->GetSenseConfig(UAISense::GetSenseID<UAISense_Sight>()))
+			{
+				auto sightConfig = Cast<UAISenseConfig_Sight>(sight);
 
-			const FVector& forwardVector = UKismetMathLibrary::GetForwardVector(GetControlRotation());
-			//Z축을 기준으로 방향백터를 시야만큼 회전시킵니다.
-			const FVector& right = UKismetMathLibrary::RotateAngleAxis(forwardVector,sightConfig->PeripheralVisionAngleDegrees,FVector(0,0,1)) * sightConfig->SightRadius + pawn->GetActorLocation();
-			DrawDebugLine(GetWorld(),pawn->GetActorLocation(),right,FColor::Blue, false, 0.1f, 0, 1.0f);
+				DrawDebugCircle(GetWorld(), pawn->GetActorLocation(), sightConfig->SightRadius, 32, FColor::Red, false,
+				                0.1f, 0, .5f, FVector(0, 1, 0), FVector(1, 0, 0));
 
-			//Z축을 기준으로 방향백터를 시야만큼 회전시킵니다.
-			const FVector& left = UKismetMathLibrary::RotateAngleAxis(forwardVector,sightConfig->PeripheralVisionAngleDegrees * -1,FVector(0,0,1)) * sightConfig->SightRadius + pawn->GetActorLocation();
-			DrawDebugLine(GetWorld(),pawn->GetActorLocation(),left,FColor::Blue, false, 0.1f, 0, 1.0f);
-			
+				const FVector& forwardVector = UKismetMathLibrary::GetForwardVector(GetControlRotation());
+				//Z축을 기준으로 방향백터를 시야만큼 회전시킵니다.
+				const FVector& right = UKismetMathLibrary::RotateAngleAxis(
+					forwardVector, sightConfig->PeripheralVisionAngleDegrees,
+					FVector(0, 0, 1)) * sightConfig->SightRadius + pawn->GetActorLocation();
+				DrawDebugLine(GetWorld(), pawn->GetActorLocation(), right, FColor::Blue, false, 0.1f, 0, 1.0f);
+
+				//Z축을 기준으로 방향백터를 시야만큼 회전시킵니다.
+				const FVector& left = UKismetMathLibrary::RotateAngleAxis(
+					forwardVector, sightConfig->PeripheralVisionAngleDegrees * -1,
+					FVector(0, 0, 1)) * sightConfig->SightRadius + pawn->GetActorLocation();
+				DrawDebugLine(GetWorld(), pawn->GetActorLocation(), left, FColor::Blue, false, 0.1f, 0, 1.0f);
+			}
 		}
-	
 	}
 }
 
@@ -248,17 +300,29 @@ void AMonsterAIController::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 #if WITH_EDITOR
-	DrawSightDebugLine();
-
-	if (UKismetSystemLibrary::DoesImplementInterface(GetPawn(), UAIInterface::StaticClass()))
+	if (auto pawn = GetPawn<ABaseMonster>())
 	{
-		float range;
-		IAIInterface::Execute_GetAttackRange(GetPawn(),range);
-		DrawDebugCircle(GetWorld(), GetPawn()->GetActorLocation(),range , 32, FColor::Magenta, false, 0.1f, 0, .5f,FVector(0,1,0),FVector(1,0,0));
-	}
-	
+		if (pawn->IsDead() == false && PerceptionComponent->IsComponentTickEnabled())
+		{
+			DrawSightDebugLine();
+
+			if (UKismetSystemLibrary::DoesImplementInterface(GetPawn(), UAIInterface::StaticClass()))
+			{
+				float range;
+				IAIInterface::Execute_GetAttackRange(GetPawn(), range);
+				DrawDebugCircle(GetWorld(), GetPawn()->GetActorLocation(), range, 32, FColor::Magenta, false, 0.1f, 0,
+				                .5f,
+				                FVector(0, 1, 0), FVector(1, 0, 0));
+			}
+		}
+
 #endif
-	
+	}
+}
+
+void AMonsterAIController::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
 }
 
 void AMonsterAIController::UpdateControlRotation(float DeltaTime, bool bUpdatePawn)

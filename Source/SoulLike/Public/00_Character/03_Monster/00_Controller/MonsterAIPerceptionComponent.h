@@ -16,4 +16,5 @@ class SOULLIKE_API UMonsterAIPerceptionComponent : public UAIPerceptionComponent
 
 
 	virtual void HandleExpiredStimulus(FAIStimulus& StimulusStore) override;
+
 };

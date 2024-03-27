@@ -278,7 +278,7 @@ void ULevelUpWidget::HiddenAddButton()
 	}
 }
 
-USimpleToolTipWidget* ULevelUpWidget::CreateSimpleToolTipWidget(FString ToolTipTextToSet)
+USimpleToolTipWidget* ULevelUpWidget::CreateSimpleToolTipWidget(FText ToolTipTextToSet)
 {
 	if (SimpleToolTipWidgetObject)
 	{

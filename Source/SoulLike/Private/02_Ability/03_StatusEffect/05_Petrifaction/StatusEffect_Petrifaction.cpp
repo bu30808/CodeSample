@@ -17,7 +17,7 @@ UStatusEffect_Petrifaction::UStatusEffect_Petrifaction()
 }
 
 void UStatusEffect_Petrifaction::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy,
-	UAbilityBase* From)
+	UAbilityBase* From, UObject* AdditionalData)
 {
 	Target->SetIgnoreMoveInput(true,EffectBy,UniqueEffectTag);
 	Target->SetIgnoreLookInput(true,EffectBy,UniqueEffectTag);

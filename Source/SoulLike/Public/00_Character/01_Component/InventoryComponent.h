@@ -44,13 +44,13 @@ public:
 	{
 	}
 
-	AItemActor* SetItemActor();
+	AItemActor* SetItemActor(bool bLoad);
 	FInventoryItem(class AActor* Owner, class AItemActor* ItemActor, int32 Count, FGuid NewID);
-	FInventoryItem(class AActor* Owner, TSubclassOf<class AItemActor> ItemActorObject, int32 Count, FGuid NewID);
+	FInventoryItem(class AActor* Owner, TSubclassOf<class AItemActor> ItemActorObject, int32 Count, FGuid NewID,bool bLoad = false);
 	
 
 	const FItemInformation* GetItemInformation() const;
-	FString GetFormattedDescription() const;
+	FText GetFormattedDescription() const;
 	bool Use(class AActor* Owner) const;
 	void UnEquip(AActor* Owner) const;
 
@@ -81,13 +81,12 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUseItem, class ABaseCharacter*, 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUnEquipItem, class ABaseCharacter*, UsedBy, const FInventoryItem&,
                                              ItemInfo);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSaveFieldItemState, class ABaseCharacter*, GetBy, class AItemActor*,
-                                             ItemActor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSaveFieldItemState, class ABaseCharacter*, GetBy, class AItemActor*,ItemActor);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRemoveItem, class ABaseCharacter*, UsedBy, const FGuid&,
                                              RemoveItemUniqueID);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnGetItem, TSoftObjectPtr<class UTexture2D>, Image, FString, Name,
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnGetItem, TSoftObjectPtr<class UTexture2D>, Image, FText, Name,
                                                int32, Count);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUpdateMainConsumeQuickSlot, const FInventoryItem&,Item,bool, bRemove);

@@ -26,11 +26,11 @@ protected:
 
 	virtual void PostInitializeComponents() override;
 public:
-	virtual FString GetEnhancedLevelDescription();
-	virtual FString GetAttributeDescription();
-	virtual FString GetEnhancedAttributeDescription();
+	virtual FText GetEnhancedLevelDescription();
+	virtual FText GetAttributeDescription();
+	virtual FText GetEnhancedAttributeDescription();
 protected:
-	virtual FString GetFormattedDescription_Implementation() override;
+	virtual FText GetFormattedDescription_Implementation() override;
 	virtual void
 	OnOverrideSelfEffectEvent_Implementation(const TArray<UAbilityEffect*>& SelfEffect, AActor* Target) override;
 	virtual void UnEquip_Implementation(AActor* Target, const FGuid& ThisItemsUniqueID) override;

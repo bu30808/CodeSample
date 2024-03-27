@@ -3,22 +3,21 @@
 
 #include "00_Character/BaseCharacter.h"
 
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
-#include "00_Character/00_Player/00_Controller/UserController.h"
 #include "00_Character/00_Player/00_Controller/00_Component/InputHandlerComponent.h"
 #include "00_Character/01_Component/AbilityComponent.h"
 #include "00_Character/01_Component/AttributeComponent.h"
 #include "00_Character/01_Component/FootStepComponent.h"
 #include "00_Character/01_Component/InventoryComponent.h"
 #include "02_Ability/AbilityEffect.h"
-#include "04_Item/ItemActor.h"
 #include "96_Library/MathHelperLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Logging/StructuredLog.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/PhysicsAsset.h"
-#include "SoulLike/SoulLike.h"
 DEFINE_LOG_CATEGORY(LogCharacter)
 
 // Sets default values
@@ -28,13 +27,19 @@ ABaseCharacter::ABaseCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	AttributeComponent = CreateDefaultSubobject<UAttributeComponent>(TEXT("AttributeComponent"));
-	//LinetraceComponent = CreateDefaultSubobject<ULinetraceComponent>(TEXT("LinetraceComponent"));
 	AbilityComponent = CreateDefaultSubobject<UAbilityComponent>(TEXT("AbilityComponent"));
 	FootStepComponent = CreateDefaultSubobject<UFootStepComponent>(TEXT("FootStepComponent"));
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 
 	
 	DeadDissolveTimeLineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("DeadDissolveTimeLine"));
+
+	static ConstructorHelpers::FClassFinder<UAbilityEffect> fallDamageClass(TEXT(
+	"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/AE_FallDamage.AE_FallDamage_C'"));
+	if (fallDamageClass.Succeeded())
+	{
+		FallDamageEffectObject = fallDamageClass.Class;
+	}
 }
 
 // Called when the game starts or when spawned
@@ -58,10 +63,83 @@ void ABaseCharacter::BeginPlay()
 	}
 }
 
+void ABaseCharacter::CheckFallDeath()
+{
+
+	if(!bShouldCheckFallDeath)
+	{
+		return;
+	}
+	
+	if(GetCharacterMovement()->IsFalling() && !IsDead())
+	{
+		FHitResult hit;
+		if(!UKismetSystemLibrary::CapsuleTraceSingle(this,GetActorLocation(),GetActorLocation() + GetActorUpVector()*(-1)*FallDeathDistance,GetCapsuleComponent()->GetScaledCapsuleRadius(),GetCapsuleComponent()->GetScaledCapsuleHalfHeight(),UEngineTypes::ConvertToTraceType(ECC_WorldStatic),false,TArray<AActor*>(),EDrawDebugTrace::ForOneFrame,hit,true))
+		{
+			UE_LOGFMT(LogCharacter,Warning,"아래 착지할 곳이 없습니다!! 사망처리 합니다.");
+			AttributeComponent->SetHP(0);
+			OnDead.Broadcast(this,this);
+		}else
+		{
+
+			if(bStartFallDamageProcess == false)
+			{
+				bStartFallDamageProcess = true;
+				//떨어지기 시작한 위치를 기록합니다.
+				FallingStartLocation = GetActorLocation();
+				UE_LOGFMT(LogCharacter,Log,"낙하 시작 기록");
+			}
+		}
+	}else
+	{
+		if(bStartFallDamageProcess)
+		{
+			if(GetCharacterMovement()->IsMovingOnGround())
+			{
+				
+				//착지하면  착지한 위치와의 Z축 거리를 계산합니다.
+				FVector landLocation = GetActorLocation();
+
+				landLocation.X = 0;
+				landLocation.Y = 0;
+				
+				FallingStartLocation.X = 0;
+				FallingStartLocation.Y = 0;
+
+				const float& distance =  (landLocation - FallingStartLocation).Length();
+				//거리가 일정 이상일 때, 거리와 비례해서 체력을 감소시킵니다.
+				//떨어져 죽을수 있는 거리의 반이상의 높이에서 떨어져 착지한 경우
+				const float fallDamageStartLength = FallDeathDistance * 0.5f;
+				UE_LOGFMT(LogCharacter,Log,"낙하 거리 : {0}, 낙하 피해 가능 최소 거리 : {1}",distance,fallDamageStartLength);
+				if(distance >= fallDamageStartLength)
+				{
+					float gapPercent = (distance -  fallDamageStartLength) / fallDamageStartLength;
+					UE_LOGFMT(LogCharacter,Log,"낙하 피해 비율 : {0}",gapPercent);
+
+					if(FallDamageEffectObject == nullptr)
+					{
+						ensure(FallDamageEffectObject);
+						return;
+					}
+					
+					if(const auto fallDamageObject = NewObject<UFallingDamageData>()){
+						fallDamageObject->FallingDamageRatio = gapPercent;
+						AbilityComponent->K2_ApplyEffect(FallDamageEffectObject,this,FOnEffectExpired(),fallDamageObject);
+					}
+				}
+
+
+				bStartFallDamageProcess = false;
+			}
+		}
+	}
+}
+
 // Called every frame
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
 }
 
 // Called to bind functionality to input
@@ -116,7 +194,6 @@ void ABaseCharacter::ActivateDefaultAbility()
 
 void ABaseCharacter::GiveDefaultItem()
 {
-	UE_LOGFMT(LogTemp,Log,"기본 아이템을 지급합니다.");
 	for (auto item : DefaultItem)
 	{
 		InventoryComponent->SpawnAndAddItem(item);
@@ -195,10 +272,33 @@ bool ABaseCharacter::ShouldSkipHitAnimation(float Damage, float SkipThreshold)
 	return AttributeComponent->GetEndurance() > Damage * SkipThreshold;
 }
 
+void ABaseCharacter::PlayDeadAnimationSequence()
+{
+	GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+	auto randIndex = FMath::RandRange(0, DeadAnimations.Num() - 1);
+	if (DeadAnimations.IsValidIndex(randIndex))
+	{
+		GetMesh()->PlayAnimation(DeadAnimations[randIndex],false);
+	}
+}
+
+void ABaseCharacter::PlayDeadAnimationMontage()
+{
+	auto randIndex = FMath::RandRange(0, DeadMontages.Num() - 1);
+	if (DeadMontages.IsValidIndex(randIndex))
+	{
+		DeadMontage = DeadMontages[randIndex];
+	}
+
+}
+
+
 void ABaseCharacter::OnUpdateDeadDissolveTimeLine(float Value)
 {
 	FName param = "Percent";
 	GetMesh()->CreateDynamicMaterialInstance(0,GetMesh()->GetMaterial(0))->SetScalarParameterValue(param,Value);
+	
+	
 }
 
 void ABaseCharacter::OnFinishDissolveTimeLine()
@@ -212,6 +312,21 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 	{
 		UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 / 정보 설정", GetActorNameOrLabel());
 		CharacterState = ECharacterState::DEAD;
+		GetCapsuleComponent()->SetCollisionProfileName("Spectator");
+		GetMesh()->SetCollisionProfileName("Spectator");
+
+		switch(DeadAnimationPlayMode)
+		{
+		case EDeadAnimationPlayMode::Sequence:
+			PlayDeadAnimationSequence();
+			break;
+		case EDeadAnimationPlayMode::Montage:
+			PlayDeadAnimationMontage();
+			break;
+		case EDeadAnimationPlayMode::None:
+			break;
+		default: ;
+		}
 	
 		if (AbilityComponent)
 		{
@@ -221,7 +336,13 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 		//디졸브 타임라인
 		if(DissolveCurve)
 		{
-			UKismetSystemLibrary::PrintString(this,TEXT("타임라인 가동됨"));
+			if(DissolveParticle)
+			{
+				UE_LOGFMT(LogCharacter,Log,"사망 파티클 생성");
+				const auto comp = UNiagaraFunctionLibrary::SpawnSystemAttached(DissolveParticle,RootComponent,NAME_None,FVector::ZeroVector,FRotator::ZeroRotator,EAttachLocation::SnapToTargetIncludingScale,false);
+				comp->SetColorParameter("Color",DissolveColor);
+			}
+			
 			DeadDissolveTimeLineComponent->AddInterpFloat(DissolveCurve,UpdateDissolve);
 			DeadDissolveTimeLineComponent->SetTimelineFinishedFunc(OnFinishDissolve);
 

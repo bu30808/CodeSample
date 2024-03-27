@@ -666,7 +666,7 @@ void UAbilityBase::ApplySelfEffect(ABaseCharacter* Character)
 	FOnEffectExpired OnExpiredSelfEffect;
 	OnExpiredSelfEffect.BindDynamic(this, &UAbilityBase::OnExpiredSelfEffectEvent);
 
-	Character->GetAbilityComponent()->ApplyEffects(SelfEffectInstance, Character, OnExpiredSelfEffect, this);
+	Character->GetAbilityComponent()->ApplyEffects(SelfEffectInstance, Character, OnExpiredSelfEffect, this, nullptr);
 }
 
 void UAbilityBase::ApplyTargetEffect(ABaseCharacter* Character)
@@ -676,7 +676,7 @@ void UAbilityBase::ApplyTargetEffect(ABaseCharacter* Character)
 	FOnEffectExpired OnExpiredTargetEffect;
 	OnExpiredTargetEffect.BindDynamic(this, &UAbilityBase::OnExpiredTargetEffect);
 
-	Character->GetAbilityComponent()->ApplyEffects(TargetEffectInstance, Character, OnExpiredTargetEffect, this);
+	Character->GetAbilityComponent()->ApplyEffects(TargetEffectInstance, Character, OnExpiredTargetEffect, this, nullptr);
 }
 
 void UAbilityBase::EndSelfEffect(ABaseCharacter* Character) const
@@ -730,7 +730,7 @@ void UAbilityBase::ApplyCost()
 			if (auto costEffect = DuplicateObject<UAbilityEffect>(costObject.GetDefaultObject(), AbilityOwner.Get()))
 			{
 				AbilityOwner->GetAbilityComponent()->ApplyEffect(costEffect, AbilityOwner.Get(), FOnEffectExpired(),
-				                                                 this);
+				                                                 this, nullptr);
 			}
 			else
 			{
@@ -753,7 +753,7 @@ void UAbilityBase::ApplyCooldown()
 			                                                          AbilityOwner.Get()))
 			{
 				AbilityOwner->GetAbilityComponent()->
-				              ApplyEffect(cooldownEffect, AbilityOwner.Get(), FOnEffectExpired(), this);
+				              ApplyEffect(cooldownEffect, AbilityOwner.Get(), FOnEffectExpired(), this, nullptr);
 			}
 			else
 			{

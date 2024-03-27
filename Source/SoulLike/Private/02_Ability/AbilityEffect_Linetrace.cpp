@@ -979,7 +979,7 @@ void UAbilityEffect_Linetrace::UpdateLastNiagaraSpawnSocketLocation()
 }
 
 void UAbilityEffect_Linetrace::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy,
-                                                            UAbilityBase* From)
+                                                            UAbilityBase* From, UObject* AdditionalData)
 {
 	if (bUseWithCustomSockets)
 	{

@@ -56,7 +56,7 @@ public:
 	FGameplayTag MonsterTag;
 	//몬스터 이름
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
-	FName MonsterName;
+	FText MonsterName;
 	//AI에 사용할 행동트리
 	UPROPERTY(EditAnywhere)
 	class UBehaviorTree* BehaviorTree;
@@ -116,9 +116,12 @@ protected:
 	ABaseMonster();
 
 	virtual void BeginPlay() override;
-
 	virtual void PostInitializeComponents() override;
-	
+	void DetachDroppedItem();
+
+
+	UFUNCTION()
+	void OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayReason);
 	UFUNCTION()
 	void OnDestroyedEvent(AActor* DestroyedActor);
 	/**********************************************컴포넌트*********************************************************/
@@ -130,9 +133,15 @@ protected:
 	//보스몬스터 전용
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class UAudioComponent* MusicComponent;
+
+	
+	UPROPERTY(Transient)
+	TObjectPtr<class AItemActor> DroppedItem;
+
+
+
 public:
 	class UWidgetComponent* GetHealthBarWidgetComponent() const { return HealthBarWidgetComponent; }
-
 
 protected:
 	FTimerHandle HealthBarVisibleTimerHandle;
@@ -140,6 +149,27 @@ protected:
 	UFUNCTION()
 	void UpdateHealthBar(float Value, float MaxValue);
 
+
+	//레그돌에서 복구할 때 사용할 컴포넌트 기본 트렌스폼
+	FTransform DefaultMeshTr;
+	FTransform DefaultHealthBarTr;
+	//액터가 배치된 위치 초기값.
+	FTransform InitTransform;
+public:
+	void EnableRagdoll() const;
+	void StopAITree() const;
+	void RunDeactivateTimer();
+
+	void Activate();
+private:
+	//이 몬스터를 비활성화 합니다. AI를 멈추고, 콜리전 반응을 지우고, 숨깁니다.
+	void Deactivate();
+	void DeadPresetting() const;
+	void RunAITree() const;
+	
+	void RestoreFromRagdoll();
+	//레그돌 활성화로 망가진 컴포넌트 상속관계와 위치를 되돌립니다. 필요하다면 덮어쓰세요.
+	virtual void RestoreComponentAttachment() const;
 	/**********************************************락온*********************************************************/
 public:
 	virtual bool IsLockOnAble_Implementation() override { return bLockOnAble; }
@@ -159,6 +189,8 @@ protected:
 	virtual void K2_SpawnAlly_Implementation(int32 SpawnCount);
 public:
 	void SpawnAlly(int32 SpawnCount, const FOnFinishSpawnAlly& OnFinishSpawnAlly);
+
+	
 	void ResetMonster(const FTransform& DefaultTr);
 
 protected:
@@ -190,6 +222,10 @@ public:
 protected:
 	void IncreaseStunIntensity(const FAttributeEffect& Effect,
 							   UAbilityEffectAdditionalInformation* AdditionalInformation);
+
+	//몬스터 사망시 숨김처리되는 시간입니다.
+	UPROPERTY(EditAnywhere)
+	float DeactivateTime = 30.f;
 	/**********************************************리스폰*********************************************************/
 protected:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -203,7 +239,7 @@ protected:
 	/**********************************************기본정보*********************************************************/
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FName GetMonsterName() { return MonsterDataAsset->MonsterName; }
+	FText GetMonsterName() { return MonsterDataAsset->MonsterName; }
 	const FGameplayTag& GetMonsterTag() const { return MonsterDataAsset->MonsterTag; }
 	/**********************************************애니메이션*********************************************************/
 
@@ -215,6 +251,10 @@ protected:
 	UFUNCTION()
 	void OnDeadBossEvent(AActor* Who, AActor* DeadBy);
 public:
+
+	virtual void PlayDeadAnimationSequence() override;
+	virtual void PlayDeadAnimationMontage() override;
+	
 	UFUNCTION()
 	virtual void OnDeadMontageEndedEvent(UAnimMontage* Montage, bool bInterrupted);
 
@@ -233,15 +273,18 @@ protected:
 
 	/**********************************************사운드*********************************************************/
 
+public:
 	//보스 인터페이스를 상속중이라면, 음악을 재생합니다.
 	UFUNCTION(BlueprintCallable)
 	void PlayMusic(class USoundBase* Music);
-	
 	/**
 	 * AdjustVolumeDuration에 걸쳐서 볼륨을 0으로 만든 후, 컴포넌트를 파괴합니다.
 	 * @param AdjustVolumeDuration 
 	 */
 	UFUNCTION(BlueprintCallable)
 	void StopMusic(float AdjustVolumeDuration);
-	
+
+
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	FString GetSafeName();
 };

@@ -108,7 +108,7 @@ void UMerchantWidget::OnPlayerSellItemEvent(const FInventoryItem& Item)
 	if (GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()->IsEquipped(Item.UniqueID))
 	{
 		UWidgetHelperLibrary::ShowAlertMsg(GetOwningPlayer<AUserController>(), EAlertMsgType::Warning,
-		                                   TEXT("장착중인 아이템을 팔 수 없습니다."),FOnButtonClicked());
+		                                   GlobalMerchandiseCheckWidgetText::cannotSellEquippedItemText,FOnButtonClicked());
 		return;
 	}
 
@@ -116,7 +116,7 @@ void UMerchantWidget::OnPlayerSellItemEvent(const FInventoryItem& Item)
 	if (Item.GetItemInformation()->bSellable == false)
 	{
 		UWidgetHelperLibrary::ShowAlertMsg(GetOwningPlayer<AUserController>(), EAlertMsgType::Normal,
-		                                   TEXT("판매 불가능한 아이템입니다."),FOnButtonClicked());
+		                                   GlobalMerchandiseCheckWidgetText::cannotSellText,FOnButtonClicked());
 		return;
 	}
 

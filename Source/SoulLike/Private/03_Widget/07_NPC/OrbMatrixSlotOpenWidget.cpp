@@ -16,10 +16,18 @@
 #include "Logging/StructuredLog.h"
 #include "00_Character/00_Player/00_Controller/UserController.h"
 
+
+#define LOCTEXT_NAMESPACE "OrbMatrixSlotOpenWidget"
+namespace GlobalOrbMatrixSlotOpenText
+{
+	static const FText unlockText= NSLOCTEXT("OrbMatrixSlotOpenWidget","SlotUnlockText","비용을 지불하여 슬롯 개방");
+	static const FText alreadyOpenedAlertText= NSLOCTEXT("OrbMatrixSlotOpenWidget","AlertText","이미 개방된 슬롯입니다.");
+}
+#undef LOCTEXT_NAMESPACE
 void UOrbMatrixSlotOpenWidget::ShowUnlockCost(int32 Cost)
 {
-	FString msg = FString::FormatAsNumber(Cost) + TEXT("비용을 지불하여 슬롯 개방");
-	TextBlock_UnLock->SetText(FText::FromString(msg));
+	
+	TextBlock_UnLock->SetText(FText::FromString(FString::FormatAsNumber(Cost) + GlobalOrbMatrixSlotOpenText::unlockText.ToString()));
 }
 
 UOrbMatrix* UOrbMatrixSlotOpenWidget::GetCoreMatrix(const FInventoryItem& OrbCoreItem)
@@ -38,7 +46,8 @@ void UOrbMatrixSlotOpenWidget::OnClickedOrbMatrixElement(const FOrbMatrixElement
 {
 	if (!MatrixInfo.bLock)
 	{
-		TextBlock_UnLock->SetText(FText::FromString(TEXT("이미 개방된 슬롯입니다.")));
+		
+		TextBlock_UnLock->SetText(GlobalOrbMatrixSlotOpenText::alreadyOpenedAlertText);
 		Button_UnLock->SetIsEnabled(false);
 		UE_LOGFMT(LogTemp, Error, "이미 열린 슬롯입니다.");
 		return;
@@ -129,7 +138,7 @@ void UOrbMatrixSlotOpenWidget::OnClickedUnLock()
 		//잠금해제 시도 이후, 이미 슬롯이 열렸다면, 버튼을 비활성화 합니다.
 		if (SelectedMatrixElementWidget->GetCurMatrixElementInfo().bLock == false)
 		{
-			TextBlock_UnLock->SetText(FText::FromString(TEXT("이미 개방된 슬롯입니다.")));
+			TextBlock_UnLock->SetText(GlobalOrbMatrixSlotOpenText::alreadyOpenedAlertText);
 			Button_UnLock->SetIsEnabled(false);
 		}
 	}

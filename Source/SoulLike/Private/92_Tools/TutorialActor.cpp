@@ -5,11 +5,12 @@
 
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "03_Widget/11_Tutorial/TutorialWidget.h"
-#include "96_Library/WidgetHelperLibrary.h"
+#include "96_Library/SaveGameHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "Components/BillboardComponent.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
+
 // Sets default values
 ATutorialActor::ATutorialActor()
 {
@@ -30,7 +31,6 @@ void ATutorialActor::OnDestroyedEvent(AActor* DestroyedActor)
 	{
 		Cast<USoulLikeInstance>(instance)->SaveTutorial(this);
 	}
-	
 }
 
 void ATutorialActor::PostInitializeComponents()
@@ -45,6 +45,11 @@ void ATutorialActor::PostInitializeComponents()
 void ATutorialActor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if(USaveGameHelperLibrary::IsAlreadyReadTutorial(this))
+	{
+		Destroy();
+	}
 	
 }
 

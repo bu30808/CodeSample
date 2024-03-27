@@ -95,7 +95,7 @@ protected:
 
 	void HiddenAddButton();
 
-	class USimpleToolTipWidget* CreateSimpleToolTipWidget(FString ToolTipTextToSet);
+	class USimpleToolTipWidget* CreateSimpleToolTipWidget(FText ToolTipTextToSet);
 
 public:
 	//이 위젯이 닫길떄 호출됩니다.

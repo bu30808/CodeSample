@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/04_NPC/NPCBase.h"
 #include "Engine/DataTable.h"
 #include "Bonfire.generated.h"
@@ -16,13 +17,15 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	FString OwnersSafeName;
 	UPROPERTY(EditAnywhere)
-	FString LocationName;
+	FText LocationName;
 	UPROPERTY(EditAnywhere)
 	FVector Location = FVector::ZeroVector;
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<class UTexture2D> LocationImage;
 	UPROPERTY(VisibleAnywhere)
 	FString LevelName;
+	UPROPERTY(EditAnywhere)
+	float SkyTime = 0;
 };
 
 /**
@@ -39,6 +42,8 @@ public:
 protected:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	class UNiagaraComponent* NiagaraComponent;
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	class UNiagaraComponent* CannotActivate_NiagaraComponent;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	class UAudioComponent* InfiniteAudioComponent;
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
@@ -57,16 +62,28 @@ protected:
 	//이 저장장소가 활성화 되었는지 확인하는 변수입니다.
 	UPROPERTY(Transient)
 	bool bIsActivate = false;
+	UPROPERTY(EditAnywhere)
+	FLinearColor PeaceColor = FLinearColor(0.f,6.394939f,20.f,1.000000);
+	UPROPERTY(EditAnywhere)
+	FLinearColor CombatColor = FLinearColor(20.f,0.776941f,0.f,1.f);
+	//이 화톳불이 위치하는 곳의 하늘 시간입니다.
+	UPROPERTY(EditAnywhere)
+	float SkyTime;
 
 	virtual void PostInitializeComponents() override;
 	virtual void BeginPlay() override;
+	virtual void Tick(float DeltaSeconds) override;
 
 
 	//이 화톳불의 위치정보를 테이블에 추가합니다.
 	UFUNCTION(BlueprintCallable,CallInEditor,DisplayName= "테이블 업데이트")
 	void AddBonfireInToDataTable();
+	void SetActivate();
 
 public:
+	UFUNCTION()
+	void OnChangePlayerStateEvent(EPlayerCharacterState State);
+	
 	UFUNCTION(BlueprintCallable)
 	void ActivateBonfire(class APlayerCharacter* Player);
 	UFUNCTION(BlueprintCallable,BlueprintPure)

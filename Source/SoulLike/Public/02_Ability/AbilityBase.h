@@ -30,7 +30,7 @@ struct FAbilityInformation : public FTableRowBase
 public:
 	//어빌리티 이름
 	UPROPERTY(EditAnywhere)
-	FString AbilityName;
+	FText AbilityName;
 
 	//어빌리티 태그
 	UPROPERTY(EditAnywhere)
@@ -42,7 +42,7 @@ public:
 
 	//어빌리티 설명
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta = (MultiLine = "true"))
-	FString AbilityDescription;
+	FText AbilityDescription;
 
 	//어빌리티 이미지
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)

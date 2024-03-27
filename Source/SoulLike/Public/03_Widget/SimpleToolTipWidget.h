@@ -21,7 +21,7 @@ public:
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void SetDescriptionText(FString Msg);
+	void SetDescriptionText(FText Msg);
 	UFUNCTION(BlueprintCallable)
-	void AddDescriptionText(const FString& AddDescription);
+	void AddDescriptionText(const FText& AddDescription);
 };

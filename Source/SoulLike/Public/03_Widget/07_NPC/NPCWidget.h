@@ -36,7 +36,7 @@ protected:
 	UPROPERTY()
 	class UNPCActionButtonWidget* ExitButton;
 
-	FString NPCActionTypeToString(ENPCActionType ActionType);
+	FText NPCActionTypeToText(ENPCActionType ActionType);
 
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;

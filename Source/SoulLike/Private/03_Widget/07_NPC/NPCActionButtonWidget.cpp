@@ -5,7 +5,7 @@
 
 #include "Components/TextBlock.h"
 
-void UNPCActionButtonWidget::SetActionName(const FString& NewAction)
+void UNPCActionButtonWidget::SetActionName(const FText& NewAction)
 {
-	TextBlock_ActionName->SetText(FText::FromString(NewAction));
+	TextBlock_ActionName->SetText(NewAction);
 }

@@ -20,7 +20,7 @@ void UItemGetPopupWidget::NativeConstruct()
 	}
 }
 
-void UItemGetPopupWidget::OnGetItem(TSoftObjectPtr<UTexture2D> Image, FString Name, int32 Count)
+void UItemGetPopupWidget::OnGetItem(TSoftObjectPtr<UTexture2D> Image, FText Name, int32 Count)
 {
 	if (ItemGetElementObject)
 	{

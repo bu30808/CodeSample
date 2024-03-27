@@ -25,7 +25,7 @@ void UAlertWidget::OnClickedOKButton()
 	SetVisibility(ESlateVisibility::Collapsed);
 }
 
-void UAlertWidget::SetAlertMsg(EAlertMsgType AlertMsgType, FString Msg, const FOnButtonClicked& OnClickedEvent)
+void UAlertWidget::SetAlertMsg(EAlertMsgType AlertMsgType, FText Msg, const FOnButtonClicked& OnClickedEvent)
 {
 	FString msg;
 	switch (AlertMsgType) {
@@ -41,7 +41,7 @@ void UAlertWidget::SetAlertMsg(EAlertMsgType AlertMsgType, FString Msg, const FO
 	default: ;
 	}
 
-	msg += Msg;
+	msg += Msg.ToString();
 	if(AlertMsgType!=EAlertMsgType::NoUseDeco)
 	{
 		msg+= "</>";

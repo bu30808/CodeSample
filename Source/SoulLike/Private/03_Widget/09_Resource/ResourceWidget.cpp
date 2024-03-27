@@ -22,7 +22,7 @@ void UResourceWidget::UpdateProgressLength(float MaxValue)
 		if(auto slot = UWidgetLayoutLibrary::SlotAsCanvasSlot(Image_Progress))
 		{
 			auto y = slot->GetSize().Y;
-			auto len = FMath::Clamp(MaxValue * 2.5f,0,1920);
+			auto len = FMath::Clamp(MaxValue * 3.f,0,1920);
 			UKismetSystemLibrary::PrintString(this,FString::SanitizeFloat(len));
 			slot->SetSize(FVector2D(len,y));
 		}

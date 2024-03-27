@@ -46,7 +46,7 @@ class SOULLIKE_API UStatusEffect_Freeze : public UAbilityEffect
 protected:
 	UStatusEffect_Freeze();
 	
-	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From) override;
+	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData = nullptr) override;
 	virtual void EndEffect_Implementation(ABaseCharacter* Target) override;
 	virtual void OverrideTime_Implementation(ABaseCharacter* Target) override;
 

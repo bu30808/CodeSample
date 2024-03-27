@@ -14,6 +14,25 @@ enum class EStatusEffect : uint8;
 DECLARE_LOG_CATEGORY_EXTERN(LogCharacter, Log, All);
 
 
+UCLASS(Blueprintable)
+class UFallingDamageData : public UObject
+{
+	GENERATED_BODY()
+public:
+	//최대체력비례해서 줄 피해 퍼센트
+	UPROPERTY(BlueprintReadWrite)
+	float FallingDamageRatio = 0;
+};
+
+
+UENUM(BlueprintType)
+enum class EDeadAnimationPlayMode : uint8
+{
+	Sequence,
+	Montage,
+	None
+};
+
 
 USTRUCT(BlueprintType)
 struct FIgnoreInputHandler
@@ -121,6 +140,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	void CheckFallDeath();
 
 public:
 	// Called every frame
@@ -142,7 +162,7 @@ protected:
 	class UFootStepComponent* FootStepComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UInventoryComponent* InventoryComponent;
-
+	
 
 public:
 	FORCEINLINE class UAbilityComponent* GetAbilityComponent() const { return AbilityComponent; }
@@ -265,9 +285,15 @@ protected:
 	//사망시 플레이할 애니메이션들입니다.
 	//몽타주와 애니메이션애셋중 하나를 골라서 사용하도록 하세요.
 	UPROPERTY(EditAnywhere, Category=Default)
+	EDeadAnimationPlayMode DeadAnimationPlayMode = EDeadAnimationPlayMode::None;
+	UPROPERTY(EditAnywhere, Category=Default, meta=(EditCondition="DeadAnimationPlayMode == EDeadAnimationPlayMode::Montage"))
 	TArray<class UAnimMontage*> DeadMontages;
-	UPROPERTY(EditAnywhere, Category=Default)
+	UPROPERTY(EditAnywhere, Category=Default, meta=(EditCondition="DeadAnimationPlayMode != EDeadAnimationPlayMode::Montage"))
 	TArray<class UAnimationAsset*> DeadAnimations;
+
+
+	virtual void PlayDeadAnimationSequence();
+	virtual void PlayDeadAnimationMontage();
 
 	//사망 몽타주를 사용했을 경우, 선택된 사망 몽타주가 저장되는 변수입니다.
 	UPROPERTY(Transient)
@@ -280,6 +306,10 @@ protected:
 	//디졸브를 적용할 시간을 결정합니다.
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 	float DissolveTime = 3.f;
+	UPROPERTY(EditAnywhere, Category = "Timeline")
+	UNiagaraSystem* DissolveParticle;
+	UPROPERTY(EditAnywhere, Category = "Timeline")
+	FLinearColor DissolveColor;
 	
 	FOnTimelineFloat UpdateDissolve;
 	FOnTimelineEvent OnFinishDissolve;
@@ -302,6 +332,25 @@ public:
 	//이 캐릭터가 사망상태인지 확인합니다.
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsDead() { return CharacterState == ECharacterState::DEAD; }
+
+protected:
+	/**************************낙하 피해 및 사망*************************/
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	bool bShouldCheckFallDeath = true;
+
+	//이 거리 아래로 떨어지면 사망합니다.
+	UPROPERTY(EditAnywhere)
+	float FallDeathDistance = 3000.f;
+	//낙하피해를 주는 이팩트
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UAbilityEffect> FallDamageEffectObject;
+
+	
+	UPROPERTY(Transient)
+	bool bStartFallDamageProcess;
+	UPROPERTY(Transient)
+	FVector FallingStartLocation;
+
 	
 	/**************************상태정보*************************/
 protected:

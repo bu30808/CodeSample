@@ -106,7 +106,7 @@ void UAbilityEffect::ChainSetting(ABaseCharacter* Target)
 	}
 }
 
-void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From)
+void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData)
 {
 	ensure(Target);
 	ensure(EffectBy);
@@ -153,7 +153,12 @@ void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor
 
 	OverrideTime(Target);
 	OverrideAttributeEffects(Target, EffectBy);
-	UpdateAttributeEffectsAffectedByOwnersAttribute(Target);
+	
+	if(EffectBy->IsA<ABaseCharacter>())
+	{
+		UpdateAttributeEffectsAffectedByOwnersAttribute(Cast<ABaseCharacter>(EffectBy));
+	}
+	
 	RegisterEffectTag(Target);
 
 	if (EffectApplyType == EEffectApplyType::DurationWithInterval)

@@ -236,7 +236,7 @@ protected:
 	void SpawnNiagaraEffect(const FHitResult& Hit) const;
 	void UpdateLastNiagaraSpawnSocketLocation();
 	
-	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy,UAbilityBase* From) override;
+	virtual void ProcessEffect_Implementation(class ABaseCharacter* Target, AActor* EffectBy,UAbilityBase* From, UObject* AdditionalData = nullptr) override;
 	virtual void OnTaskTickEvent_Implementation(float DeltaTime) override;
 	virtual void EndEffect_Implementation(ABaseCharacter* Target) override;
 

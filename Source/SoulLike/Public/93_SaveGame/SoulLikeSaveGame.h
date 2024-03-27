@@ -7,9 +7,7 @@
 #include "00_Character/01_Component/AttributeComponent.h"
 #include "00_Character/01_Component/InventoryComponent.h"
 #include "00_Character/04_NPC/Bonfire.h"
-#include "01_GameMode/SoulLikeGameMode.h"
 #include "04_Item/ItemActor.h"
-#include "04_Item/00_Consume/00_Potion/PotionItemActor.h"
 #include "95_OrbCreator/OrbMatrix.h"
 #include "GameFramework/SaveGame.h"
 #include "SoulLikeSaveGame.generated.h"
@@ -24,6 +22,90 @@ enum class EGameLoadType : uint8
 	RESPAWN,
 	TELEPORT_TO_LAST_SAVEPOINT,
 	TELEPORT_TO_OTHER_BONFIRE
+};
+
+USTRUCT(BlueprintType)
+struct FActorSave
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TObjectPtr<AActor> ActorPointer;
+	UPROPERTY()
+	FName ActorSafeName;
+	UPROPERTY()
+	TSubclassOf<class AActor> ActorClass;
+	UPROPERTY()
+	FTransform ActorTransform;
+	UPROPERTY()
+	TArray<TObjectPtr<const UDataLayerAsset>> LayerInfo;
+	
+	FActorSave(){ }
+
+	FActorSave(AActor* Ptr, const FName& SafeName, TSubclassOf<AActor> Class, const FTransform& Transform):ActorPointer(Ptr), ActorSafeName(SafeName),ActorClass(Class),ActorTransform(Transform)
+	{
+		LayerInfo = Ptr->GetDataLayerAssets();
+	}
+
+	bool operator==(const FActorSave& Other) const
+	{
+		return Other.ActorSafeName.IsEqual(ActorSafeName);
+	}
+
+	bool operator==(const FName& OtherSafeName) const
+	{
+		return OtherSafeName.IsEqual(ActorSafeName);
+	}
+
+	bool operator==(const FString& OtherSafeName) const
+	{
+		return OtherSafeName.Equals(ActorSafeName.ToString());
+	}
+
+	FORCEINLINE friend uint32 GetTypeHash(const FActorSave& Other)
+	{
+		return HashCombine(GetTypeHash(Other.ActorSafeName),GetTypeHash(Other.ActorClass));
+	}
+	
+};
+
+//액터 기본정보에 추가로 어트리뷰트 및 상태를 저장하기 위한 구조체입니다.
+USTRUCT(BlueprintType)
+struct FCharacterSave :public FActorSave
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TMap<EAttributeType,FAttribute> Attributes;
+	UPROPERTY()
+	ECharacterState CharacterState = ECharacterState::NORMAL;
+
+
+	FCharacterSave(){}
+	
+	FCharacterSave(AActor* Ptr, const FName& SafeName, TSubclassOf<AActor> Class, const FTransform& Transform,const TMap<EAttributeType,FAttribute*>& AttributesInfo,ECharacterState State):FActorSave(Ptr,SafeName,Class,Transform)
+	{
+		CharacterState = State;
+		//캐릭터 상태가 사망이라면 굳이 어트리뷰트 정보를 저장할 필요가 없습니다.
+		if(CharacterState == ECharacterState::DEAD)
+		{
+			return;
+		}
+		
+		for(auto iter : AttributesInfo)
+		{
+			Attributes.Add(iter.Key,*iter.Value);
+		}
+	}
+};
+
+USTRUCT(BlueprintType)
+struct FSavedActorInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	TSet<FActorSave> Information;
 };
 
 USTRUCT(BlueprintType)
@@ -53,25 +135,26 @@ public:
 };
 
 USTRUCT(BlueprintType)
-struct FSafeNameSave
+struct FFieldItemDataLayers
 {
 	GENERATED_BODY()
-public:
-
-	UPROPERTY(BlueprintReadOnly)
-	TArray<FString> SafeNameList;
 	
-	void Add(const FString& SafeName);
-	FString Get(const FString& SafeName);
+	UPROPERTY()
+	TSet<FString> ItemSafeNames;
+
 };
 
 USTRUCT(BlueprintType)
-struct FMonsterRespawnInfos
+struct FFieldItem
 {
 	GENERATED_BODY()
-public:
+
+	//key - layer full path
+	//value - item safe name array
 	UPROPERTY(BlueprintReadOnly)
-	TArray<FMonsterRespawnInfo> DeadInfo;
+	TMap<FString, FFieldItemDataLayers> FiledItemList;
+	
+	void Add(const FString& LayerAssetFullPath, const FString& SafeName);
 };
 
 USTRUCT(BlueprintType)
@@ -132,16 +215,15 @@ public:
 	void LoadWeapon(UInventoryComponent* InventoryComponent,const FGuid& UniqueID);
 	void LoadEquippedItem(UInventoryComponent* InventoryComponent,TArray<FGuid> EquipUniqueID, TMap<FGuid, int32> EquipSlotIndexMap);
 	void LoadAttribute(class UAttributeComponent* AttributeComponent, const TMap<EAttributeType, FAttribute>& AttributesNotIncludeLevelUpPointMap, const
-	                   TMap<EAttributeType, FAttribute>& LevelUpPointAttributesMap);
-	void RestoreMonsterState(UWorld* World, const TMap<FString, FMonsterRespawnInfos>& DeadMonsters);
-	void RestoreFieldItemState(APlayerCharacter* Player, const TMap<FString, FSafeNameSave>& PickuppedItems);
+	                   TMap<EAttributeType, FAttribute>& LevelUpPointAttributesMap, bool bIsRespawn);
 	void RestoreEquipmentEnhancement(UInventoryComponent* InventoryComponent, const TMap<FGuid, FEnhancement>& EquipmentEnhancedMap);
 	void RestorePotionEnhancement(UInventoryComponent* InventoryComponent, const TMap<FGuid, FEnhancement>& PotionEnhancementMap);
 	void RestoreQuickSlotState(APlayerCharacter* Player,const TMap<int32,FGuid>& ItemQuickSlotMap,const TMap<int32,FGameplayTag>& AbilityQuickSlotMap);
-	void CreateSoulTomb(class APlayerCharacter* Player, const FDeadState& DeadState);
+	void CreateSoulTomb(class APlayerCharacter* Player, TSubclassOf<class ASoulTomb> TombObject, const FDeadState& DeadState);
 	void RestoreBonfire(APlayerCharacter* Player, const TArray<FString>& SavedBonfire);
 	void TeleportToBonfire(APlayerCharacter* Player, const FBonfireInformation& BonfireInfo);
-	void RestoreTutorial(APlayerCharacter* Player, const TArray<FString>& Tutorials);
+	void RestoreDataLayer(APlayerCharacter* Player, const TSet<FName>& ActivateLayersPath);
+	void RestoreSky(APlayerCharacter* Player, float CurrentSkyTime);
 };
 
 /**
@@ -152,7 +234,11 @@ class SOULLIKE_API USoulLikeSaveGame : public USaveGame
 {
 	GENERATED_BODY()
 
+
 public:
+
+	USoulLikeSaveGame();
+
 	//로드시 사용할 타입 정보. 노말이 아니면 다른 행동을 합니다.
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	EGameLoadType GameLoadType = EGameLoadType::NORMAL;
@@ -208,27 +294,35 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FOrbMatrixSave OrbMatrix;
 
-	/*//레벨에서 사망한 몬스터 ID
-	//Key - 레벨이름
-	//Value - 사망한 몬스터 ID
-	UPROPERTY(BlueprintReadOnly)
-	TMap<FString, FMonsterRespawnInfos> DeadMonsters;*/
-
 	//레벨에 배치된 아이템들 중, 획득한 아이템 ID
+	//key : level Name
 	UPROPERTY(BlueprintReadOnly)
-	TMap<FString,FSafeNameSave> PickUppedItems;
+	TMap<FString,FSavedActorInfo> PickUppedItems;
 
 	//사망 정보를 저장하는 구조체
 	UPROPERTY(BlueprintReadOnly)
 	FDeadState DeadState;
 
 	//활성화된 화톳불을 저장하는 배열
+	//key - levelName
+	//value - 해당 레벨에 저장된 화톳불 목록
 	UPROPERTY(BlueprintReadOnly)
-	TArray<FString> ActivateBonfire;
+	TMap<FString,FSavedActorInfo> ActivateBonfire;
 
 	//다음 로드시 이동해야할 화톳불 정보
 	UPROPERTY(VisibleAnywhere)
 	FBonfireInformation TeleportBonfireInfo;
+
+	//지금 활성화된 월드 레이어 정보입니다.
+	UPROPERTY(BlueprintReadOnly)
+	TSet<FName> ActivateLayersPath;
+	//현재 하늘의 시간값
+	UPROPERTY(BlueprintReadOnly)
+	float CurrentSkyTime = 13;
+
+	UPROPERTY(BlueprintReadOnly)
+	TSet<FGameplayTag> KilledBossMonstersTag;
+	
 
 	//현재 레벨을 저장합니다.
 	void SaveLevelName(APlayerCharacter* Player);
@@ -257,7 +351,8 @@ public:
 	
 
 	//레벨에 배치된 아이템 중, 플레이어가 획득한 아이템임을 저장하기 위해 사용됩니다.
-	void SavePlacementItemState(const FString& LevelName, const FString& SafeName);
+	void SavePlacementItemState(class APlayerCharacter* Player, AItemActor* ItemActor);
+
 	//아이템을 획득하면 호출됩니다.
 	void SaveAddedItem(const FInventoryItem& ItemInfo);
 	//아이템을 사용하면 호출됩니다.
@@ -286,10 +381,16 @@ public:
 	void SaveTeleportBonfireInfo(const FBonfireInformation& BonfireInfo);
 	//인벤토리 상태를 저장합니다.
 	void SaveInventory(APlayerCharacter* Player);
+	//월드의 레이어 상태를 저장합니다.
+	void SaveDataLayer(APlayerCharacter* Player);
+	//현재 하늘의 시각을 저장합니다.
+	void SaveSkyTime(APlayerCharacter* Player);
+	//처치한 우두머리를 기록합니다.
+	void SaveKilledBoss(const FGameplayTag& BossTag);
 
 
 	UPROPERTY()
-	TArray<FString> ReadTutorialActors;
+	TArray<FName> ReadTutorialActors;
 	//이미 읽은 튜토리얼 액터를 저장합니다.
 	void SaveReadTutorialActor(class ATutorialActor* TutorialActor);
 

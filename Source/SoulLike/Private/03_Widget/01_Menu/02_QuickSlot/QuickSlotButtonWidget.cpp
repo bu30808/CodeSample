@@ -111,7 +111,7 @@ void UQuickSlotButtonWidget::Init(UInventoryData* Data)
 		if (Data->IsA<UItemData>())
 		{
 			auto item = Cast<UItemData>(Data);
-			UKismetSystemLibrary::PrintString(this,TEXT("퀵슬롯 초기화 : ")+item->InventoryItem.GetItemInformation()->Item_Name);
+			//UKismetSystemLibrary::PrintString(this,TEXT("퀵슬롯 초기화 : ")+item->InventoryItem.GetItemInformation()->Item_Name);
 			TextBlock_Count->SetText(FText::AsNumber(item->InventoryItem.ItemCount));
 			Image->SetBrushFromSoftTexture(item->InventoryItem.GetItemInformation()->Item_Image);
 		}

@@ -100,7 +100,7 @@ void ALadder::OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedCom
 				//같은 방향을 바라보는 경우
 				if (auto widget = OverlappedPlayer->GetInteractionWidget(
 					this, OverlappedPlayer->GetInputDataAsset()->InteractAction,
-					Execute_GetActionName(this).ToString()))
+					Execute_GetActionName(this)))
 				{
 					widget->SetWorldLocation(TopBoxComponent->GetComponentLocation());
 					widget->SetVisibility(true);
@@ -123,7 +123,7 @@ void ALadder::OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedCom
 				//다른 방향을 바라보는 경우
 				if (auto widget = OverlappedPlayer->GetInteractionWidget(
 					this, OverlappedPlayer->GetInputDataAsset()->InteractAction,
-					Execute_GetActionName(this).ToString()))
+					Execute_GetActionName(this)))
 				{
 					UKismetSystemLibrary::PrintString(this,TEXT("보임!!"));
 					widget->SetWorldLocation(BottomBoxComponent->GetComponentLocation());

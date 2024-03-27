@@ -23,11 +23,11 @@ protected:
 	UPROPERTY(EditAnywhere)
 	FName KeyName = "NONE";
 	UPROPERTY(EditAnywhere)
-	FString ActionName = "NoAction";
+	FText ActionName = FText::FromString("NoAction");
 
 	virtual void NativePreConstruct() override;
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void SetKeyAndAction(FName Key, FString Action);
+	void SetKeyAndAction(FName Key, FText Action);
 };

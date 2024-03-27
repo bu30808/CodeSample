@@ -48,6 +48,7 @@
 #include "00_Character/00_Player/OrbBackgroundActor.h"
 #include "00_Character/00_Player/01_Component/JumpMovementComponent.h"
 #include "00_Character/00_Player/01_Component/LadderMovementComponent.h"
+#include "91_Sky/DynamicSkyActor.h"
 #include "99_Subsystem/WidgetInteractionSubsystem.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Engine/TextureRenderTarget2D.h"
@@ -57,12 +58,15 @@ class UWidgetInteractionSubsystem;
 
 #define ECC_INTERACTION ECC_GameTraceChannel7
 
+#define LOCTEXT_NAMESPACE "PlayerCharacter"
+
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
+	PrimaryActorTick.bStartWithTickEnabled = false;
+	
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetMesh()->SetCollisionProfileName("PlayerMesh");
@@ -133,7 +137,6 @@ APlayerCharacter::APlayerCharacter()
 
 	LadderMovementComponent = CreateDefaultSubobject<ULadderMovementComponent>(TEXT("LadderMovementComponent"));
 	JumpMovementComponent = CreateDefaultSubobject<UJumpMovementComponent>(TEXT("JumpMovementComponent"));
-	
 }
 
 void APlayerCharacter::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* OtherActor)
@@ -143,7 +146,8 @@ void APlayerCharacter::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor*
 		if (OtherActor->IsA<ASoulTomb>())
 		{
 			OverlappedOtherActor = OtherActor;
-			ShowInteractionWidget(OverlappedOtherActor.Get(), InputDataAsset->PickUpAction, TEXT("복구"));
+			const FText restoreText = NSLOCTEXT("PlayerCharacter","ResotreSoulText","복구");
+			ShowInteractionWidget(OverlappedOtherActor.Get(), InputDataAsset->PickUpAction, restoreText);
 			return;
 		}
 
@@ -151,7 +155,8 @@ void APlayerCharacter::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor*
 		if (OtherActor->IsA<AItemActor>())
 		{
 			OverlappedOtherActor = OtherActor;
-			ShowInteractionWidget(OverlappedOtherActor.Get(), InputDataAsset->PickUpAction, TEXT("획득"));
+			const FText getItemText = NSLOCTEXT("PlayerCharacter","GetItemText","획득");
+			ShowInteractionWidget(OverlappedOtherActor.Get(), InputDataAsset->PickUpAction, getItemText);
 			return;
 		}
 	}
@@ -179,9 +184,13 @@ void APlayerCharacter::OnActorEndOverlapEvent(AActor* OverlappedActor, AActor* O
 void APlayerCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-
+	SetActorTickEnabled(false);
+	
 	OnActorBeginOverlap.AddUniqueDynamic(this, &APlayerCharacter::OnActorBeginOverlapEvent);
 	OnActorEndOverlap.AddUniqueDynamic(this, &APlayerCharacter::OnActorEndOverlapEvent);
+
+	OnEndPlay.AddUniqueDynamic(this, &APlayerCharacter::OnEndPlayEvent);
+
 
 	AttributeComponent->OnChangedMoveSpeedAttribute.AddUniqueDynamic(
 		this, &APlayerCharacter::OnChangedMoveSpeedAttributeEvent);
@@ -194,6 +203,11 @@ void APlayerCharacter::PostInitializeComponents()
 	SceneCaptureComponent2D->SetActive(false);
 
 	OriginalFurMaterial = FurComponent->GetMaterial(0);
+
+	CreateBodyMaterialInstance();
+
+	CameraBoom->bEnableCameraLag = false;
+	CameraBoom->bEnableCameraRotationLag = false;
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController)
@@ -212,29 +226,38 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 	}
 }
 
+void APlayerCharacter::CreateBodyMaterialInstance()
+{
+	BodyMaterialInstance.Add(FurComponent->CreateDynamicMaterialInstance(0));
+	const auto& index = GetMesh()->GetMaterials().Num();
+	for (int32 i = 0; i < 4; i++)
+	{
+		BodyMaterialInstance.Add(GetMesh()->CreateDynamicMaterialInstance(i));
+	}
+}
 
-// Called when the game starts or when spawned
-void APlayerCharacter::BeginPlay()
+void APlayerCharacter::CreateSoulTomb()
+{
+	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
+	{
+		if (instance->IsUseGameSave())
+		{
+			if(instance->ExistSaveFile())
+			{
+				instance->CreateSoulTomb(this);
+			}
+		}
+	}
+}
+
+void APlayerCharacter::LoadGame()
 {
 	if (auto pc = GetController<AUserController>())
 	{
-		/*DeadDissolveTimeLineComponent->SetTimelineLength(DissolveTime);*/
-
-		UWidgetBlueprintLibrary::SetInputMode_GameOnly(pc);
-
 		//초기화가 끝날때까지 입력 막음
 		DisableInput(pc);
 
-		CameraBoom->bEnableCameraLag =false;
-		CameraBoom->bEnableCameraRotationLag = false;
-
-		//기본 위젯 생성
-		pc->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("widget.main"));
-
-		//메인메뉴 포인터 저장
-		SetMainWidget();
-
-		Super::BeginPlay();
+		
 		if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 		{
 			if (instance->IsUseGameSave())
@@ -248,7 +271,8 @@ void APlayerCharacter::BeginPlay()
 					EquipDefaultWeapon();
 					//기본 아이템 제공
 					GiveDefaultItem();
-
+					//스카이 타임 저장
+					instance->SaveSky(this);
 				}
 				else
 				{
@@ -270,11 +294,61 @@ void APlayerCharacter::BeginPlay()
 				AttributeComponent->BroadcastMPEvent();
 			}
 		}
+		
+	}
+}
 
-		//레벨업 이벤트 바인딩
-		pc->GetLocalPlayer()->GetSubsystem<ULevelUpSubsystem>()->OnLevelUp.AddUniqueDynamic(
-			this, &APlayerCharacter::OnLevelUpEvent);
+void APlayerCharacter::OnAfterLoadGame()
+{
+	if (auto pc = GetController<AUserController>())
+	{
+		UWidgetBlueprintLibrary::SetInputMode_GameOnly(pc);
+		
+		//초기화가 끝날때까지 입력 막음
+		EnableInput(pc);
+		CameraBoom->bEnableCameraLag = true;
+		CameraBoom->bEnableCameraRotationLag = true;
 
+		auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this,0);
+		cameraManager->SetManualCameraFade(0,FColor::Black,true);
+
+		CreateSoulTomb();
+		
+		SetActorTickEnabled(true);
+	}
+}
+
+void APlayerCharacter::SaveLastGroundedLocation()
+{
+	if(IsDead() == false)
+	{
+		if(GetCharacterMovement()->IsMovingOnGround())
+		{
+			LastGroundedLocation = GetActorLocation();
+		}
+	}
+}
+
+// Called when the game starts or when spawned
+void APlayerCharacter::BeginPlay()
+{
+	if (auto pc = GetController<AUserController>())
+	{
+		auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this,0);
+		cameraManager->SetManualCameraFade(1,FColor::Black,true);
+
+		DynamicSkyActor = Cast<ADynamicSkyActor>(
+			UGameplayStatics::GetActorOfClass(this, ADynamicSkyActor::StaticClass()));
+
+		//기본 위젯 생성, 반드시 게임을 불러오는 과정보다 앞에 있어야 합니다.
+		pc->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("widget.main"));
+		//메인메뉴 포인터 저장
+		SetMainWidget();
+		
+		Super::BeginPlay();
+		
+		LoadGame();
+	
 		//오브 배경 스폰
 		if (OrbBackgroundActorObject)
 		{
@@ -282,24 +356,28 @@ void APlayerCharacter::BeginPlay()
 			OrbBackgroundActor->ShowRender(false);
 			SceneCaptureComponent2D->SetActive(false);
 		}
-
-
+		
 		//서브시스템은 게임이 종료될때까지 유지되는 것이므로, 레벨을 새로 로드 한 후에 초기화를 해 줘야 합니다.
 		pc->GetLocalPlayer()->GetSubsystem<UWidgetInteractionSubsystem>()->InitSubsystem();
+		
+		FTimerHandle timerHandle;
+		GetWorldTimerManager().SetTimer(timerHandle,this,&APlayerCharacter::OnAfterLoadGame,1.f);
 
-		GetMoviePlayer()->StopMovie();
-
-		CameraBoom->bEnableCameraLag = true;
-		CameraBoom->bEnableCameraRotationLag = true;
-		//초기화가 끝날때까지 입력 막음
-		EnableInput(pc);
+		//n초마다 마지막으로 밟은 땅의 좌표를 기억합니다. 이 좌표에다 영혼무덤을 생성할 것입니다.
+		LastGroundedLocation = GetActorLocation();
+		GetWorldTimerManager().SetTimer(GroundLocationSaveTimerHandle,this,&APlayerCharacter::SaveLastGroundedLocation,1.f,true);
 	}
 }
 
-void APlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+void APlayerCharacter::OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayReason)
 {
-	Super::EndPlay(EndPlayReason);
-		
+	if (EndPlayReason == EEndPlayReason::Destroyed)
+	{
+		if (IsDead())
+		{
+			OnFinishDissolveTimeLine();
+		}
+	}
 }
 
 // Called every frame
@@ -307,8 +385,10 @@ void APlayerCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FindInteractableNPC();
-	
+	CheckFallDeath();
+
+	FindInteractActor();
+
 	//처형 가능한 몬스터를 찾습니다.
 	CheckExecutionMonster();
 
@@ -355,7 +435,6 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 {
 	if (UEnhancedInputComponent* EnhancedInputComponent = CastChecked<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		
 		//움직임
 		EnhancedInputComponent->BindAction(InputDataAsset->MoveAction, ETriggerEvent::Triggered, this,
 		                                   &APlayerCharacter::Move);
@@ -415,13 +494,11 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(InputDataAsset->AbilityQuickSlotAction, ETriggerEvent::Triggered,
 		                                   InventoryComponent,
 		                                   &UInventoryComponent::UseAbilityQuickSlot);
-		
 
 
 		//상호작용
 		EnhancedInputComponent->BindAction(InputDataAsset->InteractAction, ETriggerEvent::Triggered, this,
 		                                   &APlayerCharacter::Interaction);
-		
 	}
 	else
 	{
@@ -507,18 +584,17 @@ void APlayerCharacter::NextLockOnTarget()
 
 void APlayerCharacter::OpenNavigationOrClosePopUp()
 {
-	if(auto pc = Cast<AUserController>(GetController()))
+	if (auto pc = Cast<AUserController>(GetController()))
 	{
-	
-		if(pc->IsThereAnyPopUp())
+		if (pc->IsThereAnyPopUp())
 		{
-			for(auto iter : pc->GetPopUpStack())
+			for (auto iter : pc->GetPopUpStack())
 			{
-				UKismetSystemLibrary::PrintString(this,iter->GetName());
+				UKismetSystemLibrary::PrintString(this, iter->GetName());
 			}
 			pc->ClosePopUp();
-			
-		}else
+		}
+		else
 		{
 			if (MainWidget.IsValid())
 			{
@@ -558,68 +634,19 @@ void APlayerCharacter::ChangeAbilityQuickSlot()
 	InventoryComponent->NextAbilityQuickSlot();
 }
 
-
-/*
-void APlayerCharacter::ConsumeQuickSlot1()
-{
-	OnUseConsumeQuickSlot1.Broadcast(InputDataAsset->ConsumeQuickSlotAction1);
-}
-
-void APlayerCharacter::ConsumeQuickSlot2()
-{
-	OnUseConsumeQuickSlot2.Broadcast(InputDataAsset->ConsumeQuickSlotAction2);
-}
-
-void APlayerCharacter::ConsumeQuickSlot3()
-{
-	OnUseConsumeQuickSlot3.Broadcast(InputDataAsset->ConsumeQuickSlotAction3);
-}
-
-void APlayerCharacter::ConsumeQuickSlot4()
-{
-	OnUseConsumeQuickSlot4.Broadcast(InputDataAsset->ConsumeQuickSlotAction4);
-}
-
-void APlayerCharacter::ConsumeQuickSlot5()
-{
-	OnUseConsumeQuickSlot5.Broadcast(InputDataAsset->ConsumeQuickSlotAction5);
-}
-
-void APlayerCharacter::AbilityQuickSlot1()
-{
-	OnUseAbilityQuickSlot1.Broadcast(InputDataAsset->AbilityQuickSlotAction1);
-}
-
-void APlayerCharacter::AbilityQuickSlot2()
-{
-	OnUseAbilityQuickSlot2.Broadcast(InputDataAsset->AbilityQuickSlotAction2);
-}
-
-void APlayerCharacter::AbilityQuickSlot3()
-{
-	OnUseAbilityQuickSlot3.Broadcast(InputDataAsset->AbilityQuickSlotAction3);
-}
-
-void APlayerCharacter::AbilityQuickSlot4()
-{
-	OnUseAbilityQuickSlot4.Broadcast(InputDataAsset->AbilityQuickSlotAction4);
-}
-
-void APlayerCharacter::AbilityQuickSlot5()
-{
-	OnUseAbilityQuickSlot5.Broadcast(InputDataAsset->AbilityQuickSlotAction5);
-}
-*/
-
 void APlayerCharacter::Interaction()
 {
-	
-	if(InteractableActor.IsValid())
+	if (LadderMovementComponent->GetUseLadderMovement())
+	{
+		return;
+	}
+
+	if (InteractableActor.IsValid())
 	{
 		IInteractionInterface::Execute_Interaction(InteractableActor.Get(), this);
 		return;
 	}
-	
+
 	const float& halfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 	const float& radius = GetCapsuleComponent()->GetScaledCapsuleRadius();
 
@@ -631,18 +658,17 @@ void APlayerCharacter::Interaction()
 	ignoreActors.Add(this);
 
 	TArray<FHitResult> hits;
-	if (UKismetSystemLibrary::CapsuleTraceMulti(this, targetLoc, targetLoc, radius, halfHeight, UEngineTypes::ConvertToTraceType(ECC_INTERACTION), false,
-														 ignoreActors, EDrawDebugTrace::ForOneFrame, hits, true))
+	if (UKismetSystemLibrary::CapsuleTraceMulti(this, targetLoc, targetLoc, radius, halfHeight,
+	                                            UEngineTypes::ConvertToTraceType(ECC_INTERACTION), false,
+	                                            ignoreActors, EDrawDebugTrace::ForOneFrame, hits, true))
 	{
 		for (auto h : hits)
 		{
-			
 			if (UKismetSystemLibrary::DoesImplementInterface(h.GetActor(), UInteractionInterface::StaticClass()))
 			{
 				IInteractionInterface::Execute_Interaction(h.GetActor(), this);
 				break;
 			}
-			
 		}
 	}
 }
@@ -678,39 +704,11 @@ void APlayerCharacter::DoExecute(ABaseMonster* ExecuteTarget)
 
 void APlayerCharacter::ClosePopUp()
 {
-	if(auto pc = Cast<AUserController>(GetController()))
+	if (auto pc = Cast<AUserController>(GetController()))
 	{
 		pc->ClosePopUp();
 	}
 }
-
-/*
-void APlayerCharacter::OpenCharacterInfo()
-{
-	if (MainWidget.IsValid())
-	{
-		MainWidget->OpenNavigation();
-		MainWidget->OpenCharacterInformation();
-	}
-}
-
-void APlayerCharacter::OpenEquipment()
-{
-	if (MainWidget.IsValid())
-	{
-		MainWidget->OpenNavigation();
-		MainWidget->OpenEquipment();
-	}
-}
-
-void APlayerCharacter::OpenInventory()
-{
-	if (MainWidget.IsValid())
-	{
-		MainWidget->OpenNavigation();
-		MainWidget->OpenInventory();
-	}
-}*/
 
 void APlayerCharacter::PressSprint()
 {
@@ -740,6 +738,7 @@ void APlayerCharacter::ReleaseSprint()
 
 void APlayerCharacter::EquipDefaultWeapon()
 {
+	UE_LOGFMT(LogCharacter,Log,"기본 무기 지급");
 	if (DefaultSpirit)
 	{
 		const auto& id = InventoryComponent->SpawnAndAddItem(DefaultSpirit);
@@ -754,6 +753,7 @@ void APlayerCharacter::EquipDefaultWeapon()
 
 void APlayerCharacter::EquipDefaultCore()
 {
+	UE_LOGFMT(LogCharacter,Log,"기본 코어 지급");
 	if (InventoryComponent && DefaultCore)
 	{
 		const auto& id = InventoryComponent->SpawnAndAddItem(DefaultCore);
@@ -776,7 +776,7 @@ void APlayerCharacter::SetMainWidget()
 	}
 }
 
-void APlayerCharacter::FindInteractableNPC()
+void APlayerCharacter::FindInteractActor()
 {
 	//평화상태가 아니면 찾을 필요가 없습니다.
 	if (IsPeaceState() == false)
@@ -790,33 +790,35 @@ void APlayerCharacter::FindInteractableNPC()
 	const auto forwardLoc = GetActorLocation() + (GetActorForwardVector() * radius * 2);
 	const auto targetLoc = forwardLoc;
 
-	
+
 	TArray<FHitResult> hits;
 	TArray<AActor*> ignoreActors;
 	ignoreActors.Emplace(this);
-	
-	if (UKismetSystemLibrary::CapsuleTraceMulti(GetWorld(), targetLoc, targetLoc, radius, halfHeight, UEngineTypes::ConvertToTraceType(ECC_INTERACTION),
-												false,ignoreActors , EDrawDebugTrace::ForOneFrame, hits,
-												true))
+
+	if (UKismetSystemLibrary::CapsuleTraceMulti(GetWorld(), targetLoc, targetLoc, radius, halfHeight,
+	                                            UEngineTypes::ConvertToTraceType(ECC_INTERACTION),
+	                                            false, ignoreActors, EDrawDebugTrace::ForOneFrame, hits,
+	                                            true))
 	{
-		for(const auto& hit : hits)
+		for (const auto& hit : hits)
 		{
-			if (hit.GetActor()->IsValidLowLevel() && UKismetSystemLibrary::DoesImplementInterface(hit.GetActor(),UInteractionInterface::StaticClass()))
+			if (hit.GetActor()->IsValidLowLevel() && UKismetSystemLibrary::DoesImplementInterface(
+				hit.GetActor(), UInteractionInterface::StaticClass()))
 			{
 				InteractableActor = hit.GetActor();
-				if(IInteractionInterface::Execute_ShowInteractionWidgetDirectly(InteractableActor.Get()))
+				if (IInteractionInterface::Execute_ShowInteractionWidgetDirectly(InteractableActor.Get()))
 				{
 					ShowInteractionWidget(hit.GetActor(), InputDataAsset->InteractAction,
-										   IInteractionInterface::Execute_GetActionName(InteractableActor.Get()).ToString());
+					                      IInteractionInterface::Execute_GetActionName(InteractableActor.Get()));
 				}
 				break;
 			}
 		}
-	}else
+	}
+	else
 	{
-
 		//찾은게 없다면 발 아래 사다리가 있는지 찾습니다.
-		if(!FindLadder())
+		if (!FindLadder())
 		{
 			if (InteractableActor.IsValid())
 			{
@@ -829,20 +831,24 @@ void APlayerCharacter::FindInteractableNPC()
 
 bool APlayerCharacter::FindLadder()
 {
-	const FVector& start = GetActorLocation() - FVector(0,0,GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 1.5f) + GetActorForwardVector() * 10.f;
+	const FVector& start = GetActorLocation() - FVector(
+		0, 0, GetCapsuleComponent()->GetScaledCapsuleHalfHeight() * 1.5f) + GetActorForwardVector() * 10.f;
 	const FVector& end = start + GetActorForwardVector() * -10;
 
 	TArray<AActor*> ignoreActors;
 	ignoreActors.Emplace(this);
-	
+
 	TArray<FHitResult> hits;
-	if(UKismetSystemLibrary::SphereTraceMulti(this,start,end,35.f,UEngineTypes::ConvertToTraceType(ECC_INTERACTION),false,ignoreActors,EDrawDebugTrace::ForOneFrame,hits,true))
+	if (UKismetSystemLibrary::SphereTraceMulti(this, start, end, 35.f,
+	                                           UEngineTypes::ConvertToTraceType(ECC_INTERACTION), false, ignoreActors,
+	                                           EDrawDebugTrace::ForOneFrame, hits, true))
 	{
-		for(const auto& hit : hits)
+		for (const auto& hit : hits)
 		{
-			if (hit.GetActor()->IsValidLowLevel() && UKismetSystemLibrary::DoesImplementInterface(hit.GetActor(),UInteractionInterface::StaticClass()))
+			if (hit.GetActor()->IsValidLowLevel() && UKismetSystemLibrary::DoesImplementInterface(
+				hit.GetActor(), UInteractionInterface::StaticClass()))
 			{
-				if(hit.GetActor()->IsA<ALadder>())
+				if (hit.GetActor()->IsA<ALadder>())
 				{
 					InteractableActor = hit.GetActor();
 					return true;
@@ -854,27 +860,27 @@ bool APlayerCharacter::FindLadder()
 }
 
 UWidgetComponent* APlayerCharacter::ShowInteractionWidget(const AActor* Target, const UInputAction* Action,
-                                                          const FString& ActionName)
+                                                          const FText& ActionName)
 {
-	if(ActionName.IsEmpty())
+	if (ActionName.IsEmpty())
 	{
-		UE_LOGFMT(LogTemp,Error,"인터렉션 위젯의 액션이름이 비었습니다.");
+		UE_LOGFMT(LogTemp, Error, "인터렉션 위젯의 액션이름이 비었습니다.");
 		return nullptr;
 	}
-	
+
 	auto keys = GetLocalInputSystem()->QueryKeysMappedToAction(Action);
 	if (keys.IsValidIndex(0))
 	{
-		if(keys[0].GetFName().IsEqual(NAME_None))
+		if (keys[0].GetFName().IsEqual(NAME_None))
 		{
-			UE_LOGFMT(LogTemp,Error,"인터렉션 위젯의 키 이름이 비정상입니다.");
+			UE_LOGFMT(LogTemp, Error, "인터렉션 위젯의 키 이름이 비정상입니다.");
 			return nullptr;
 		}
-		
-		if(auto widget = GetPressKeyWidget(keys[0].GetFName(), ActionName))
+
+		if (auto widget = GetPressKeyWidget(keys[0].GetFName(), ActionName))
 		{
 			widget->AttachToComponent(
-			Target->GetRootComponent(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true));
+				Target->GetRootComponent(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true));
 
 			return widget;
 		}
@@ -884,29 +890,29 @@ UWidgetComponent* APlayerCharacter::ShowInteractionWidget(const AActor* Target, 
 }
 
 UWidgetComponent* APlayerCharacter::GetInteractionWidget(const AActor* Target, const UInputAction* Action,
-	const FString& ActionName)
+                                                         const FText& ActionName)
 {
-	if(ActionName.IsEmpty())
+	if (ActionName.IsEmpty())
 	{
-		UE_LOGFMT(LogTemp,Error,"인터렉션 위젯의 액션이름이 비었습니다.");
+		UE_LOGFMT(LogTemp, Error, "인터렉션 위젯의 액션이름이 비었습니다.");
 		return nullptr;
 	}
-	
+
 	auto keys = GetLocalInputSystem()->QueryKeysMappedToAction(Action);
 	if (keys.IsValidIndex(0))
 	{
-		if(keys[0].GetFName().IsEqual(NAME_None))
+		if (keys[0].GetFName().IsEqual(NAME_None))
 		{
-			UE_LOGFMT(LogTemp,Error,"인터렉션 위젯의 키 이름이 비정상입니다.");
+			UE_LOGFMT(LogTemp, Error, "인터렉션 위젯의 키 이름이 비정상입니다.");
 			return nullptr;
 		}
-		
-		if(auto widget = GetPressKeyWidget(keys[0].GetFName(), ActionName))
+
+		if (auto widget = GetPressKeyWidget(keys[0].GetFName(), ActionName))
 		{
 			widget->SetVisibility(false);
-			
+
 			widget->AttachToComponent(
-			Target->GetRootComponent(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true));
+				Target->GetRootComponent(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true));
 
 			return widget;
 		}
@@ -917,12 +923,14 @@ UWidgetComponent* APlayerCharacter::GetInteractionWidget(const AActor* Target, c
 
 void APlayerCharacter::HideInteractionWidget()
 {
-	if(auto widget = GetPressKeyWidget()){
+	if (auto widget = GetPressKeyWidget("",FText::GetEmpty()))
+	{
 		widget->SetVisibility(false);
 	}
 }
 
-UWidgetComponent* APlayerCharacter::GetPressKeyWidget(FName KeyName, const FString& ActionName)
+
+UWidgetComponent* APlayerCharacter::GetPressKeyWidget(FName KeyName, const FText& ActionName)
 {
 	if (InteractionWidgetComponent == nullptr)
 	{
@@ -952,6 +960,7 @@ UWidgetComponent* APlayerCharacter::GetPressKeyWidget(FName KeyName, const FStri
 	}
 	InteractionWidgetComponent->SetVisibility(true);
 	return InteractionWidgetComponent;
+
 }
 
 void APlayerCharacter::ChangeMovementState(EMovementState Type, float Multiplier)
@@ -1059,6 +1068,11 @@ void APlayerCharacter::CheckExecutionMonster()
 	FVector hitLocation;
 	if (auto monster = GetPlayerForwardMonster(hitLocation))
 	{
+		if(monster->IsDead())
+		{
+			return;
+		}
+	
 		if (IsExecutable(monster, hitLocation))
 		{
 			ExecutableMonster = monster;
@@ -1098,7 +1112,7 @@ ABaseMonster* APlayerCharacter::GetPlayerForwardMonster(FVector& HitLocation)
 	                                            UEngineTypes::ConvertToTraceType(ECC_Visibility),
 	                                            false, ignoreActors, EDrawDebugTrace::ForOneFrame, hit, true))
 	{
-		if (hit.GetActor()!=nullptr && hit.GetActor()->IsA<ABaseMonster>())
+		if (hit.GetActor() != nullptr && hit.GetActor()->IsA<ABaseMonster>())
 		{
 			HitLocation = hit.ImpactPoint;
 			return Cast<ABaseMonster>(hit.GetActor());
@@ -1174,8 +1188,10 @@ void APlayerCharacter::CheckAroundExistMonster()
 	                                                    CombatCheckTraceRadius,
 	                                                    UEngineTypes::ConvertToTraceType(ECC_Monster), false,
 	                                                    TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, hit, true);
-	if (bHit)
+	if (!bHit)
 	{
+		UE_LOGFMT(LogCharacter,Log,"평화상태로 강제전환을 시도합니다.");
+		ChangeCombatStateFrom.Empty();
 		SetPlayerState(EPlayerCharacterState::Peaceful);
 	}
 }
@@ -1183,7 +1199,7 @@ void APlayerCharacter::CheckAroundExistMonster()
 void APlayerCharacter::SetPlayerState(EPlayerCharacterState NewState)
 {
 	CurrentState = NewState;
-	if (CurrentState == EPlayerCharacterState::Combat)
+	/*if (CurrentState == EPlayerCharacterState::Combat)
 	{
 		if (GetWorldTimerManager().TimerExists(PeaceTimerHandle))
 		{
@@ -1200,9 +1216,91 @@ void APlayerCharacter::SetPlayerState(EPlayerCharacterState NewState)
 		{
 			GetWorldTimerManager().ClearTimer(PeaceTimerHandle);
 		}
-	}
+	}*/
 
 	OnChangePlayerState.Broadcast(CurrentState);
+}
+
+void APlayerCharacter::SetPlayerStateBy(EPlayerCharacterState NewState, AActor* By)
+{
+	if (By == nullptr)
+	{
+		return;
+	}
+
+	if (NewState == EPlayerCharacterState::Combat)
+	{
+		CurrentState = NewState;
+		ChangeCombatStateFrom.Emplace(By);
+		OnChangePlayerState.Broadcast(CurrentState);
+
+		if (GetWorldTimerManager().TimerExists(PeaceTimerHandle))
+		{
+			GetWorldTimerManager().ClearTimer(PeaceTimerHandle);
+		}
+		//주변에 적이 있는가 계속 검사합니다.
+		//없다면 평화로 전환합니다.
+		GetWorldTimerManager().SetTimer(PeaceTimerHandle, this, &APlayerCharacter::CheckAroundExistMonster,
+		                                PeaceCheckTime, true);
+	}
+	else
+	{
+
+		if(By == nullptr)
+		{
+			CurrentState = NewState;
+			OnChangePlayerState.Broadcast(CurrentState);
+			return;
+		}
+		
+		UE_LOGFMT(LogCharacter,Log,"평화상태로 전환 시도합니다.");
+		
+
+		if (ChangeCombatStateFrom.Num() > 0)
+		{
+			ChangeCombatStateFrom.Remove(By);
+			UE_LOGFMT(LogCharacter,Log,"스텍에서 다음 대상을 제거합니다 : {0}",GetNameSafe(By));
+			if (ChangeCombatStateFrom.Num() <= 0)
+			{
+				if (GetWorldTimerManager().TimerExists(PeaceTimerHandle))
+				{
+					GetWorldTimerManager().ClearTimer(PeaceTimerHandle);
+				}
+
+				CurrentState = NewState;
+				OnChangePlayerState.Broadcast(CurrentState);
+			}
+		}
+		else
+		{
+			CurrentState = NewState;
+			OnChangePlayerState.Broadcast(CurrentState);
+		}
+	}
+}
+
+bool APlayerCharacter::IsPeaceState()
+{
+	if (ChangeCombatStateFrom.Num() != 0)
+	{
+		const auto& arr = ChangeCombatStateFrom.Array();
+		for (auto i = 0; i < arr.Num(); i++)
+		{
+			if (arr[i] == nullptr)
+			{
+				ChangeCombatStateFrom.Remove(arr[i]);
+			}
+		}
+
+		if (ChangeCombatStateFrom.Num() == 0)
+		{
+			CurrentState = EPlayerCharacterState::Peaceful;
+			OnChangePlayerState.Broadcast(CurrentState);
+		}
+	}
+
+
+	return CurrentState == EPlayerCharacterState::Peaceful;
 }
 
 void APlayerCharacter::OnChangedMoveSpeedAttributeEvent()
@@ -1230,19 +1328,14 @@ void APlayerCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 		//사망상태 저장
 		if (auto instance = GetGameInstance<USoulLikeInstance>())
 		{
-			instance->OnDeadPlayer(this);
-		}
-
-		GetMesh()->GetAnimInstance()->StopAllMontages(0);
-		GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
-		auto index = FMath::RandRange(0, DeadAnimations.Num() - 1);
-		if (DeadAnimations.IsValidIndex(index))
-		{
-			UAnimationAsset* deadAnim = DeadAnimations[index];
-			GetMesh()->PlayAnimation(deadAnim, false);
+			if (instance->IsUseGameSave())
+			{
+				instance->OnDeadPlayer(this);
+			}
 		}
 	}
 }
+
 
 void APlayerCharacter::TeleportToOtherBonfire(FName LevelName)
 {
@@ -1296,16 +1389,15 @@ void APlayerCharacter::ForceEndDodge()
 void APlayerCharacter::OnUpdateDeadDissolveTimeLine(float Value)
 {
 	FName param = "Percent";
-	FurComponent->CreateDynamicMaterialInstance(0, FurComponent->GetMaterial(0))->SetScalarParameterValue(param, Value);
-
-	/*GetMesh()->CreateDynamicMaterialInstance(0,GetMesh()->GetMaterial(0))->SetScalarParameterValue(param,Value);
-	GetMesh()->CreateDynamicMaterialInstance(1,GetMesh()->GetMaterial(1))->SetScalarParameterValue(param,Value);
-	GetMesh()->CreateDynamicMaterialInstance(2,GetMesh()->GetMaterial(2))->SetScalarParameterValue(param,Value);
-	GetMesh()->CreateDynamicMaterialInstance(3,GetMesh()->GetMaterial(3))->SetScalarParameterValue(param,Value);*/
+	for(auto iter : BodyMaterialInstance)
+	{
+		iter->SetScalarParameterValue(param,Value);
+	}
 }
 
 void APlayerCharacter::OnFinishDissolveTimeLine()
 {
+	UE_LOGFMT(LogCharacter, Warning, "사망 디졸브가 끝났습니다. 레벨을 다시 로드합니다.");
 	UGameplayStatics::OpenLevel(this, FName(UGameplayStatics::GetCurrentLevelName(this)));
 }
 
@@ -1336,10 +1428,11 @@ void APlayerCharacter::Move(const FInputActionValue& Value)
 
 	if (Controller != nullptr)
 	{
-		if(LadderMovementComponent->GetUseLadderMovement())
+		if (LadderMovementComponent->GetUseLadderMovement())
 		{
 			LadderMovementComponent->AddLadderMovementInput(MovementVector.Y);
-		}else
+		}
+		else
 		{
 			// find out which way is forward
 			const FRotator Rotation = Controller->GetControlRotation();
@@ -1371,8 +1464,8 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 		if (pc->bShowMouseCursor == false)
 		{
 			// add yaw and pitch input to controller
-			AddControllerYawInput(LookAxisVector.X *pc->GetMouseSensitivity());
-			AddControllerPitchInput(LookAxisVector.Y *pc->GetMouseSensitivity());
+			AddControllerYawInput(LookAxisVector.X * pc->GetMouseSensitivity());
+			AddControllerPitchInput(LookAxisVector.Y * pc->GetMouseSensitivity());
 		}
 	}
 }
@@ -1419,19 +1512,20 @@ void APlayerCharacter::ShowRender(bool bIsVisible)
 
 void APlayerCharacter::SetDefaultMappingContext()
 {
-	UE_LOGFMT(LogCharacter,Log,"입력메핑 스택4");
+	UE_LOGFMT(LogCharacter, Log, "입력메핑 스택4");
 	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
 	{
-		UE_LOGFMT(LogCharacter,Log,"기본 입력 매핑을 적용합니다.");
+		UE_LOGFMT(LogCharacter, Log, "기본 입력 매핑을 적용합니다.");
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
 			UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
 			Subsystem->ClearAllMappings();
 			Subsystem->AddMappingContext(InputDataAsset->DefaultMappingContext, 0);
 		}
-	}else
+	}
+	else
 	{
-		UE_LOGFMT(LogCharacter,Log,"컨트롤러를 찾을 수 없어, 기본입력매핑으로 돌릴 수 없습니다.");
+		UE_LOGFMT(LogCharacter, Log, "컨트롤러를 찾을 수 없어, 기본입력매핑으로 돌릴 수 없습니다.");
 	}
 }
 
@@ -1452,3 +1546,4 @@ void APlayerCharacter::OnLevelUpEvent()
 {
 	AbilityComponent->ApplyCue(LevelUpCueInfo);
 }
+#undef LOCTEXT_NAMESPACE

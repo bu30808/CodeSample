@@ -9,6 +9,7 @@
 #include "04_Item/ItemActor.h"
 #include "93_SaveGame/SoulLikeSaveGame.h"
 #include "96_Library/AbilityHelperLibrary.h"
+#include "96_Library/DataLayerHelperLibrary.h"
 #include "96_Library/ItemHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "Kismet/GameplayStatics.h"
@@ -16,8 +17,8 @@
 
 DEFINE_LOG_CATEGORY(LogInventory)
 
-AItemActor* FInventoryItem::SetItemActor()
-{
+AItemActor* FInventoryItem::SetItemActor(bool bLoad)
+{	
 	if(SpawndItemActor == nullptr)
 	{
 		if (auto newActor =
@@ -27,6 +28,16 @@ AItemActor* FInventoryItem::SetItemActor()
 																   ESpawnActorCollisionHandlingMethod::AlwaysSpawn,
 																   OwnerActor.Get())))
 		{
+			if(bLoad)
+			{
+				UE_LOGFMT(LogSave,Log,"게임 로드로 생성된 아이템 액터입니다 : {0}",GetNameSafe(newActor));
+			}else
+			{
+				UE_LOGFMT(LogSave,Warning,"게임 로드로 생성된 아이템 액터가 아닙니다. : {0}",GetNameSafe(newActor));
+			}
+
+			newActor->AddDataLayer(UDataLayerHelperLibrary::GetAlwaysActivatedDataLayerAsset(newActor));
+			newActor->SetIsSpatiallyLoaded(false);
 			newActor->SetActorEnableCollision(false);
 			newActor->SetActorHiddenInGame(true);
 			newActor->SpawnPreSetting();
@@ -48,12 +59,12 @@ FInventoryItem::FInventoryItem(class AActor* Owner, AItemActor* ItemActor, int32
 	/*SpawndItemActor = ItemActor;*/
 	UniqueID = NewID;
 
-	SetItemActor();
+	SetItemActor(false);
 
 	ItemCount = Count;
 }
 
-FInventoryItem::FInventoryItem(AActor* Owner, TSubclassOf<AItemActor> ItemActorObject, int32 Count, FGuid NewID)
+FInventoryItem::FInventoryItem(AActor* Owner, TSubclassOf<AItemActor> ItemActorObject, int32 Count, FGuid NewID,bool bLoad)
 {
 	ensure(Owner);
 	ensure(ItemActorObject);
@@ -62,7 +73,7 @@ FInventoryItem::FInventoryItem(AActor* Owner, TSubclassOf<AItemActor> ItemActorO
 	ItemActorObjectClass = ItemActorObject;
 	UniqueID = NewID;
 
-	SetItemActor();
+	SetItemActor(bLoad);
 
 	ItemCount = Count;
 }
@@ -79,7 +90,7 @@ const FItemInformation* FInventoryItem::GetItemInformation() const
 	return nullptr;
 }
 
-FString FInventoryItem::GetFormattedDescription() const
+FText FInventoryItem::GetFormattedDescription() const
 {
 	//UE_LOGFMT(LogTemp,Log,"아이템 설명을 가져오려 시도합니다.");
 	if (SpawndItemActor != nullptr)
@@ -88,7 +99,7 @@ FString FInventoryItem::GetFormattedDescription() const
 		return SpawndItemActor->GetFormattedDescription();
 	}
 
-	return "NOT VALID";
+	return FText::FromString("NOT VALID");
 }
 
 bool FInventoryItem::Use(AActor* Owner) const
@@ -146,8 +157,7 @@ void UInventoryComponent::BeginPlay()
 	// ...
 	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 	{
-		//OnSavedLevelItem.AddUniqueDynamic(instance,&USoulLikeInstance::SaveLevelItemPlacementState);
-		OnSaveFieldItemState.AddUniqueDynamic(instance, &USoulLikeInstance::OnSaveLevelItemPlacementStateEvent);
+		OnSaveFieldItemState.AddUniqueDynamic(instance,&USoulLikeInstance::OnSaveLevelItemPlacementStateEvent);
 		OnAddItem.AddUniqueDynamic(instance, &USoulLikeInstance::OnAddItemEvent);
 		OnRemoveItem.AddUniqueDynamic(instance, &USoulLikeInstance::OnRemoveItemEvent);
 		OnUseItem.AddUniqueDynamic(instance, &USoulLikeInstance::OnUseItemEvent);
@@ -163,9 +173,8 @@ void UInventoryComponent::PostInitProperties()
 
 void UInventoryComponent::AddFragment(FGuid Guid, const FInventoryItem& NewFragment, const FItemInformation* ItemInfo)
 {
-	//Cast<AEquipmentItemActor_OrbFragment>(NewFragment.GetSpawndItemActor())->OverrideInfo(ItemInfo);
+	UE_LOGFMT(LogInventory,Log,"AddFragment : 다음 인벤토리 파편을 추가합니다 : {0}",ItemInfo->Item_Name.ToString());
 	Fragments.Add(Guid, NewFragment);
-	//UE_LOGFMT(LogTemp,Log,"11111111111111111111111111 :{0} : {1}, {2} {3}",Guid,Fragments[Guid].GetSpawndItemActor()->GetName(),__FUNCTION__,__LINE__);
 }
 
 bool UInventoryComponent::IsFragmentContains(const FGuid& UniqueID) const
@@ -236,8 +245,8 @@ FGuid UInventoryComponent::AddItem(AItemActor* ItemActor, bool bShowPickUpWidget
 					OnGetItem.Broadcast(info->Item_Image, info->Item_Name, itemCount);
 				}
 
-				UE_LOGFMT(LogActorComponent, Log, "아이템 추가 : {0} {1}", guid.ToString(),
-				          Inventory[guid].GetItemInformation()->Item_Tag.ToString());
+				/*UE_LOGFMT(LogActorComponent, Log, "아이템 추가 : {0} {1}", guid.ToString(),
+				          Inventory[guid].GetItemInformation()->Item_Tag.ToString());*/
 				OnInventoryWidgetUpdate.Broadcast(guid, Inventory[guid].ItemCount);
 				OnItemQuickSlotUpdate.Broadcast(guid, Inventory[guid].ItemCount);
 			}
@@ -272,6 +281,7 @@ FGuid UInventoryComponent::SpawnAndAddItem(TSubclassOf<AItemActor> ItemToSpawn, 
 
 		if (auto item = GetWorld()->SpawnActor<AItemActor>(ItemToSpawn, FTransform::Identity, spawnParam))
 		{
+			item->AddDataLayer(UDataLayerHelperLibrary::GetAlwaysActivatedDataLayerAsset(this));
 			item->SetItemCount(ItemCount);
 			return AddItem(item, false);
 		}
@@ -293,7 +303,7 @@ void UInventoryComponent::UseItem(FGuid ItemUniqueID)
 		if (Inventory[ItemUniqueID].ItemCount > 0)
 		{
 			UE_LOGFMT(LogActorComponent, Log, "다음 아이템을 사용 시도 합니다 : {0} ,{1}",
-			          Inventory[ItemUniqueID].GetItemInformation()->Item_Name, ItemUniqueID);
+			          Inventory[ItemUniqueID].GetItemInformation()->Item_Name.ToString(), ItemUniqueID);
 			const auto& item = Inventory[ItemUniqueID];
 			bool bSccUse = item.Use(GetOwner());
 
@@ -331,7 +341,7 @@ void UInventoryComponent::UseItem(FGuid ItemUniqueID)
 	{
 		if (const auto frag = GetFragment(ItemUniqueID); frag.ItemCount > 0)
 		{
-			UE_LOGFMT(LogActorComponent, Log, "다음 아이템을 사용 시도 합니다 : {0} ,{1}", frag.GetItemInformation()->Item_Name,
+			UE_LOGFMT(LogActorComponent, Log, "다음 아이템을 사용 시도 합니다 : {0} ,{1}", frag.GetItemInformation()->Item_Name.ToString(),
 			          ItemUniqueID);
 			frag.Use(GetOwner());
 
@@ -387,7 +397,7 @@ bool UInventoryComponent::DecreaseItemCount(FGuid ItemUniqueID, int32 Count)
 			if (Inventory[ItemUniqueID].GetItemInformation()->bRemoveWhenCountZero)
 			{
 				UE_LOGFMT(LogActorComponent, Log, "아이템 갯수가 0 이하이고, 지워도 된다고 마크되어 있으니 인벤토리에서 제거합니다 : {0}",
-				          Inventory[ItemUniqueID].GetItemInformation()->Item_Name);
+				          Inventory[ItemUniqueID].GetItemInformation()->Item_Name.ToString());
 
 				Inventory.Remove(ItemUniqueID);
 				OnRemoveItem.Broadcast(GetOwner<ABaseCharacter>(), ItemUniqueID);
@@ -408,7 +418,7 @@ void UInventoryComponent::UnEquip(const FGuid& ItemUniqueID)
 {
 	if (Inventory.Contains(ItemUniqueID))
 	{
-		UE_LOGFMT(LogTemp, Log, "다음 아이템을 장착 해제 시도합니다 : {0}",Inventory[ItemUniqueID].GetItemInformation()->Item_Name);
+		UE_LOGFMT(LogTemp, Log, "다음 아이템을 장착 해제 시도합니다 : {0}",Inventory[ItemUniqueID].GetItemInformation()->Item_Name.ToString());
 		Inventory[ItemUniqueID].UnEquip(GetOwner());
 		if (Inventory[ItemUniqueID].GetItemInformation()->Item_Type == EItemType::EQUIPMENT)
 		{
@@ -522,25 +532,23 @@ FInventoryItem* UInventoryComponent::HasItem(FGameplayTag ItemTag)
 
 const FGuid UInventoryComponent::AddNewItemToInventory(const FItemInformation* ItemInfo, AItemActor* ItemActor, int32 ItemCount)
 {
-	FGuid newID = FGuid::NewGuid();
+	const FGuid& newID = FGuid::NewGuid();
 	const FInventoryItem& NewItem = FInventoryItem(GetOwner(), ItemActor, ItemCount, newID);
 	
-	UE_LOGFMT(LogActorComponent, Log, "새 아이템 추가 : {0}:{1} {2}개", NewItem.GetItemInformation()->Item_Name, newID,NewItem.ItemCount);
-
 	if (ItemInfo->Item_Type == EItemType::EQUIPMENT)
 	{
 		if (static_cast<const FEquipmentInformation*>(ItemInfo)->EquipType == EEquipType::ORB)
 		{
 			if (static_cast<const FOrbInformation*>(ItemInfo)->OrbType == EOrbType::FRAGMENT)
 			{
+				UE_LOGFMT(LogInventory, Log, "새 파편 추가 : {0}:{1} {2}개", NewItem.GetItemInformation()->Item_Name.ToString(), newID,NewItem.ItemCount);
 				AddFragment(newID, NewItem, ItemInfo);
-				//Test(newID);
-
 				return newID;
 			}
 		}
 	}
-
+	
+	UE_LOGFMT(LogInventory, Log, "새 아이템 추가 : {0}:{1} {2}개", NewItem.GetItemInformation()->Item_Name.ToString(), newID,NewItem.ItemCount);
 	Inventory.Add(newID, NewItem);
 	return newID;
 }

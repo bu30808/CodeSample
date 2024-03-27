@@ -93,6 +93,7 @@ void UItemDropComponent::PostInitProperties()
 void UItemDropComponent::BossDropItem(ABaseCharacter* DropBy)
 {
 	APlayerCharacter* player = nullptr;
+	
 	if (DropBy->IsA<APlayerCharacter>())
 	{
 		player = Cast<APlayerCharacter>(DropBy);
@@ -124,7 +125,7 @@ void UItemDropComponent::BossDropItem(ABaseCharacter* DropBy)
 	}
 }
 
-void UItemDropComponent::DropItem(ABaseCharacter* DropBy)
+AItemActor* UItemDropComponent::DropItem(ABaseCharacter* DropBy)
 {
 	/*if (auto interface = Cast<IBossMonsterInterface>(GetOwner()))
 	{
@@ -155,15 +156,20 @@ void UItemDropComponent::DropItem(ABaseCharacter* DropBy)
 			if (const auto item = GetWorld()->SpawnActor<AItemActor>(load, spawnParam))
 			{
 				item->GetSphereComponent()->SetSphereRadius(item->GetSphereComponent()->GetScaledSphereRadius() * 1.5f);
-				item->AttachToComponent(GetOwner<ABaseCharacter>()->GetMesh(),
+				//item->AttachToActor(GetOwner(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),ItemAttachSocketName);
+				item->AttachToComponent(GetOwner<ABaseCharacter>()->GetRootComponent(),
 				                        FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),
 				                        ItemAttachSocketName);
 
 				GetOwner<ABaseCharacter>()->OnDestroyed.
 				                            AddUniqueDynamic(item, &AItemActor::OnAttachedOwnerDestroyEvent);
+
+				return item;
 			}
 		}
 	}
+
+	return nullptr;
 }
 
 void UItemDropComponent::GiveExp(ABaseCharacter* DropBy)
@@ -183,10 +189,11 @@ void UItemDropComponent::GiveExp(ABaseCharacter* DropBy)
 		}
 
 		//우두머리의 경우 다이렉트로 플레이어에게 경험치를 추가해줍니다.
-		if (UKismetSystemLibrary::DoesImplementInterface(this, UBossMonsterInterface::StaticClass()))
+		if (UKismetSystemLibrary::DoesImplementInterface(GetOwner(), UBossMonsterInterface::StaticClass()))
 		{
 			if(auto attComp = Cast<APlayerCharacter>(DropBy)->GetAttributeComponent())
 			{
+				UE_LOGFMT(LogCharacter,Warning,"보스 처치 보상 즉시 지급");
 				attComp->SetEXP(attComp->GetEXP() + Exp);
 				attComp->OnCharacterInformationUpdate.Broadcast();
 			}

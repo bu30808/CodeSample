@@ -4,108 +4,228 @@
 #include "01_GameMode/SoulLikeGameMode.h"
 
 #include "00_Character/03_Monster/BaseMonster.h"
-#include "93_SaveGame/SoulLikeSaveGame.h"
+#include "96_Library/DataLayerHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
 #include "UObject/ConstructorHelpers.h"
+#include "WorldPartition/DataLayer/DataLayerAsset.h"
+
+
+class UDataLayerSubsystem;
+DEFINE_LOG_CATEGORY(LogSoulLikeGameMode)
 
 ASoulLikeGameMode::ASoulLikeGameMode()
 {
-	/*// set default pawn class to our Blueprinted character
-	static ConstructorHelpers::FClassFinder<APawn> PlayerPawnBPClass(TEXT("/Game/ThirdPerson/Blueprints/BP_ThirdPersonCharacter"));
-	if (PlayerPawnBPClass.Class != NULL)
-	{
-		DefaultPawnClass = PlayerPawnBPClass.Class;
-	}*/
-}
-
-void ASoulLikeGameMode::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-}
-
-void ASoulLikeGameMode::AddMonster(ABaseMonster* BaseMonster,
-                                   const FMonsterRespawnInfo& MonsterRespawnInfo)
-{
-	const auto& safeName = GetNameSafe(BaseMonster);
-	const auto& mapName = UGameplayStatics::GetCurrentLevelName(BaseMonster->GetWorld());
-
-	if (!RespawnInfos.Contains(mapName))
-	{
-		RespawnInfos.Add(mapName, TArray<FMonsterRespawnInfo>());
-	}
-
-	UE_LOGFMT(LogTemp, Log, "몬스터 상태 복구 / 레벨 몬스터 저장 {0}", safeName);
-	if(RespawnInfos[mapName].Contains(MonsterRespawnInfo))
-	{
-		const auto index = RespawnInfos[mapName].Find(MonsterRespawnInfo);
-		if(index!=INDEX_NONE)
-		{
-			RespawnInfos[mapName][index].Monster = BaseMonster;
-		}
-
-		return;
-	}
-	RespawnInfos[mapName].AddUnique(MonsterRespawnInfo);
 	
 }
 
+void ASoulLikeGameMode::AddToRespawnMonster(ABaseMonster* BaseMonster)
+{
+	const auto& safeName = FName(GetNameSafe(BaseMonster));
+
+	if (!RespawnInfos.Contains(safeName))
+	{
+		RespawnInfos.Add(safeName);
+	}
+	
+	UE_LOGFMT(LogMonster, Log, "몬스터 추가 : {0}", safeName);
+	RespawnInfos[safeName] = FActorSave(BaseMonster,safeName,BaseMonster->GetClass(), BaseMonster->GetActorTransform());
+}
+
+void ASoulLikeGameMode::RemoveFromRespawnMonster(const ABaseMonster* BaseMonster)
+{
+	if(BaseMonster->IsValidLowLevel())
+	{
+		const auto& safeName = GetNameSafe(BaseMonster);
+		RemoveFromRespawnMonsterWithSafeName(safeName);
+	}
+
+}
+
+void ASoulLikeGameMode::RemoveFromRespawnMonsterWithSafeName(const FString& SafeName)
+{
+
+		const auto& safeName = FName(SafeName);
+		if (!RespawnInfos.Contains(safeName))
+		{
+			return;
+		}
+		UE_LOGFMT(LogMonster, Log, "몬스터 제거 : {0}", safeName);
+		RespawnInfos.Remove(safeName);
+}
+
+void ASoulLikeGameMode::SaveMonsterAttributeWhenUnload(const ABaseMonster* BaseMonster)
+{
+	const auto& safeName = FName(GetNameSafe(BaseMonster));
+	if(!TemporarySavedMonsterState.Contains(safeName))
+	{
+		TemporarySavedMonsterState.Add(safeName,FCharacterSave());
+		return;
+	}
+
+	const auto attComp = BaseMonster->GetAttributeComponent();
+	const auto& attributes = attComp->GetAllAttributeNotIncludeLevelUpPoint();
+	
+	for(const auto& iter : attributes)
+	{
+		TemporarySavedMonsterState[safeName].Attributes.Add(iter.Key,*iter.Value);
+	}
+}
 
 void ASoulLikeGameMode::RespawnMonsters(class APlayerCharacter* Player)
 {
-	UE_LOGFMT(LogTemp, Log, "몬스터 상태 복구 / RespawnMonsters");
-	const auto& mapName =UGameplayStatics::GetCurrentLevelName(Player->GetWorld());
-
-	if (RespawnInfos.Contains(mapName))
+	for(const auto& iter : RespawnInfos)
 	{
+		const auto& savedData = iter.Value;
 
-		TArray<FMonsterRespawnInfo> respawnInfo;
-		
-		const auto& monstersInfo = RespawnInfos[mapName];
-		//스폰되어 저장된 친구들중에, 사망상태이거나 지워져서 유효하지 않은 친구들의 정보를 가져옵니다.
-		for (auto i = monstersInfo.Num() - 1; i >= 0; i--)
+		if(!savedData.ActorPointer->IsValidLowLevel())
 		{
-			const auto& info = monstersInfo[i];
-			//유효하지 않을 때
-			if(info.Monster->IsValidLowLevel()==false)
+			UE_LOGFMT(LogMonster, Warning, "유효하지 않은 포인터라 리스폰할 수 없습니다. : {0}", savedData.ActorClass->GetName());
+		}else
+		{
+			if(savedData.ActorPointer->IsA<ABaseCharacter>())
 			{
-				UKismetSystemLibrary::PrintString(this,TEXT("저장된 대상이 유효하지 않으니, 재 스폰 목록에 추가합니다. 기존 아이디 : ")+info.MonsterSafeName);
-				//저장한 뒤, 아래에서 재 스폰해줍니다.
-				respawnInfo.AddUnique(info);
-			}else
-			{
-				//사망상태인가 체크합니다
-				if(info.Monster->IsDead() == false)
+				if(Cast<ABaseCharacter>(savedData.ActorPointer)->IsDead())
 				{
-					//사망상태인체로 필드에 남아있는 상태라면, 그냥 상태복구만 해줍니다.
-					info.Monster->ResetMonster(info.RespawnTransform);
-				}else
+					UE_LOGFMT(LogMonster, Warning, "다음 몬스터를 리스폰 할 것입니다 : {0} {1}", savedData.ActorClass->GetName() ,GetNameSafe(savedData.ActorPointer));
+					RemoveFromRespawnMonster(Cast<ABaseMonster>(savedData.ActorPointer));
+					Cast<ABaseMonster>(savedData.ActorPointer)->Activate();
+				}
+				//위치만 다른 친구들의 경우, 위치랑 어트리뷰트만 초기화 해 줍니다.
+				else
 				{
-					//이름을 바꾸고 제거합니다. 이후 저장해서 아래에서 재 스폰 합니다.
-					const auto& tempName = info.Monster->GetName() + TEXT("Destroyed");
-					info.Monster->Rename(*tempName);
-					UKismetSystemLibrary::PrintString(this,TEXT("사망한 대상이니, 제거하고, 재 스폰 목록에 추가합니다. 변경한 이름 : ")+info.Monster->GetName());
-					info.Monster->Destroy();
-					respawnInfo.AddUnique(info);
+					RemoveFromRespawnMonster(Cast<ABaseMonster>(savedData.ActorPointer));
+					Cast<ABaseMonster>(savedData.ActorPointer)->Activate();
 				}
 			}
-			
+		}
+		
+	}
+}
+
+void ASoulLikeGameMode::OnDeadMonsterEvent(AActor* Who, AActor* DeadBy)
+{
+	if(Who)
+	{
+		const auto& safeName = FName(GetNameSafe(Who));
+		
+		if(!TemporarySavedMonsterState.Contains(safeName))
+		{
+			if(auto character =  Cast<ABaseCharacter>(Who))
+			{
+				auto attComp = character->GetAttributeComponent();
+				TemporarySavedMonsterState.Add(safeName, FCharacterSave(Who,safeName,Who->GetClass(),Who->GetActorTransform(),attComp->GetAllAttributeNotIncludeLevelUpPoint(),character->GetCharacterState()));
+			}
+		}else
+		{
+			UE_LOGFMT(LogSave,Error,"이미 해당 몬스터의 상태정보가 저장되어 있습니다. : {0}",safeName);
 		}
 
-
-		//사망하거나 유효하지 않은 몬스터 재 스폰
-		for(const auto& iter : respawnInfo)
+		if(!DeadBy->IsA<APlayerCharacter>())
 		{
-			FActorSpawnParameters spawnParams;
-			spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-			spawnParams.Name = *iter.MonsterSafeName;
+			DeadBy = UGameplayStatics::GetPlayerCharacter(this,0);
+		}
 
-			if (const auto spawnMonster = GetWorld()->SpawnActor<ABaseMonster>(
-				iter.MonsterClass, iter.RespawnTransform, spawnParams))
+		Cast<APlayerCharacter>(DeadBy)->SetPlayerStateBy(EPlayerCharacterState::Peaceful,Who);
+	}
+}
+
+void ASoulLikeGameMode::RestoreMonsterState(ABaseMonster* BaseMonster)
+{
+	if(BaseMonster)
+	{
+		const auto& safeName = FName(GetNameSafe(BaseMonster));
+
+		if(TemporarySavedMonsterState.Contains(safeName))
+		{
+			const auto& savedData = TemporarySavedMonsterState[safeName];
+			if(savedData.CharacterState == ECharacterState::DEAD)
 			{
-				spawnMonster->SetActorTransform(iter.RespawnTransform);
+				UE_LOGFMT(LogMonster,Log,"사망 상태로 되돌립니다 : {0}",safeName);
+				BaseMonster->SetActorTransform(savedData.ActorTransform);
+				BaseMonster->StopAITree();
+				BaseMonster->EnableRagdoll();
+				BaseMonster->RunDeactivateTimer();
+			}else
+			{
+				const auto attComp = BaseMonster->GetAttributeComponent();
+				attComp->LoadAttributeNotIncludeLevelUpPoint(savedData.Attributes, false, true);
 			}
 		}
+		
+		/*
+		const auto& layers =  BaseMonster->GetDataLayerAssets();
+		 if(layers.IsValidIndex(0))
+		{
+			const auto& fullPath = UDataLayerHelperLibrary::GetLayerFullPath(BaseMonster->GetWorld(), layers[0]);
+			if(DeadMonsters.Contains(fullPath))
+			{
+				if(DeadMonsters[fullPath].Contains(safeName))
+				{
+					UE_LOGFMT(LogMonster,Log,"사망 상태로 되돌립니다 : {0}",safeName);
+					BaseMonster->StopAITree();
+					BaseMonster->EnableRagdoll();
+					BaseMonster->RunDeactivateTimer();
+					return true;
+				}
+			}else
+			{
+				UE_LOGFMT(LogMonster,Log,"{0}가 속한 {1} 레이어에 대한 정보가 없습니다.",safeName,fullPath);
+			}
+		}else
+		{
+			UE_LOGFMT(LogMonster,Log,"{0}의 레이어가 유효하지 않습니다.",safeName);
+		}*/
+	}
+}
+
+bool ASoulLikeGameMode::IsContainDeadList(const ABaseMonster* BaseMonster)
+{
+	if(BaseMonster)
+	{
+		const auto& safeName = FName(GetNameSafe(BaseMonster));
+		
+		if(TemporarySavedMonsterState.Contains(safeName))
+		{
+			const auto& savedData = TemporarySavedMonsterState[safeName];
+			return savedData.CharacterState == ECharacterState::DEAD;
+		}
+		/*const auto& layers =  BaseMonster->GetDataLayerAssets();
+		if(layers.IsValidIndex(0))
+		{
+			const auto& fullPath = UDataLayerHelperLibrary::GetLayerFullPath(BaseMonster->GetWorld(), layers[0]);
+			if(DeadMonsters.Contains(fullPath))
+			{
+				return DeadMonsters[fullPath].Contains(safeName);
+				
+			}
+		}*/
+	}
+
+	return false;
+}
+
+void ASoulLikeGameMode::ClearTemporarySavedMonsterData(APlayerCharacter* Player)
+{
+	TemporarySavedMonsterState.Empty();
+}
+
+void ASoulLikeGameMode::Respawn(const UWorld* World, const FTransform& SpawnTr, TSubclassOf<AActor> MonsterClass, const TArray<TObjectPtr<const
+	                                UDataLayerAsset>>& LayerInfo)
+{
+	FActorSpawnParameters spawnParams;
+	spawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	UE_LOGFMT(LogMonster, Warning, "다음 몬스터를 리스폰시도 합니다. : {0}",MonsterClass->GetName());
+	if(auto spawnMonster =
+		UGameplayStatics::FinishSpawningActor(UGameplayStatics::BeginDeferredActorSpawnFromClass(World, MonsterClass, SpawnTr,
+														   ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn,nullptr,ESpawnActorScaleMethod::OverrideRootScale),SpawnTr,ESpawnActorScaleMethod::OverrideRootScale))
+	{
+		for(auto iter : LayerInfo)
+		{
+			spawnMonster->AddDataLayer(iter);
+		}
+		UE_LOGFMT(LogMonster, Warning, "다음 몬스터를 리스폰합니다 : {0}", GetNameSafe(spawnMonster));
 	}
 }

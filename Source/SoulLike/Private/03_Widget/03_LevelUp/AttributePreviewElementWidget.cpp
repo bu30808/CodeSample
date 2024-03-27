@@ -22,7 +22,7 @@ void UAttributePreviewElementWidget::NativeConstruct()
 	{
 		if (auto widget = CreateWidget<USimpleToolTipWidget>(GetOwningPlayer(), ToolTipWidgetObject))
 		{
-			widget->SetDescriptionText(AttributeTypeToString(AttributeType));
+			widget->SetDescriptionText(AttributeTypeToText(AttributeType));
 			SetToolTip(widget);
 		}
 	}
@@ -30,7 +30,6 @@ void UAttributePreviewElementWidget::NativeConstruct()
 
 void UAttributePreviewElementWidget::Init(EAttributeType Attribute)
 {
-	UE_LOGFMT(LogTemp,Log,"33333333333333333333333333333333333333");
 	AttributeType = Attribute;
 
 	RichTextBlock_Icon->SetText(FText::FromString(AttributeTypeToImageString(Attribute)));
@@ -68,14 +67,12 @@ void UAttributePreviewElementWidget::SetPreview(float PreviewVal) const
 
 void UAttributePreviewElementWidget::Reset() const
 {
-	UE_LOGFMT(LogTemp,Log,"2222222222222222222222222222");
+
 	HorizontalBox_Next->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UAttributePreviewElementWidget::UpdatePreview(float AddValue)
-{
-	UE_LOGFMT(LogTemp,Log,"11111111111111111111111111111111111");
-	
+{	
 	AccValue += AddValue;
 
 	TextBlock_Next->SetText(FText::AsNumber(BaseValue + AccValue));

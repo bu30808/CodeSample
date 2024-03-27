@@ -7,7 +7,13 @@
 #include "97_Interface/InteractionInterface.h"
 #include "UObject/Interface.h"
 #include "MerchantInterface.generated.h"
-
+#define LOCTEXT_NAMESPACE "MerchantInterface"
+namespace GlobalMerchantText
+{
+	static const FText buyText =NSLOCTEXT("MerchantInterface","BuyAlertCountErrorText","구매하려는 아이템 수량이 모자랍니다.");
+	static const FText alertText =NSLOCTEXT("MerchantInterface","BuyAlertNotEnoughSoulText","재화가 모자랍니다.");
+}
+#undef LOCTEXT_NAMESPACE
 
 // This class does not need to be modified.
 UINTERFACE(MinimalAPI)

@@ -42,5 +42,5 @@ protected:
 	UFUNCTION()
 	void OnClickedOKButton();
 public:
-	void SetAlertMsg(EAlertMsgType AlertMsgType, FString Msg, const FOnButtonClicked& OnClickedEvent);
+	void SetAlertMsg(EAlertMsgType AlertMsgType, FText Msg, const FOnButtonClicked& OnClickedEvent);
 };

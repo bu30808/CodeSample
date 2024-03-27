@@ -21,10 +21,10 @@ class SOULLIKE_API UWidgetHelperLibrary : public UObject
 public:
 	//전달되는 Msg내부 String 가장 마지막줄 끝에 줄바꿈 넣지 마세요. 텍스트 데코레이터가 적용되지 않습니다.
 	UFUNCTION(BlueprintCallable)
-	static void ShowAlertMsg(class AUserController* PC, EAlertMsgType AlertMsgType, FString Msg, const FOnButtonClicked& OnClickedOKButtonEvent);
+	static void ShowAlertMsg(class AUserController* PC, EAlertMsgType AlertMsgType, FText Msg, const FOnButtonClicked& OnClickedOKButtonEvent);
 
 	UFUNCTION(BlueprintCallable)
-	static class USimpleToolTipWidget* GetSimpleToolTipWidget(class APlayerController* PC, FString Msg);
+	static class USimpleToolTipWidget* GetSimpleToolTipWidget(class APlayerController* PC, FText Msg);
 
 	//인터렉션으로 위젯이 열렸을 때, 사전설정하는 함수입니다.
 	UFUNCTION(BlueprintCallable)
@@ -35,7 +35,7 @@ public:
 	static void CloseWidgetSetting(APlayerController* PC, UUserWidget* ClosedWidget, bool RemainMousePoint = false);
 
 	UFUNCTION(BlueprintCallable)
-	static void SetToolTipWidget(UUserWidget* TargetWidget, const FString& Msg);
+	static void SetToolTipWidget(UUserWidget* TargetWidget, const FText& Msg);
 
 	static FString EnhancementTagToDecoString(const FGameplayTag& Key);
 	

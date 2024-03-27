@@ -3,11 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "00_Character/BaseCharacter.h"
 #include "00_Character/04_NPC/NPCBase.h"
 #include "03_Widget/07_NPC/00_Bonfire/BonfireTeleportWidget.h"
 #include "Components/ActorComponent.h"
 #include "BonfireComponent.generated.h"
+
+DECLARE_LOG_CATEGORY_EXTERN(LogBonfire, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRest,class APlayerCharacter*,Player);
 

@@ -18,7 +18,7 @@
 #include "SoulLike/SoulLike.h"
 
 
-void UWidgetHelperLibrary::ShowAlertMsg(AUserController* PC, EAlertMsgType AlertMsgType, FString Msg, const FOnButtonClicked& OnClickedOKButtonEvent)
+void UWidgetHelperLibrary::ShowAlertMsg(AUserController* PC, EAlertMsgType AlertMsgType, FText Msg, const FOnButtonClicked& OnClickedOKButtonEvent)
 {
 	if (PC)
 	{
@@ -32,7 +32,7 @@ void UWidgetHelperLibrary::ShowAlertMsg(AUserController* PC, EAlertMsgType Alert
 	}
 }
 
-USimpleToolTipWidget* UWidgetHelperLibrary::GetSimpleToolTipWidget(APlayerController* PC, FString Msg)
+USimpleToolTipWidget* UWidgetHelperLibrary::GetSimpleToolTipWidget(APlayerController* PC, FText Msg)
 {
 	if (auto system = UGameplayStatics::GetGameInstance(PC)->GetSubsystem<UToolTipWidgetSubsystem>())
 	{
@@ -74,7 +74,7 @@ void UWidgetHelperLibrary::CloseWidgetSetting(APlayerController* PC, UUserWidget
 	}
 }
 
-void UWidgetHelperLibrary::SetToolTipWidget(UUserWidget* TargetWidget, const FString& Msg)
+void UWidgetHelperLibrary::SetToolTipWidget(UUserWidget* TargetWidget, const FText& Msg)
 {
 	if (TargetWidget)
 	{
@@ -82,7 +82,7 @@ void UWidgetHelperLibrary::SetToolTipWidget(UUserWidget* TargetWidget, const FSt
 
 		if (tooltipWidget == nullptr)
 		{
-			tooltipWidget = GetSimpleToolTipWidget(TargetWidget->GetOwningPlayer<APlayerController>(), "");
+			tooltipWidget = GetSimpleToolTipWidget(TargetWidget->GetOwningPlayer<APlayerController>(), FText::GetEmpty());
 			TargetWidget->SetToolTip(tooltipWidget);
 		}
 		tooltipWidget->SetDescriptionText(Msg);

@@ -185,7 +185,7 @@ void UItemButtonWidget::ProcessInventoryData(UObject* ListItemObject)
 		if (const auto info = data->InventoryItem.GetItemInformation())
 		{
 			Image_Item->SetBrushFromSoftTexture(info->Item_Image);
-			TextBlock_ItemName->SetText(FText::FromString(info->Item_Name));
+			TextBlock_ItemName->SetText(info->Item_Name);
 			TextBlock_Count->SetText(FText::AsNumber(data->InventoryItem.ItemCount));
 
 			if (GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()->IsEquipped(
@@ -212,7 +212,7 @@ void UItemButtonWidget::ProcessAbilityData(UObject* ListItemObject)
 		const auto info = data->AbilityInformation;
 
 		Image_Item->SetBrushFromSoftTexture(info.AbilityImage);
-		TextBlock_ItemName->SetText(FText::FromString(info.AbilityName));
+		TextBlock_ItemName->SetText(info.AbilityName);
 		TextBlock_Count->SetText(FText::AsNumber(1));
 
 		UWidgetHelperLibrary::SetToolTipWidget(this, info.AbilityDescription);
@@ -341,8 +341,8 @@ void UItemButtonWidget::OnHoveredEvent()
 
 		if(InventoryData->IsA<UItemData>())
 		{
-				UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetItemToolTipString(
-					Cast<UItemData>(InventoryData)->InventoryItem, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
+				UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetItemToolTipText(
+					                                       Cast<UItemData>(InventoryData)->InventoryItem, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
 
 		}
 	}else

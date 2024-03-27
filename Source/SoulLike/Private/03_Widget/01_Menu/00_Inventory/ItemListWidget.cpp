@@ -315,6 +315,7 @@ void UItemListWidget::OnAddItemEvent(class ABaseCharacter* UsedBy, const FInvent
                                       AItemActor* ItemActor)
 {
 
+	UE_LOGFMT(LogTemp,Log,"인벤토리 위젯 업데이트");
 	/*UKismetSystemLibrary::PrintString(this,StaticEnum<EItemListType>()->GetValueAsString(ItemListType));*/
 	
 	if (IsOrbItem(ItemInfo))

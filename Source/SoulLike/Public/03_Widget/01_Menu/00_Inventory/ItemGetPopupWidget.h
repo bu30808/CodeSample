@@ -25,5 +25,5 @@ protected:
 	virtual void NativeConstruct() override;
 
 	UFUNCTION()
-	void OnGetItem(TSoftObjectPtr<UTexture2D> Image, FString Name, int32 Count);
+	void OnGetItem(TSoftObjectPtr<UTexture2D> Image, FText Name, int32 Count);
 };

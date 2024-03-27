@@ -3,6 +3,7 @@
 
 #include "99_Subsystem/AbilitySubsystem.h"
 
+#include "02_Ability/02_Projectile/ProjectileActor.h"
 #include "Logging/StructuredLog.h"
 
 void UAbilitySubsystem::TriggerSavedEvent(FGameplayTag AbilityTag)
@@ -51,4 +52,20 @@ TArray<AProjectileActor*> UAbilitySubsystem::GetProjectiles(ABaseCharacter* Owne
 	}
 
 	return TArray<AProjectileActor*>();
+}
+
+void UAbilitySubsystem::RemoveProjectiles(ABaseCharacter* Owner)
+{
+	if (Projectiles.Contains(Owner))
+	{
+		for(auto iter : Projectiles)
+		{
+			for(auto p : iter.Value)
+			{
+				p->Destroy();
+			}
+			
+		}
+		Projectiles.Remove(Owner);
+	}
 }

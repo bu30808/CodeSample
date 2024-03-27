@@ -31,8 +31,8 @@ void UDebugElementWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 
 		Image_Ability->SetBrushFromSoftTexture(info.AbilityImage);
 
-		FString msg = info.AbilityName + "\n" + info.AbilityTag.ToString() + "\n" + info.AbilityDescription;
-		Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(msg);
+		FString msg = info.AbilityName.ToString() + "\n" + info.AbilityTag.ToString() + "\n" + info.AbilityDescription.ToString();
+		Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(FText::FromString(msg));
 
 		return;
 	}

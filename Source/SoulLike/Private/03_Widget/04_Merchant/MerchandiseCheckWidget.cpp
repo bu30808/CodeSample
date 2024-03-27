@@ -133,8 +133,9 @@ void UMerchandiseCheckWidget::PlayerSellSetting(ANPCBase* NPC, const FInventoryI
 	MaxCount = Item.ItemCount;
 	ItemUniqueID = Item.UniqueID;
 
-	TextBlock_Name->SetText(FText::FromString(Item.GetItemInformation()->Item_Name));
-	TextBlock_Action->SetText(FText::FromString(TEXT("판매")));
+	TextBlock_Name->SetText(Item.GetItemInformation()->Item_Name);
+
+	TextBlock_Action->SetText(GlobalMerchandiseCheckWidgetText::sellText);
 
 	TradeType = EPlayerTradeToNPCType::Sell;
 	TradeObjectType = ETradeObjectType::Item;
@@ -157,8 +158,9 @@ void UMerchandiseCheckWidget::PlayerPurchaseSetting(ANPCBase* NPC,
 	}
 	ItemUniqueID = Merchandise.UniqueID;
 
-	TextBlock_Name->SetText(FText::FromString(Merchandise.GetItemInformation()->Item_Name));
-	TextBlock_Action->SetText(FText::FromString(TEXT("구매")));
+	TextBlock_Name->SetText(Merchandise.GetItemInformation()->Item_Name);
+
+	TextBlock_Action->SetText(GlobalMerchandiseCheckWidgetText::buyText);
 
 	TradeType = EPlayerTradeToNPCType::Purchase;
 	TradeObjectType = ETradeObjectType::Item;
@@ -173,8 +175,8 @@ void UMerchandiseCheckWidget::PlayerPurchaseSetting(ANPCBase* NPC, const FMercha
 	TextBlock_Count->SetText(FText::AsNumber(1));
 	MaxCount = 1;
 
-	TextBlock_Name->SetText(FText::FromString(MerchandiseAbility.GetAbilityInformation()->AbilityName));
-	TextBlock_Action->SetText(FText::FromString(TEXT("구매")));
+	TextBlock_Name->SetText(MerchandiseAbility.GetAbilityInformation()->AbilityName);
+	TextBlock_Action->SetText(GlobalMerchandiseCheckWidgetText::buyText);
 
 	TradeType = EPlayerTradeToNPCType::Purchase;
 	TradeObjectType = ETradeObjectType::Ability;

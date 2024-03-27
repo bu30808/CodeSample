@@ -220,11 +220,11 @@ void UAbilityComponent::UnRegisterEffectTags(const FGameplayTagContainer& Effect
 }
 
 void UAbilityComponent::K2_ApplyEffect(TSubclassOf<UAbilityEffect> Effect, AActor* EffectBy,
-                                       FOnEffectExpired OnEffectExpired)
+                                       FOnEffectExpired OnEffectExpired, UObject* AdditionalData)
 {
 	if(auto instance = DuplicateObject(Effect.GetDefaultObject(),this))
 	{
-		ApplyEffect(instance, EffectBy, OnEffectExpired, nullptr);
+		ApplyEffect(instance, EffectBy, OnEffectExpired, nullptr, AdditionalData);
 	}
 }
 
@@ -234,7 +234,7 @@ void UAbilityComponent::UnRegisterEffectTag(const FGameplayTag& EffectTag)
 }
 
 void UAbilityComponent::ApplyEffect(UAbilityEffect* Effect, AActor* EffectBy, FOnEffectExpired OnEffectExpired,
-                                    UAbilityBase* From)
+                                    UAbilityBase* From, UObject* AdditionalData)
 {
 	ensure(Effect);
 	ensure(EffectBy);
@@ -254,11 +254,11 @@ void UAbilityComponent::ApplyEffect(UAbilityEffect* Effect, AActor* EffectBy, FO
 			OnApplyEffect.Broadcast(AppliedEffectTags);
 			Effect->OnEffectExpired = OnEffectExpired;
 			UE_LOGFMT(LogTemp, Log, "스택형 이팩트 적용 {0}", Effect->GetName());
-			Effect->ProcessEffect(GetOwner<ABaseCharacter>(), EffectBy, From);
+			Effect->ProcessEffect(GetOwner<ABaseCharacter>(), EffectBy, From, AdditionalData);
 			return;
 		}
 		UE_LOGFMT(LogTemp, Log, "이미 존재하는 이팩트 오브젝트로부터 스택형 이팩트 적용 {0}", existEffect->GetName());
-		existEffect->ProcessEffect(GetOwner<ABaseCharacter>(), EffectBy, From);
+		existEffect->ProcessEffect(GetOwner<ABaseCharacter>(), EffectBy, From, AdditionalData);
 	}
 	else
 	{
@@ -277,14 +277,14 @@ void UAbilityComponent::ApplyEffect(UAbilityEffect* Effect, AActor* EffectBy, FO
 					UE_LOGFMT(LogTemp, Warning, "이미 같은 태그의 이팩트가 있지만, 기존에 적용되던 이팩트 오브젝트로부터 다시 적용합니다.");
 					OnApplyEffect.Broadcast(AppliedEffectTags);
 					existEffect->OnEffectExpired = OnEffectExpired;
-					existEffect->ProcessEffect(GetOwner<ABaseCharacter>(), EffectBy, From);
+					existEffect->ProcessEffect(GetOwner<ABaseCharacter>(), EffectBy, From, AdditionalData);
 				}
 				break;
 			case EEffectApplicationDecision::AlwaysApply:
 				AppliedEffects.Add(Effect);
 				OnApplyEffect.Broadcast(AppliedEffectTags);
 				Effect->OnEffectExpired = OnEffectExpired;
-				Effect->ProcessEffect(GetOwner<ABaseCharacter>(), EffectBy, From);
+				Effect->ProcessEffect(GetOwner<ABaseCharacter>(), EffectBy, From, AdditionalData);
 				break;
 			case EEffectApplicationDecision::MAX:
 				break;
@@ -296,19 +296,19 @@ void UAbilityComponent::ApplyEffect(UAbilityEffect* Effect, AActor* EffectBy, FO
 			AppliedEffects.Add(Effect);
 			OnApplyEffect.Broadcast(AppliedEffectTags);
 			Effect->OnEffectExpired = OnEffectExpired;
-			Effect->ProcessEffect(GetOwner<ABaseCharacter>(), EffectBy, From);
+			Effect->ProcessEffect(GetOwner<ABaseCharacter>(), EffectBy, From, AdditionalData);
 		}
 		
 	}
 }
 
 void UAbilityComponent::ApplyEffects(const TArray<UAbilityEffect*>& Effects, AActor* EffectBy,
-                                     FOnEffectExpired OnEffectExpired, UAbilityBase* From)
+                                     FOnEffectExpired OnEffectExpired, UAbilityBase* From, UObject* AdditionalData)
 {
 	ensure(EffectBy);
 	for (auto e : Effects)
 	{
-		ApplyEffect(e, EffectBy, OnEffectExpired, From);
+		ApplyEffect(e, EffectBy, OnEffectExpired, From, AdditionalData);
 	}
 }
 
@@ -333,7 +333,7 @@ TArray<UAbilityEffect*> UAbilityComponent::K2_ApplyEffectsWithReturn(const TArra
 					cueAddInfo->UpdateCueLocation(effect->InstanceAbilityCues);
 					cueAddInfo->UpdateCueLocation(effect->IntervalAbilityCues);
 				}
-				ApplyEffect(effect, EffectBy, FOnEffectExpired(), nullptr);
+				ApplyEffect(effect, EffectBy, FOnEffectExpired(), nullptr, AdditionalData);
 			}
 		}
 	
@@ -360,7 +360,7 @@ TArray<UAbilityEffect*> UAbilityComponent::ApplyEffectsWithReturn(const TArray<U
 			cueAddInfo->UpdateCueLocation(e->InstanceAbilityCues);
 			cueAddInfo->UpdateCueLocation(e->IntervalAbilityCues);
 		}
-		ApplyEffect(e, EffectBy, FOnEffectExpired(), nullptr);
+		ApplyEffect(e, EffectBy, FOnEffectExpired(), nullptr, AdditionalData);
 	}
 	
 
@@ -516,10 +516,12 @@ AAbilityCue* UAbilityComponent::ApplyCue(FAbilityCueInformation CueInformation)
 			if (ReusableCues.Contains(CueInformation.CueTag) == false)
 			{
 				cueActor = spawnCueFunction(CueInformation);
+				if(cueActor!=nullptr){				
 				UE_LOGFMT(LogAbilityComponent, Log, "재사용 가능한 큐 스폰 : {0}, {1}", cueActor->GetActorNameOrLabel(),
 				          CueInformation.CueTag.ToString());
 				ReusableCues.Add(CueInformation.CueTag, cueActor);
 				OnAddCue.Broadcast(CueInformation.CueTag);
+				}
 			}
 			else
 			{

@@ -83,7 +83,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void LaunchProjectile(const FVector& ForwardVector);
 	
-	void ShootSetting(EProjectileDirection ProjectileDirection) const;
+	void ShootSetting(EProjectileDirection ProjectileDirection);
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void LaunchProjectileWithOption(EProjectileDirection P_Direction, EProjectileShootType P_ShootType);

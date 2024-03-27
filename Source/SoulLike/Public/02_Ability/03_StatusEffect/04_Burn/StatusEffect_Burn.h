@@ -34,5 +34,5 @@ class SOULLIKE_API UStatusEffect_DodgeBurnDecrease: public UAbilityEffect
 	GENERATED_BODY()
 protected:
 	UStatusEffect_DodgeBurnDecrease();
-	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From) override;
+	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData = nullptr) override;
 };

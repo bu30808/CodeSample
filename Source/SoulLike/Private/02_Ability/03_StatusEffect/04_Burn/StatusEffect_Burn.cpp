@@ -43,9 +43,9 @@ UStatusEffect_DodgeBurnDecrease::UStatusEffect_DodgeBurnDecrease()
 }
 
 void UStatusEffect_DodgeBurnDecrease::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy,
-	UAbilityBase* From)
+	UAbilityBase* From, UObject* AdditionalData)
 {
-	Super::ProcessEffect_Implementation(Target, EffectBy, From);
+	Super::ProcessEffect_Implementation(Target, EffectBy, From, AdditionalData);
 
 	if(auto attComp = Target->GetAttributeComponent())
 	{

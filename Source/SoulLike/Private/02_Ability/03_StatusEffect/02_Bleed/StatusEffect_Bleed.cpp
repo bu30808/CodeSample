@@ -17,12 +17,12 @@ UStatusEffect_Bleed::UStatusEffect_Bleed()
 	UniqueEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.Bleed.Effect");
 }
 
-void UStatusEffect_Bleed::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From)
+void UStatusEffect_Bleed::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData)
 {
 	if (auto abComp = Target->GetAbilityComponent())
 	{
-		abComp->K2_ApplyEffect(BleedInstantObject, EffectBy, FOnEffectExpired());
-		abComp->K2_ApplyEffect(BleedDurationObject, EffectBy, FOnEffectExpired());
+		abComp->K2_ApplyEffect(BleedInstantObject, EffectBy, FOnEffectExpired(), AdditionalData);
+		abComp->K2_ApplyEffect(BleedDurationObject, EffectBy, FOnEffectExpired(), AdditionalData);
 
 		ApplyInstantEffect(Target);
 	}

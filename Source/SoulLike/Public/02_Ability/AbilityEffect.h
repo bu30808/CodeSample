@@ -413,8 +413,8 @@ protected:
 	void ChainSetting(ABaseCharacter* Target);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void ProcessEffect(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From);
-	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From);
+	void ProcessEffect(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData = nullptr);
+	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData = nullptr);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void EndEffect(ABaseCharacter* Target);

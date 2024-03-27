@@ -322,7 +322,7 @@ void UEnhancementWidget::SetEnhancementInfo(const FInventoryItem& Item)
 					if (const auto enhancementMaterial = system->GetEnhancementItemInformation(iter.Key))
 					{
 						msg += UWidgetHelperLibrary::EnhancementTagToDecoString(iter.Key) + enhancementMaterial->
-							Item_Name + " " + FString::FormatAsNumber(iter.Value) + TEXT("개\n");
+							Item_Name.ToString() + " " + FString::FormatAsNumber(iter.Value) + TEXT("개\n");
 					}
 				}
 				RichTextBlock_Material->SetText(FText::FromString(msg));

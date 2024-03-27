@@ -57,7 +57,7 @@ bool UFootStepComponent::CreateFootStepTrace(FName SocketName, FHitResult& OutHi
 		TArray<AActor*> actorsToIgnore;
 		actorsToIgnore.Add(Owner.Get());
 
-		return UKismetSystemLibrary::SphereTraceSingle(this,startLocation,endLocation,10.f,UEngineTypes::ConvertToTraceType(ECC_Visibility),false,actorsToIgnore,EDrawDebugTrace::ForDuration,OutHit,true,FColor::Cyan,FColor::Silver,0.3f);
+		return UKismetSystemLibrary::SphereTraceSingle(this,startLocation,endLocation,10.f,UEngineTypes::ConvertToTraceType(ECC_Visibility),false,actorsToIgnore,EDrawDebugTrace::ForOneFrame,OutHit,true,FColor::Cyan,FColor::Silver,0.3f);
 		
 	}
 
@@ -126,12 +126,8 @@ void UFootStepComponent::MakeFootStep(FName SocketName)
 		FHitResult OutHit;
 		if(CreateFootStepTrace(SocketName,OutHit))
 		{
-			if (OutHit.PhysMaterial != nullptr)
-			{
-				UE_LOGFMT(LogFootStep,Log,"{0}를 밟음 : {1}",OutHit.GetActor()->GetName(),StaticEnum<EPhysicalSurface>()->GetValueAsString(OutHit.PhysMaterial->SurfaceType));
-			}
-
-			if(OutHit.PhysMaterial->SurfaceType == WATER_TYPE)
+		
+			if(OutHit.PhysMaterial !=nullptr && OutHit.PhysMaterial->SurfaceType == WATER_TYPE)
 			{
 				//어느정도의 깊이인지 체크합니다.
 				FHitResult WaterHit;
@@ -140,7 +136,7 @@ void UFootStepComponent::MakeFootStep(FName SocketName)
 					//발이 닿은 지점과, 물이 닿은 지점의 거리를 계산합니다.
 					float distance = FMath::Abs(Owner->GetMesh()->GetSocketLocation(SocketName).Z - WaterHit.Location.Z);
 					//거리가 크면, 깊다는 뜻입니다.
-					UE_LOGFMT(LogFootStep,Log,"거리 : {0}",distance);
+					//UE_LOGFMT(LogFootStep,Log,"거리 : {0}",distance);
 					//얕음
 					if(distance < 10.f)
 					{

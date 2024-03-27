@@ -53,10 +53,7 @@ void UOrbListButtonWidget::SetData(UObject* Item)
 			return;
 		}
 		Image->SetBrushFromSoftTexture(OrbItem.GetItemInformation()->Item_Image);
-		/*TextBlock_Name->SetText(FText::FromString(OrbItem.GetItemInformation()->Item_Name));*/
-
-		auto msg = "<orb.name>" + OrbItem.GetItemInformation()->Item_Name + "</>";
-
+	
 		if (UItemHelperLibrary::IsOrbFragment(OrbItem))
 		{
 			const auto frag = static_cast<const FOrbFragmentInformation*>(OrbItem.GetItemInformation());
@@ -78,10 +75,10 @@ void UOrbListButtonWidget::SetData(UObject* Item)
 			default: ;
 			}
 
-			UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetFragmentToolTipString(OrbItem));
+			UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetFragmentToolTipText(OrbItem));
 		}else
 		{
-			UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetItemDetailString(OrbItem,GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
+			UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetItemDetailText(OrbItem,GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
 		}
 
 		if (OrbData->bIsEquipped)

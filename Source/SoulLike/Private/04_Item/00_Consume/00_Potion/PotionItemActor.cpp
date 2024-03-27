@@ -37,12 +37,13 @@ void APotionItemActor::PostInitializeComponents()
 	//회복약의 기본 정보를 가져와 기억합니다.
 	GetPotionInformation();
 }
-
-FString APotionItemActor::GetEnhancedDescription()
+#define LOCTEXT_NAMESPACE "PotionItemText"
+FText APotionItemActor::GetEnhancedDescription()
 {
-	return TEXT("강화단계 : ") +FString::FormatAsNumber(GetEnhancementValue());
+	FText enhancedDescriptionText =  NSLOCTEXT("PotionItemText", "EnhancedDescriptionText", "강화단계");
+	return FText::Format(NSLOCTEXT("PotionItemText","EnhancedDescription","{0} : {1}"),enhancedDescriptionText,FText::AsNumber(GetEnhancementValue()));
 }
-
+#undef LOCTEXT_NAMESPACE
 // Sets default values
 APotionItemActor::APotionItemActor()
 {

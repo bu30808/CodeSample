@@ -126,7 +126,7 @@ public:
 	FMerchandiseItem(class ANPCBase* Owner, FGuid Guid, const FMerchandiseItemData& Goods);
 
 	const FItemInformation* GetItemInformation() const;
-	FString GetFormattedDescription() const;
+	FText GetFormattedDescription() const;
 	class AItemActor* GetSpawndItemActor() const { return SpawndItemActor.Get(); }
 };
 
@@ -150,7 +150,7 @@ public:
 
 
 	const FAbilityInformation* GetAbilityInformation() const;
-	FString GetAbilityDescription() const;
+	FText GetAbilityDescription() const;
 };
 
 /**

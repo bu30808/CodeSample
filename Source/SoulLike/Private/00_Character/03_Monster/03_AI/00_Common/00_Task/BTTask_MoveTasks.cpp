@@ -6,6 +6,7 @@
 #include "AIController.h"
 #include "NavigationSystem.h"
 #include "00_Character/02_Animation/00_NotifyState/AnimNotifyState_AddForce.h"
+#include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Logging/StructuredLog.h"
 #include "Navigation/PathFollowingComponent.h"
@@ -36,6 +37,7 @@ void UBTTask_MoveRandomPoint::OnMoveCompleteEvent(FAIRequestID RequestID, EPathF
 
 EBTNodeResult::Type UBTTask_MoveRandomPoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
+	
 	if (auto character = OwnerComp.GetAIOwner()->GetPawn())
 	{
 		AICon = OwnerComp.GetAIOwner();
@@ -48,20 +50,22 @@ EBTNodeResult::Type UBTTask_MoveRandomPoint::ExecuteTask(UBehaviorTreeComponent&
 				OwnerComp.GetAIOwner()->ReceiveMoveCompleted.AddUniqueDynamic(this,&UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
 				// 이동 명령을 내립니다.
 				OwnerComp.GetAIOwner()->MoveToLocation(result.Location,50.f);
-
 				return EBTNodeResult::InProgress;
 			}
+		}else
+		{
+			UE_LOGFMT(LogAICon,Error,"{0} 네비게이션을 가져올 수 없습니다.",GetNameSafe(AICon->GetPawn()));
 		}
 	}
 
-
+	UE_LOGFMT(LogAICon,Error,"{0} 랜덤 좌표 생성에 실패했습니다.",GetNameSafe(AICon->GetPawn()));
 	return EBTNodeResult::Failed;
 }
 
 
 EBTNodeResult::Type UBTTask_MoveRandomPoint::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	UE_LOGFMT(LogTemp,Warning,"렌덤 포인트 이동 중지당함.");
+	UE_LOGFMT(LogTemp,Warning,"랜덤 포인트 이동 중지당함.");
 	if (AAIController* AIController = OwnerComp.GetAIOwner())
 	{
 		AIController->StopMovement();

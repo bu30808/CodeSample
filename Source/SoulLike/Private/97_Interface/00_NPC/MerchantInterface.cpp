@@ -70,8 +70,9 @@ void IMerchantInterface::SellItemToPlayer(ANPCBase* Merchant, APlayerCharacter* 
 		{
 			if (merchandise.MerchandiseData.Count < TradeCount)
 			{
+			
 				UWidgetHelperLibrary::ShowAlertMsg(PlayerCharacter->GetController<AUserController>(),
-				                                   EAlertMsgType::Normal, TEXT("구매하려는 아이템 수량이 모자랍니다."),FOnButtonClicked());
+				                                   EAlertMsgType::Normal, GlobalMerchantText::buyText,FOnButtonClicked());
 				return;
 			}
 		}
@@ -80,8 +81,9 @@ void IMerchantInterface::SellItemToPlayer(ANPCBase* Merchant, APlayerCharacter* 
 		const int32 TotalPrice = merchandise.MerchandiseData.Price * TradeCount;
 		if (PlayerCharacter->GetAttributeComponent()->GetEXP() < TotalPrice)
 		{
+			
 			UWidgetHelperLibrary::ShowAlertMsg(PlayerCharacter->GetController<AUserController>(), EAlertMsgType::Error,
-			                                   TEXT("재화가 모자랍니다."),FOnButtonClicked());
+			                                   GlobalMerchantText::alertText,FOnButtonClicked());
 			return;
 		}
 
@@ -171,8 +173,9 @@ void IMerchantInterface::SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacte
 		{
 			if (merchandise.MerchandiseAbilityData.Count < TradeCount)
 			{
+			
 				UWidgetHelperLibrary::ShowAlertMsg(PlayerCharacter->GetController<AUserController>(),
-				                                   EAlertMsgType::Normal, TEXT("구매하려는 아이템 수량이 모자랍니다."),FOnButtonClicked());
+				                                   EAlertMsgType::Normal, GlobalMerchantText::buyText,FOnButtonClicked());
 				return;
 			}
 		}
@@ -181,8 +184,9 @@ void IMerchantInterface::SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacte
 		const int32 TotalPrice = merchandise.MerchandiseAbilityData.Price * TradeCount;
 		if (PlayerCharacter->GetAttributeComponent()->GetEXP() < TotalPrice)
 		{
+		
 			UWidgetHelperLibrary::ShowAlertMsg(PlayerCharacter->GetController<AUserController>(), EAlertMsgType::Error,
-			                                   TEXT("재화가 모자랍니다."),FOnButtonClicked());
+			                                  GlobalMerchantText::alertText,FOnButtonClicked());
 			return;
 		}
 

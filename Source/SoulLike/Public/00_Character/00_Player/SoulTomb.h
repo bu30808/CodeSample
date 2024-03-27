@@ -26,13 +26,18 @@ protected:
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	class UNiagaraComponent* NiagaraComponent;
-	
 
+
+	UFUNCTION()
+	void OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayReason);
+	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 
 public:
+	void Activate(float exp, const FVector& Location);
+	void Deactivate();
 	void SetEXP(float exp){EXP = exp;}
 
 	//플레이어 캐릭터에게 EXP를 되돌려줍니다.

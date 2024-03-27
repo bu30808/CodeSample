@@ -117,7 +117,7 @@ void ANPCBase::PostInitializeComponents()
 void ANPCBase::Interaction_Implementation(ABaseCharacter* Start)
 {
 	IInteractionInterface::Interaction_Implementation(Start);
-
+		
 	InteractionActor = Start;
 
 	for(auto iter : NPCActions)

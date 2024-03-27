@@ -6,6 +6,7 @@
 #include "00_Character/01_Component/AttributeComponent.h"
 #include "00_Character/04_NPC/NPCBase.h"
 #include "03_Widget/01_Menu/00_Inventory/ItemButtonWidget.h"
+#include "03_Widget/04_Merchant/MerchandiseCheckWidget.h"
 #include "03_Widget/04_Merchant/MerchantWidget.h"
 #include "03_Widget/99_Drag/DragAndDropOperation.h"
 #include "03_Widget/99_Drag/DraggableWidget.h"
@@ -15,6 +16,7 @@
 #include "Components/TextBlock.h"
 #include "Components/WidgetSwitcher.h"
 #include "Logging/StructuredLog.h"
+
 
 
 void UMerchantListWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponent)
@@ -61,7 +63,7 @@ void UMerchantListWidget::OnClickedRepurchaseButton()
 		{
 			ShopType = EShopType::Repurchase;
 			Switcher->SetActiveWidgetIndex(1);
-			TextBlock_ButtonText->SetText(FText::FromString(TEXT("구매")));
+			TextBlock_ButtonText->SetText(GlobalMerchandiseCheckWidgetText::buyText);
 
 			CreateRepurchaseList();
 		}
@@ -69,7 +71,7 @@ void UMerchantListWidget::OnClickedRepurchaseButton()
 		{
 			ShopType = EShopType::Purchase;
 			Switcher->SetActiveWidgetIndex(0);
-			TextBlock_ButtonText->SetText(FText::FromString(TEXT("재구매")));
+			TextBlock_ButtonText->SetText(GlobalMerchandiseCheckWidgetText::repurchaseText);
 		}
 	}
 }

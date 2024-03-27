@@ -184,7 +184,7 @@ void UOrbMatrixElementWidget::OnClicked()
 	UKismetSystemLibrary::PrintString(this,TEXT("슬롯 개방용 클릭"));
 	OnClickedMatrixElement.Broadcast(MatrixElementInfo, this);
 }
-
+#define LOCTEXT_NAMESPACE "OrbMatrixElementWidget"
 void UOrbMatrixElementWidget::OnHoveredEvent()
 {
 	if (MatrixElementInfo.OrbMatrixSlotType != EOrbMatrixSlotType::LINE)
@@ -199,22 +199,23 @@ void UOrbMatrixElementWidget::OnHoveredEvent()
 	if (MatrixElementInfo.OrbMatrixSlotContent == EOrbMatrixSlotContent::Empty)
 	{
 		FString toolTipMsg;
-		toolTipMsg += "<orb.slot>" + OrbMatrixSlotTypeToString(MatrixElementInfo.OrbMatrixSlotType) + "</>";
-		toolTipMsg += "\n<orb.empty>" + OrbMatrixSlotContentToString(MatrixElementInfo.OrbMatrixSlotContent) + "</>";
+		toolTipMsg += "<orb.slot>" + OrbMatrixSlotTypeToText(MatrixElementInfo.OrbMatrixSlotType).ToString() + "</>";
+		toolTipMsg += "\n<orb.empty>" + OrbMatrixSlotContentToString(MatrixElementInfo.OrbMatrixSlotContent).ToString() + "</>";
 
 		if (MatrixElementInfo.bLock)
 		{
-			toolTipMsg += TEXT("\n<orb.lock>잠김</>");
+			const FText lockedText= NSLOCTEXT("OrbMatrixElementWidget","LockedText","잠김");
+			toolTipMsg += "\n<orb.lock>"+lockedText.ToString()+"</>";
 		}
 
-		UWidgetHelperLibrary::SetToolTipWidget(this, toolTipMsg);
+		UWidgetHelperLibrary::SetToolTipWidget(this, FText::FromString(toolTipMsg));
 	}
 	else
 	{
 		UpdateToolTip(MatrixElementInfo.UniqueID);
 	}
 }
-
+#undef LOCTEXT_NAMESPACE
 void UOrbMatrixElementWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -861,7 +862,7 @@ void UOrbMatrixElementWidget::UpdateToolTip(const FGuid& UniqueID)
 	}
 	else
 	{
-		UWidgetHelperLibrary::SetToolTipWidget(this,TEXT("비어있음"));
+		UWidgetHelperLibrary::SetToolTipWidget(this,FText::FromString(TEXT("비어있음")));
 	}
 }
 
@@ -870,18 +871,18 @@ void UOrbMatrixElementWidget::UpdateToolTip(const FInventoryItem& OrbItem)
 	if (UItemHelperLibrary::IsOrbCore(OrbItem))
 	{
 		//UKismetSystemLibrary::PrintString(this,TEXT("코어"));
-		auto desc = "<orb.name>" + OrbItem.GetItemInformation()->Item_Name + "</>";
-		/*desc += "\n" + OrbItem.GetFormattedDescription();*/
-		desc += "\n" + UItemHelperLibrary::GetItemDetailString(
-			OrbItem, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent());
+		FString desc = "<orb.name>" + OrbItem.GetItemInformation()->Item_Name.ToString() + "</>";
+		
+		desc += "\n" + UItemHelperLibrary::GetItemDetailText(
+			OrbItem, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()).ToString();
 
-		UWidgetHelperLibrary::SetToolTipWidget(this, desc);
+		UWidgetHelperLibrary::SetToolTipWidget(this, FText::FromString(desc));
 		return;
 	}
 
 	if (UItemHelperLibrary::IsOrbFragment(OrbItem))
 	{
-		UWidgetHelperLibrary::SetToolTipWidget(this,	UItemHelperLibrary::GetFragmentToolTipString(OrbItem));		
+		UWidgetHelperLibrary::SetToolTipWidget(this,UItemHelperLibrary::GetFragmentToolTipText(OrbItem));		
 		/*//UKismetSystemLibrary::PrintString(this,TEXT("파편"));
 		auto msg = "<orb.name>" + OrbItem.GetItemInformation()->Item_Name + "</>";
 

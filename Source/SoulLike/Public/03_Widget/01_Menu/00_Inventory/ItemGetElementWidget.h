@@ -28,5 +28,5 @@ protected:
 
 public:
 	virtual void NativeConstruct() override;
-	void SetData(const TSoftObjectPtr<UTexture2D>& Image, const FString& Name, int32 Count) const;
+	void SetData(const TSoftObjectPtr<UTexture2D>& Image, const FText& Name, int32 Count) const;
 };

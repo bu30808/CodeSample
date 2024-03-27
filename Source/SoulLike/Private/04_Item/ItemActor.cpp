@@ -7,12 +7,11 @@
 #include "NiagaraSystem.h"
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/01_Component/AbilityComponent.h"
-#include "00_Character/01_Component/InventoryComponent.h"
 #include "02_Ability/AbilityBase.h"
+#include "96_Library/SaveGameHelperLibrary.h"
 #include "Components/SphereComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
-
-
 
 
 // Sets default values
@@ -42,11 +41,27 @@ AItemActor::AItemActor()
 	SphereComponent->CanCharacterStepUpOn = ECB_No;
 }
 
+void AItemActor::DestroyIfPlayerAlreadyGetThisItemFromField()
+{
+	if(USaveGameHelperLibrary::IsAlreadyPickUppedItem(this))
+	{
+		Destroy();
+	}else
+	{
+		UE_LOGFMT(LogTemp,Log,"다음 필드 아이템은 필드에서 획득된 적이 없습니다 : {0}",GetNameSafe(this));
+	}
+	
+}
+
 // Called when the game starts or when spawned
 void AItemActor::BeginPlay()
 {
 	Super::BeginPlay();
+
+	//오너가 플레이어가 아닐 때(필드 아이템) 이미 획득한 상태라면 제거합니다.
+	DestroyIfPlayerAlreadyGetThisItemFromField();
 }
+
 #if WITH_EDITOR
 void AItemActor::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
@@ -71,14 +86,14 @@ const FItemInformation* AItemActor::GetItemInformation()
 	return nullptr;
 }
 
-FString AItemActor::GetNotFormattedDescription()
+FText AItemActor::GetNotFormattedDescription()
 {
 	if (const auto info = GetItemInformation())
 	{
 		return info->Item_Description;
 	}
 
-	return "NOT VALID ITEM INFO";
+	return FText::FromString("NOT VALID ITEM INFO");
 }
 
 bool AItemActor::UseItem_Implementation(AActor* Target, const FGuid& ThisItemsUniqueID)
@@ -139,9 +154,4 @@ void AItemActor::OnAttachedOwnerDestroyEvent(AActor* DestroyedActor)
 {
 	//같이 제거됩니다.
 	Destroy();
-}
-
-void AItemActor::PrintName()
-{
-	UKismetSystemLibrary::PrintString(this,GetNameSafe(this));
 }

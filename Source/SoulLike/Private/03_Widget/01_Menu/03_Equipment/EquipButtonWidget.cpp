@@ -18,11 +18,18 @@
 #include "03_Widget/MainWidget.h"
 #include "96_Library/ItemHelperLibrary.h"
 #include "Kismet/GameplayStatics.h"
+#define LOCTEXT_NAMESPACE "EquipButtonWidget"
+namespace GlobalEquipButtonWidgetText
+{
+	static const FText emptyText= NSLOCTEXT("EquipButtonWidget","SlotUnlockText","비어있음");
+	static const FText cannotUnEquipText= NSLOCTEXT("EquipButtonWidget","CannotUnEquipText","무기는 장착 해제할 수 없습니다.");
+}
+#undef LOCTEXT_NAMESPACE
 
 void UEquipButtonWidget::Clean()
 {
 	ItemData = nullptr;
-	TextBlock_Name->SetText(FText::FromString(TEXT("비어있음")));
+	TextBlock_Name->SetText(GlobalEquipButtonWidgetText::emptyText);
 	Image->SetBrushFromSoftTexture(DefaultImage);
 	OnUnEquipped.Clear();
 }
@@ -51,7 +58,7 @@ void UEquipButtonWidget::SetButtonInfo(TWeakObjectPtr<UItemData> NewData)
 		
 		ItemData = NewData;
 
-		auto itemName = info->Item_Name;
+		auto itemName = info->Item_Name.ToString();
 		if(itemName.Len()>10)
 		{
 			itemName = itemName.Left(10);
@@ -200,8 +207,7 @@ void UEquipButtonWidget::UnEquip()
 				}
 				else
 				{
-					UWidgetHelperLibrary::ShowAlertMsg(GetOwningPlayer<AUserController>(), EAlertMsgType::Normal,
-					                                   TEXT("무기는 장착 해제할 수 없습니다."),FOnButtonClicked());
+					UWidgetHelperLibrary::ShowAlertMsg(GetOwningPlayer<AUserController>(), EAlertMsgType::Normal,GlobalEquipButtonWidgetText::cannotUnEquipText,FOnButtonClicked());
 				}
 			}
 		}
@@ -248,10 +254,10 @@ void UEquipButtonWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const F
 	}else
 	{
 		if(ItemData.IsValid()){
-			auto tooltip = ItemData->InventoryItem.GetFormattedDescription() + "\n\n" +
-				UItemHelperLibrary::GetItemDetailString(ItemData->InventoryItem,
-														GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent());
-			UWidgetHelperLibrary::SetToolTipWidget(this, tooltip);
+			FString tooltip = ItemData->InventoryItem.GetFormattedDescription().ToString() + "\n\n" +
+				UItemHelperLibrary::GetItemDetailText(ItemData->InventoryItem,
+				                                        GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()).ToString();
+			UWidgetHelperLibrary::SetToolTipWidget(this, FText::FromString(tooltip));
 		}
 	}
 	

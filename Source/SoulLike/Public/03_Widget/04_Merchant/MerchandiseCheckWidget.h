@@ -6,7 +6,6 @@
 #include "MerchantListWidget.h"
 #include "00_Character/01_Component/InventoryComponent.h"
 #include "00_Character/04_NPC/99_Component/MerchantComponent.h"
-#include "Blueprint/UserWidget.h"
 #include "MerchandiseCheckWidget.generated.h"
 
 //파는거니 사는거니?
@@ -97,4 +96,17 @@ public:
 
 	//플레이어가 어빌리티를 구입할 때 필요한 설정을 합니다.
 	void PlayerPurchaseSetting(ANPCBase* NPC, const FMerchandiseAbility& MerchandiseAbility);
+	
 };
+
+#define LOCTEXT_NAMESPACE "MerchandiseCheckWidget"
+
+namespace GlobalMerchandiseCheckWidgetText
+{
+	const FText buyText = NSLOCTEXT("MerchandiseCheckWidget","BuyText","다음 아이템을 구매합니다");
+	const FText sellText = NSLOCTEXT("MerchandiseCheckWidget","SellText","다음 아이템을 판매합니다");
+	const FText repurchaseText = NSLOCTEXT("MerchandiseCheckWidget","RepurchaseText","재구매");
+	const FText cannotSellEquippedItemText = NSLOCTEXT("MerchandiseCheckWidget","CannotSellEquippedItemText","장착중인 아이템을 팔 수 없습니다.");
+	const FText cannotSellText = NSLOCTEXT("MerchandiseCheckWidget","cannotSellText","판매 불가능한 아이템입니다.");
+}
+#undef LOCTEXT_NAMESPACE

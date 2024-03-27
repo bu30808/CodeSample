@@ -161,11 +161,11 @@ public:
 	TSoftObjectPtr<class UTexture2D> Item_Image;
 	//아이템 이름
 	UPROPERTY(EditAnywhere)
-	FString Item_Name;
+	FText Item_Name;
 
 	//아이템 설명(ex. 체력을 {0}만큼 회복합니다)
 	UPROPERTY(EditAnywhere)
-	FString Item_Description;
+	FText Item_Description;
 
 	//아이템 가격
 	UPROPERTY(EditAnywhere)
@@ -424,9 +424,12 @@ public:
 	// Sets default values for this actor's properties
 	AItemActor();
 
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+	//오너가 플레이어가 아닐 때(필드 아이템) 이미 획득한 상태라면 제거합니다.
+	void DestroyIfPlayerAlreadyGetThisItemFromField();
 
 	UPROPERTY(VisibleAnywhere, Category=Component, meta=(AllowPrivateAccess="true"))
 	class USphereComponent* SphereComponent;
@@ -438,7 +441,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category=Info)
 	int32 ItemCount = 1;
 	UPROPERTY(VisibleAnywhere, Category=Info)
-	FString NotFormattedDescription;
+	FText NotFormattedDescription;
 	//아이템 사용시 사용자에게 등록한 어빌리티가 저장되는 변수입니다.
 	UPROPERTY()
 	TArray<class UAbilityBase*> GivenAbility;
@@ -470,12 +473,12 @@ public:
 	const FGuid& GetUniqueID(){return GetItemInformation()->UniqueID;}*/
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FString GetNotFormattedDescription();
+	FText GetNotFormattedDescription();
 
 	//포멧화된 아이템 설명을 리턴합니다. 필요에 의해 블루프린트에서 덮어쓰세요.
 	UFUNCTION(BlueprintNativeEvent)
-	FString GetFormattedDescription();
-	virtual FString GetFormattedDescription_Implementation() { return NotFormattedDescription; }
+	FText GetFormattedDescription();
+	virtual FText GetFormattedDescription_Implementation() { return NotFormattedDescription; }
 
 
 	//아이템 사용 효과를 적용합니다. 필요에 의해 덮어쓰세요.
@@ -528,9 +531,5 @@ public:
 	UFUNCTION()
 	void OnAttachedOwnerDestroyEvent(AActor* DestroyedActor);
 
-
-	UFUNCTION(BlueprintCallable,CallInEditor)
-	void PrintName();
-
-
+	
 };

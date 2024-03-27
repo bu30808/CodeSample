@@ -28,7 +28,7 @@ void UTeleportElementWidget::SetInfo(const FBonfireInformation& Info, class UBon
 {
 	TeleportInformation = Info;
 
-	TextBlock_LocationName->SetText(FText::FromString(Info.LocationName));
+	TextBlock_LocationName->SetText(Info.LocationName);
 
 	ParentsWidget = OwnerWidget;
 }

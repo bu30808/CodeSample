@@ -12,7 +12,7 @@ void UBossHealthBarWidget::SetInfo(class ABaseMonster* Boss)
 	{
 		SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
-		TextBlock_Name->SetText(FText::FromName(Boss->GetMonsterName()));
+		TextBlock_Name->SetText(Boss->GetMonsterName());
 
 		if (auto attComp = Boss->GetAttributeComponent())
 		{

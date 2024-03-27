@@ -41,7 +41,7 @@ void UAnimNotifyState_SpawnProjectile::NotifyBegin(USkeletalMeshComponent* MeshC
 					ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
 
 				const FVector location = MeshComp->GetSocketLocation(SocketName);
-				const FRotator rotation = MeshComp->GetComponentRotation();
+				const FRotator rotation = FRotationMatrix::MakeFromX(MeshComp->GetForwardVector()).Rotator();
 
 				if (const auto projectile = world->SpawnActor<AProjectileActor>(
 					ProjectileObject, location, rotation, spawnParam))

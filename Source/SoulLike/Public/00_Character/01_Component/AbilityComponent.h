@@ -264,14 +264,16 @@ public:
 	 * 비워둘 경우 어빌리티 내부 EffectExpired가 바인드되지 않습니다.
 	 */
 	UFUNCTION(BlueprintCallable)
-	void K2_ApplyEffect(TSubclassOf<UAbilityEffect> Effect, AActor* EffectBy, FOnEffectExpired OnEffectExpired);
+	void K2_ApplyEffect(TSubclassOf<UAbilityEffect> Effect, AActor* EffectBy, FOnEffectExpired OnEffectExpired, UObject* AdditionalData = nullptr);
 	/**
 	 * 이 함수는 내부에서 전달받은 이팩트 오브젝트를 복제하지 않습니다. COD를 직접 전달하지 마십시오.
 	 */
 	UFUNCTION(BlueprintCallable)
-	void ApplyEffect(class UAbilityEffect* Effect, AActor* EffectBy, FOnEffectExpired OnEffectExpired, UAbilityBase* From);
+	void ApplyEffect(class UAbilityEffect* Effect, AActor* EffectBy, FOnEffectExpired OnEffectExpired, UAbilityBase* From, UObject*
+	                 AdditionalData = nullptr);
 	UFUNCTION(BlueprintCallable)
-	void ApplyEffects(const TArray<UAbilityEffect*>& Effects, AActor* EffectBy, FOnEffectExpired OnEffectExpired, UAbilityBase* From);
+	void ApplyEffects(const TArray<UAbilityEffect*>& Effects, AActor* EffectBy, FOnEffectExpired OnEffectExpired, UAbilityBase* From, UObject
+	                  * AdditionalData);
 	//내부적으로 전달받은 이팩트를 복제해서 사용합니다.
 	UFUNCTION(BlueprintCallable)
 	TArray<class UAbilityEffect*> K2_ApplyEffectsWithReturn(const TArray<TSubclassOf<class UAbilityEffect>>& Effects,

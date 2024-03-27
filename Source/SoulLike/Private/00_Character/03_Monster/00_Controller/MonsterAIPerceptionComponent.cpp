@@ -5,9 +5,7 @@
 
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Kismet/KismetSystemLibrary.h"
 #include "Perception/AISense_Damage.h"
-#include "Perception/AISense_Hearing.h"
 #include "Perception/AISense_Sight.h"
 
 //특정 대상에 대한 감각 만료를 알 수가 없네요.

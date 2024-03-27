@@ -28,7 +28,7 @@ void UOrbWidget::OnAddOrbItem(class ABaseCharacter* UsedBy, const FInventoryItem
 
 	if (UItemHelperLibrary::IsOrbFragment(ItemInfo))
 	{
-		UE_LOGFMT(LogTemp, Log, "파편 추가 : {0}", ItemInfo.GetItemInformation()->Item_Name);
+		UE_LOGFMT(LogTemp, Log, "파편 추가 : {0}", ItemInfo.GetItemInformation()->Item_Name.ToString());
 		UMG_OrbElementListFragment->AddItem(ItemInfo);
 	}
 }

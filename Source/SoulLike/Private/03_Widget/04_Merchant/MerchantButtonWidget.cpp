@@ -10,6 +10,14 @@
 #include "Components/TextBlock.h"
 #include "Logging/StructuredLog.h"
 
+#define LOCTEXT_NAMESPACE "MerchantButtonWidget"
+
+namespace GlobalMerchantButtonWidgetText
+{
+	const FText infiniteText = NSLOCTEXT("MerchantButtonWidget","InfiniteText","무제한");
+	const FText sellText = NSLOCTEXT("MerchantButtonWidget","SellText","판매");
+}
+#undef LOCTEXT_NAMESPACE
 
 void UMerchantButtonWidget::NativeConstruct()
 {
@@ -37,12 +45,11 @@ void UMerchantButtonWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 						itemData->Item_Image);
 				}
 
-				TextBlock_ItemName->SetText(
-					FText::FromString(itemData->Item_Name));
+				TextBlock_ItemName->SetText(itemData->Item_Name);
 				
 				if (merchandiseItemListData->MerchandiseItem.MerchandiseData.bSellInfinite)
 				{
-					TextBlock_Count->SetText(FText::FromString(TEXT("무제한")));
+					TextBlock_Count->SetText(GlobalMerchantButtonWidgetText::infiniteText);
 				}
 				else
 				{

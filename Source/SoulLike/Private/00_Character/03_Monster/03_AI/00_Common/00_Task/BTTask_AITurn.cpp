@@ -99,6 +99,7 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 				{
 					if (bShouldManualFinish == false)
 					{
+						UE_LOGFMT(LogTemp,Warning,"11111111111111111111111");
 						FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 					}
 				}
@@ -138,7 +139,7 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 					break;
 				case EStopTraceType::MeshForward:
 					{
-						startLoc = aiPawn->GetActorLocation();
+						startLoc = aiPawn->GetMesh()->GetSocketLocation(SocketName);
 						auto rot = aiPawn->GetMesh()->GetSocketRotation(SocketName);
 						rot.Pitch = 0;
 						rot.Roll = 0;
@@ -165,10 +166,9 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 					                                                           true);
 					if (bHit)
 					{
-						//UKismetSystemLibrary::PrintString(OwnersAIController,hit.GetActor()->GetActorNameOrLabel());
 						if (hit.GetActor() == target)
 						{
-							DrawDebugPoint(OwnersAIController->GetWorld(), hit.Location, 50.f, FColor::Red, true, 3.f);
+							UE_LOGFMT(LogTemp,Warning,"222222222222222222222");
 							FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 						}
 					}
@@ -246,6 +246,8 @@ void UBTTask_AITurn::Turn()
 				//이미 각도 안이면 멈춥니다.
 				if (FMath::Abs(DeltaYaw) < StopDeltaYaw)
 				{
+					UE_LOGFMT(LogAICon,Warning,"이미 목표 각도 안이므로 종료합니다 : {0}",DeltaYaw);
+					UE_LOGFMT(LogTemp,Warning,"333333333333333333333333");
 					FinishLatentTask(*OwnerComp, EBTNodeResult::Succeeded);
 					return;
 				}
@@ -269,6 +271,8 @@ void UBTTask_AITurn::Turn()
 						}
 						else
 						{
+							UE_LOGFMT(LogAICon,Warning,"델타값이 0이라 종료합니다. : {0}",DeltaYaw);
+							UE_LOGFMT(LogTemp,Warning,"4444444444444444444444");
 							FinishLatentTask(*OwnerComp, EBTNodeResult::Succeeded);
 						}
 					}

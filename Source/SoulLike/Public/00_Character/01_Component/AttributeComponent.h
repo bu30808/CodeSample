@@ -348,8 +348,7 @@ public:
 	void Init(class UAttributeComponent* AttComp, EStatusEffect StatusEffect);
 	UFUNCTION()
 	void ReduceAccValue(float DeltaTime);
-	
-	virtual ~UStatusEffectValueHandler() override;
+
 };
 
 UCLASS()
@@ -411,8 +410,10 @@ public:
 
 	//필요한 어트리뷰트를 초기화 합니다.
 	void InitAttributes();
-	void LoadAttribute(TMap<EAttributeType, FAttribute> SavedAttribute);
-	
+	//레벨업 포인트를 제외한 어트리뷰트를 복구합니다.
+	void LoadAttributeNotIncludeLevelUpPoint(const TMap<EAttributeType, FAttribute>& SavedAttribute, bool ShouldUpdateProgressBar, bool bIsRespawn);
+	//레벨업 포인트를 복구합니다.
+	void LoadLevelUpPointAttributes(const TMap<EAttributeType, FAttribute>& LevelUpPoint);
 
 protected:
 	//포인트당 속성 증가치를 가져옵니다.

@@ -22,9 +22,9 @@ void UItemGetElementWidget::NativeConstruct()
 	}
 }
 
-void UItemGetElementWidget::SetData(const TSoftObjectPtr<UTexture2D>& Image, const FString& Name, int32 Count) const
+void UItemGetElementWidget::SetData(const TSoftObjectPtr<UTexture2D>& Image, const FText& Name, int32 Count) const
 {
 	Image_Item->SetBrushFromSoftTexture(Image);
-	TextBlock_ItemName->SetText(FText::FromString(Name));
+	TextBlock_ItemName->SetText(Name);
 	TextBlock_Count->SetText(FText::AsNumber(Count));
 }

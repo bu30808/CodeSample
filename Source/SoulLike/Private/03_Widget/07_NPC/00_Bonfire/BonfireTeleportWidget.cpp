@@ -65,26 +65,25 @@ void UBonfireTeleportWidget::CreateList(UBonfireComponent* BonfireComponent)
 				//UKismetSystemLibrary::PrintString(this, iter->LocationName + "/" + owner->GetBonfireInformation().LocationName);
 				ScrollBox_TeleportList->AddChild(element);
 
-				if(iter->LocationName.Equals(owner->GetBonfireInformation().LocationName))
+				if(iter->LocationName.EqualTo(owner->GetBonfireInformation().LocationName))
 				{
 					SetPreviewImage(iter->LocationImage);
 					element->ShowCurLocation();
-					
 				}
 
-				element->SetIsEnabled(IsActivated(iter->OwnersSafeName));
+				element->SetIsEnabled(IsActivated(UGameplayStatics::GetCurrentLevelName(BonfireComponent), iter->OwnersSafeName));
 				
 			}
 		}
 	}
 }
 
-bool UBonfireTeleportWidget::IsActivated(const FString& SafeName)
+bool UBonfireTeleportWidget::IsActivated(const FString& LevelName, const FString& SafeName)
 {
 	//이 화톳불이 활성화 되었다고 저장합니다.
 	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 	{
-		return instance->IsActivatedBonfire(SafeName);
+		return instance->IsActivatedBonfire(LevelName, SafeName);
 	}
 	return false;
 }

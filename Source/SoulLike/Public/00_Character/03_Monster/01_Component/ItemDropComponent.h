@@ -77,7 +77,7 @@ public:
 	 * @param DropBy 누구에 의해 드롭되나요?
 	 */
 	UFUNCTION(BlueprintCallable)
-	void DropItem(class ABaseCharacter* DropBy);
+	AItemActor* DropItem(class ABaseCharacter* DropBy);
 
 	/**
 	 * 이 오너를 사망하게 만든 대상에게 경험치를 지급합니다.

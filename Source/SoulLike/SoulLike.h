@@ -45,81 +45,59 @@ static FORCEINLINE FText GetFloatAsTextWithPrecision(float TheFloat, int32 Preci
 	NumberFormat.MaximumFractionalDigits = Precision;
 	return FText::AsNumber(TheFloat, &NumberFormat);
 }
-
-static FORCEINLINE FString AttributeTypeToString(EAttributeType Type)
+#define LOCTEXT_NAMESPACE "EnumTextConvertHelper"
+static FORCEINLINE FText AttributeTypeToText(EAttributeType Type)
 {
-	FString toolTip;
 	switch (Type)
 	{
 	case EAttributeType::NONE:
 		break;
 	case EAttributeType::HP:
-		toolTip = TEXT("체력");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "HP", "체력");
 	case EAttributeType::SP:
-		toolTip = TEXT("스테미너");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "SP", "스테미너");
 	case EAttributeType::MP:
-		toolTip = TEXT("신력");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "MP", "신력");
 	case EAttributeType::MaxHP:
-		toolTip = TEXT("최대체력");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "MaxHP", "최대 체력");
 	case EAttributeType::MaxSP:
-		toolTip = TEXT("최대 스테미너");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "MaxSP", "최대 스테미너");
 	case EAttributeType::MaxMP:
-		toolTip = TEXT("최대 신력");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "MaxMP", "최대 신력");
 	case EAttributeType::RecoverHP:
-		toolTip = TEXT("초당 체력 회복량");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "RecoverHP", "체력 회복량");
 	case EAttributeType::RecoverSP:
-		toolTip = TEXT("초당 스테미너 회복량");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "RecoverSP", "스테미너 회복량");
 	case EAttributeType::RecoverMP:
-		toolTip = TEXT("타격시 신력 회복량");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "RecoverMP", "신력 회복량");
 	case EAttributeType::PhysicalAttack:
-		toolTip = TEXT("물리공격력");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "PhysicalAttack", "물리공격력");
 	case EAttributeType::MagicalAttack:
-		toolTip = TEXT("마법공격력");
-		break;
+	return NSLOCTEXT("EnumTextConvertHelper", "MagicalAttack", "마법공격력");
 	case EAttributeType::PhysicalDefense:
-		toolTip = TEXT("물리방어력");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "PhysicalDefense", "물리방어력");
 	case EAttributeType::MagicalDefense:
-		toolTip = TEXT("마법방어력");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "MagicalDefense", "마법방어력");
 	case EAttributeType::ActionSpeed:
-		toolTip = TEXT("행동속도");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "ActionSpeed", "행동속도");
 	case EAttributeType::Endurance:
-		toolTip = TEXT("강인도");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "Endurance", "강인도");
 	case EAttributeType::Strength:
-		toolTip = TEXT("힘");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "Strength", "힘");
 	case EAttributeType::Dexterity:
-		toolTip = TEXT("민첩");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "Dexterity", "민첩");
 	case EAttributeType::Intelligence:
-		toolTip = TEXT("지능");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "Intelligence", "지능");
 	case EAttributeType::Willpower:
-		toolTip = TEXT("의지");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "Willpower", "의지");
 	case EAttributeType::Level:
-		toolTip = TEXT("레벨");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "Level", "레벨");
 	case EAttributeType::EXP:
-		toolTip = TEXT("영혼");
-		break;
+		return NSLOCTEXT("EnumTextConvertHelper", "EXP", "영혼");
 	default: ;
 	}
 
-	return toolTip;
+	return FText::FromString("ERROR");
 }
 
 //id = "어쩌구저쩌구" 와 같이 = 사이에 띄어쓰기가 있으면 안 됩니다.
@@ -201,112 +179,95 @@ static FORCEINLINE FString AttributeTypeToImageString(EAttributeType Type)
 	return imageString;
 }
 
-static FORCEINLINE FString OrbMatrixSlotTypeToString(EOrbMatrixSlotType Type)
+static FORCEINLINE FText OrbMatrixSlotTypeToText(EOrbMatrixSlotType Type)
 {
 	switch (Type)
 	{
 	case EOrbMatrixSlotType::CORE:
-		return TEXT("코어 슬롯");
+		return NSLOCTEXT("EnumTextConvertHelper", "CORE", "코어");
 	case EOrbMatrixSlotType::PHYSICAL:
-		return TEXT("물리 슬롯");
+		return NSLOCTEXT("EnumTextConvertHelper", "PHYSICAL", "물리");
 	case EOrbMatrixSlotType::DEFENCE:
-		return TEXT("방어 슬롯");
+		return NSLOCTEXT("EnumTextConvertHelper", "DEFENCE", "방어");
 	case EOrbMatrixSlotType::MAGICAL:
-		return TEXT("마법 슬롯");
+		return NSLOCTEXT("EnumTextConvertHelper", "MAGICAL", "마법");
 	case EOrbMatrixSlotType::FREE:
-		return TEXT("자유 슬롯");
+		return NSLOCTEXT("EnumTextConvertHelper", "FREE", "자유");
 	default: ;
 	}
 
-	return "ERROR";
+	return  FText::FromString("ERROR");
 }
 
-static FORCEINLINE FString OrbMatrixSlotContentToString(EOrbMatrixSlotContent Type)
+static FORCEINLINE FText OrbMatrixSlotContentToString(EOrbMatrixSlotContent Type)
 {
 	switch (Type)
 	{
 	case EOrbMatrixSlotContent::Empty:
-		return TEXT("비어있음");
+		return NSLOCTEXT("EnumTextConvertHelper", "Empty", "비어있음");
 	case EOrbMatrixSlotContent::Set:
-		return "";
+		return FText::GetEmpty();
 	default: ;
 	}
 
-	return "ERROR";
+	return FText::FromString("ERROR");
 }
 
-static FORCEINLINE FString RarityToString(EItemRarity Type)
+static FORCEINLINE FText RarityToText(EItemRarity Type)
 {
 	switch (Type)
 	{
 	case EItemRarity::Common:
-		return TEXT("일반");
+		return NSLOCTEXT("EnumTextConvertHelper", "Common", "일반");
 	case EItemRarity::Rare:
-		return TEXT("희귀");
+		return NSLOCTEXT("EnumTextConvertHelper", "Rare", "희귀");
 	case EItemRarity::Epic:
-		return TEXT("영웅");
+		return NSLOCTEXT("EnumTextConvertHelper", "Epic", "영웅");
 	case EItemRarity::Legendary:
-		return TEXT("전설");
+		return NSLOCTEXT("EnumTextConvertHelper", "Legendary", "전설");
 	default: ;
 	}
 
-	return "ERROR";
+	return FText::FromString("ERROR");
 }
 
-static FORCEINLINE FString RarityToDecoText(EItemRarity Type)
+static FORCEINLINE FText RarityToDecoText(EItemRarity Type)
 {
 	switch (Type)
 	{
 	case EItemRarity::Common:
-		return "<orb.common>";
+		return FText::FromString("<orb.common>");
 	case EItemRarity::Rare:
-		return "<orb.rare>";
+		return FText::FromString("<orb.rare>");
 	case EItemRarity::Epic:
-		return "<orb.epic>";
+		return FText::FromString("<orb.epic>");
 	case EItemRarity::Legendary:
-		return "<orb.legendary>";
+		return FText::FromString("<orb.legendary>");
 	default: ;
 	}
 
-	return "ERROR";
+	return FText::FromString("ERROR");
 }
 
-static FORCEINLINE FString SlotTypeToString(EOrbMatrixSlotType SlotType)
+
+static FORCEINLINE FText SlotTypeToDecoText(EOrbMatrixSlotType SlotType)
 {
+	
 	switch (SlotType)
 	{
 	case EOrbMatrixSlotType::CORE:
-		return TEXT("코어");
+		return FText::FromString("<orb.core>");
 	case EOrbMatrixSlotType::PHYSICAL:
-		return TEXT("물리");
+		return FText::FromString("<orb.physical>");
 	case EOrbMatrixSlotType::DEFENCE:
-		return TEXT("방어");
+		return FText::FromString("<orb.defence>");
 	case EOrbMatrixSlotType::MAGICAL:
-		return TEXT("마법");
+		return FText::FromString("<orb.magical>");
 	case EOrbMatrixSlotType::FREE:
-		return TEXT("자유");
+		return FText::FromString("<orb.free>");
 	default: ;
 	}
 
-	return "ERROR";
+	return FText::FromString("ERROR");
 }
-
-static FORCEINLINE FString SlotTypeToDecoText(EOrbMatrixSlotType SlotType)
-{
-	switch (SlotType)
-	{
-	case EOrbMatrixSlotType::CORE:
-		return "<orb.core>";
-	case EOrbMatrixSlotType::PHYSICAL:
-		return "<orb.physical>";
-	case EOrbMatrixSlotType::DEFENCE:
-		return "<orb.defence>";
-	case EOrbMatrixSlotType::MAGICAL:
-		return "<orb.magical>";
-	case EOrbMatrixSlotType::FREE:
-		return "<orb.free>";
-	default: ;
-	}
-
-	return "ERROR";
-}
+#undef LOCTEXT_NAMESPACE

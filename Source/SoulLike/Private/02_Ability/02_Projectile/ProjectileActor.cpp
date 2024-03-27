@@ -76,11 +76,12 @@ void AProjectileActor::LaunchProjectile(const FVector& ForwardVector)
 	SetActorTickEnabled(true);
 }
 
-void AProjectileActor::ShootSetting(EProjectileDirection ProjectileDirection) const
+void AProjectileActor::ShootSetting(EProjectileDirection ProjectileDirection)
 {
 	switch (ProjectileDirection)
 	{
 	case EProjectileDirection::Forward:
+		SetActorRotation(FRotationMatrix::MakeFromX(GetOwner()->GetActorForwardVector()).Rotator());
 		ProjectileMovementComponent->Velocity = GetOwner()->GetActorForwardVector() * ProjectileSpeed;
 		break;
 	case EProjectileDirection::BlackboardTarget:
@@ -91,8 +92,10 @@ void AProjectileActor::ShootSetting(EProjectileDirection ProjectileDirection) co
 				{
 					if (auto target = Cast<AActor>(blackboard->GetValueAsObject("Target")))
 					{
-						ProjectileMovementComponent->Velocity = UKismetMathLibrary::FindLookAtRotation(
-							GetActorLocation(), target->GetActorLocation()).Vector() * ProjectileSpeed;
+						const FRotator& lookRot = UKismetMathLibrary::FindLookAtRotation(
+							GetActorLocation(), target->GetActorLocation());
+						SetActorRotation(lookRot);
+						ProjectileMovementComponent->Velocity = lookRot.Vector() * ProjectileSpeed;
 					}
 				}
 			}

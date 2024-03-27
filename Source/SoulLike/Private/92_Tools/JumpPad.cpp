@@ -456,7 +456,7 @@ UWidgetComponent* AJumpPad::ShowInteractionWidget()
 	if (OverlappedPlayer)
 	{
 		return OverlappedPlayer->ShowInteractionWidget(this, OverlappedPlayer->GetInputDataAsset()->InteractAction,
-		                                               Execute_GetActionName(this).ToString());
+		                                               Execute_GetActionName(this));
 	}
 
 	return nullptr;

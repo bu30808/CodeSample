@@ -47,7 +47,7 @@ const FItemInformation* FMerchandiseItem::GetItemInformation() const
 	return nullptr;
 }
 
-FString FMerchandiseItem::GetFormattedDescription() const
+FText FMerchandiseItem::GetFormattedDescription() const
 {
 	//UE_LOGFMT(LogTemp,Log,"아이템 설명을 가져오려 시도합니다.");
 	if (SpawndItemActor != nullptr)
@@ -56,7 +56,7 @@ FString FMerchandiseItem::GetFormattedDescription() const
 		return SpawndItemActor->GetFormattedDescription();
 	}
 
-	return "NOT VALID";
+	return FText::FromString("NOT VALID");
 }
 
 FMerchandiseAbility::FMerchandiseAbility(ANPCBase* Owner, const FMerchandiseAbilityData& AbilityData)
@@ -79,7 +79,7 @@ const FAbilityInformation* FMerchandiseAbility::GetAbilityInformation() const
 	return nullptr;
 }
 
-FString FMerchandiseAbility::GetAbilityDescription() const
+FText FMerchandiseAbility::GetAbilityDescription() const
 {
 	return GetAbilityInformation()->AbilityDescription;
 }

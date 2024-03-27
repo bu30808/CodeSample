@@ -23,5 +23,5 @@ public:
 
 
 	UFUNCTION(Blueprintable, BlueprintPure)
-	class USimpleToolTipWidget* CreateSimpleToolTipWidget(class APlayerController* PC, FString Msg) const;
+	class USimpleToolTipWidget* CreateSimpleToolTipWidget(class APlayerController* PC, FText Msg) const;
 };

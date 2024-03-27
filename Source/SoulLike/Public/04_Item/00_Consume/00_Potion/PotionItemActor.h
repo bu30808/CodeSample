@@ -31,7 +31,7 @@ protected:
 	virtual void PostInitializeComponents() override;
 
 public:
-	FString GetEnhancedDescription();
+	FText GetEnhancedDescription();
 	
 	//현 강화 수치를 가져옴
 	UFUNCTION(BlueprintCallable, BlueprintPure)

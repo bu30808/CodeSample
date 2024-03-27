@@ -11,6 +11,8 @@
 #include "Components/TextBlock.h"
 #include "Components/WidgetSwitcher.h"
 
+#define LOCTEXT_NAMESPACE "PotionEnhancementWidget"
+
 void UPotionEnhancementWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
 	Super::OnVisibilityChangedEvent(InVisibility);
@@ -48,7 +50,7 @@ void UPotionEnhancementWidget::OnClickedUpgradeMPButton()
 			GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent(), EEnhancedPotionType::MP))
 		{
 			PotionEnhancementComponent->UpgradePotion(GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent(),
-			                                            EEnhancedPotionType::MP);
+			                                          EEnhancedPotionType::MP);
 			Init();
 		}
 	}
@@ -113,8 +115,10 @@ void UPotionEnhancementWidget::Init()
 					const auto next = FMath::Clamp(cur + 1, 0, potionActor->GetPotionEnhancement().GetMaxEnhancement());
 					TextBlock_CurEnhancementHP->SetText(FText::AsNumber(cur));
 					TextBlock_NextEnhancementHP->SetText(FText::AsNumber(next));
+					const FText warningText = NSLOCTEXT("PotionEnhancementWidget", "HPMaxEnhanceWarningText",
+					                                    "강화 최대치 도달");
 
-					TextBlock_ButtonTextHP->SetText(FText::FromString(TEXT("강화 최대치 도달")));
+					TextBlock_ButtonTextHP->SetText(warningText);
 				}
 			}
 		}
@@ -127,11 +131,14 @@ void UPotionEnhancementWidget::Init()
 
 			if (bAvailable)
 			{
-				TextBlock_ButtonTextHP->SetText(FText::FromString(TEXT("업그레이드")));
+				const FText upgradeText = NSLOCTEXT("PotionEnhancementWidget", "HPUpgradeText", "업그레이드");
+				TextBlock_ButtonTextHP->SetText(upgradeText);
 			}
 			else
 			{
-				TextBlock_ButtonTextHP->SetText(FText::FromString(TEXT("활력의 결정이 모자라거나, 강화 최대수치에 도달했습니다.")));
+				const FText errorText = NSLOCTEXT("PotionEnhancementWidget", "HPErrorText",
+				                                  "활력의 결정이 모자라거나, 강화 최대수치에 도달했습니다.");
+				TextBlock_ButtonTextHP->SetText(errorText);
 			}
 		}
 	}
@@ -149,8 +156,10 @@ void UPotionEnhancementWidget::Init()
 					const auto next = FMath::Clamp(cur + 1, 0, potionActor->GetPotionEnhancement().GetMaxEnhancement());
 					TextBlock_CurEnhancementMP->SetText(FText::AsNumber(cur));
 					TextBlock_NextEnhancementMP->SetText(FText::AsNumber(next));
+					const FText warningText = NSLOCTEXT("PotionEnhancementWidget", "MPMaxEnhanceWarningText",
+					                                    "강화 최대치 도달");
 
-					TextBlock_ButtonTextMP->SetText(FText::FromString(TEXT("강화 최대치 도달")));
+					TextBlock_ButtonTextMP->SetText(warningText);
 				}
 			}
 		}
@@ -163,12 +172,16 @@ void UPotionEnhancementWidget::Init()
 
 			if (bAvailable)
 			{
-				TextBlock_ButtonTextMP->SetText(FText::FromString(TEXT("업그레이드")));
+				const FText upgradeText = NSLOCTEXT("PotionEnhancementWidget", "MPUpgradeText", "업그레이드");
+				TextBlock_ButtonTextMP->SetText(upgradeText);
 			}
 			else
 			{
-				TextBlock_ButtonTextMP->SetText(FText::FromString(TEXT("신성한 결정이 모자라거나, 강화 최대수치에 도달했습니다.")));
+				const FText errorText = NSLOCTEXT("PotionEnhancementWidget", "MPErrorText",
+				                                  "신성한 결정이 모자라거나, 강화 최대수치에 도달했습니다.");
+				TextBlock_ButtonTextMP->SetText(errorText);
 			}
 		}
 	}
 }
+#undef LOCTEXT_NAMESPACE

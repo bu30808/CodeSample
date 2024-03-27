@@ -49,10 +49,12 @@ public:
 
 	//블랙보드에 기억했던 내용을 초기화 합니다.
 	void ResetBlackboard();
+	void StartImmediatelyBehavior();
 	void DrawSightDebugLine();
 
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaSeconds) override;
+	virtual void PostInitializeComponents() override;
 
 	virtual void UpdateControlRotation(float DeltaTime, bool bUpdatePawn) override;
 	UFUNCTION(BlueprintCallable,BlueprintPure)

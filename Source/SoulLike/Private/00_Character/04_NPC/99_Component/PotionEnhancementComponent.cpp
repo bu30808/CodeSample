@@ -162,7 +162,7 @@ bool UPotionEnhancementComponent::CanEnhancePotion(UInventoryComponent* Inventor
 							const FInventoryItem* item = InventoryComponent->GetItemByTag(iter.Key);
 							if (item->ItemCount < iter.Value)
 							{
-								UE_LOGFMT(LogTemp, Error, "필요한 아이템의 갯수가 모자람 :{0}", item->GetItemInformation()->Item_Name);
+								UE_LOGFMT(LogTemp, Error, "필요한 아이템의 갯수가 모자람 :{0}", item->GetItemInformation()->Item_Name.ToString());
 								return false;
 							}
 						}
