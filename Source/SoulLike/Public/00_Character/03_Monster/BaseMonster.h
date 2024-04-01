@@ -52,10 +52,10 @@ class SOULLIKE_API UMonsterDataAsset : public UDataAsset
 
 public:
 	//몬스터를 구분짓는 유일한 태그입니다.
-	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTag MonsterTag;
 	//몬스터 이름
-	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FText MonsterName;
 	//AI에 사용할 행동트리
 	UPROPERTY(EditAnywhere)
@@ -76,7 +76,7 @@ public:
 	float MaxStunIntensity;
 	UPROPERTY(EditAnywhere, Category="Stun", meta=(EditCondition = "bUseStun"))
 	UAnimMontage* StunMontage;
-	
+
 	//시야 범위
 	UPROPERTY(EditAnywhere, Category="Perception")
 	float SightRadius = 1200.f;
@@ -95,8 +95,6 @@ public:
 	//레그돌용
 	UPROPERTY(EditAnywhere)
 	class UPhysicsAsset* RagdollPhysics;
-
-	
 };
 
 
@@ -134,18 +132,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class UAudioComponent* MusicComponent;
 
-	
+
 	UPROPERTY(Transient)
 	TObjectPtr<class AItemActor> DroppedItem;
-
-
 
 public:
 	class UWidgetComponent* GetHealthBarWidgetComponent() const { return HealthBarWidgetComponent; }
 
 protected:
 	FTimerHandle HealthBarVisibleTimerHandle;
-	
+
 	UFUNCTION()
 	void UpdateHealthBar(float Value, float MaxValue);
 
@@ -155,18 +151,20 @@ protected:
 	FTransform DefaultHealthBarTr;
 	//액터가 배치된 위치 초기값.
 	FTransform InitTransform;
+
 public:
 	void EnableRagdoll() const;
 	void StopAITree() const;
 	void RunDeactivateTimer();
 
 	void Activate();
+
 private:
 	//이 몬스터를 비활성화 합니다. AI를 멈추고, 콜리전 반응을 지우고, 숨깁니다.
 	void Deactivate();
 	void DeadPresetting() const;
 	void RunAITree() const;
-	
+
 	void RestoreFromRagdoll();
 	//레그돌 활성화로 망가진 컴포넌트 상속관계와 위치를 되돌립니다. 필요하다면 덮어쓰세요.
 	virtual void RestoreComponentAttachment() const;
@@ -183,14 +181,15 @@ protected:
 	//몬스터 사망시 n초후에 몬스터를 제거하는 타이머 핸들
 	UPROPERTY()
 	FTimerHandle DeadTimerHandle;
-	
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable, DisplayName= "SpawnAlly")
 	void K2_SpawnAlly(int32 SpawnCount);
 	virtual void K2_SpawnAlly_Implementation(int32 SpawnCount);
+
 public:
 	void SpawnAlly(int32 SpawnCount, const FOnFinishSpawnAlly& OnFinishSpawnAlly);
 
-	
+
 	void ResetMonster(const FTransform& DefaultTr);
 
 protected:
@@ -201,27 +200,30 @@ protected:
 	/**********************************************상태*********************************************************/
 protected:
 	//적을 인식했는지 저장하는 변수입니다.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Transient)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient)
 	EMonsterState MonsterState;
 	//몬스터 기본정보를 저장하는 데이터 에셋입니다.
-	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	class UMonsterDataAsset* MonsterDataAsset;
 	//이 수치가 DataAsset에 저장된 수치보다 높아지면 이 수치를 0으로 초기화 하고, 강제로 피격 애니메이션을 재생하도록 합니다.
-	UPROPERTY(EditAnywhere,Transient)
+	UPROPERTY(EditAnywhere, Transient)
 	float StunIntensity;
-	
+
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	EMonsterType GetMonsterType() { return MonsterDataAsset->MonsterType; }
+
 public:
 	UFUNCTION(BlueprintCallable)
 	void SetMonsterState(EMonsterState NewState);
-	UFUNCTION(BlueprintCallable,BlueprintPure)
-	EMonsterState GetMonsterState(){return MonsterState;}
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	EMonsterState GetMonsterState() { return MonsterState; }
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool ShouldForceCombatState();
+
 protected:
 	void IncreaseStunIntensity(const FAttributeEffect& Effect,
-							   UAbilityEffectAdditionalInformation* AdditionalInformation);
+	                           UAbilityEffectAdditionalInformation* AdditionalInformation);
 
 	//몬스터 사망시 숨김처리되는 시간입니다.
 	UPROPERTY(EditAnywhere)
@@ -236,25 +238,27 @@ protected:
 protected:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsStartBehaviorTreeImmediately() { return MonsterDataAsset->bStartBehaviorTreeImmediately; }
+
 	/**********************************************기본정보*********************************************************/
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FText GetMonsterName() { return MonsterDataAsset->MonsterName; }
+
 	const FGameplayTag& GetMonsterTag() const { return MonsterDataAsset->MonsterTag; }
 	/**********************************************애니메이션*********************************************************/
 
-	
+
 	/**********************************************사망처리*********************************************************/
 
 protected:
 	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy) override;
 	UFUNCTION()
 	void OnDeadBossEvent(AActor* Who, AActor* DeadBy);
-public:
 
+public:
 	virtual void PlayDeadAnimationSequence() override;
 	virtual void PlayDeadAnimationMontage() override;
-	
+
 	UFUNCTION()
 	virtual void OnDeadMontageEndedEvent(UAnimMontage* Montage, bool bInterrupted);
 
@@ -262,13 +266,14 @@ public:
 protected:
 	virtual void OnRemoveAttributeEffectAdditionalInformationEvent_Implementation(const FAttributeEffect& Effect,
 		UAbilityEffectAdditionalInformation*
-		AdditionalInformation,float DeltaTime = 1) override;
+		AdditionalInformation, float DeltaTime = 1) override;
 
 	//레벨에서 호출하면 렌덤하게 회전을 틉니다.
-	UFUNCTION(BlueprintCallable,CallInEditor)
+	UFUNCTION(BlueprintCallable, CallInEditor)
 	void SetRandomRotationYaw();
 
-	virtual void TriggerHitAnimation_Implementation(UAbilityEffectAdditionalInformation* AdditionalInformation) override;
+	virtual void
+	TriggerHitAnimation_Implementation(UAbilityEffectAdditionalInformation* AdditionalInformation) override;
 
 
 	/**********************************************사운드*********************************************************/
@@ -285,6 +290,6 @@ public:
 	void StopMusic(float AdjustVolumeDuration);
 
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FString GetSafeName();
 };

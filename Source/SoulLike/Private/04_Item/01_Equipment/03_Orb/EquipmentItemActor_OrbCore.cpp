@@ -6,6 +6,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
+#include "03_Widget/MainWidget.h"
 #include "03_Widget/01_Menu/05_Orb/OrbWidget.h"
 #include "99_Subsystem/ItemManagerSubsystem.h"
 #include "Kismet/GameplayStatics.h"
@@ -26,11 +27,11 @@ AEquipmentItemActor_OrbCore::AEquipmentItemActor_OrbCore()
 
 void AEquipmentItemActor_OrbCore::SetCoreMatrixPtr()
 {
-	if(auto info = const_cast<FOrbCoreInformation*>(static_cast<const FOrbCoreInformation*>(GetItemInformation())))
+	if (auto info = const_cast<FOrbCoreInformation*>(static_cast<const FOrbCoreInformation*>(GetItemInformation())))
 	{
-		if(info->OrbMatrix == nullptr)
+		if (info->OrbMatrix == nullptr)
 		{
-			info->OrbMatrix = DuplicateObject(info->OrbMatrix_Original.Get(),this);
+			info->OrbMatrix = DuplicateObject(info->OrbMatrix_Original.Get(), this);
 			info->OrbMatrix->SetMatrix(info->OrbMatrix_Original.Get());
 		}
 	}
@@ -62,13 +63,14 @@ const FItemInformation* AEquipmentItemActor_OrbCore::GetItemInformation()
 bool AEquipmentItemActor_OrbCore::UseItem_Implementation(AActor* Target, const FGuid& ThisItemsUniqueID)
 {
 	Super::UseItem_Implementation(Target, ThisItemsUniqueID);
-	if(auto player = Cast<APlayerCharacter>(Target))
+	if (auto player = Cast<APlayerCharacter>(Target))
 	{
-		if(auto invenComp = player->GetInventoryComponent())
+		if (auto invenComp = player->GetInventoryComponent())
 		{
 			invenComp->SetEquippedCoreID(ThisItemsUniqueID);
-			
-			if(auto main = player->GetMainWidget()){
+
+			if (auto main = player->GetMainWidget())
+			{
 				main->UMG_Orb->OnEquipCoreEvent(invenComp->GetInventoryItem(ThisItemsUniqueID));
 			}
 
@@ -87,7 +89,6 @@ void AEquipmentItemActor_OrbCore::UnEquip_Implementation(AActor* Target, const F
 void AEquipmentItemActor_OrbCore::BeginPlay()
 {
 	Super::BeginPlay();
-
 }
 
 void AEquipmentItemActor_OrbCore::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -105,11 +106,11 @@ void AEquipmentItemActor_OrbCore::EndPlay(const EEndPlayReason::Type EndPlayReas
 
 void AEquipmentItemActor_OrbCore::Destroyed()
 {
-	if(auto info = const_cast<FOrbCoreInformation*>(static_cast<const FOrbCoreInformation*>(GetItemInformation())))
+	if (auto info = const_cast<FOrbCoreInformation*>(static_cast<const FOrbCoreInformation*>(GetItemInformation())))
 	{
-		if(info->OrbMatrix != nullptr)
+		if (info->OrbMatrix != nullptr)
 		{
-			if(info->OrbMatrix->IsRooted())
+			if (info->OrbMatrix->IsRooted())
 			{
 				info->OrbMatrix->RemoveFromRoot();
 			}
@@ -117,4 +118,3 @@ void AEquipmentItemActor_OrbCore::Destroyed()
 	}
 	Super::Destroyed();
 }
-

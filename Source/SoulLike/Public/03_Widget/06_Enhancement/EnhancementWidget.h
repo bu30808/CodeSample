@@ -40,7 +40,7 @@ protected:
 
 	UPROPERTY(meta=(BindWidget))
 	class UBorder* Border_UpgradeMax;
-	
+
 	UPROPERTY(meta=(BindWidget))
 	class UItemInfoWidget* UMG_ItemInfo;
 
@@ -85,7 +85,6 @@ protected:
 	//이 위젯에 정보가 설정된 아이템구조체입니다.
 	UPROPERTY()
 	FInventoryItem SetItem;
-	
 
 
 	virtual void NativePreConstruct() override;
@@ -116,7 +115,7 @@ public:
 	void ShowItemInformation(UInventoryData* Data);
 	//오브 및 프레그먼트 정보 표시
 	void ShowItemInformation(UOrbData* Data);
-	
+
 	UFUNCTION()
 	void OnUpgradeEquipmentEvent(const FGuid& ID, AEquipmentItemActor* EquipmentItemActor);
 };

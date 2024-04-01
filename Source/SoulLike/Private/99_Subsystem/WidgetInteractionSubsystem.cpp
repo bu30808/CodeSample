@@ -28,9 +28,9 @@ void UWidgetInteractionSubsystem::OpenWidgetSetting(APlayerController* PC, UUser
 	{
 		PC->bShowMouseCursor = true;
 		WidgetOpenStack.Push(false);
-		UKismetSystemLibrary::PrintString(this,FString::Printf(TEXT("위젯 열림 스택 : %d"),WidgetOpenStack.Num()));
-		UE_LOGFMT(LogCharacter,Log,"위젯 입력 매핑을 적용합니다.");
-		UWidgetBlueprintLibrary::SetInputMode_GameAndUIEx(PC, FocusWidget,EMouseLockMode::LockAlways,true);
+		UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("위젯 열림 스택 : %d"), WidgetOpenStack.Num()));
+		UE_LOGFMT(LogCharacter, Log, "위젯 입력 매핑을 적용합니다.");
+		UWidgetBlueprintLibrary::SetInputMode_GameAndUIEx(PC, FocusWidget, EMouseLockMode::LockAlways, true);
 		system->ClearAllMappings();
 		system->AddMappingContext(WidgetInputContext, 0);
 	}
@@ -38,28 +38,28 @@ void UWidgetInteractionSubsystem::OpenWidgetSetting(APlayerController* PC, UUser
 
 void UWidgetInteractionSubsystem::CloseWidgetSetting(APlayerController* PC, bool RemainMousePoint)
 {
-	UE_LOGFMT(LogCharacter,Log,"입력메핑 스택1");
+	UE_LOGFMT(LogCharacter, Log, "입력메핑 스택1");
 	if (auto system = GetLocalInputSystem(PC))
 	{
-		UE_LOGFMT(LogCharacter,Log,"입력메핑 스택2");
-		if(WidgetOpenStack.Num() > 0)
+		UE_LOGFMT(LogCharacter, Log, "입력메핑 스택2");
+		if (WidgetOpenStack.Num() > 0)
 		{
 			WidgetOpenStack.Pop();
 		}
-		
-		if(WidgetOpenStack.IsEmpty())
+
+		if (WidgetOpenStack.IsEmpty())
 		{
-			UE_LOGFMT(LogCharacter,Log,"입력메핑 스택3");
-			
+			UE_LOGFMT(LogCharacter, Log, "입력메핑 스택3");
+
 			system->ClearAllMappings();
 			PC->GetPawn<APlayerCharacter>()->SetDefaultMappingContext();
-			
-			if(RemainMousePoint)
+
+			if (RemainMousePoint)
 			{
 				UWidgetBlueprintLibrary::SetInputMode_GameAndUIEx(PC);
-				
-			}else{
-				
+			}
+			else
+			{
 				UWidgetBlueprintLibrary::SetInputMode_GameOnly(PC);
 				PC->bShowMouseCursor = false;
 			}

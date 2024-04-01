@@ -13,7 +13,7 @@ UStatusEffect_DeadlyPoison::UStatusEffect_DeadlyPoison()
 	UniqueEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.DeadlyPoison.Effect");
 
 	static ConstructorHelpers::FClassFinder<AAbilityCue> cueActor(TEXT(
-	"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/StatusEffect/DeadlyPoison/AC_DeadlyPoison.AC_DeadlyPoison_C'"));
+		"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/StatusEffect/DeadlyPoison/AC_DeadlyPoison.AC_DeadlyPoison_C'"));
 	if (cueActor.Succeeded())
 	{
 		FAbilityCueInformation cue;
@@ -29,5 +29,5 @@ UStatusEffect_DeadlyPoisonAcc::UStatusEffect_DeadlyPoisonAcc()
 	UniqueEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.DeadlyPoison.Acc.Effect");
 	CheckStatusEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.DeadlyPoison.Effect");
 
-	AttributeEffects.Add(FAttributeEffect(EAttributeType::DeadlyPoisonAcc,EAttributeApplyMethod::ADD,0));
+	AttributeEffects.Add(FAttributeEffect(EAttributeType::DeadlyPoisonAcc, EAttributeApplyMethod::ADD, 0));
 }

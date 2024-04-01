@@ -33,7 +33,9 @@ void UAnimNotifyState_DisableInput::BranchingPointNotifyBegin(FBranchingPointNot
 					break;
 				case EDisableInputType::DisableMoveInput:
 					//pc->SetIgnoreMoveInput(true);
-						player->SetIgnoreMoveInput(true,player,FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Animation.NotifyState.DisableInput"));
+					player->SetIgnoreMoveInput(true, player,
+					                           FGameplayTag::RequestGameplayTag(
+						                           "Common.Passive.IgnoreMoveInput.Animation.NotifyState.DisableInput"));
 					break;
 				case EDisableInputType::Both:
 					player->DisableInput(pc);
@@ -62,7 +64,9 @@ void UAnimNotifyState_DisableInput::BranchingPointNotifyEnd(FBranchingPointNotif
 					break;
 				case EDisableInputType::DisableMoveInput:
 					//pc->SetIgnoreMoveInput(false);
-						player->SetIgnoreMoveInput(false,player,FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Animation.NotifyState.DisableInput"));
+					player->SetIgnoreMoveInput(false, player,
+					                           FGameplayTag::RequestGameplayTag(
+						                           "Common.Passive.IgnoreMoveInput.Animation.NotifyState.DisableInput"));
 					break;
 				case EDisableInputType::Both:
 					player->DisableInput(pc);

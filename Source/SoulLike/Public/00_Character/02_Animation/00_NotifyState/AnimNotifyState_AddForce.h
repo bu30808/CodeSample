@@ -55,7 +55,7 @@ protected:
 	EDirection ForceDirection;
 	//참이면 컨트롤 로테이션을 기준으로 방향을 구합니다.
 	UPROPERTY(EditAnywhere,
-	meta=(EditCondition = "ForceApplicationMode == EForceApplicationMode::CustomDirectionSetting"))
+		meta=(EditCondition = "ForceApplicationMode == EForceApplicationMode::CustomDirectionSetting"))
 	bool bUseControllerDir = true;
 
 	/*//이 값이 참이면, 무브먼트의 속력수치를 사용합니다. 거짓이라면 플레이어의 입력 방향백터를 이용하게 됩니다.

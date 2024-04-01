@@ -16,6 +16,7 @@ class SOULLIKE_API UInventoryWidget : public UPopUpBasedWidget
 	GENERATED_BODY()
 
 	friend class UGameLoadHandler;
+
 protected:
 	UPROPERTY(meta=(BindWidget))
 	class UItemListWidget* UMG_ItemList;
@@ -29,6 +30,7 @@ protected:
 	virtual void NativeConstruct() override;
 	UFUNCTION()
 	void OnClickedCloseButton();
+
 public:
 	void ShowItemInformation(class UInventoryData* Data);
 };

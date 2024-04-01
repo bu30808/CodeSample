@@ -77,6 +77,6 @@ public:
 
 	virtual void CreateOrbMatrixFirst(const FInventoryItem& OrbCoreItem) override;
 	virtual void OverrideOrbMatrix(const FInventoryItem& OrbCoreItem) override;
-	
+
 	virtual void OnVisibilityChangedEvent(ESlateVisibility InVisibility) override;
 };

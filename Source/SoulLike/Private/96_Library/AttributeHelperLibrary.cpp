@@ -47,7 +47,8 @@ UAttributeProcessSubsystem* UAttributeHelperLibrary::GetAttributeProcessSubsyste
 
 EStatusEffect UAttributeHelperLibrary::AttributeTypeToStatusEffect(EAttributeType Type)
 {
-	switch (Type) {
+	switch (Type)
+	{
 	case EAttributeType::PoisonAcc:
 		return EStatusEffect::POISON;
 	case EAttributeType::DeadlyPoisonAcc:
@@ -62,16 +63,19 @@ EStatusEffect UAttributeHelperLibrary::AttributeTypeToStatusEffect(EAttributeTyp
 		return EStatusEffect::PETRIFACTION;
 	default: ;
 	}
-	
+
 	return EStatusEffect::MAX;
 }
 
 void UAttributeHelperLibrary::AttributeEffectElementToStatusEffectValues(UAttributeComponent* AttributeComponent,
-                                                                         EAttributeType AttributeType, EStatusEffect& StatusEffect, float& TotalAccValue, float& ResistValue)
+                                                                         EAttributeType AttributeType,
+                                                                         EStatusEffect& StatusEffect,
+                                                                         float& TotalAccValue, float& ResistValue)
 {
 	StatusEffect = AttributeTypeToStatusEffect(AttributeType);
 
-	switch (StatusEffect) {
+	switch (StatusEffect)
+	{
 	case EStatusEffect::POISON:
 		TotalAccValue = AttributeComponent->GetPoisonAcc();
 		ResistValue = AttributeComponent->GetPoisonResist();
@@ -97,7 +101,7 @@ void UAttributeHelperLibrary::AttributeEffectElementToStatusEffectValues(UAttrib
 		ResistValue = AttributeComponent->GetPetrifactionResist();
 		break;
 	case EStatusEffect::MAX:
-		UE_LOGFMT(LogEffect,Error,"상태이상 이넘값으로 변환 실패함");
+		UE_LOGFMT(LogEffect, Error, "상태이상 이넘값으로 변환 실패함");
 		break;
 	default: ;
 	}

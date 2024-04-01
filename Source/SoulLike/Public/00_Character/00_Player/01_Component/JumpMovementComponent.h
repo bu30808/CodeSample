@@ -8,12 +8,13 @@
 #include "JumpMovementComponent.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SOULLIKE_API UJumpMovementComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
 	friend class AJumpPad;
+
 protected:
 	UPROPERTY(EditAnywhere)
 	class UAnimMontage* ActivateMontage;
@@ -21,13 +22,13 @@ protected:
 	class UAnimMontage* JumpStartMontage;
 	UPROPERTY(EditAnywhere)
 	class UAnimMontage* LandMontage;
-	
+
 	UPROPERTY()
 	TObjectPtr<class APlayerCharacter> Pawn;
 	UPROPERTY()
 	TObjectPtr<class AJumpPad> CurJumpPad;
 
-public:	
+public:
 	// Sets default values for this component's properties
 	UJumpMovementComponent();
 

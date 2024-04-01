@@ -13,6 +13,6 @@ UCLASS()
 class SOULLIKE_API UBonfireWidget : public UNPCWidget
 {
 	GENERATED_BODY()
-	
+
 	virtual void NativeConstruct() override;
 };

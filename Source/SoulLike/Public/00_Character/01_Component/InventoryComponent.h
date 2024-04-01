@@ -46,8 +46,9 @@ public:
 
 	AItemActor* SetItemActor(bool bLoad);
 	FInventoryItem(class AActor* Owner, class AItemActor* ItemActor, int32 Count, FGuid NewID);
-	FInventoryItem(class AActor* Owner, TSubclassOf<class AItemActor> ItemActorObject, int32 Count, FGuid NewID,bool bLoad = false);
-	
+	FInventoryItem(class AActor* Owner, TSubclassOf<class AItemActor> ItemActorObject, int32 Count, FGuid NewID,
+	               bool bLoad = false);
+
 
 	const FItemInformation* GetItemInformation() const;
 	FText GetFormattedDescription() const;
@@ -81,7 +82,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUseItem, class ABaseCharacter*, 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUnEquipItem, class ABaseCharacter*, UsedBy, const FInventoryItem&,
                                              ItemInfo);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSaveFieldItemState, class ABaseCharacter*, GetBy, class AItemActor*,ItemActor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSaveFieldItemState, class ABaseCharacter*, GetBy, class AItemActor*,
+                                             ItemActor);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRemoveItem, class ABaseCharacter*, UsedBy, const FGuid&,
                                              RemoveItemUniqueID);
@@ -89,8 +91,11 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRemoveItem, class ABaseCharacter
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnGetItem, TSoftObjectPtr<class UTexture2D>, Image, FText, Name,
                                                int32, Count);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUpdateMainConsumeQuickSlot, const FInventoryItem&,Item,bool, bRemove);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUpdateMainAbilityQuickSlot, const FGameplayTag&,Tag,bool, bRemove);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnUpdateMainConsumeQuickSlot, const FInventoryItem&, Item, bool,
+                                               bRemove, int32, SlotIndex);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnUpdateMainAbilityQuickSlot, const FGameplayTag&, Tag, bool, bRemove,
+                                               int32, SlotIndex);
 
 
 /*
@@ -117,7 +122,6 @@ public:
 	UInventoryComponent();
 
 private:
-	
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
@@ -128,7 +132,7 @@ private:
 
 	//EItemType::EQUIPMENT인 모든 장착중인 장비를 저장하는 배열입니다.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	TArray<FGuid> EquippedItems;
+	TArray<FGuid> EquippedEquipments;
 
 	//장착중인 무기의 유니크 아이디입니다.
 	UPROPERTY()
@@ -137,6 +141,7 @@ private:
 	//장착중인 코어의 유니크 아이디입니다.
 	UPROPERTY()
 	FGuid EquippedCore;
+
 
 	/***********************구슬 파편 저장*******************************/
 	UPROPERTY(VisibleAnywhere)
@@ -148,15 +153,14 @@ public:
 	bool IsFragmentContains(const FGuid& UniqueID) const;
 	bool IsItemContains(const FGuid& UniqueID) const;
 
-	const TArray<FGuid>& GetEquippedItemsID() { return EquippedItems; }
+	const TArray<FGuid>& GetEquippedItemsID() { return EquippedEquipments; }
 	const FInventoryItem& GetEquippedWeapon();
 	const FInventoryItem& GetEquippedCore();
 
 	void SetEquippedCoreID(const FGuid& UniqueID) { EquippedCore = UniqueID; }
 	const FGuid& GetEquippedCoreID() const { return EquippedCore; }
-	void SetEquippedWeaponID(const FGuid& UniqueID){ EquippedWeapon = UniqueID;}
+	void SetEquippedWeaponID(const FGuid& UniqueID) { EquippedWeapon = UniqueID; }
 	const FGuid& GetEquippedWeaponID() const { return EquippedWeapon; }
-
 
 
 	//아이템이 추가되었을 때 호출되는 이벤트입니다.
@@ -226,9 +230,9 @@ public:
 	TArray<class AItemActor*> GetEquipmentItems();
 
 
-	//해당 아이디의 아이템이 장착중인지 확인합니다.
+	//해당 아이디의 "장비"아이템이 장착중인지 확인합니다.
 	UFUNCTION(BlueprintPure, BlueprintCallable)
-	bool IsEquipped(const FGuid& ItemUniqueID);
+	bool IsEquippedEquipment(const FGuid& ItemUniqueID);
 
 
 	/**
@@ -263,9 +267,9 @@ protected:
 	/***********************퀵슬롯 관리*******************************/
 
 	//지금 표시중인 인덱스
-	UPROPERTY(VisibleAnywhere,meta=(ClampMin = 0,ClampMax = 9))
+	UPROPERTY(VisibleAnywhere, meta=(ClampMin = 0, ClampMax = 9))
 	int32 CurConsumeQuickSlotIndex = 0;
-	UPROPERTY(VisibleAnywhere,meta=(ClampMin = 0,ClampMax = 9))
+	UPROPERTY(VisibleAnywhere, meta=(ClampMin = 0, ClampMax = 9))
 	int32 CurAbilityQuickSlotIndex = 0;
 
 	//퀵슬롯에 저장된 아이템 유니크 아이디입니다.
@@ -279,18 +283,18 @@ protected:
 		FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag,
 		FGameplayTag::EmptyTag, FGameplayTag::EmptyTag
 	};
-public:
 
-	UPROPERTY(BlueprintAssignable,BlueprintCallable)
+public:
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnUpdateMainConsumeQuickSlot OnUpdateMainConsumeQuickSlot;
-	UPROPERTY(BlueprintAssignable,BlueprintCallable)
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnUpdateMainAbilityQuickSlot OnUpdateMainAbilityQuickSlot;
-	
-	void AddQuickSlotItem(class UInventoryData* Data,int32 Index);
+
+	void AddQuickSlotItem(class UInventoryData* Data, int32 Index);
 	void AddQuickSlotAbility(class UInventoryData* Data, int32 Index);
 
-	void RemoveQuickSlotItem(class UInventoryData* Data,int32 Index);
-	void RemoveQuickSlotAbility(class UInventoryData* Data,int32 Index);
+	void RemoveQuickSlotItem(class UInventoryData* Data, int32 Index);
+	void RemoveQuickSlotAbility(class UInventoryData* Data, int32 Index);
 
 	void NextConsumeQuickSlot();
 	void NextAbilityQuickSlot();
@@ -302,4 +306,10 @@ public:
 	void UseConsumeQuickSlot();
 	void UseAbilityQuickSlot();
 
+	TSet<FGuid> GetRegisteredConsumeQuickSlotItems();
+	TSet<FGameplayTag> GetRegisteredQuickSlotAbilities();
+
+	//아이템 버튼이 아이템리스트에서 생성되면 호출됩니다.
+	UFUNCTION()
+	void OnItemButtonWidgetGeneratedEvent(UUserWidget* UserWidget);
 };

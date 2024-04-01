@@ -41,7 +41,7 @@ public:
 	class UButton* Button;*/
 	UPROPERTY(meta=(BindWidget))
 	class UImage* Image_Line;
-	
+
 	UPROPERTY()
 	FOnClickedMatrixElement OnClickedMatrixElement;
 
@@ -62,7 +62,6 @@ public:
 	EOrbMatrixElementType ElementType = EOrbMatrixElementType::Normal;
 
 protected:
-
 	UPROPERTY(EditAnywhere)
 	TMap<EOrbMatrixSlotType, FLinearColor> OrbColor;
 
@@ -80,21 +79,20 @@ protected:
 	bool UnEquipPreFragment(FGuid PreFragmentUniqueID);
 
 
-
 	UFUNCTION()
 	void OnEquipFragmentEvent(const FInventoryItem& OrbFragmentItem);
 
 	UFUNCTION()
 	void OnClicked();
-	
+
 	UFUNCTION()
 	void OnHoveredEvent();
 
 	virtual void NativeConstruct() override;
-	
+
 	bool IsSameType(EOrbMatrixSlotType SlotType);
 	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent,
-										  UDragDropOperation*& OutOperation) override;
+	                                  UDragDropOperation*& OutOperation) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	                          UDragDropOperation* InOperation) override;
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
@@ -108,12 +106,12 @@ protected:
 	class UTexture2D* LineSlotTexture;
 
 	void ChangeElementImageStyle(UObject* NewTexture, float Alpha = 1.f) const;
-	const FOrbFragmentInformation* GetOrbFragmentInformation(const FOrbMatrixElementInfo&  Info);
+	const FOrbFragmentInformation* GetOrbFragmentInformation(const FOrbMatrixElementInfo& Info);
 	bool ExchangeCheck(const FOrbMatrixElementInfo& A, const FOrbMatrixElementInfo& B);
-	
+
 	bool CanExchange(const FOrbMatrixElementInfo& OtherMatrixElementInfo);
 	void ExchangeData(UOrbMatrixElementWidget* OtherWidget);
-	
+
 	UFUNCTION()
 	void SetLine();
 	UFUNCTION()
@@ -145,10 +143,9 @@ public:
 	void OverrideMatrixSlot();
 	//저장되었던 이 슬롯의 정보를 가져와 갱신합니다.
 	void LoadMatrixSlot();
-	
+
 	void EquipOrbFragment(const FInventoryItem& OrbFragmentItem);
 	virtual UUserWidget* CreateCustomDragShadowWidget() override;
-
 };
 
 UCLASS()
@@ -157,10 +154,9 @@ class SOULLIKE_API UOrbMatrixElementDragShadowWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-
-		UPROPERTY(meta=(BindWidget), BlueprintReadOnly)
+	UPROPERTY(meta=(BindWidget), BlueprintReadOnly)
 	class UNiagaraSystemWidget* OrbParticle;
-	
+
 	//이 슬롯을 드래그했습니다.
 	UPROPERTY()
 	TWeakObjectPtr<class UOrbMatrixElementWidget> DraggedWidget;

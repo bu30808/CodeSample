@@ -22,11 +22,11 @@ void UCharacterTotalInfoWidget::NativePreConstruct()
 
 void UCharacterTotalInfoWidget::NativeConstruct()
 {
-	UE_LOGFMT(LogTemp,Log,"팝업위젯/// 컨스트럭트");
-	
+	UE_LOGFMT(LogTemp, Log, "팝업위젯/// 컨스트럭트");
+
 	bUseAsPopUp = true;
 	bRemovable = false;
-	
+
 	Super::NativeConstruct();
 
 	if (auto pawn = GetOwningPlayerPawn<APlayerCharacter>())
@@ -36,7 +36,6 @@ void UCharacterTotalInfoWidget::NativeConstruct()
 			invenComp->OnUseItem.AddUniqueDynamic(this, &UCharacterTotalInfoWidget::OnEquippedItemEvent);
 		}
 	}
-	
 }
 
 void UCharacterTotalInfoWidget::OnEquippedItemEvent(ABaseCharacter* UsedBy, const FInventoryItem& ItemInfo)
@@ -77,7 +76,6 @@ void UCharacterTotalInfoWidget::OnEquippedItemEvent(ABaseCharacter* UsedBy, cons
 					{
 						Cast<UEquipButtonWidget>(EquipmentButtons[index + 2])->SetButtonInfo(data);
 					}
-					return;
 				}
 			}
 		}
@@ -95,7 +93,6 @@ void UCharacterTotalInfoWidget::AddRingSlot()
 	if (!EquipmentButtons[6]->IsVisible())
 	{
 		EquipmentButtons[6]->SetVisibility(ESlateVisibility::Visible);
-		return;
 	}
 }
 
@@ -110,19 +107,18 @@ void UCharacterTotalInfoWidget::RemoveRingSlot()
 	if (EquipmentButtons[5]->IsVisible())
 	{
 		EquipmentButtons[5]->SetVisibility(ESlateVisibility::Collapsed);
-		return;
 	}
 }
 
 void UCharacterTotalInfoWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
-	UE_LOGFMT(LogTemp,Log,"팝업위젯/// OnVisibilityChangedEvent");
+	UE_LOGFMT(LogTemp, Log, "팝업위젯/// OnVisibilityChangedEvent");
 	Super::OnVisibilityChangedEvent(InVisibility);
-	
+
 	if (auto pawn = GetOwningPlayerPawn<APlayerCharacter>())
 	{
 		pawn->ShowRender(IsVisible());
-		
+
 		if (IsVisible())
 		{
 			if (auto invenComp = pawn->GetInventoryComponent())

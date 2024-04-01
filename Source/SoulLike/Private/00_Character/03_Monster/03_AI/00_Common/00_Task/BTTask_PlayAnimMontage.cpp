@@ -24,7 +24,7 @@ EBTNodeResult::Type UBTTask_PlayAnimMontage::ExecuteTask(UBehaviorTreeComponent&
 	if (MontageToPlay)
 	{
 		AIController = OwnerComp.GetAIOwner();
-		
+
 		if (auto monster = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
 		{
 			if (!monster->GetIsTriggeredHitAnimationExitEvent())
@@ -36,12 +36,11 @@ EBTNodeResult::Type UBTTask_PlayAnimMontage::ExecuteTask(UBehaviorTreeComponent&
 
 			if (auto instance = monster->GetMesh()->GetAnimInstance())
 			{
-		
 				if (!bEnableRootMotion)
 				{
 					instance->RootMotionMode = ERootMotionMode::IgnoreRootMotion;
 				}
-	
+
 				float playSpeed = 1.f;
 				if (bUseCustomPlayRate)
 				{
@@ -57,20 +56,18 @@ EBTNodeResult::Type UBTTask_PlayAnimMontage::ExecuteTask(UBehaviorTreeComponent&
 					instance->Montage_Play(MontageToPlay, playSpeed);
 					return EBTNodeResult::Succeeded;
 				}
-				
-				instance->OnMontageBlendingOut.AddUniqueDynamic(this, &UBTTask_PlayAnimMontage::OnMontageBlendingOutEvent);
+
+				instance->OnMontageBlendingOut.AddUniqueDynamic(
+					this, &UBTTask_PlayAnimMontage::OnMontageBlendingOutEvent);
 				instance->Montage_Play(MontageToPlay, playSpeed);
 
 				return EBTNodeResult::InProgress;
 			}
-			else
-			{
-				UE_LOGFMT(LogAICon, Error, "인스턴스를 가져올 수 없어요!!");
-			}
+			UE_LOGFMT(LogAICon, Error, "인스턴스를 가져올 수 없어요!!");
 		}
 	}
 	UE_LOGFMT(LogAICon, Error, "플레이할 몽타주가 없어요!");
-	UKismetSystemLibrary::PrintString(AIController,FString::Printf(TEXT("몽타주 재생에 실패했음!!!!!!!!!!!!!!!!!!")));
+	UKismetSystemLibrary::PrintString(AIController, FString::Printf(TEXT("몽타주 재생에 실패했음!!!!!!!!!!!!!!!!!!")));
 	return EBTNodeResult::Failed;
 }
 
@@ -95,15 +92,17 @@ void UBTTask_PlayAnimMontage::OnMontageBlendingOutEvent(UAnimMontage* Montage, b
 {
 	if (MontageToPlay == Montage)
 	{
-		if(AIController!=nullptr)
+		if (AIController != nullptr)
 		{
-			UKismetSystemLibrary::PrintString(AIController,FString::Printf(TEXT("%s 가 종료되었습니다."),*Montage->GetName()));
-			if(auto pawn = AIController->GetPawn<ABaseCharacter>())
+			UKismetSystemLibrary::PrintString(AIController,
+			                                  FString::Printf(TEXT("%s 가 종료되었습니다."), *Montage->GetName()));
+			if (auto pawn = AIController->GetPawn<ABaseCharacter>())
 			{
 				if (auto instance = pawn->GetMesh()->GetAnimInstance())
 				{
 					instance->OnMontageBlendingOut.RemoveAll(this);
-					FinishLatentTask(*Cast<UBehaviorTreeComponent>(AIController->GetBrainComponent()), EBTNodeResult::Succeeded);
+					FinishLatentTask(*Cast<UBehaviorTreeComponent>(AIController->GetBrainComponent()),
+					                 EBTNodeResult::Succeeded);
 				}
 			}
 		}

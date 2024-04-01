@@ -372,7 +372,7 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<class UOrbMatrix> OrbMatrix = nullptr;
-	
+
 	UPROPERTY(EditAnywhere, meta=(EditCondition= "OrbType == EOrbType::CORE"))
 	FLinearColor CoreColor = FLinearColor::White;
 
@@ -382,14 +382,11 @@ public:
 		EquipType = EEquipType::ORB;
 		OrbType = EOrbType::CORE;
 		bStackable = false;
-		
-		Item_Image = FSoftObjectPath("/Script/Engine.Texture2D'/Game/Asset/Icon/Orb/orbCore.orbCore'");
 
-		
+		Item_Image = FSoftObjectPath("/Script/Engine.Texture2D'/Game/Asset/Icon/Orb/orbCore.orbCore'");
 	}
 
 	//class UOrbMatrix* GetLoadMatrix() const {return OrbMatrixObject;}
-	
 };
 
 USTRUCT(BlueprintType)
@@ -423,7 +420,6 @@ class SOULLIKE_API AItemActor : public AActor
 public:
 	// Sets default values for this actor's properties
 	AItemActor();
-
 
 protected:
 	// Called when the game starts or when spawned
@@ -530,6 +526,4 @@ public:
 	//이 아이템이 스폰되어 몬스터에 들러붙어있는 도중에, 몬스터가 Destroy된 경우에 호출됩니다.
 	UFUNCTION()
 	void OnAttachedOwnerDestroyEvent(AActor* DestroyedActor);
-
-	
 };

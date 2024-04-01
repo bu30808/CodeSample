@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
+#include "InventoryComponent.h"
 #include "Components/ActorComponent.h"
 #include "00_Character/BaseCharacter.h"
 #include "02_Ability/AbilityBase.h"
@@ -47,7 +48,6 @@ class UAbilityCueAdditionalInformation : public UObject
 	GENERATED_BODY()
 
 public:
-	
 	FVector HitLocation;
 	void UpdateCueLocation(TArray<FAbilityCueInformation>& CueInfos) const;
 };
@@ -106,11 +106,11 @@ protected:
 	virtual void BeginPlay() override;
 
 	//이 목록에 있는 어빌리티만 사용 가능합니다.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Transient)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient)
 	TArray<class UAbilityBase*> AvailableAbilities;
 
 	//현재 사용(발동)중인 어빌리티의 태그입니다.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Transient )
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient)
 	FGameplayTagContainer ActivatedAbilityTags;
 
 	/**
@@ -120,21 +120,21 @@ protected:
 	 * 이 변수 내부에 쿨다운 태그가 존재하는 경우, 쿨타임이 적용중인 상태가 됩니다.
 	 * 쿨타임이 끝났을 때, 쿨다운 태그를 이 변수에서 제거합니다.
 	 */
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Transient )
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient)
 	FGameplayTagContainer AppliedEffectTags;
 
 	//적용된 이팩트를 저장하는 입니다.
-	UPROPERTY(VisibleAnywhere,Transient )
+	UPROPERTY(VisibleAnywhere, Transient)
 	TArray<class UAbilityEffect*> AppliedEffects;
 
 	//재 사용 가능한 어빌리티 큐를 저장하는 맵입니다.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Transient )
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient)
 	TMap<FGameplayTag, class AAbilityCue*> ReusableCues;
-	
+
 	//지속시간형 어빌리티 큐를 저장하는 맵입니다.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Transient )
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient)
 	TMap<FGameplayTag, class AAbilityCue*> DurableCues;
-	
+
 public:
 	const TArray<class UAbilityBase*>& GetAvailableAbilities() const { return AvailableAbilities; }
 	const FGameplayTagContainer& GetActivatedAbilityTags() { return ActivatedAbilityTags; }
@@ -144,7 +144,7 @@ public:
 	 * @return 찾지 못한 경우 nullptr
 	 */
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	class UAbilityBase* GetAbilityByTag(FGameplayTag AbilityTag);
+	UAbilityBase* GetAbilityByTag(FGameplayTag AbilityTag);
 
 	/**
 	 * @brief 등록된 어빌리티중 이 태그를 가진 어빌리티가 있는지 확인합니다.
@@ -264,25 +264,28 @@ public:
 	 * 비워둘 경우 어빌리티 내부 EffectExpired가 바인드되지 않습니다.
 	 */
 	UFUNCTION(BlueprintCallable)
-	void K2_ApplyEffect(TSubclassOf<UAbilityEffect> Effect, AActor* EffectBy, FOnEffectExpired OnEffectExpired, UObject* AdditionalData = nullptr);
+	void K2_ApplyEffect(TSubclassOf<UAbilityEffect> Effect, AActor* EffectBy, FOnEffectExpired OnEffectExpired,
+	                    UObject* AdditionalData = nullptr);
 	/**
 	 * 이 함수는 내부에서 전달받은 이팩트 오브젝트를 복제하지 않습니다. COD를 직접 전달하지 마십시오.
 	 */
 	UFUNCTION(BlueprintCallable)
-	void ApplyEffect(class UAbilityEffect* Effect, AActor* EffectBy, FOnEffectExpired OnEffectExpired, UAbilityBase* From, UObject*
-	                 AdditionalData = nullptr);
+	void ApplyEffect(class UAbilityEffect* Effect, AActor* EffectBy, FOnEffectExpired OnEffectExpired,
+	                 UAbilityBase* From, UObject*
+		                 AdditionalData = nullptr);
 	UFUNCTION(BlueprintCallable)
-	void ApplyEffects(const TArray<UAbilityEffect*>& Effects, AActor* EffectBy, FOnEffectExpired OnEffectExpired, UAbilityBase* From, UObject
+	void ApplyEffects(const TArray<UAbilityEffect*>& Effects, AActor* EffectBy, FOnEffectExpired OnEffectExpired,
+	                  UAbilityBase* From, UObject
 	                  * AdditionalData);
 	//내부적으로 전달받은 이팩트를 복제해서 사용합니다.
 	UFUNCTION(BlueprintCallable)
 	TArray<class UAbilityEffect*> K2_ApplyEffectsWithReturn(const TArray<TSubclassOf<class UAbilityEffect>>& Effects,
-	                                                     class AActor* EffectBy = nullptr,
-	                                                     UObject* AdditionalData = nullptr);
+	                                                        class AActor* EffectBy = nullptr,
+	                                                        UObject* AdditionalData = nullptr);
 	//이미 외부에서 복사된 이팩트 배열을 받아 사용합니다. 절대 COD를 직접 전달하지 마십시오.
 	TArray<class UAbilityEffect*> ApplyEffectsWithReturn(const TArray<class UAbilityEffect*>& Effects,
-														 class AActor* EffectBy = nullptr,
-														 UObject* AdditionalData = nullptr);
+	                                                     class AActor* EffectBy = nullptr,
+	                                                     UObject* AdditionalData = nullptr);
 
 	//어빌리티 이팩트를 종료합니다.
 	UFUNCTION(BlueprintCallable)
@@ -299,7 +302,7 @@ public:
 	//무적 태그가 있는지 확인합니다.
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsInvincible();
-	
+
 
 	UPROPERTY()
 	FTimerHandle CueClearTimerHandle;
@@ -337,6 +340,4 @@ public:
 
 	virtual void DestroyComponent(bool bPromoteChildren) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
-	
-	
 };

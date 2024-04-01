@@ -21,6 +21,7 @@ public:
 	UFUNCTION()
 	void OnDeadBossEvent(AActor* Who, AActor* DeadBy);
 };
+
 /**
  * 
  */
@@ -28,10 +29,12 @@ UCLASS()
 class SOULLIKE_API ULevelEventHelperLibrary : public UObject
 {
 	GENERATED_BODY()
-	
+
 public:
 	UFUNCTION(BlueprintCallable)
-	static ABaseMonster* SpawnBoss(AMainLevelScriptActor* ScriptActor,AActor* Trigger, AActor* OverlapActor, TArray<AActor*> BlockingActors, AActor* TargetPoint, TSubclassOf<class ABaseMonster> BossToSpawn, class USoundBase* MusicToPlay);
+	static ABaseMonster* SpawnBoss(AMainLevelScriptActor* ScriptActor, AActor* Trigger, AActor* OverlapActor,
+	                               TArray<AActor*> BlockingActors, AActor* TargetPoint,
+	                               TSubclassOf<class ABaseMonster> BossToSpawn, class USoundBase* MusicToPlay);
 	UFUNCTION(BlueprintCallable)
 	static void ActiveBlockingActors(TArray<AActor*> BlockingActors, bool bActive);
 };

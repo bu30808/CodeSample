@@ -45,7 +45,9 @@ static FORCEINLINE FText GetFloatAsTextWithPrecision(float TheFloat, int32 Preci
 	NumberFormat.MaximumFractionalDigits = Precision;
 	return FText::AsNumber(TheFloat, &NumberFormat);
 }
+
 #define LOCTEXT_NAMESPACE "EnumTextConvertHelper"
+
 static FORCEINLINE FText AttributeTypeToText(EAttributeType Type)
 {
 	switch (Type)
@@ -73,7 +75,7 @@ static FORCEINLINE FText AttributeTypeToText(EAttributeType Type)
 	case EAttributeType::PhysicalAttack:
 		return NSLOCTEXT("EnumTextConvertHelper", "PhysicalAttack", "물리공격력");
 	case EAttributeType::MagicalAttack:
-	return NSLOCTEXT("EnumTextConvertHelper", "MagicalAttack", "마법공격력");
+		return NSLOCTEXT("EnumTextConvertHelper", "MagicalAttack", "마법공격력");
 	case EAttributeType::PhysicalDefense:
 		return NSLOCTEXT("EnumTextConvertHelper", "PhysicalDefense", "물리방어력");
 	case EAttributeType::MagicalDefense:
@@ -196,7 +198,7 @@ static FORCEINLINE FText OrbMatrixSlotTypeToText(EOrbMatrixSlotType Type)
 	default: ;
 	}
 
-	return  FText::FromString("ERROR");
+	return FText::FromString("ERROR");
 }
 
 static FORCEINLINE FText OrbMatrixSlotContentToString(EOrbMatrixSlotContent Type)
@@ -252,7 +254,6 @@ static FORCEINLINE FText RarityToDecoText(EItemRarity Type)
 
 static FORCEINLINE FText SlotTypeToDecoText(EOrbMatrixSlotType SlotType)
 {
-	
 	switch (SlotType)
 	{
 	case EOrbMatrixSlotType::CORE:

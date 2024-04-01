@@ -14,15 +14,16 @@ UCLASS()
 class SOULLIKE_API UStatusEffect_DeadlyPoison : public UStatusEffect_TickBase
 {
 	GENERATED_BODY()
+
 protected:
 	UStatusEffect_DeadlyPoison();
-	
 };
 
 UCLASS()
 class SOULLIKE_API UStatusEffect_DeadlyPoisonAcc : public UStatusEffect_AccBase
 {
 	GENERATED_BODY()
+
 protected:
 	UStatusEffect_DeadlyPoisonAcc();
 };

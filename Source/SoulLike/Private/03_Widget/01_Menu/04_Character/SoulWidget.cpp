@@ -12,19 +12,19 @@
 void USoulWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
-	if(auto attComp = GetOwningPlayerPawn<ABaseCharacter>()->GetAttributeComponent())
+
+	if (auto attComp = GetOwningPlayerPawn<ABaseCharacter>()->GetAttributeComponent())
 	{
-		if(TextBlock_Soul)
+		if (TextBlock_Soul)
 		{
 			TextBlock_Soul->SetText(FText::AsNumber(attComp->GetEXP()));
 		}
-		attComp->OnCharacterInformationUpdate.AddUniqueDynamic(this,&USoulWidget::OnCharacterInformationUpdateEvent);
-		attComp->OnUpdateExp.AddUniqueDynamic(this,&USoulWidget::OnUpdateEXPEvent);
+		attComp->OnCharacterInformationUpdate.AddUniqueDynamic(this, &USoulWidget::OnCharacterInformationUpdateEvent);
+		attComp->OnUpdateExp.AddUniqueDynamic(this, &USoulWidget::OnUpdateEXPEvent);
 
-		UpdateDissolve.BindDynamic(this,&USoulWidget::OnLerpEXPEvent);
+		UpdateDissolve.BindDynamic(this, &USoulWidget::OnLerpEXPEvent);
 
-		if(HorizontalBox_GetSoul)
+		if (HorizontalBox_GetSoul)
 		{
 			HorizontalBox_GetSoul->SetVisibility(ESlateVisibility::Hidden);
 		}
@@ -33,7 +33,7 @@ void USoulWidget::NativeConstruct()
 
 void USoulWidget::OnCharacterInformationUpdateEvent()
 {
-	if(auto attComp = GetOwningPlayerPawn<ABaseCharacter>()->GetAttributeComponent())
+	if (auto attComp = GetOwningPlayerPawn<ABaseCharacter>()->GetAttributeComponent())
 	{
 		TextBlock_Soul->SetText(FText::AsNumber(attComp->GetEXP()));
 	}
@@ -51,37 +51,36 @@ void USoulWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 void USoulWidget::OnUpdateEXPEvent(float AddEXP)
 {
-	if(auto player = GetOwningPlayerPawn<ABaseCharacter>())
+	if (auto player = GetOwningPlayerPawn<ABaseCharacter>())
 	{
-		if(EXPLerpTimeLine == nullptr)
+		if (EXPLerpTimeLine == nullptr)
 		{
-			EXPLerpTimeLine =  UComponentHelperLibrary::CreateActorComponent<UTimelineComponent>(player,TEXT("EXPLerpComponent"));
-			EXPLerpTimeLine->AddInterpFloat(EXPLerpCurve,UpdateDissolve);
+			EXPLerpTimeLine = UComponentHelperLibrary::CreateActorComponent<UTimelineComponent>(
+				player,TEXT("EXPLerpComponent"));
+			EXPLerpTimeLine->AddInterpFloat(EXPLerpCurve, UpdateDissolve);
 			EXPLerpTimeLine->SetTimelineLength(LerpLength);
 		}
-		
-		if(auto attComp = player->GetAttributeComponent())
+
+		if (auto attComp = player->GetAttributeComponent())
 		{
-	
 			NextExp = attComp->GetEXP();
 			CurExp = NextExp - AddEXP;
-		
+
 			EXPLerpTimeLine->PlayFromStart();
-			
+
 			HorizontalBox_GetSoul->SetVisibility(ESlateVisibility::Visible);
 			TextBlock_SoulAdd->SetText(FText::AsNumber(static_cast<int32>(AddEXP)));
-
 		}
 	}
 }
 
 void USoulWidget::OnLerpEXPEvent(float Alpha)
 {
-	if(Alpha==1.f)
+	if (Alpha == 1.f)
 	{
 		HorizontalBox_GetSoul->SetVisibility(ESlateVisibility::Hidden);
 	}
-	
-	auto lerpValue = FMath::Lerp(CurExp,NextExp,Alpha);
+
+	auto lerpValue = FMath::Lerp(CurExp, NextExp, Alpha);
 	TextBlock_Soul->SetText(FText::AsNumber(static_cast<int32>(lerpValue)));
 }

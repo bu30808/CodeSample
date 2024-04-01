@@ -24,9 +24,9 @@ EBTNodeResult::Type UBTTask_ChangeMonsterState::ExecuteTask(UBehaviorTreeCompone
 		ownerCharacter->SetMonsterState(NewMonsterState);
 
 		//평화로 바꾸는 경우 타겟을 잊습니다.
-		if(NewMonsterState==EMonsterState::Peaceful)
+		if (NewMonsterState == EMonsterState::Peaceful)
 		{
-			if(auto taget = OwnerComp.GetBlackboardComponent()->GetValueAsObject(GetSelectedBlackboardKey()))
+			if (auto taget = OwnerComp.GetBlackboardComponent()->GetValueAsObject(GetSelectedBlackboardKey()))
 			{
 				//OwnerComp.GetBlackboardComponent()->SetValueAsObject(GetSelectedBlackboardKey(),nullptr);
 				OwnerComp.GetAIOwner()->PerceptionComponent->ForgetActor(Cast<AActor>(taget));

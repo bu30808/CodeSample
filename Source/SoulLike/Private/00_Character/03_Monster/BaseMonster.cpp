@@ -101,7 +101,7 @@ void ABaseMonster::ResetMonster(const FTransform& DefaultTr)
 	if (IsDead())
 	{
 		CharacterState = ECharacterState::NORMAL;
-		GetMesh()->SetAllBodiesSimulatePhysics(false); 
+		GetMesh()->SetAllBodiesSimulatePhysics(false);
 		GetCapsuleComponent()->SetCollisionProfileName("Pawn");
 		GetMesh()->SetCollisionProfileName("MonsterMesh");
 		GetWorldTimerManager().ClearTimer(DeadTimerHandle);
@@ -131,14 +131,15 @@ void ABaseMonster::BeginPlay()
 			//사망상태가 아니라면, 저장된 어트리뷰트값이 있다면 복구합니다
 			gameMode->RestoreMonsterState(this);
 			gameMode->AddToRespawnMonster(this);
-			
+
 			OnDead.AddUniqueDynamic(gameMode, &ASoulLikeGameMode::OnDeadMonsterEvent);
 		}
 	}
 
-	if(!IsDead())
+	if (!IsDead())
 	{
-		if(IsStartBehaviorTreeImmediately()){
+		if (IsStartBehaviorTreeImmediately())
+		{
 			GetController<AMonsterAIController>()->StartImmediatelyBehavior();
 		}
 	}
@@ -187,9 +188,9 @@ void ABaseMonster::PostInitializeComponents()
 
 void ABaseMonster::DetachDroppedItem()
 {
-	if(DroppedItem != nullptr)
+	if (DroppedItem != nullptr)
 	{
-		UE_LOGFMT(LogMonster,Log,"{0} : 붙은 아이템을 때어냅니다.",GetNameSafe(this));
+		UE_LOGFMT(LogMonster, Log, "{0} : 붙은 아이템을 때어냅니다.", GetNameSafe(this));
 		DroppedItem->K2_DetachFromActor();
 		DroppedItem->GetSphereComponent()->SetSimulatePhysics(true);
 	}
@@ -198,12 +199,11 @@ void ABaseMonster::DetachDroppedItem()
 void ABaseMonster::OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayReason)
 {
 	/*DetachDroppedItem();*/
-	
+
 	if (EndPlayReason == EEndPlayReason::RemovedFromWorld)
 	{
 		if (const auto gameMode = Cast<ASoulLikeGameMode>(UGameplayStatics::GetGameMode(this)))
 		{
-			
 			//사망 상태가 아닌데 언로드 되었다면, 어트리뷰트 상태를 저장합니다. 다음에 로드되었을 때 복구합니다.
 			if (!IsDead())
 			{
@@ -222,6 +222,8 @@ void ABaseMonster::OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayRea
 		DetachDroppedItem();
 		UE_LOGFMT(LogMonster, Warning, "몬스터 파괴됨 : {0}", GetNameSafe(this));
 	}
+
+	Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this,0))->SetPlayerStateBy(EPlayerCharacterState::Peaceful, this);
 }
 
 void ABaseMonster::OnDestroyedEvent(AActor* DestroyedActor)
@@ -286,12 +288,12 @@ void ABaseMonster::StopAITree() const
 {
 	if (const auto aiCon = GetController<AMonsterAIController>())
 	{
-		UE_LOGFMT(LogMonster,Warning,"AI 비활성화 : {0}",GetNameSafe(this));
+		UE_LOGFMT(LogMonster, Warning, "AI 비활성화 : {0}", GetNameSafe(this));
 		aiCon->GetPerceptionComponent()->ForgetAll();
 		aiCon->GetPerceptionComponent()->Deactivate();
 		if (aiCon->GetBrainComponent() != nullptr)
 		{
-			if(const auto btTreeComp = Cast<UBehaviorTreeComponent>(aiCon->GetBrainComponent()))
+			if (const auto btTreeComp = Cast<UBehaviorTreeComponent>(aiCon->GetBrainComponent()))
 			{
 				btTreeComp->StopTree();
 				aiCon->ResetBlackboard();
@@ -337,7 +339,7 @@ void ABaseMonster::RestoreFromRagdoll()
 	GetMesh()->SetCollisionProfileName("MonsterMesh");
 
 	RestoreComponentAttachment();
-	
+
 	SetActorEnableCollision(true);
 	SetActorHiddenInGame(false);
 	GetCharacterMovement()->GravityScale = 1;
@@ -370,7 +372,7 @@ void ABaseMonster::Activate()
 void ABaseMonster::Deactivate()
 {
 	UE_LOGFMT(LogMonster, Log, "{0} 비활성화", GetNameSafe(this));
-	
+
 	StopAITree();
 	SetActorHiddenInGame(true);
 	GetCharacterMovement()->GravityScale = 0;
@@ -393,7 +395,7 @@ void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy)
 			{
 				if (!UKismetSystemLibrary::DoesImplementInterface(this, UBossMonsterInterface::StaticClass()))
 				{
-					DroppedItem =  ItemDropComponent->DropItem(Cast<ABaseCharacter>(DeadBy));
+					DroppedItem = ItemDropComponent->DropItem(Cast<ABaseCharacter>(DeadBy));
 				}
 
 				ItemDropComponent->GiveExp(Cast<ABaseCharacter>(DeadBy));
@@ -407,7 +409,7 @@ void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy)
 			}
 
 
-			switch(DeadAnimationPlayMode)
+			switch (DeadAnimationPlayMode)
 			{
 			case EDeadAnimationPlayMode::None:
 				EnableRagdoll();
@@ -415,7 +417,6 @@ void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy)
 				break;
 			default: ;
 			}
-			
 		}
 	}
 }
@@ -425,7 +426,7 @@ void ABaseMonster::OnDeadBossEvent(AActor* Who, AActor* DeadBy)
 	if (UKismetSystemLibrary::DoesImplementInterface(this, UBossMonsterInterface::StaticClass()))
 	{
 		IBossMonsterInterface::Execute_RemoveBossWidget(this, this, DeadBy);
-		UAIConHelperLibrary::ChangePlayerState(Who,DeadBy,EPlayerCharacterState::Peaceful);
+		UAIConHelperLibrary::ChangePlayerState(Who, DeadBy, EPlayerCharacterState::Peaceful);
 		ItemDropComponent->BossDropItem(Cast<ABaseCharacter>(DeadBy));
 		USaveGameHelperLibrary::SaveKillBoss(this);
 	}
@@ -440,7 +441,7 @@ void ABaseMonster::PlayDeadAnimationSequence()
 void ABaseMonster::PlayDeadAnimationMontage()
 {
 	Super::PlayDeadAnimationMontage();
-	
+
 	if (DeadMontage != nullptr && GetMesh()->GetAnimInstance() != nullptr)
 	{
 		GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(

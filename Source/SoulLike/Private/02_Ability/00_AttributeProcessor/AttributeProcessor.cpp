@@ -60,21 +60,21 @@ float UAttributeProcessor_Add::ProcessAttributeEffect(class UAttributeComponent*
 		case EAttributeType::MaxHP:
 			setValue = AttributeComponent->GetMaxHP() + Effect.ApplyValue * DeltaTime;
 			AttributeComponent->SetMaxHP(setValue);
-			AttributeComponent->SetHP(AttributeComponent->GetHP() +  Effect.ApplyValue * DeltaTime);
+			AttributeComponent->SetHP(AttributeComponent->GetHP() + Effect.ApplyValue * DeltaTime);
 			AttributeComponent->BroadcastHPEvent();
 			AttributeComponent->BroadcastMaxHPEvent();
 			break;
 		case EAttributeType::MaxSP:
 			setValue = AttributeComponent->GetMaxSP() + Effect.ApplyValue * DeltaTime;
 			AttributeComponent->SetMaxSP(setValue);
-			AttributeComponent->SetSP(AttributeComponent->GetSP() +  Effect.ApplyValue * DeltaTime);
+			AttributeComponent->SetSP(AttributeComponent->GetSP() + Effect.ApplyValue * DeltaTime);
 			AttributeComponent->BroadcastSPEvent();
 			AttributeComponent->BroadcastMaxSPEvent();
 			break;
 		case EAttributeType::MaxMP:
 			setValue = AttributeComponent->GetMaxMP() + Effect.ApplyValue * DeltaTime;
 			AttributeComponent->SetMaxMP(setValue);
-			AttributeComponent->SetMP(AttributeComponent->GetMP() +  Effect.ApplyValue * DeltaTime);
+			AttributeComponent->SetMP(AttributeComponent->GetMP() + Effect.ApplyValue * DeltaTime);
 			AttributeComponent->BroadcastMPEvent();
 			AttributeComponent->BroadcastMaxMPEvent();
 			break;
@@ -145,55 +145,57 @@ float UAttributeProcessor_Add::ProcessAttributeEffect(class UAttributeComponent*
 			break;
 		case EAttributeType::PoisonResist:
 			setValue = AttributeComponent->GetPoisonResist() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetPoisonResist(FMath::Clamp(setValue,0,INT_MAX));
+			AttributeComponent->SetPoisonResist(FMath::Clamp(setValue, 0,INT_MAX));
 			break;
 		case EAttributeType::DeadlyPoisonResist:
 			setValue = AttributeComponent->GetDeadlyPoisonResist() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetDeadlyPoisonResist(FMath::Clamp(setValue,0,INT_MAX));
+			AttributeComponent->SetDeadlyPoisonResist(FMath::Clamp(setValue, 0,INT_MAX));
 			break;
 		case EAttributeType::BurnResist:
 			setValue = AttributeComponent->GetBurnResist() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetBurnResist(FMath::Clamp(setValue,0,INT_MAX));
+			AttributeComponent->SetBurnResist(FMath::Clamp(setValue, 0,INT_MAX));
 			break;
 		case EAttributeType::ChillResist:
 			setValue = AttributeComponent->GetChillResist() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetChillResist(FMath::Clamp(setValue,0,INT_MAX));
+			AttributeComponent->SetChillResist(FMath::Clamp(setValue, 0,INT_MAX));
 			break;
 		case EAttributeType::BleedResist:
 			setValue = AttributeComponent->GetBleedResist() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetBleedResist(FMath::Clamp(setValue,0,INT_MAX));
+			AttributeComponent->SetBleedResist(FMath::Clamp(setValue, 0,INT_MAX));
 			break;
 		case EAttributeType::PetrifactionResist:
 			setValue = AttributeComponent->GetPetrifactionResist() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetPetrifactionResist(FMath::Clamp(setValue,0,INT_MAX));
+			AttributeComponent->SetPetrifactionResist(FMath::Clamp(setValue, 0,INT_MAX));
 			break;
 		case EAttributeType::PoisonAcc:
 			setValue = AttributeComponent->GetPoisonAcc() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetPoisonAcc(FMath::Clamp(setValue,0,AttributeComponent->GetPoisonResist()));
+			AttributeComponent->SetPoisonAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetPoisonResist()));
 			break;
 		case EAttributeType::DeadlyPoisonAcc:
 			setValue = AttributeComponent->GetDeadlyPoisonAcc() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetDeadlyPoisonAcc(FMath::Clamp(setValue,0,AttributeComponent->GetDeadlyPoisonResist()));
+			AttributeComponent->SetDeadlyPoisonAcc(
+				FMath::Clamp(setValue, 0, AttributeComponent->GetDeadlyPoisonResist()));
 			break;
 		case EAttributeType::BurnAcc:
 			setValue = AttributeComponent->GetBurnAcc() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetBurnAcc(FMath::Clamp(setValue,0,AttributeComponent->GetBurnResist()));
+			AttributeComponent->SetBurnAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetBurnResist()));
 			break;
 		case EAttributeType::ChillAcc:
 			setValue = AttributeComponent->GetChillAcc() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetChillAcc(FMath::Clamp(setValue,0,AttributeComponent->GetChillResist()));
+			AttributeComponent->SetChillAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetChillResist()));
 			break;
 		case EAttributeType::BleedAcc:
 			setValue = AttributeComponent->GetBleedAcc() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetBleedAcc(FMath::Clamp(setValue,0,AttributeComponent->GetBleedResist()));
+			AttributeComponent->SetBleedAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetBleedResist()));
 			break;
 		case EAttributeType::PetrifactionAcc:
 			setValue = AttributeComponent->GetPetrifactionAcc() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetPetrifactionAcc(FMath::Clamp(setValue,0,AttributeComponent->GetPetrifactionResist()));
+			AttributeComponent->SetPetrifactionAcc(
+				FMath::Clamp(setValue, 0, AttributeComponent->GetPetrifactionResist()));
 			break;
 		case EAttributeType::MoveSpeed:
 			setValue = AttributeComponent->GetMoveSpeed() + Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetMoveSpeed(FMath::Clamp(setValue,0,INT_MAX));
+			AttributeComponent->SetMoveSpeed(FMath::Clamp(setValue, 0,INT_MAX));
 			AttributeComponent->OnChangedMoveSpeedAttribute.Broadcast();
 			break;
 		case EAttributeType::MAX:
@@ -236,12 +238,12 @@ float UAttributeProcessor_Remove::ProcessAttributeEffect(UAttributeComponent* At
 		case EAttributeType::SP:
 #if WITH_EDITOR
 
-			if(DeltaTime == 1)
+			if (DeltaTime == 1)
 			{
-				UE_LOGFMT(LogTemp,Log,"SP 감소량 : {0}",Effect.ApplyValue);
+				UE_LOGFMT(LogTemp, Log, "SP 감소량 : {0}", Effect.ApplyValue);
 			}
 #endif
-			//UE_LOGFMT(LogTemp,Log,"초당 감소량 : {0}, 델타타임 계산값 : {1}",Effect.ApplyValue,Effect.ApplyValue * DeltaTime);
+		//UE_LOGFMT(LogTemp,Log,"초당 감소량 : {0}, 델타타임 계산값 : {1}",Effect.ApplyValue,Effect.ApplyValue * DeltaTime);
 			setValue = FMath::Clamp(AttributeComponent->GetSP() - Effect.ApplyValue * DeltaTime, 0,
 			                        AttributeComponent->GetMaxSP());
 			AttributeComponent->SetSP(setValue);
@@ -256,21 +258,21 @@ float UAttributeProcessor_Remove::ProcessAttributeEffect(UAttributeComponent* At
 		case EAttributeType::MaxHP:
 			setValue = AttributeComponent->GetMaxHP() - Effect.ApplyValue * DeltaTime;
 			AttributeComponent->SetMaxHP(setValue);
-			AttributeComponent->SetHP(AttributeComponent->GetHP() -  Effect.ApplyValue * DeltaTime);
+			AttributeComponent->SetHP(AttributeComponent->GetHP() - Effect.ApplyValue * DeltaTime);
 			AttributeComponent->BroadcastMaxHPEvent();
 			AttributeComponent->BroadcastHPEvent();
 			break;
 		case EAttributeType::MaxSP:
 			setValue = AttributeComponent->GetMaxSP() - Effect.ApplyValue * DeltaTime;
 			AttributeComponent->SetMaxSP(setValue);
-			AttributeComponent->SetSP(AttributeComponent->GetSP() -  Effect.ApplyValue * DeltaTime);
+			AttributeComponent->SetSP(AttributeComponent->GetSP() - Effect.ApplyValue * DeltaTime);
 			AttributeComponent->BroadcastMaxSPEvent();
 			AttributeComponent->BroadcastSPEvent();
 			break;
 		case EAttributeType::MaxMP:
 			setValue = AttributeComponent->GetMaxMP() - Effect.ApplyValue * DeltaTime;
 			AttributeComponent->SetMaxMP(setValue);
-			AttributeComponent->SetMP(AttributeComponent->GetMP() -  Effect.ApplyValue * DeltaTime);
+			AttributeComponent->SetMP(AttributeComponent->GetMP() - Effect.ApplyValue * DeltaTime);
 			AttributeComponent->BroadcastMaxMPEvent();
 			AttributeComponent->BroadcastMPEvent();
 			break;
@@ -364,31 +366,33 @@ float UAttributeProcessor_Remove::ProcessAttributeEffect(UAttributeComponent* At
 			break;
 		case EAttributeType::PoisonAcc:
 			setValue = AttributeComponent->GetPoisonAcc() - Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetPoisonAcc(FMath::Clamp(setValue,0,AttributeComponent->GetPoisonResist()));
+			AttributeComponent->SetPoisonAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetPoisonResist()));
 			break;
 		case EAttributeType::DeadlyPoisonAcc:
 			setValue = AttributeComponent->GetDeadlyPoisonAcc() - Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetDeadlyPoisonAcc(FMath::Clamp(setValue,0,AttributeComponent->GetDeadlyPoisonResist()));
+			AttributeComponent->SetDeadlyPoisonAcc(
+				FMath::Clamp(setValue, 0, AttributeComponent->GetDeadlyPoisonResist()));
 			break;
 		case EAttributeType::BurnAcc:
 			setValue = AttributeComponent->GetBurnAcc() - Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetBurnAcc(FMath::Clamp(setValue,0,AttributeComponent->GetBurnResist()));
+			AttributeComponent->SetBurnAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetBurnResist()));
 			break;
 		case EAttributeType::ChillAcc:
 			setValue = AttributeComponent->GetChillAcc() - Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetChillAcc(FMath::Clamp(setValue,0,AttributeComponent->GetChillResist()));
+			AttributeComponent->SetChillAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetChillResist()));
 			break;
 		case EAttributeType::BleedAcc:
 			setValue = AttributeComponent->GetBleedAcc() - Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetBleedAcc(FMath::Clamp(setValue,0,AttributeComponent->GetBleedResist()));
+			AttributeComponent->SetBleedAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetBleedResist()));
 			break;
 		case EAttributeType::PetrifactionAcc:
 			setValue = AttributeComponent->GetPetrifactionAcc() - Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetPetrifactionAcc(FMath::Clamp(setValue,0,AttributeComponent->GetPetrifactionResist()));
+			AttributeComponent->SetPetrifactionAcc(
+				FMath::Clamp(setValue, 0, AttributeComponent->GetPetrifactionResist()));
 			break;
 		case EAttributeType::MoveSpeed:
 			setValue = AttributeComponent->GetMoveSpeed() - Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetMoveSpeed(FMath::Clamp(setValue,0,INT_MAX));
+			AttributeComponent->SetMoveSpeed(FMath::Clamp(setValue, 0,INT_MAX));
 			AttributeComponent->OnChangedMoveSpeedAttribute.Broadcast();
 			break;
 		case EAttributeType::MAX:
@@ -546,31 +550,33 @@ float UAttributeProcessor_Multiplication::ProcessAttributeEffect(UAttributeCompo
 			break;
 		case EAttributeType::PoisonAcc:
 			setValue = AttributeComponent->GetPoisonAcc() * Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetPoisonAcc(FMath::Clamp(setValue,0,AttributeComponent->GetPoisonResist()));
+			AttributeComponent->SetPoisonAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetPoisonResist()));
 			break;
 		case EAttributeType::DeadlyPoisonAcc:
 			setValue = AttributeComponent->GetDeadlyPoisonAcc() * Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetDeadlyPoisonAcc(FMath::Clamp(setValue,0,AttributeComponent->GetDeadlyPoisonResist()));
+			AttributeComponent->SetDeadlyPoisonAcc(
+				FMath::Clamp(setValue, 0, AttributeComponent->GetDeadlyPoisonResist()));
 			break;
 		case EAttributeType::BurnAcc:
 			setValue = AttributeComponent->GetBurnAcc() * Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetBurnAcc(FMath::Clamp(setValue,0,AttributeComponent->GetBurnResist()));
+			AttributeComponent->SetBurnAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetBurnResist()));
 			break;
 		case EAttributeType::ChillAcc:
 			setValue = AttributeComponent->GetChillAcc() * Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetChillAcc(FMath::Clamp(setValue,0,AttributeComponent->GetChillResist()));
+			AttributeComponent->SetChillAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetChillResist()));
 			break;
 		case EAttributeType::BleedAcc:
 			setValue = AttributeComponent->GetBleedAcc() * Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetBleedAcc(FMath::Clamp(setValue,0,AttributeComponent->GetBleedResist()));
+			AttributeComponent->SetBleedAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetBleedResist()));
 			break;
 		case EAttributeType::PetrifactionAcc:
 			setValue = AttributeComponent->GetPetrifactionAcc() * Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetPetrifactionAcc(FMath::Clamp(setValue,0,AttributeComponent->GetPetrifactionResist()));
+			AttributeComponent->SetPetrifactionAcc(
+				FMath::Clamp(setValue, 0, AttributeComponent->GetPetrifactionResist()));
 			break;
 		case EAttributeType::MoveSpeed:
 			setValue = AttributeComponent->GetMoveSpeed() * Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetMoveSpeed(FMath::Clamp(setValue,0,INT_MAX));
+			AttributeComponent->SetMoveSpeed(FMath::Clamp(setValue, 0,INT_MAX));
 			AttributeComponent->OnChangedMoveSpeedAttribute.Broadcast();
 			break;
 		case EAttributeType::MAX:
@@ -752,7 +758,7 @@ float UAttributeProcessor_Division::ProcessAttributeEffect(UAttributeComponent* 
 			break;
 		case EAttributeType::MoveSpeed:
 			setValue = AttributeComponent->GetMoveSpeed() / Effect.ApplyValue * DeltaTime;
-			AttributeComponent->SetMoveSpeed(FMath::Clamp(setValue,0,INT_MAX));
+			AttributeComponent->SetMoveSpeed(FMath::Clamp(setValue, 0,INT_MAX));
 			AttributeComponent->OnChangedMoveSpeedAttribute.Broadcast();
 			break;
 		case EAttributeType::MAX:

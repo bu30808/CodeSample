@@ -41,8 +41,8 @@ void UBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		Speed = Character->GetVelocity().Length();
 
 		Velocity = Character->GetVelocity();
-		bShouldMove = Speed>3.f && Character->GetCharacterMovement()->GetCurrentAcceleration() != FVector::ZeroVector;
-		
+		bShouldMove = Speed > 3.f && Character->GetCharacterMovement()->GetCurrentAcceleration() != FVector::ZeroVector;
+
 
 		//Roll Pitch Yaw값을 설정합니다.
 		{
@@ -85,15 +85,16 @@ void UBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			CharacterState = Character->GetCharacterState();
 			HitDegree = Character->HitDegree;
 			bModifyBoneTransform = Character->bModifySkeletonTransform;
-			
-			if(bModifyBoneTransform){
+
+			if (bModifyBoneTransform)
+			{
 				ChangeBoneTransform(DeltaSeconds);
-			}else
+			}
+			else
 			{
 				ClearBoneTransform(DeltaSeconds);
 			}
 		}
-		
 	}
 }
 
@@ -104,7 +105,6 @@ void UBaseAnimInstance::AnimNotify_OnHitEnter_Implementation()
 	{
 		if (Character->IsA<APlayerCharacter>())
 		{
-			
 		}
 	}
 }
@@ -114,9 +114,10 @@ void UBaseAnimInstance::AnimNotify_OnHitExit_Implementation()
 {
 	if (Character.IsValid())
 	{
-		if(Character->GetIsTriggeredHitAnimationExitEvent() == false)
+		if (Character->GetIsTriggeredHitAnimationExitEvent() == false)
 		{
-			UE_LOGFMT(LogAbility,Error,"{0} {1} : 히트 애니메이션 빠져나감 이벤트가 호출되지 않았기 때문에 강제로 호출합니다.",__FUNCTION__,__LINE__);
+			UE_LOGFMT(LogAbility, Error, "{0} {1} : 히트 애니메이션 빠져나감 이벤트가 호출되지 않았기 때문에 강제로 호출합니다.", __FUNCTION__,
+			          __LINE__);
 			Character->OnTriggerHitAnimationExit.Broadcast(Character.Get(), nullptr);
 		}
 	}

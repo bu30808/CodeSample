@@ -3,6 +3,7 @@
 
 #include "00_Character/BaseCharacter.h"
 
+#include "NavigationInvokerComponent.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
@@ -30,12 +31,12 @@ ABaseCharacter::ABaseCharacter()
 	AbilityComponent = CreateDefaultSubobject<UAbilityComponent>(TEXT("AbilityComponent"));
 	FootStepComponent = CreateDefaultSubobject<UFootStepComponent>(TEXT("FootStepComponent"));
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+	/*NavigationInvokerComponent = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavigationInvokerComponent"));*/
 
-	
 	DeadDissolveTimeLineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("DeadDissolveTimeLine"));
 
 	static ConstructorHelpers::FClassFinder<UAbilityEffect> fallDamageClass(TEXT(
-	"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/AE_FallDamage.AE_FallDamage_C'"));
+		"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/AE_FallDamage.AE_FallDamage_C'"));
 	if (fallDamageClass.Succeeded())
 	{
 		FallDamageEffectObject = fallDamageClass.Class;
@@ -47,7 +48,7 @@ void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	
+
 	//속성 초기화
 	AttributeComponent->InitAttributes();
 	//피격 이벤트 바인드
@@ -57,7 +58,7 @@ void ABaseCharacter::BeginPlay()
 	GiveDefaultAbility();
 	ActivateDefaultAbility();
 	DeadDissolveTimeLineComponent->SetTimelineLength(DissolveTime);
-	if(!IsA<APlayerCharacter>())
+	if (!IsA<APlayerCharacter>())
 	{
 		GiveDefaultItem();
 	}
@@ -65,66 +66,73 @@ void ABaseCharacter::BeginPlay()
 
 void ABaseCharacter::CheckFallDeath()
 {
-
-	if(!bShouldCheckFallDeath)
+	if (!bShouldCheckFallDeath)
 	{
 		return;
 	}
-	
-	if(GetCharacterMovement()->IsFalling() && !IsDead())
+
+	if (GetCharacterMovement()->IsFalling() && !IsDead())
 	{
 		FHitResult hit;
-		if(!UKismetSystemLibrary::CapsuleTraceSingle(this,GetActorLocation(),GetActorLocation() + GetActorUpVector()*(-1)*FallDeathDistance,GetCapsuleComponent()->GetScaledCapsuleRadius(),GetCapsuleComponent()->GetScaledCapsuleHalfHeight(),UEngineTypes::ConvertToTraceType(ECC_WorldStatic),false,TArray<AActor*>(),EDrawDebugTrace::ForOneFrame,hit,true))
+		if (!UKismetSystemLibrary::CapsuleTraceSingle(this, GetActorLocation(),
+		                                              GetActorLocation() + GetActorUpVector() * (-1) *
+		                                              FallDeathDistance,
+		                                              GetCapsuleComponent()->GetScaledCapsuleRadius(),
+		                                              GetCapsuleComponent()->GetScaledCapsuleHalfHeight(),
+		                                              UEngineTypes::ConvertToTraceType(ECC_WorldStatic), false,
+		                                              TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, hit, true))
 		{
-			UE_LOGFMT(LogCharacter,Warning,"아래 착지할 곳이 없습니다!! 사망처리 합니다.");
+			UE_LOGFMT(LogCharacter, Warning, "아래 착지할 곳이 없습니다!! 사망처리 합니다.");
 			AttributeComponent->SetHP(0);
-			OnDead.Broadcast(this,this);
-		}else
+			OnDead.Broadcast(this, this);
+		}
+		else
 		{
-
-			if(bStartFallDamageProcess == false)
+			if (bStartFallDamageProcess == false)
 			{
 				bStartFallDamageProcess = true;
 				//떨어지기 시작한 위치를 기록합니다.
 				FallingStartLocation = GetActorLocation();
-				UE_LOGFMT(LogCharacter,Log,"낙하 시작 기록");
+				UE_LOGFMT(LogCharacter, Log, "낙하 시작 기록");
 			}
 		}
-	}else
+	}
+	else
 	{
-		if(bStartFallDamageProcess)
+		if (bStartFallDamageProcess)
 		{
-			if(GetCharacterMovement()->IsMovingOnGround())
+			if (GetCharacterMovement()->IsMovingOnGround())
 			{
-				
 				//착지하면  착지한 위치와의 Z축 거리를 계산합니다.
 				FVector landLocation = GetActorLocation();
 
 				landLocation.X = 0;
 				landLocation.Y = 0;
-				
+
 				FallingStartLocation.X = 0;
 				FallingStartLocation.Y = 0;
 
-				const float& distance =  (landLocation - FallingStartLocation).Length();
+				const float& distance = (landLocation - FallingStartLocation).Length();
 				//거리가 일정 이상일 때, 거리와 비례해서 체력을 감소시킵니다.
 				//떨어져 죽을수 있는 거리의 반이상의 높이에서 떨어져 착지한 경우
 				const float fallDamageStartLength = FallDeathDistance * 0.5f;
-				UE_LOGFMT(LogCharacter,Log,"낙하 거리 : {0}, 낙하 피해 가능 최소 거리 : {1}",distance,fallDamageStartLength);
-				if(distance >= fallDamageStartLength)
+				UE_LOGFMT(LogCharacter, Log, "낙하 거리 : {0}, 낙하 피해 가능 최소 거리 : {1}", distance, fallDamageStartLength);
+				if (distance >= fallDamageStartLength)
 				{
-					float gapPercent = (distance -  fallDamageStartLength) / fallDamageStartLength;
-					UE_LOGFMT(LogCharacter,Log,"낙하 피해 비율 : {0}",gapPercent);
+					float gapPercent = (distance - fallDamageStartLength) / fallDamageStartLength;
+					UE_LOGFMT(LogCharacter, Log, "낙하 피해 비율 : {0}", gapPercent);
 
-					if(FallDamageEffectObject == nullptr)
+					if (FallDamageEffectObject == nullptr)
 					{
 						ensure(FallDamageEffectObject);
 						return;
 					}
-					
-					if(const auto fallDamageObject = NewObject<UFallingDamageData>()){
+
+					if (const auto fallDamageObject = NewObject<UFallingDamageData>())
+					{
 						fallDamageObject->FallingDamageRatio = gapPercent;
-						AbilityComponent->K2_ApplyEffect(FallDamageEffectObject,this,FOnEffectExpired(),fallDamageObject);
+						AbilityComponent->K2_ApplyEffect(FallDamageEffectObject, this, FOnEffectExpired(),
+						                                 fallDamageObject);
 					}
 				}
 
@@ -139,7 +147,6 @@ void ABaseCharacter::CheckFallDeath()
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	
 }
 
 // Called to bind functionality to input
@@ -156,8 +163,8 @@ void ABaseCharacter::PostInitializeComponents()
 	OnTriggerHitAnimationEnter.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationEnterEvent);
 	OnTriggerHitAnimationExit.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationExitEvent);
 
-	UpdateDissolve.BindDynamic(this,&ABaseCharacter::OnUpdateDeadDissolveTimeLine);
-	OnFinishDissolve.BindDynamic(this,&ABaseCharacter::OnFinishDissolveTimeLine);
+	UpdateDissolve.BindDynamic(this, &ABaseCharacter::OnUpdateDeadDissolveTimeLine);
+	OnFinishDissolve.BindDynamic(this, &ABaseCharacter::OnFinishDissolveTimeLine);
 
 	OriginalMaterials = GetMesh()->GetMaterials();
 }
@@ -185,7 +192,7 @@ void ABaseCharacter::GiveDefaultAbility()
 
 void ABaseCharacter::ActivateDefaultAbility()
 {
-	UE_LOGFMT(LogCharacter,Log,"{0} {1} : 기본 어빌리티 사용",__FUNCTION__,__LINE__);
+	UE_LOGFMT(LogCharacter, Log, "{0} {1} : 기본 어빌리티 사용", __FUNCTION__, __LINE__);
 	for (auto tag : DefaultUseAbilityTags)
 	{
 		AbilityComponent->ActivateAbility(tag, this);
@@ -278,7 +285,7 @@ void ABaseCharacter::PlayDeadAnimationSequence()
 	auto randIndex = FMath::RandRange(0, DeadAnimations.Num() - 1);
 	if (DeadAnimations.IsValidIndex(randIndex))
 	{
-		GetMesh()->PlayAnimation(DeadAnimations[randIndex],false);
+		GetMesh()->PlayAnimation(DeadAnimations[randIndex], false);
 	}
 }
 
@@ -289,16 +296,13 @@ void ABaseCharacter::PlayDeadAnimationMontage()
 	{
 		DeadMontage = DeadMontages[randIndex];
 	}
-
 }
 
 
 void ABaseCharacter::OnUpdateDeadDissolveTimeLine(float Value)
 {
 	FName param = "Percent";
-	GetMesh()->CreateDynamicMaterialInstance(0,GetMesh()->GetMaterial(0))->SetScalarParameterValue(param,Value);
-	
-	
+	GetMesh()->CreateDynamicMaterialInstance(0, GetMesh()->GetMaterial(0))->SetScalarParameterValue(param, Value);
 }
 
 void ABaseCharacter::OnFinishDissolveTimeLine()
@@ -308,14 +312,14 @@ void ABaseCharacter::OnFinishDissolveTimeLine()
 void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 {
 	UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 호출", GetActorNameOrLabel());
-	if(CharacterState != ECharacterState::DEAD)
+	if (CharacterState != ECharacterState::DEAD)
 	{
 		UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 / 정보 설정", GetActorNameOrLabel());
 		CharacterState = ECharacterState::DEAD;
 		GetCapsuleComponent()->SetCollisionProfileName("Spectator");
 		GetMesh()->SetCollisionProfileName("Spectator");
 
-		switch(DeadAnimationPlayMode)
+		switch (DeadAnimationPlayMode)
 		{
 		case EDeadAnimationPlayMode::Sequence:
 			PlayDeadAnimationSequence();
@@ -327,23 +331,25 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 			break;
 		default: ;
 		}
-	
+
 		if (AbilityComponent)
 		{
 			AbilityComponent->ClearReusableCue();
 		}
 
 		//디졸브 타임라인
-		if(DissolveCurve)
+		if (DissolveCurve)
 		{
-			if(DissolveParticle)
+			if (DissolveParticle)
 			{
-				UE_LOGFMT(LogCharacter,Log,"사망 파티클 생성");
-				const auto comp = UNiagaraFunctionLibrary::SpawnSystemAttached(DissolveParticle,RootComponent,NAME_None,FVector::ZeroVector,FRotator::ZeroRotator,EAttachLocation::SnapToTargetIncludingScale,false);
-				comp->SetColorParameter("Color",DissolveColor);
+				UE_LOGFMT(LogCharacter, Log, "사망 파티클 생성");
+				const auto comp = UNiagaraFunctionLibrary::SpawnSystemAttached(
+					DissolveParticle, RootComponent, NAME_None, FVector::ZeroVector, FRotator::ZeroRotator,
+					EAttachLocation::SnapToTargetIncludingScale, false);
+				comp->SetColorParameter("Color", DissolveColor);
 			}
-			
-			DeadDissolveTimeLineComponent->AddInterpFloat(DissolveCurve,UpdateDissolve);
+
+			DeadDissolveTimeLineComponent->AddInterpFloat(DissolveCurve, UpdateDissolve);
 			DeadDissolveTimeLineComponent->SetTimelineFinishedFunc(OnFinishDissolve);
 
 			DeadDissolveTimeLineComponent->PlayFromStart();
@@ -412,7 +418,7 @@ void ABaseCharacter::OnTriggerHitAnimationEnterEvent(ABaseCharacter* DamagedChar
 
 void ABaseCharacter::OnTriggerHitAnimationExitEvent(ABaseCharacter* DamagedCharacter, AActor* HitBy)
 {
-	if(CharacterState != ECharacterState::DEAD)
+	if (CharacterState != ECharacterState::DEAD)
 	{
 		bIsTriggeredHitAnimationExitEvent = true;
 		SetCharacterState(ECharacterState::NORMAL);
@@ -437,48 +443,51 @@ void ABaseCharacter::TriggerHitAnimation_Implementation(UAbilityEffectAdditional
 
 void ABaseCharacter::SetIgnoreMoveInput(bool bIgnore, AActor* AccruedBy, FGameplayTag AccruedTag)
 {
-	if(GetController() == nullptr)
+	if (GetController() == nullptr)
 	{
 		return;
 	}
 
-	if(!AccruedTag.IsValid())
+	if (!AccruedTag.IsValid())
 	{
-		UE_LOGFMT(LogCharacter,Error,"입력무시를 시도했지만, 유효하지 않은 태그정보입니다!!");
+		UE_LOGFMT(LogCharacter, Error, "입력무시를 시도했지만, 유효하지 않은 태그정보입니다!!");
 		return;
 	}
-	
-	FIgnoreInputHandler ignoreMoveInputHandler(AccruedBy,AccruedTag);
-	if(bIgnore)
+
+	FIgnoreInputHandler ignoreMoveInputHandler(AccruedBy, AccruedTag);
+	if (bIgnore)
 	{
-		
-		if(IgnoreMoveInputStacks.Contains(ignoreMoveInputHandler))
+		if (IgnoreMoveInputStacks.Contains(ignoreMoveInputHandler))
 		{
 			IgnoreMoveInputStacks[ignoreMoveInputHandler]++;
-		}else
+		}
+		else
 		{
-			IgnoreMoveInputStacks.Emplace(ignoreMoveInputHandler,1);
+			IgnoreMoveInputStacks.Emplace(ignoreMoveInputHandler, 1);
 		}
 
-		UE_LOGFMT(LogCharacter,Log,"입력 무시 추가됨!! {0}로부터 {1}태그, {2}누적",AccruedBy->GetActorNameOrLabel(),AccruedTag.ToString(), IgnoreMoveInputStacks[ignoreMoveInputHandler]);
-		
+		UE_LOGFMT(LogCharacter, Log, "입력 무시 추가됨!! {0}로부터 {1}태그, {2}누적", AccruedBy->GetActorNameOrLabel(),
+		          AccruedTag.ToString(), IgnoreMoveInputStacks[ignoreMoveInputHandler]);
+
 		GetController()->SetIgnoreMoveInput(true);
-	}else
+	}
+	else
 	{
-		if(IgnoreMoveInputStacks.Contains(ignoreMoveInputHandler))
+		if (IgnoreMoveInputStacks.Contains(ignoreMoveInputHandler))
 		{
 			auto& count = IgnoreMoveInputStacks[ignoreMoveInputHandler];
-			count = count-1;
-			
-			UE_LOGFMT(LogCharacter,Log,"입력 무시 줄어듦!! {0}로부터 {1}태그, {2}누적",AccruedBy->GetActorNameOrLabel(),AccruedTag.ToString(), IgnoreMoveInputStacks[ignoreMoveInputHandler]);
+			count = count - 1;
 
-			
-			if(count<=0)
+			UE_LOGFMT(LogCharacter, Log, "입력 무시 줄어듦!! {0}로부터 {1}태그, {2}누적", AccruedBy->GetActorNameOrLabel(),
+			          AccruedTag.ToString(), IgnoreMoveInputStacks[ignoreMoveInputHandler]);
+
+
+			if (count <= 0)
 			{
 				IgnoreMoveInputStacks.Remove(ignoreMoveInputHandler);
 			}
 
-			
+
 			GetController()->SetIgnoreMoveInput(false);
 		}
 	}
@@ -488,80 +497,81 @@ void ABaseCharacter::SetIgnoreMoveInput(bool bIgnore, AActor* AccruedBy, FGamepl
 
 void ABaseCharacter::ClearMoveInputForGameplayTag(AActor* AccruedBy, FGameplayTag AccruedTag)
 {
-	const FIgnoreInputHandler ignoreMoveInputHandler(AccruedBy,AccruedTag);
-	
-	if(IgnoreMoveInputStacks.Contains(ignoreMoveInputHandler))
+	const FIgnoreInputHandler ignoreMoveInputHandler(AccruedBy, AccruedTag);
+
+	if (IgnoreMoveInputStacks.Contains(ignoreMoveInputHandler))
 	{
 		IgnoreMoveInputStacks.Remove(ignoreMoveInputHandler);
 	}
-	
-	if(IgnoreMoveInputStacks.Num()<=0)
+
+	if (IgnoreMoveInputStacks.Num() <= 0)
 	{
-		if(GetController()){
+		if (GetController())
+		{
 			GetController()->SetIgnoreMoveInput(false);
 		}
 	}
-	
 }
 
 void ABaseCharacter::SetIgnoreLookInput(bool bIgnore, AActor* AccruedBy, FGameplayTag AccruedTag)
 {
-	if(!AccruedTag.IsValid())
+	if (!AccruedTag.IsValid())
 	{
-		UE_LOGFMT(LogCharacter,Error,"입력무시를 시도했지만, 유효하지 않은 태그정보입니다!!");
+		UE_LOGFMT(LogCharacter, Error, "입력무시를 시도했지만, 유효하지 않은 태그정보입니다!!");
 		return;
 	}
-	
-	FIgnoreInputHandler ignoreMoveInputHandler(AccruedBy,AccruedTag);
-	if(bIgnore)
+
+	FIgnoreInputHandler ignoreMoveInputHandler(AccruedBy, AccruedTag);
+	if (bIgnore)
 	{
-		
-		
-		if(IgnoreLookInputStacks.Contains(ignoreMoveInputHandler))
+		if (IgnoreLookInputStacks.Contains(ignoreMoveInputHandler))
 		{
 			IgnoreLookInputStacks[ignoreMoveInputHandler]++;
-		}else
+		}
+		else
 		{
-			IgnoreLookInputStacks.Emplace(ignoreMoveInputHandler,1);
+			IgnoreLookInputStacks.Emplace(ignoreMoveInputHandler, 1);
 		}
 
-		UE_LOGFMT(LogCharacter,Log,"입력 무시 추가됨!! {0}로부터 {1}태그, {2}누적",AccruedBy->GetActorNameOrLabel(),AccruedTag.ToString(), IgnoreLookInputStacks[ignoreMoveInputHandler]);
-		
+		UE_LOGFMT(LogCharacter, Log, "입력 무시 추가됨!! {0}로부터 {1}태그, {2}누적", AccruedBy->GetActorNameOrLabel(),
+		          AccruedTag.ToString(), IgnoreLookInputStacks[ignoreMoveInputHandler]);
+
 		GetController()->SetIgnoreLookInput(true);
-	}else
+	}
+	else
 	{
-		if(IgnoreLookInputStacks.Contains(ignoreMoveInputHandler))
+		if (IgnoreLookInputStacks.Contains(ignoreMoveInputHandler))
 		{
 			auto& count = IgnoreLookInputStacks[ignoreMoveInputHandler];
-			count = count-1;
-			
-			UE_LOGFMT(LogCharacter,Log,"입력 무시 줄어듦!! {0}로부터 {1}태그, {2}누적",AccruedBy->GetActorNameOrLabel(),AccruedTag.ToString(), IgnoreLookInputStacks[ignoreMoveInputHandler]);
+			count = count - 1;
 
-			
-			if(count<=0)
+			UE_LOGFMT(LogCharacter, Log, "입력 무시 줄어듦!! {0}로부터 {1}태그, {2}누적", AccruedBy->GetActorNameOrLabel(),
+			          AccruedTag.ToString(), IgnoreLookInputStacks[ignoreMoveInputHandler]);
+
+
+			if (count <= 0)
 			{
 				IgnoreLookInputStacks.Remove(ignoreMoveInputHandler);
 			}
 
-			
+
 			GetController()->SetIgnoreLookInput(false);
 		}
 	}
-
 }
 
 void ABaseCharacter::ClearLookInputForGameplayTag(AActor* AccruedBy, FGameplayTag AccruedTag)
 {
-	const FIgnoreInputHandler ignoreMoveInputHandler(AccruedBy,AccruedTag);
-	
-	if(IgnoreLookInputStacks.Contains(ignoreMoveInputHandler))
+	const FIgnoreInputHandler ignoreMoveInputHandler(AccruedBy, AccruedTag);
+
+	if (IgnoreLookInputStacks.Contains(ignoreMoveInputHandler))
 	{
 		IgnoreLookInputStacks.Remove(ignoreMoveInputHandler);
 	}
 
-	if(IgnoreLookInputStacks.Num()<=0)
+	if (IgnoreLookInputStacks.Num() <= 0)
 	{
-		if(GetController())
+		if (GetController())
 		{
 			GetController()->SetIgnoreLookInput(false);
 		}
@@ -570,19 +580,19 @@ void ABaseCharacter::ClearLookInputForGameplayTag(AActor* AccruedBy, FGameplayTa
 
 void ABaseCharacter::ChangeStatusEffectMaterial(EStatusEffect EffectType)
 {
-	if(StatusEffectMaterialMap.Contains(EffectType))
+	if (StatusEffectMaterialMap.Contains(EffectType))
 	{
-		for(auto i = 0;i<OriginalMaterials.Num();i++)
+		for (auto i = 0; i < OriginalMaterials.Num(); i++)
 		{
-			GetMesh()->SetMaterial(i,StatusEffectMaterialMap[EffectType]);
+			GetMesh()->SetMaterial(i, StatusEffectMaterialMap[EffectType]);
 		}
 	}
 }
 
 void ABaseCharacter::RestoreStatusEffectMaterial()
 {
-	for(auto i = 0;i<OriginalMaterials.Num();i++)
+	for (auto i = 0; i < OriginalMaterials.Num(); i++)
 	{
-		GetMesh()->SetMaterial(i,OriginalMaterials[i]);
+		GetMesh()->SetMaterial(i, OriginalMaterials[i]);
 	}
 }

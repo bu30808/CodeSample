@@ -40,5 +40,5 @@ public:
 	static FText ItemTypeToText(const FItemInformation* ItemInformation);
 
 	static void PotionReplenishment(APlayerCharacter* Player);
-	
+	static FLinearColor GetFragmentColorByType(const FInventoryItem& Fragment);
 };

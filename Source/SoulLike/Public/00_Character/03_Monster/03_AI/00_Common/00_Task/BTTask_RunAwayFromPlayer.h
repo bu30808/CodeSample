@@ -13,10 +13,11 @@ UCLASS()
 class SOULLIKE_API UBTTask_RunAwayFromPlayer : public UBTTask_BlackboardBase
 {
 	GENERATED_BODY()
-	
+
 	UBTTask_RunAwayFromPlayer();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 	virtual FString GetStaticDescription() const override;
-	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTNodeResult::Type TaskResult) override;
+	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
+	                            EBTNodeResult::Type TaskResult) override;
 };

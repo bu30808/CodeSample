@@ -106,7 +106,8 @@ void UAbilityEffect::ChainSetting(ABaseCharacter* Target)
 	}
 }
 
-void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData)
+void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From,
+                                                  UObject* AdditionalData)
 {
 	ensure(Target);
 	ensure(EffectBy);
@@ -153,12 +154,12 @@ void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor
 
 	OverrideTime(Target);
 	OverrideAttributeEffects(Target, EffectBy);
-	
-	if(EffectBy->IsA<ABaseCharacter>())
+
+	if (EffectBy->IsA<ABaseCharacter>())
 	{
 		UpdateAttributeEffectsAffectedByOwnersAttribute(Cast<ABaseCharacter>(EffectBy));
 	}
-	
+
 	RegisterEffectTag(Target);
 
 	if (EffectApplyType == EEffectApplyType::DurationWithInterval)
@@ -732,7 +733,7 @@ void UAbilityEffect::ApplyTickEffect(ABaseCharacter* Target)
 
 	if (TickTask.IsValid() == false)
 	{
-		TickTask = UGameplayTask_LaunchEvent::LaunchEvent(Target,nullptr,TickRate);
+		TickTask = UGameplayTask_LaunchEvent::LaunchEvent(Target, nullptr, TickRate);
 		UE_LOGFMT(LogTemp, Warning, "{0},{1}에서 테스크를 생성합니다", UniqueEffectTag.ToString(), GetName());
 	}
 

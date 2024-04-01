@@ -10,20 +10,18 @@
 UBTTask_GetMoveLocation::UBTTask_GetMoveLocation()
 {
 	BlackboardKey.SelectedKeyName = "MoveLocation";
-	
 }
 
 EBTNodeResult::Type UBTTask_GetMoveLocation::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	if(auto aiCon = OwnerComp.GetAIOwner())
+	if (auto aiCon = OwnerComp.GetAIOwner())
 	{
-		if(auto pawn = aiCon->GetPawn())
+		if (auto pawn = aiCon->GetPawn())
 		{
-			if(auto bbComp = OwnerComp.GetBlackboardComponent()){
-
-
+			if (auto bbComp = OwnerComp.GetBlackboardComponent())
+			{
 				FVector resultLocation;
-				
+
 				switch (Direction)
 				{
 				case EDirection::Front:
@@ -39,16 +37,20 @@ EBTNodeResult::Type UBTTask_GetMoveLocation::ExecuteTask(UBehaviorTreeComponent&
 					resultLocation = pawn->GetActorLocation() + pawn->GetActorForwardVector() * Distance * -1;
 					break;
 				case EDirection::FrontRight:
-					resultLocation = pawn->GetActorLocation() + (pawn->GetActorForwardVector() + pawn->GetActorRightVector()).GetSafeNormal() * Distance;
+					resultLocation = pawn->GetActorLocation() + (pawn->GetActorForwardVector() + pawn->
+						GetActorRightVector()).GetSafeNormal() * Distance;
 					break;
 				case EDirection::FrontLeft:
-					resultLocation = pawn->GetActorLocation() + (pawn->GetActorForwardVector() + pawn->GetActorRightVector() * -1).GetSafeNormal() * Distance;
+					resultLocation = pawn->GetActorLocation() + (pawn->GetActorForwardVector() + pawn->
+						GetActorRightVector() * -1).GetSafeNormal() * Distance;
 					break;
 				case EDirection::BackRight:
-					resultLocation = pawn->GetActorLocation() + (pawn->GetActorForwardVector() * -1 + pawn->GetActorRightVector()).GetSafeNormal() * Distance;
+					resultLocation = pawn->GetActorLocation() + (pawn->GetActorForwardVector() * -1 + pawn->
+						GetActorRightVector()).GetSafeNormal() * Distance;
 					break;
 				case EDirection::BackLeft:
-					resultLocation = pawn->GetActorLocation() + (pawn->GetActorForwardVector() * -1 + pawn->GetActorRightVector() * -1).GetSafeNormal() * Distance;
+					resultLocation = pawn->GetActorLocation() + (pawn->GetActorForwardVector() * -1 + pawn->
+						GetActorRightVector() * -1).GetSafeNormal() * Distance;
 					break;
 				case EDirection::Up:
 					resultLocation = pawn->GetActorLocation() + pawn->GetActorUpVector() * Distance;
@@ -60,11 +62,11 @@ EBTNodeResult::Type UBTTask_GetMoveLocation::ExecuteTask(UBehaviorTreeComponent&
 					break;
 				}
 
-				bbComp->SetValueAsVector(GetSelectedBlackboardKey(),resultLocation);
+				bbComp->SetValueAsVector(GetSelectedBlackboardKey(), resultLocation);
 
 				return EBTNodeResult::Succeeded;
 			}
 		}
-	}	
+	}
 	return Super::ExecuteTask(OwnerComp, NodeMemory);
 }

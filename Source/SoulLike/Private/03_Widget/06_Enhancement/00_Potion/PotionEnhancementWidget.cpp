@@ -178,7 +178,7 @@ void UPotionEnhancementWidget::Init()
 			else
 			{
 				const FText errorText = NSLOCTEXT("PotionEnhancementWidget", "MPErrorText",
-				                                  "신성한 결정이 모자라거나, 강화 최대수치에 도달했습니다.");
+				                                  "활력의 결정이 모자라거나, 강화 최대수치에 도달했습니다.");
 				TextBlock_ButtonTextMP->SetText(errorText);
 			}
 		}

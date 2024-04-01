@@ -18,18 +18,17 @@
 #include "Logging/StructuredLog.h"
 
 
-
 void UMerchantListWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponent)
 {
 	ListView_Purchase->ClearListItems();
 
 	MerchantNPC = MerchantComponent->GetOwner<ANPCBase>();
 
-	UE_LOGFMT(LogTemp,Log,"상점 아이템 리스트 생성2");
+	UE_LOGFMT(LogTemp, Log, "상점 아이템 리스트 생성2");
 	const TMap<FGuid, FMerchandiseItem>& merchandiseItem = MerchantComponent->GetMerchandiseItem();
 	for (auto iter : merchandiseItem)
 	{
-		if(auto data = NewObject<UMerchandiseItemListData>())
+		if (auto data = NewObject<UMerchandiseItemListData>())
 		{
 			data->MerchandiseItem = iter.Value;
 			data->MerchantListWidget = this;
@@ -43,7 +42,7 @@ void UMerchantListWidget::CreateMerchandiseList(UMerchantComponent* MerchantComp
 	const auto& merchandiseAbility = MerchantComponent->GetMerchandiseAbility();
 	for (auto iter : merchandiseAbility)
 	{
-		if(auto data = NewObject<UMerchandiseAbilityListData>())
+		if (auto data = NewObject<UMerchandiseAbilityListData>())
 		{
 			data->MerchandiseAbility = iter.Value;
 			data->MerchantListWidget = this;

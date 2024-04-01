@@ -14,8 +14,8 @@
 
 namespace GlobalMerchantButtonWidgetText
 {
-	const FText infiniteText = NSLOCTEXT("MerchantButtonWidget","InfiniteText","무제한");
-	const FText sellText = NSLOCTEXT("MerchantButtonWidget","SellText","판매");
+	const FText infiniteText = NSLOCTEXT("MerchantButtonWidget", "InfiniteText", "무제한");
+	const FText sellText = NSLOCTEXT("MerchantButtonWidget", "SellText", "판매");
 }
 #undef LOCTEXT_NAMESPACE
 
@@ -46,7 +46,7 @@ void UMerchantButtonWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 				}
 
 				TextBlock_ItemName->SetText(itemData->Item_Name);
-				
+
 				if (merchandiseItemListData->MerchandiseItem.MerchandiseData.bSellInfinite)
 				{
 					TextBlock_Count->SetText(GlobalMerchantButtonWidgetText::infiniteText);
@@ -56,17 +56,16 @@ void UMerchantButtonWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 					TextBlock_Count->SetText(
 						FText::AsNumber(merchandiseItemListData->MerchandiseItem.MerchandiseData.Count));
 				}
-				
+
 				TextBlock_Price->SetText(
 					FText::AsNumber(merchandiseItemListData->MerchandiseItem.MerchandiseData.Price));
 
-				UWidgetHelperLibrary::SetToolTipWidget(this,merchandiseItemListData->MerchandiseItem.GetFormattedDescription());
+				UWidgetHelperLibrary::SetToolTipWidget(
+					this, merchandiseItemListData->MerchandiseItem.GetFormattedDescription());
 				/*Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(
 					merchandiseItemListData->MerchandiseItem.GetFormattedDescription());*/
 			}
-
 		}
-		return;
 	}
 
 	/*if (ListItemObject->IsA<UMerchandiseAbilityListData>())
@@ -92,8 +91,6 @@ void UMerchantButtonWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 			}
 		}
 	}*/
-
-	
 }
 
 bool UMerchantButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,

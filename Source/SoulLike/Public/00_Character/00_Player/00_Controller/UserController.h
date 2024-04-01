@@ -31,7 +31,6 @@ public:
 	virtual void OnPossess(APawn* InPawn) override;
 
 	virtual FGenericTeamId GetGenericTeamId() const override { return TeamId; }
-	
 
 private:
 	FGenericTeamId TeamId;
@@ -40,13 +39,12 @@ private:
 	TArray<class UUserWidget*> PopUpStack;
 
 public:
-
-	TArray<class UUserWidget*> GetPopUpStack(){return PopUpStack;}
+	TArray<class UUserWidget*> GetPopUpStack() { return PopUpStack; }
 
 	//팝업위젯으로 추가합니다.
 	UFUNCTION(BlueprintCallable)
 	void AddToPopUp(UUserWidget* Widget);
-	
+
 	/**
 	* ESC로 순차적으로 닫기거나 혹은
 	* 모종의 이유로 닫겼다면, 팝업위젯에서 제거합니다.
@@ -55,16 +53,16 @@ public:
 	 * @param bIsRemovable 이 값이 참이면 RemoveFromParents를 호출합니다.
 	 */
 	UFUNCTION(BlueprintCallable)
-	void RemoveFromPopUp(UUserWidget* Widget,bool bIsRemovable);
-	
+	void RemoveFromPopUp(UUserWidget* Widget, bool bIsRemovable);
+
 	UFUNCTION(BlueprintCallable)
 	void ClosePopUp();
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsThereAnyPopUp();
 
 	UFUNCTION(BlueprintCallable)
 	void SetMouseSensitivity(float Sensitivity);
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetMouseSensitivity();
 };

@@ -14,16 +14,16 @@ UCLASS()
 class SOULLIKE_API UStatusEffectProgressWidget : public UUserWidget
 {
 	GENERATED_BODY()
-protected:
 
+protected:
 	UPROPERTY(meta=(BindWidget))
 	class UImage* Image_StatusEffect;
 	UPROPERTY(meta=(BindWidget))
 	class UImage* Image_Progress;
-	
-	
+
+
 	UPROPERTY(EditAnywhere)
-	TMap<EStatusEffect,TSoftObjectPtr<UTexture2D>> StatusEffectImage;
+	TMap<EStatusEffect, TSoftObjectPtr<UTexture2D>> StatusEffectImage;
 	UPROPERTY(EditAnywhere)
 	class UMaterialInterface* ProgressMaterial;
 	UPROPERTY(EditAnywhere)
@@ -33,7 +33,6 @@ protected:
 	UPROPERTY()
 	class UMaterialInstanceDynamic* DynamicMat;
 
-	
 public:
 	UPROPERTY(VisibleAnywhere)
 	EStatusEffect StatusEffectType;
@@ -45,5 +44,4 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetProgress(float Value);
 	void SetImage(EStatusEffect StatusEffect);
-	
 };

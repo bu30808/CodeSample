@@ -38,25 +38,25 @@ void UMerchantWidget::NativeConstruct()
 {
 	bUseAsPopUp = true;
 	bRemovable = true;
-	
+
 	Super::NativeConstruct();
-	
+
 	if (UMG_Inventory)
 	{
 		UMG_Inventory->CreateInventoryItemList();
 	}
 
-	if(Button_Close)
+	if (Button_Close)
 	{
-		Button_Close->OnClicked.AddUniqueDynamic(this,&UMerchantWidget::OnClickedCloseButton);
+		Button_Close->OnClicked.AddUniqueDynamic(this, &UMerchantWidget::OnClickedCloseButton);
 	}
 
 	if (CheckWidgetObject)
 	{
 		CheckWidget = CreateWidget<UMerchandiseCheckWidget>(GetOwningPlayer(), CheckWidgetObject);
 	}
-	
-	UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),FGameplayTag::RequestGameplayTag("Tutorial.Merchant"));
+
+	UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(), FGameplayTag::RequestGameplayTag("Tutorial.Merchant"));
 }
 
 void UMerchantWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponent)
@@ -68,7 +68,8 @@ void UMerchantWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponen
 	{
 		MerchantComponent->OnBuyItemFromPlayer.
 		                   AddUniqueDynamic(UMG_MerchantList, &UMerchantListWidget::OnBuyItemFromPlayerEvent);
-		MerchantComponent->OnSellItemToPlayer.AddUniqueDynamic(UMG_MerchantList, &UMerchantListWidget::OnSellItemToPlayerEvent);
+		MerchantComponent->OnSellItemToPlayer.AddUniqueDynamic(UMG_MerchantList,
+		                                                       &UMerchantListWidget::OnSellItemToPlayerEvent);
 
 
 		MerchantComponent->OnBuyAbilityFromPlayer.AddUniqueDynamic(UMG_MerchantList,
@@ -78,7 +79,7 @@ void UMerchantWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponen
 
 		if (UMG_MerchantList)
 		{
-			UE_LOGFMT(LogTemp,Log,"상점 아이템 리스트 생성1");
+			UE_LOGFMT(LogTemp, Log, "상점 아이템 리스트 생성1");
 			UMG_MerchantList->CreateMerchandiseList(MerchantComponent);
 		}
 	}
@@ -105,10 +106,11 @@ void UMerchantWidget::OnPlayerBuyItemEvent(const FMerchandiseItem& Merchandise)
 void UMerchantWidget::OnPlayerSellItemEvent(const FInventoryItem& Item)
 {
 	//혹시나 장비에 장착중인 아이템을 파려고 하는지 확인합니다.
-	if (GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()->IsEquipped(Item.UniqueID))
+	if (GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()->IsEquippedEquipment(Item.UniqueID))
 	{
 		UWidgetHelperLibrary::ShowAlertMsg(GetOwningPlayer<AUserController>(), EAlertMsgType::Warning,
-		                                   GlobalMerchandiseCheckWidgetText::cannotSellEquippedItemText,FOnButtonClicked());
+		                                   GlobalMerchandiseCheckWidgetText::cannotSellEquippedItemText,
+		                                   FOnButtonClicked());
 		return;
 	}
 
@@ -116,7 +118,7 @@ void UMerchantWidget::OnPlayerSellItemEvent(const FInventoryItem& Item)
 	if (Item.GetItemInformation()->bSellable == false)
 	{
 		UWidgetHelperLibrary::ShowAlertMsg(GetOwningPlayer<AUserController>(), EAlertMsgType::Normal,
-		                                   GlobalMerchandiseCheckWidgetText::cannotSellText,FOnButtonClicked());
+		                                   GlobalMerchandiseCheckWidgetText::cannotSellText, FOnButtonClicked());
 		return;
 	}
 

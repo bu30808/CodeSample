@@ -34,7 +34,6 @@ AProjectileActor::AProjectileActor()
 void AProjectileActor::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void AProjectileActor::PostInitializeComponents()
@@ -47,19 +46,19 @@ void AProjectileActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	
-	if(CurProjectileShootType == EProjectileShootType::DelayUntilRotation)
+
+	if (CurProjectileShootType == EProjectileShootType::DelayUntilRotation)
 	{
-		if(bRotationComplete==false)
+		if (bRotationComplete == false)
 		{
 			SetActorRotation(
-					FMath::RInterpTo(GetActorRotation(),
-					TargetRotation,
-					DeltaTime,
-					InterpSpeed
-					));
+				FMath::RInterpTo(GetActorRotation(),
+				                 TargetRotation,
+				                 DeltaTime,
+				                 InterpSpeed
+				));
 
-			if(GetActorRotation().Equals(TargetRotation,1.f))
+			if (GetActorRotation().Equals(TargetRotation, 1.f))
 			{
 				ShootSetting(CurProjectileDirectionType);
 				bRotationComplete = true;
@@ -108,9 +107,9 @@ void AProjectileActor::ShootSetting(EProjectileDirection ProjectileDirection)
 void AProjectileActor::LaunchProjectileWithOption_Implementation(
 	EProjectileDirection P_Direction, EProjectileShootType P_ShootType)
 {
-	CurProjectileDirectionType =  P_Direction;
- 	CurProjectileShootType = P_ShootType;
-	
+	CurProjectileDirectionType = P_Direction;
+	CurProjectileShootType = P_ShootType;
+
 	if (auto owner = GetOwner<ABaseCharacter>())
 	{
 		switch (P_ShootType)
@@ -123,7 +122,7 @@ void AProjectileActor::LaunchProjectileWithOption_Implementation(
 			break;
 		}
 
-	
+
 		switch (P_ShootType)
 		{
 		case EProjectileShootType::Immediately:
@@ -138,10 +137,12 @@ void AProjectileActor::LaunchProjectileWithOption_Implementation(
 			break;
 		case EProjectileShootType::DelayUntilRotation:
 			ProjectileMovementComponent->bRotationFollowsVelocity = true;
-			if(CurProjectileDirectionType== EProjectileDirection::Forward)
+			if (CurProjectileDirectionType == EProjectileDirection::Forward)
 			{
-				TargetRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),GetOwner()->GetActorForwardVector() + GetOwner()->GetActorLocation());
-			}else
+				TargetRotation = UKismetMathLibrary::FindLookAtRotation(
+					GetActorLocation(), GetOwner()->GetActorForwardVector() + GetOwner()->GetActorLocation());
+			}
+			else
 			{
 				if (auto aiCon = owner->GetController<AMonsterAIController>())
 				{
@@ -149,7 +150,8 @@ void AProjectileActor::LaunchProjectileWithOption_Implementation(
 					{
 						if (auto target = Cast<AActor>(blackboard->GetValueAsObject("Target")))
 						{
-							TargetRotation = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(),target->GetActorLocation());
+							TargetRotation = UKismetMathLibrary::FindLookAtRotation(
+								GetActorLocation(), target->GetActorLocation());
 						}
 					}
 				}
@@ -158,16 +160,17 @@ void AProjectileActor::LaunchProjectileWithOption_Implementation(
 			break;
 		default: ;
 		}
-		
 	}
 }
 
 void AProjectileActor::LaunchProjectileDelayWithOption(float Time, EProjectileDirection P_Direction,
-	EProjectileShootType P_ShootType)
+                                                       EProjectileShootType P_ShootType)
 {
-	if(!GetWorldTimerManager().TimerExists(DelayLaunchTimerHandle)){
-		FTimerDelegate timerDel = FTimerDelegate::CreateUObject(this,&AProjectileActor::LaunchProjectileWithOption,P_Direction,P_ShootType);
-		GetWorldTimerManager().SetTimer(DelayLaunchTimerHandle,timerDel,Time,false);
+	if (!GetWorldTimerManager().TimerExists(DelayLaunchTimerHandle))
+	{
+		FTimerDelegate timerDel = FTimerDelegate::CreateUObject(this, &AProjectileActor::LaunchProjectileWithOption,
+		                                                        P_Direction, P_ShootType);
+		GetWorldTimerManager().SetTimer(DelayLaunchTimerHandle, timerDel, Time, false);
 	}
 }
 
@@ -175,7 +178,6 @@ void AProjectileActor::SetEffect(const TArray<TSubclassOf<UAbilityEffect>>& Effe
 {
 	ProjectileEffects = Effects;
 }
-
 
 
 void AProjectileActor::ApplyEffects(ABaseCharacter* HitTarget, FVector HitLocation)
@@ -186,34 +188,35 @@ void AProjectileActor::ApplyEffects(ABaseCharacter* HitTarget, FVector HitLocati
 		{
 			auto addInfo = NewObject<UAbilityCueAdditionalInformation>(this);
 			addInfo->HitLocation = HitLocation;
-			
-			abComp->K2_ApplyEffectsWithReturn(ProjectileEffects, GetOwner(),addInfo);
+
+			abComp->K2_ApplyEffectsWithReturn(ProjectileEffects, GetOwner(), addInfo);
 		}
 	}
 }
 
 void AProjectileActor::ProcessHit(const TArray<FHitResult>& Hits, bool bManualDestroy)
 {
-	for(auto iter : Hits)
+	for (auto iter : Hits)
 	{
-		if(iter.GetActor() != GetOwner())
+		if (iter.GetActor() != GetOwner())
 		{
-			if(iter.GetActor()->IsA<ABaseCharacter>())
+			if (iter.GetActor()->IsA<ABaseCharacter>())
 			{
-				ApplyEffects(Cast<ABaseCharacter>(iter.GetActor()),iter.Location);
-			}else
+				ApplyEffects(Cast<ABaseCharacter>(iter.GetActor()), iter.Location);
+			}
+			else
 			{
-				if(GetOwner()!=nullptr && GetOwner()->IsA<ABaseCharacter>())
+				if (GetOwner() != nullptr && GetOwner()->IsA<ABaseCharacter>())
 				{
-					if(VisibilityHitCue.IsValid())
+					if (VisibilityHitCue.IsValid())
 					{
 						VisibilityHitCue.SpawnLocation = iter.Location;
 						GetOwner<ABaseCharacter>()->GetAbilityComponent()->ApplyCue(VisibilityHitCue);
 					}
 				}
 			}
-			
-			if(!bManualDestroy)
+
+			if (!bManualDestroy)
 			{
 				SetActorTickEnabled(false);
 				Destroy();
@@ -221,4 +224,3 @@ void AProjectileActor::ProcessHit(const TArray<FHitResult>& Hits, bool bManualDe
 		}
 	}
 }
-

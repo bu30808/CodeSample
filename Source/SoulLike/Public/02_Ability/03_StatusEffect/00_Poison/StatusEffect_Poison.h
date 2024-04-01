@@ -14,8 +14,10 @@ UCLASS()
 class SOULLIKE_API UStatusEffect_Poison : public UStatusEffect_TickBase
 {
 	GENERATED_BODY()
+
 public:
 	UStatusEffect_Poison();
+
 protected:
 };
 

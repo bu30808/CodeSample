@@ -40,7 +40,7 @@ void UOrbElementListWidget::OnClickedInitFilter()
 
 void UOrbElementListWidget::InitFilterFromElement()
 {
-	for(auto iter : FilteredChild)
+	for (auto iter : FilteredChild)
 	{
 		WrapBox->AddChildToWrapBox(iter);
 	}
@@ -82,24 +82,22 @@ void UOrbElementListWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 	WrapBox->ClearChildren();
-
 }
 
 void UOrbElementListWidget::AddItem(const FInventoryItem& OrbInfo)
 {
-	UE_LOGFMT(LogTemp, Warning, "다음 오브 관련 아이템 추가됨 : {0}", OrbInfo.UniqueID.ToString());
+	UE_LOGFMT(LogTemp, Warning, "다음 오브 관련 아이템 추가됨 : {0}", OrbInfo.GetItemInformation()->Item_Name.ToString());
 	if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
 	{
-	
 		//이미 있으면 업데이트만 해줌.
 		if (auto find = WrappedChild.FindByPredicate([OrbInfo](class UOrbListButtonWidget* button)
+		{
+			if (button->GetOrbData() != nullptr)
 			{
-				if(button->GetOrbData()!=nullptr)
-				{
-					return button->GetOrbData()->Data.UniqueID == OrbInfo.UniqueID;
-				}
-				return false;
-			}))
+				return button->GetOrbData()->Data.UniqueID == OrbInfo.UniqueID;
+			}
+			return false;
+		}))
 		{
 			(*find)->UpdateData(OrbInfo);
 		}
@@ -111,18 +109,22 @@ void UOrbElementListWidget::AddItem(const FInventoryItem& OrbInfo)
 				if (auto item = NewObject<UOrbData>())
 				{
 					item->Data = OrbInfo;
-					item->bIsEquipped = invenComp->IsEquipped(OrbInfo.UniqueID);
-					UE_LOGFMT(LogTemp, Warning, "새로 추가 , 장착여부 : {0}", item->bIsEquipped);
+					item->bIsEquipped = invenComp->IsEquippedEquipment(OrbInfo.UniqueID);
+					UE_LOGFMT(LogTemp, Warning, "다음 오브 관련 아이템 새로 추가 , 장착여부 : {0} {1}",
+					          OrbInfo.GetItemInformation()->Item_Name.ToString(), item->bIsEquipped);
 
 					button->SetData(item);
 				}
-			
+
 				WrappedChild.Emplace(button);
 				WrapBox->AddChildToWrapBox(button);
 			}
 		}
 
-		SortElement();
+		if (UItemHelperLibrary::IsOrbFragment(OrbInfo))
+		{
+			SortElement();
+		}
 	}
 }
 
@@ -130,7 +132,7 @@ void UOrbElementListWidget::SetEquipped(const FGuid& OrbID, bool bEquipped)
 {
 	if (auto find = WrappedChild.FindByPredicate([OrbID](class UOrbListButtonWidget* button)
 	{
-		if(button->GetOrbData())
+		if (button->GetOrbData())
 		{
 			return button->GetOrbData()->Data.UniqueID == OrbID;
 		}
@@ -169,7 +171,7 @@ TArray<UOrbData*> UOrbElementListWidget::FindSameSlotType(const TArray<UOrbData*
 	{
 		for (auto s : SlotFilter)
 		{
-			if(auto frag = static_cast<const FOrbFragmentInformation*>(data->Data.GetItemInformation()))
+			if (auto frag = static_cast<const FOrbFragmentInformation*>(data->Data.GetItemInformation()))
 			{
 				if (frag->SlotType == s)
 				{
@@ -178,9 +180,9 @@ TArray<UOrbData*> UOrbElementListWidget::FindSameSlotType(const TArray<UOrbData*
 			}
 		}
 
-		for(auto s : SlotFilterFromElement)
+		for (auto s : SlotFilterFromElement)
 		{
-			if(auto frag = static_cast<const FOrbFragmentInformation*>(data->Data.GetItemInformation()))
+			if (auto frag = static_cast<const FOrbFragmentInformation*>(data->Data.GetItemInformation()))
 			{
 				if (frag->SlotType == s)
 				{
@@ -191,14 +193,14 @@ TArray<UOrbData*> UOrbElementListWidget::FindSameSlotType(const TArray<UOrbData*
 	}
 
 	TArray<UOrbData*> returnData;
-	for(auto iter : findData)
+	for (auto iter : findData)
 	{
-		if(iter!=nullptr)
+		if (iter != nullptr)
 		{
 			returnData.Emplace(iter);
 		}
 	}
-	
+
 	return returnData;
 }
 
@@ -211,7 +213,7 @@ TArray<UOrbData*> UOrbElementListWidget::FindSameAttribute(const TArray<UOrbData
 	{
 		{
 			//기본적으로 달린 능력치 체크
-			if(const auto frag = static_cast<const FOrbFragmentInformation*>(item->Data.GetItemInformation()))
+			if (const auto frag = static_cast<const FOrbFragmentInformation*>(item->Data.GetItemInformation()))
 			{
 				//있는 경우
 				if (frag->EquipmentAttribute.ContainsByPredicate([FindAttribute](const FEquipmentAttribute& Att)
@@ -221,13 +223,14 @@ TArray<UOrbData*> UOrbElementListWidget::FindSameAttribute(const TArray<UOrbData
 				{
 					findData.Emplace(item);
 				}
-			}else
+			}
+			else
 			{
 				UKismetSystemLibrary::PrintString(this,TEXT("프레그먼트 데이터 정보를 가져올 수 없습니다!!!"));
 			}
 		}
 
-		
+
 		//강화로 달린 능력치 체크
 		{
 			for (const auto iter : Cast<AEquipmentItemActor>(item->Data.GetSpawndItemActor())->GetEnhancementInfo().
@@ -240,7 +243,6 @@ TArray<UOrbData*> UOrbElementListWidget::FindSameAttribute(const TArray<UOrbData
 			}
 		}
 	}
-	
 
 
 	return findData;
@@ -256,12 +258,12 @@ bool UOrbElementListWidget::IsAllFilterEmpty()
 		}
 	}
 
-	if(SlotFilter.Num()>0)
+	if (SlotFilter.Num() > 0)
 	{
 		return false;
 	}
 
-	if(SlotFilterFromElement.Num()>0)
+	if (SlotFilterFromElement.Num() > 0)
 	{
 		return false;
 	}
@@ -276,17 +278,17 @@ void UOrbElementListWidget::OnUpdateFilterEvent()
 		Refresh();
 		return;
 	}
-	
+
 	TArray<UOrbData*> filteredData;
 	//파편 슬롯 타입에 관계없이 어트리뷰트만 검사함.
-	for(auto iter : WrappedChild)
+	for (auto iter : WrappedChild)
 	{
 		filteredData.Emplace(iter->GetOrbData());
 	}
-	
+
 	for (const auto attType : AttributeFilter)
 	{
-		filteredData = FindSameAttribute(filteredData,attType);
+		filteredData = FindSameAttribute(filteredData, attType);
 	}
 
 	//슬롯 타입을 검사함
@@ -294,11 +296,11 @@ void UOrbElementListWidget::OnUpdateFilterEvent()
 
 	//결과에 해당하는 애들만 필터 렙 박스에 추가해서 보여줍니다.
 	WrapBox->SetVisibility(ESlateVisibility::Collapsed);
-	for(auto iter : WrappedChild)
+	for (auto iter : WrappedChild)
 	{
-		if(const auto data = iter->GetOrbData())
+		if (const auto data = iter->GetOrbData())
 		{
-			if(auto find = result.FindByPredicate([data](const UOrbData* item)
+			if (auto find = result.FindByPredicate([data](const UOrbData* item)
 			{
 				return item->Data.UniqueID == data->Data.UniqueID;
 			}))
@@ -309,7 +311,6 @@ void UOrbElementListWidget::OnUpdateFilterEvent()
 		}
 	}
 	WrapBox_Filter->SetVisibility(ESlateVisibility::Visible);
-
 }
 
 void UOrbElementListWidget::AddFilter(EOrbMatrixSlotType SlotType)
@@ -319,7 +320,7 @@ void UOrbElementListWidget::AddFilter(EOrbMatrixSlotType SlotType)
 
 void UOrbElementListWidget::AddFilterFromElement(EOrbMatrixSlotType SlotType)
 {
-		SlotFilterFromElement.Emplace(SlotType);
+	SlotFilterFromElement.Emplace(SlotType);
 }
 
 void UOrbElementListWidget::AddFilter(EAttributeType AttributeType)
@@ -344,7 +345,6 @@ void UOrbElementListWidget::RemoveFilterFromElement(EOrbMatrixSlotType SlotType)
 
 void UOrbElementListWidget::CreateCoreListFromInventory()
 {
-	/*ListView->ClearListItems();*/
 	if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
 	{
 		const auto& inventory = invenComp->GetInventory();
@@ -400,43 +400,43 @@ void UOrbElementListWidget::OnItemButtonHovered(UOrbData* Data)
 
 void UOrbElementListWidget::GetWidgetBySlotType(EOrbMatrixSlotType Type)
 {
-	for(auto iter : WrappedChild)
+	for (auto iter : WrappedChild)
 	{
-		if(auto orbData = iter->GetOrbData())
+		if (auto orbData = iter->GetOrbData())
 		{
-			if(auto info = orbData->Data.GetItemInformation())
+			if (auto info = orbData->Data.GetItemInformation())
 			{
-				if(const auto frag = static_cast<const FOrbFragmentInformation*>(info))
+				if (const auto frag = static_cast<const FOrbFragmentInformation*>(info))
 				{
-					if(frag->SlotType == Type)
+					if (frag->SlotType == Type)
 					{
 						WrapBox->AddChildToWrapBox(iter);
 					}
 				}
 			}
-		}else
+		}
+		else
 		{
-			UE_LOGFMT(LogTemp,Error,"버튼에 저장된 오브 데이터를 가져올 수 없어요");
+			UE_LOGFMT(LogTemp, Error, "버튼에 저장된 오브 데이터를 가져올 수 없어요");
 		}
 	}
 }
 
 void UOrbElementListWidget::RemoveFromParent()
 {
-	UE_LOGFMT(LogTemp,Warning,"파편 리스트 내부 버튼이 제거되려 합니다. :{0}",GetName());
+	UE_LOGFMT(LogTemp, Warning, "파편 리스트 내부 버튼이 제거되려 합니다. :{0}", GetName());
 	Super::RemoveFromParent();
 }
 
 void UOrbElementListWidget::SortElement()
 {
-	
 	WrapBox->ClearChildren();
-	for(auto i = 1;i<static_cast<int>(EOrbMatrixSlotType::MAX);i++)
+	for (auto i = 1; i < static_cast<int>(EOrbMatrixSlotType::MAX); i++)
 	{
 		GetWidgetBySlotType(static_cast<EOrbMatrixSlotType>(i));
 	}
-	
-	
+
+
 	/*GridChild.Sort([](class UOrbListButtonWidget* a,UOrbListButtonWidget* b)
 	{
 		const auto fragA = static_cast<const FOrbFragmentInformation*>(a->GetOrbData()->Data.GetItemInformation());

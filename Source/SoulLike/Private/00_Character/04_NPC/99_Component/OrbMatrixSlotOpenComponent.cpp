@@ -146,14 +146,16 @@ void UOrbMatrixSlotOpenComponent::UnLock(APlayerController* PlayerController,
 			}
 			else
 			{
-				const FText warningText =  NSLOCTEXT("OrbMatrixSlotOpenComponent","OrbMatrixSlotOpenCostWarningText","개방에 필요한 비용이 부족합니다.");
+				const FText warningText = NSLOCTEXT("OrbMatrixSlotOpenComponent", "OrbMatrixSlotOpenCostWarningText",
+				                                    "개방에 필요한 비용이 부족합니다.");
 				UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::Warning,
 				                                   warningText, FOnButtonClicked());
 			}
 		}
 		else
 		{
-			const FText warningText =  NSLOCTEXT("OrbMatrixSlotOpenComponent","OrbMatrixSlotOpenWarningText","이전 슬롯이 먼저 개방되어야 합니다.");
+			const FText warningText = NSLOCTEXT("OrbMatrixSlotOpenComponent", "OrbMatrixSlotOpenWarningText",
+			                                    "이전 슬롯이 먼저 개방되어야 합니다.");
 			UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::Warning,
 			                                   warningText, FOnButtonClicked());
 		}
@@ -191,9 +193,11 @@ void UOrbMatrixSlotOpenComponent::GivePhysicalLineCompleteReward(APlayerControll
 
 			if (bShowAlert)
 			{
-				const FText alertText =FText::Format( NSLOCTEXT("OrbMatrixSlotOpenComponent","PhysicalLineCompleteRewardText","물리 라인을 완성하여 다음 능력을 얻었습니다 : {0}"),FText::FromString(msg));
+				const FText alertText = FText::Format(
+					NSLOCTEXT("OrbMatrixSlotOpenComponent", "PhysicalLineCompleteRewardText",
+					          "물리 라인을 완성하여 다음 능력을 얻었습니다 : {0}"), FText::FromString(msg));
 				UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::NoUseDeco,
-				                                  alertText, FOnButtonClicked());
+				                                   alertText, FOnButtonClicked());
 			}
 		}
 	}
@@ -215,10 +219,12 @@ void UOrbMatrixSlotOpenComponent::GiveMagicalLineCompleteReward(APlayerControlle
 
 			if (bShowAlert)
 			{
-				const FText alertText =FText::Format( NSLOCTEXT("OrbMatrixSlotOpenComponent","MagicalLineCompleteRewardText","마법 라인을 완성하여 다음 능력을 얻었습니다 : {0}"),FText::FromString(msg));
-			
+				const FText alertText = FText::Format(
+					NSLOCTEXT("OrbMatrixSlotOpenComponent", "MagicalLineCompleteRewardText",
+					          "마법 라인을 완성하여 다음 능력을 얻었습니다 : {0}"), FText::FromString(msg));
+
 				UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::NoUseDeco,
-				                                 alertText, FOnButtonClicked());
+				                                   alertText, FOnButtonClicked());
 			}
 		}
 	}
@@ -241,10 +247,12 @@ void UOrbMatrixSlotOpenComponent::GiveDefenceLineCompleteReward(APlayerControlle
 
 			if (bShowAlert)
 			{
-				const FText alertText =FText::Format( NSLOCTEXT("OrbMatrixSlotOpenComponent","DefenceLineCompleteRewardText","방어 라인을 완성하여 다음 능력을 얻었습니다 : {0}"),FText::FromString(msg));
-			
+				const FText alertText = FText::Format(
+					NSLOCTEXT("OrbMatrixSlotOpenComponent", "DefenceLineCompleteRewardText",
+					          "방어 라인을 완성하여 다음 능력을 얻었습니다 : {0}"), FText::FromString(msg));
+
 				UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::NoUseDeco,
-				                                  alertText, FOnButtonClicked());
+				                                   alertText, FOnButtonClicked());
 			}
 		}
 	}
@@ -266,8 +274,10 @@ void UOrbMatrixSlotOpenComponent::GiveFreeLineCompleteReward(APlayerController* 
 
 			if (bShowAlert)
 			{
-				const FText alertText =FText::Format( NSLOCTEXT("OrbMatrixSlotOpenComponent","FreeLineCompleteRewardText","방어 라인을 완성하여 다음 능력을 얻었습니다 : {0}"),FText::FromString(msg));
-			
+				const FText alertText = FText::Format(
+					NSLOCTEXT("OrbMatrixSlotOpenComponent", "FreeLineCompleteRewardText",
+					          "방어 라인을 완성하여 다음 능력을 얻었습니다 : {0}"), FText::FromString(msg));
+
 				UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::NoUseDeco,
 				                                   alertText, FOnButtonClicked());
 			}

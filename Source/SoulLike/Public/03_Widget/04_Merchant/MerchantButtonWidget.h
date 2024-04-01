@@ -21,7 +21,7 @@ protected:
 	class UImage* Image_Item;
 	UPROPERTY(meta=(BindWidget))
 	class UImage* Image_Background;
-	
+
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* TextBlock_ItemName;
 
@@ -53,6 +53,7 @@ protected:
 
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+
 public:
 	UBaseMerchandiseListData* GetMerchandiseData() const { return Data.Get(); }
 };

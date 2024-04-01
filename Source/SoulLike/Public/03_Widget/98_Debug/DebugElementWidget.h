@@ -32,6 +32,7 @@ UCLASS()
 class SOULLIKE_API UDebugIgnoreMoveInputWidget : public UUserWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
+
 public:
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* TextBlock_Tag;
@@ -39,6 +40,6 @@ public:
 	class UTextBlock* TextBlock_Who;
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* TextBlock_Count;
-	
+
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 };

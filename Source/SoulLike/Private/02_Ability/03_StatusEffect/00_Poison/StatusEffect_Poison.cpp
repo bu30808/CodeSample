@@ -11,12 +11,12 @@
 UStatusEffect_Poison::UStatusEffect_Poison()
 {
 	Amount = 0.01f;
-	
+
 	/*EffectApplyType = EEffectApplyType::InfiniteWithTick;*/
 	UniqueEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.Poison.Effect");
 
 	static ConstructorHelpers::FClassFinder<AAbilityCue> cueActor(TEXT(
-	"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/StatusEffect/Poison/AC_Poison.AC_Poison_C'"));
+		"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/StatusEffect/Poison/AC_Poison.AC_Poison_C'"));
 	if (cueActor.Succeeded())
 	{
 		FAbilityCueInformation cue;
@@ -34,6 +34,5 @@ UStatusEffect_PoisonAcc::UStatusEffect_PoisonAcc()
 	UniqueEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.Poison.Acc.Effect");
 	CheckStatusEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.Poison.Effect");
 
-	AttributeEffects.Add(FAttributeEffect(EAttributeType::PoisonAcc,EAttributeApplyMethod::ADD,0));
+	AttributeEffects.Add(FAttributeEffect(EAttributeType::PoisonAcc, EAttributeApplyMethod::ADD, 0));
 }
-

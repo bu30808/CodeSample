@@ -34,15 +34,14 @@ void IMerchantInterface::BuyItemFromPlayer(ANPCBase* Merchant, APlayerCharacter*
 				//비용 지불
 				auto attComp = PlayerCharacter->GetAttributeComponent();
 				attComp->SetEXP(attComp->GetEXP() + item.GetItemInformation()->Item_Price * BuyCount);
-				
-				UpdateExpWidget(PlayerCharacter,item.GetItemInformation()->Item_Price * BuyCount);
+
+				UpdateExpWidget(PlayerCharacter, item.GetItemInformation()->Item_Price * BuyCount);
 
 				attComp->OnCharacterInformationUpdate.Broadcast();
-				Execute_GetMerchantComponent(Merchant)->OnBuyItemFromPlayer.Broadcast(PlayerCharacter,ItemUniqueID);
+				Execute_GetMerchantComponent(Merchant)->OnBuyItemFromPlayer.Broadcast(PlayerCharacter, ItemUniqueID);
 
 				//재구매 리스트에 추가함.
 				Execute_GetMerchantComponent(Merchant)->AddRepurchaseItem(item, BuyCount);
-				
 			}
 		}
 	}
@@ -70,9 +69,9 @@ void IMerchantInterface::SellItemToPlayer(ANPCBase* Merchant, APlayerCharacter* 
 		{
 			if (merchandise.MerchandiseData.Count < TradeCount)
 			{
-			
 				UWidgetHelperLibrary::ShowAlertMsg(PlayerCharacter->GetController<AUserController>(),
-				                                   EAlertMsgType::Normal, GlobalMerchantText::buyText,FOnButtonClicked());
+				                                   EAlertMsgType::Normal, GlobalMerchantText::buyText,
+				                                   FOnButtonClicked());
 				return;
 			}
 		}
@@ -81,9 +80,8 @@ void IMerchantInterface::SellItemToPlayer(ANPCBase* Merchant, APlayerCharacter* 
 		const int32 TotalPrice = merchandise.MerchandiseData.Price * TradeCount;
 		if (PlayerCharacter->GetAttributeComponent()->GetEXP() < TotalPrice)
 		{
-			
 			UWidgetHelperLibrary::ShowAlertMsg(PlayerCharacter->GetController<AUserController>(), EAlertMsgType::Error,
-			                                   GlobalMerchantText::alertText,FOnButtonClicked());
+			                                   GlobalMerchantText::alertText, FOnButtonClicked());
 			return;
 		}
 
@@ -107,7 +105,7 @@ void IMerchantInterface::SellItemToPlayer(ANPCBase* Merchant, APlayerCharacter* 
 
 		PlayerCharacter->GetAttributeComponent()->SetEXP(
 			PlayerCharacter->GetAttributeComponent()->GetEXP() - TotalPrice);
-		UpdateExpWidget(PlayerCharacter,TotalPrice * -1);
+		UpdateExpWidget(PlayerCharacter, TotalPrice * -1);
 
 		// 아이템을 넘깁니다.
 		FActorSpawnParameters spawnParams;
@@ -122,7 +120,7 @@ void IMerchantInterface::SellItemToPlayer(ANPCBase* Merchant, APlayerCharacter* 
 		PlayerCharacter->GetInventoryComponent()->AddItem(sellItem, false);
 
 		PlayerCharacter->GetAttributeComponent()->OnCharacterInformationUpdate.Broadcast();
-		MerchantComponent->OnSellItemToPlayer.Broadcast(PlayerCharacter,ItemUniqueID);
+		MerchantComponent->OnSellItemToPlayer.Broadcast(PlayerCharacter, ItemUniqueID);
 	}
 }
 
@@ -140,7 +138,7 @@ void IMerchantInterface::BuyAbilityFromPlayer(ANPCBase* Merchant, APlayerCharact
 			//비용 지불
 			auto attComp = PlayerCharacter->GetAttributeComponent();
 			attComp->SetEXP(attComp->GetEXP() + MerchandiseAbility.MerchandiseAbilityData.Price * BuyCount);
-			UpdateExpWidget(PlayerCharacter,MerchandiseAbility.MerchandiseAbilityData.Price * BuyCount);
+			UpdateExpWidget(PlayerCharacter, MerchandiseAbility.MerchandiseAbilityData.Price * BuyCount);
 
 			attComp->OnCharacterInformationUpdate.Broadcast();
 			MerchantComponent->OnBuyAbilityFromPlayer.Broadcast(PlayerCharacter);
@@ -173,9 +171,9 @@ void IMerchantInterface::SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacte
 		{
 			if (merchandise.MerchandiseAbilityData.Count < TradeCount)
 			{
-			
 				UWidgetHelperLibrary::ShowAlertMsg(PlayerCharacter->GetController<AUserController>(),
-				                                   EAlertMsgType::Normal, GlobalMerchantText::buyText,FOnButtonClicked());
+				                                   EAlertMsgType::Normal, GlobalMerchantText::buyText,
+				                                   FOnButtonClicked());
 				return;
 			}
 		}
@@ -184,9 +182,8 @@ void IMerchantInterface::SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacte
 		const int32 TotalPrice = merchandise.MerchandiseAbilityData.Price * TradeCount;
 		if (PlayerCharacter->GetAttributeComponent()->GetEXP() < TotalPrice)
 		{
-		
 			UWidgetHelperLibrary::ShowAlertMsg(PlayerCharacter->GetController<AUserController>(), EAlertMsgType::Error,
-			                                  GlobalMerchantText::alertText,FOnButtonClicked());
+			                                   GlobalMerchantText::alertText, FOnButtonClicked());
 			return;
 		}
 
@@ -210,8 +207,8 @@ void IMerchantInterface::SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacte
 
 		PlayerCharacter->GetAttributeComponent()->SetEXP(
 			PlayerCharacter->GetAttributeComponent()->GetEXP() - TotalPrice);
-		
-		UpdateExpWidget(PlayerCharacter,TotalPrice * -1);
+
+		UpdateExpWidget(PlayerCharacter, TotalPrice * -1);
 
 		//어빌리티를 넘깁니다.
 		PlayerCharacter->GetAbilityComponent()->GiveAbility(
@@ -223,7 +220,7 @@ void IMerchantInterface::SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacte
 
 void IMerchantInterface::UpdateExpWidget(APlayerCharacter* Player, const int32& AddExp)
 {
-	if(auto attComp = Player->GetAttributeComponent())
+	if (auto attComp = Player->GetAttributeComponent())
 	{
 		attComp->OnUpdateExp.Broadcast(AddExp);
 	}

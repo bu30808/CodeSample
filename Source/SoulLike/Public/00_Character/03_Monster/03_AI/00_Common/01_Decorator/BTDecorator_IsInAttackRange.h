@@ -16,7 +16,7 @@ class SOULLIKE_API UBTDecorator_IsInAttackRange : public UBTDecorator_Blackboard
 
 protected:
 	UBTDecorator_IsInAttackRange();
-	
+
 	UPROPERTY(EditAnywhere)
 	FBlackboardKeySelector AttackRangeKey;
 
@@ -27,7 +27,6 @@ protected:
 	UPROPERTY(EditAnywhere)
 	float OutMargin = 50.f;
 	virtual bool CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const override;
-
 };
 
 /*
@@ -40,7 +39,7 @@ class SOULLIKE_API UBTDecorator_IsCloserThanAttackRange : public UBTDecorator_Bl
 
 protected:
 	UBTDecorator_IsCloserThanAttackRange();
-	
+
 	UPROPERTY(EditAnywhere)
 	FBlackboardKeySelector AttackRangeKey;
 
@@ -49,7 +48,6 @@ protected:
 	float ErrorMargin = 50.f;
 
 	virtual bool CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const override;
-
 };
 
 /*
@@ -62,7 +60,7 @@ class SOULLIKE_API UBTDecorator_IsFartherThanAttackRange : public UBTDecorator_B
 
 protected:
 	UBTDecorator_IsFartherThanAttackRange();
-	
+
 	UPROPERTY(EditAnywhere)
 	FBlackboardKeySelector AttackRangeKey;
 
@@ -71,6 +69,4 @@ protected:
 	float ErrorMargin = 50.f;
 
 	virtual bool CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const override;
-
 };
-

@@ -14,5 +14,4 @@ UCLASS()
 class SOULLIKE_API ATroll : public ABaseMonster, public IBossMonsterInterface
 {
 	GENERATED_BODY()
-	
 };

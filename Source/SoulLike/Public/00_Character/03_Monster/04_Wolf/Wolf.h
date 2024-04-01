@@ -17,12 +17,11 @@ class SOULLIKE_API AWolf : public ABaseMonster
 	friend class AWolfBoss;
 
 protected:
-
-
 	UPROPERTY(EditAnywhere)
 	TMap<EDirection, UAnimMontage*> HitMontages;
 
-	virtual void TriggerHitAnimation_Implementation(UAbilityEffectAdditionalInformation* AdditionalInformation) override;
+	virtual void
+	TriggerHitAnimation_Implementation(UAbilityEffectAdditionalInformation* AdditionalInformation) override;
 	UFUNCTION()
 	void OnHitMontageBlendOutEvent(UAnimMontage* Montage, bool bInterrupted);
 };

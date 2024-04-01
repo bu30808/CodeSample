@@ -25,20 +25,20 @@ AWolfBoss::AWolfBoss()
 
 void AWolfBoss::CreateDynamicMaterials()
 {
-	if(MaterialInterfaces.IsValidIndex(0))
+	if (MaterialInterfaces.IsValidIndex(0))
 	{
 		//눈
-		MaterialInstances.Emplace(GetMesh()->CreateDynamicMaterialInstance(2,MaterialInterfaces[0]));
+		MaterialInstances.Emplace(GetMesh()->CreateDynamicMaterialInstance(2, MaterialInterfaces[0]));
 	}
-	if(MaterialInterfaces.IsValidIndex(1))
+	if (MaterialInterfaces.IsValidIndex(1))
 	{
 		//털
-		MaterialInstances.Emplace(GetMesh()->CreateDynamicMaterialInstance(3,MaterialInterfaces[1]));
+		MaterialInstances.Emplace(GetMesh()->CreateDynamicMaterialInstance(3, MaterialInterfaces[1]));
 	}
-	if(MaterialInterfaces.IsValidIndex(2))
+	if (MaterialInterfaces.IsValidIndex(2))
 	{
 		//몸
-		MaterialInstances.Emplace(GetMesh()->CreateDynamicMaterialInstance(4,MaterialInterfaces[2]));
+		MaterialInstances.Emplace(GetMesh()->CreateDynamicMaterialInstance(4, MaterialInterfaces[2]));
 	}
 }
 
@@ -52,32 +52,29 @@ void AWolfBoss::PostInitializeComponents()
 void AWolfBoss::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	if(auto actor = UGameplayStatics::GetActorOfClass(this,ADynamicSkyActor::StaticClass()))
+
+	if (auto actor = UGameplayStatics::GetActorOfClass(this, ADynamicSkyActor::StaticClass()))
 	{
 		Sky = Cast<ADynamicSkyActor>(actor);
 		OriginalTime = Sky->CurrentTime;
 	}
-
-
 }
 
 
 void AWolfBoss::ChangePhase2ColorSet(float Alpha)
 {
-	for(auto iter : MaterialInstances)
+	for (auto iter : MaterialInstances)
 	{
-		Phase2ColorSet.A = FMath::Lerp(0,1,Alpha);
-		iter->SetVectorParameterValue("Emision_Color",Phase2ColorSet);
-		iter->SetScalarParameterValue("Emission Power",FMath::Lerp(0,Phase2EmissivePower,Alpha));
+		Phase2ColorSet.A = FMath::Lerp(0, 1, Alpha);
+		iter->SetVectorParameterValue("Emision_Color", Phase2ColorSet);
+		iter->SetScalarParameterValue("Emission Power", FMath::Lerp(0, Phase2EmissivePower, Alpha));
 	}
-	
 }
 
 void AWolfBoss::ChangeSkyTime(float Time, float Alpha)
 {
-	if(Sky)
+	if (Sky)
 	{
-		Sky->CurrentTime = FMath::Lerp(OriginalTime,Time,Alpha);
+		Sky->CurrentTime = FMath::Lerp(OriginalTime, Time, Alpha);
 	}
 }

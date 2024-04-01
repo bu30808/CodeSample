@@ -65,7 +65,7 @@ public:
 	UPROPERTY(EditAnywhere)
 	EOrbMatrixSlotContent OrbMatrixSlotContent = EOrbMatrixSlotContent::Empty;
 
-	
+
 	//이 슬롯이 잠겼는가 확인하는 변수입니다.
 	UPROPERTY(EditAnywhere,
 		meta=(EditCondition =
@@ -103,7 +103,7 @@ public:
 		OrbMatrixSlotContent = Other.OrbMatrixSlotContent;
 		UniqueID = Other.UniqueID;
 		Row = Other.Row;
-		Col=Other.Col;
+		Col = Other.Col;
 	}
 };
 
@@ -155,10 +155,11 @@ USTRUCT(BlueprintType)
 struct FOrbMatrixSave
 {
 	GENERATED_BODY()
+
 public:
 	UPROPERTY()
 	TArray<FMatrixArray> WholeMatrix;
-	
+
 	UPROPERTY()
 	TArray<FOrbMatrixElementInfo> PhysicalLine;
 	UPROPERTY()
@@ -167,7 +168,7 @@ public:
 	TArray<FOrbMatrixElementInfo> MagicalLine;
 	UPROPERTY()
 	TArray<FOrbMatrixElementInfo> FreeLine;
-	
+
 	void Clear()
 	{
 		WholeMatrix.Empty();
@@ -181,7 +182,7 @@ public:
 /**
  * 
  */
-UCLASS(Blueprintable,DefaultToInstanced)
+UCLASS(Blueprintable, DefaultToInstanced)
 class SOULLIKE_API UOrbMatrix : public UObject
 {
 	GENERATED_BODY()
@@ -207,9 +208,8 @@ public:
 
 	//저장된 오브 메트릭스 정보를 불러옵니다.
 	void LoadMatrix(const FOrbMatrixSave& OrbMatrixSave, class APlayerCharacter* Player);
-	
-	void SetMatrix(const UOrbMatrix* const COD);
-	
-	virtual void BeginDestroy() override;
 
+	void SetMatrix(const UOrbMatrix* const COD);
+
+	virtual void BeginDestroy() override;
 };

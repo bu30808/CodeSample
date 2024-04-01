@@ -25,7 +25,7 @@ public:
 	//이 값이 참이면 블랙보드의 Target에 저장된 대상을 향해서 이동하게 만듭니다.
 	UPROPERTY(EditAnywhere)
 	bool bUseBlackboard;
-	UPROPERTY(EditAnywhere,meta=(EditCondition="bUseBlackboard"))
+	UPROPERTY(EditAnywhere, meta=(EditCondition="bUseBlackboard"))
 	EProjectileDirection ProjectileDirection;
 	UPROPERTY(EditAnywhere)
 	EProjectileShootType ProjectileShootType;
@@ -38,4 +38,5 @@ public:
 
 
 	virtual void BranchingPointNotify(FBranchingPointNotifyPayload& BranchingPointPayload) override;
+	
 };

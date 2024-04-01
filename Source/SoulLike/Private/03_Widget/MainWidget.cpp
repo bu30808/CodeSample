@@ -30,8 +30,7 @@ void UMainWidget::OpenNavigation(bool bForceClose)
 {
 	if (OpenMenuAnimation)
 	{
-
-		if(bForceClose)
+		if (bForceClose)
 		{
 			if (bIsNavigationOpen)
 			{
@@ -40,12 +39,12 @@ void UMainWidget::OpenNavigation(bool bForceClose)
 				UMG_Equipment->SetVisibility(ESlateVisibility::Collapsed);
 				UMG_Orb->SetVisibility(ESlateVisibility::Collapsed);
 				PlayAnimationReverse(OpenMenuAnimation);
-				
+
 				bIsNavigationOpen = false;
-				UWidgetHelperLibrary::CloseWidgetSetting(GetOwningPlayer(),this);
+				UWidgetHelperLibrary::CloseWidgetSetting(GetOwningPlayer(), this);
 			}
-			
-		}else
+		}
+		else
 		{
 			if (bIsNavigationOpen)
 			{
@@ -55,45 +54,43 @@ void UMainWidget::OpenNavigation(bool bForceClose)
 				UMG_Equipment->SetVisibility(ESlateVisibility::Collapsed);
 				UMG_Orb->SetVisibility(ESlateVisibility::Collapsed);
 				PlayAnimationReverse(OpenMenuAnimation);
-				UWidgetHelperLibrary::CloseWidgetSetting(GetOwningPlayer(),this);
+				UWidgetHelperLibrary::CloseWidgetSetting(GetOwningPlayer(), this);
 			}
 			else
 			{
 				PlayAnimationForward(OpenMenuAnimation);
-				UWidgetHelperLibrary::OpenWidgetSetting(GetOwningPlayer(),this);
+				UWidgetHelperLibrary::OpenWidgetSetting(GetOwningPlayer(), this);
 			}
 
 			bIsNavigationOpen = !bIsNavigationOpen;
 		}
-		
+
 		//NavigationOpenInputSetting();
 	}
 }
 
 void UMainWidget::ShowBossWidget(ABaseMonster* Boss)
 {
-
-	if(Boss)
+	if (Boss)
 	{
 		const auto& safeName = GetNameSafe(Boss);
-		
-		if(!BossHealthBarWidgetMap.Contains(safeName))
+
+		if (!BossHealthBarWidgetMap.Contains(safeName))
 		{
-			auto bossWidget = CreateWidget<UBossHealthBarWidget>(GetOwningPlayer(),BossHealthBarWidgetObject);
+			auto bossWidget = CreateWidget<UBossHealthBarWidget>(GetOwningPlayer(), BossHealthBarWidgetObject);
 			bossWidget->SetInfo(Boss);
 			VerticalBox_BossWidgets->AddChild(bossWidget);
-			BossHealthBarWidgetMap.Emplace(safeName,bossWidget);
+			BossHealthBarWidgetMap.Emplace(safeName, bossWidget);
 		}
 	}
-	
 }
 
 void UMainWidget::RemoveBossWidget(ABaseMonster* Boss)
 {
-	if(Boss)
+	if (Boss)
 	{
 		const auto& safeName = GetNameSafe(Boss);
-		if(BossHealthBarWidgetMap.Contains(safeName))
+		if (BossHealthBarWidgetMap.Contains(safeName))
 		{
 			BossHealthBarWidgetMap[safeName]->RemoveFromParent();
 			BossHealthBarWidgetMap.Remove(safeName);
@@ -110,7 +107,7 @@ void UMainWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
 
-	if(UMG_AbilityDebug)
+	if (UMG_AbilityDebug)
 	{
 		UMG_AbilityDebug->SetVisibility(ESlateVisibility::Collapsed);
 	}
@@ -121,7 +118,6 @@ void UMainWidget::NativePreConstruct()
 		UMG_AbilityDebug->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	}
 #endif
-
 }
 
 void UMainWidget::NativeConstruct()
@@ -148,11 +144,11 @@ void UMainWidget::Init()
 			attComp->OnChangeMPValue.AddUniqueDynamic(this, &UMainWidget::OnChangedMPEvent);
 			attComp->OnChangeSPValue.AddUniqueDynamic(this, &UMainWidget::OnChangedSPEvent);
 
-			attComp->OnChangeMaxHPValue.AddUniqueDynamic(this,&UMainWidget::OnChangedMaxHPEvent);
-			attComp->OnChangeMaxMPValue.AddUniqueDynamic(this,&UMainWidget::OnChangedMaxMPEvent);
-			attComp->OnChangeMaxSPValue.AddUniqueDynamic(this,&UMainWidget::OnChangedMaxSPEvent);
-			
-			
+			attComp->OnChangeMaxHPValue.AddUniqueDynamic(this, &UMainWidget::OnChangedMaxHPEvent);
+			attComp->OnChangeMaxMPValue.AddUniqueDynamic(this, &UMainWidget::OnChangedMaxMPEvent);
+			attComp->OnChangeMaxSPValue.AddUniqueDynamic(this, &UMainWidget::OnChangedMaxSPEvent);
+
+
 			attComp->InitProgressWidget();
 		}
 
@@ -161,9 +157,9 @@ void UMainWidget::Init()
 			UMG_Navigation->Init(this);
 		}
 
-		Button_NavigationOpen->OnClicked.AddUniqueDynamic(this,&UMainWidget::OnClickedOpenButton);
+		Button_NavigationOpen->OnClicked.AddUniqueDynamic(this, &UMainWidget::OnClickedOpenButton);
 
-		if(UMG_CharacterInformation)
+		if (UMG_CharacterInformation)
 		{
 			UMG_CharacterInformation->EquipmentWidget = UMG_Equipment;
 		}
@@ -288,7 +284,8 @@ void UMainWidget::OpenCharacterInformation()
 		if (!UMG_CharacterInformation->IsVisible())
 		{
 			UMG_CharacterInformation->SetVisibility(ESlateVisibility::Visible);
-		}else
+		}
+		else
 		{
 			UMG_CharacterInformation->SetVisibility(ESlateVisibility::Collapsed);
 		}
@@ -302,7 +299,8 @@ void UMainWidget::OpenInventory()
 		if (!UMG_Inventory->IsVisible())
 		{
 			UMG_Inventory->SetVisibility(ESlateVisibility::Visible);
-		}else
+		}
+		else
 		{
 			UMG_Inventory->SetVisibility(ESlateVisibility::Collapsed);
 		}
@@ -316,7 +314,8 @@ void UMainWidget::OpenEquipment()
 		if (!UMG_Equipment->IsVisible())
 		{
 			UMG_Equipment->SetVisibility(ESlateVisibility::Visible);
-		}else
+		}
+		else
 		{
 			UMG_Equipment->SetVisibility(ESlateVisibility::Collapsed);
 		}

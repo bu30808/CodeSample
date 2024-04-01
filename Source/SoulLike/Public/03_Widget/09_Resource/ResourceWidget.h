@@ -14,12 +14,15 @@ UCLASS()
 class SOULLIKE_API UResourceWidget : public UGradientBaseWidget
 {
 	GENERATED_BODY()
+
 protected:
-	UPROPERTY(meta=(BindWidget),BlueprintReadOnly)
+	UPROPERTY(meta=(BindWidget), BlueprintReadOnly)
 	class UImage* Image_Progress;
 
 	virtual void NativePreConstruct() override;
-	class UMaterialInstanceDynamic* InitDynamicMaterial(class UMaterialInterface* ProgressMat,UImage* ProgressImage,FLinearColor Color) const;
+	class UMaterialInstanceDynamic* InitDynamicMaterial(class UMaterialInterface* ProgressMat, UImage* ProgressImage,
+	                                                    FLinearColor Color) const;
+
 public:
 	void UpdateProgressLength(float MaxValue);
 };

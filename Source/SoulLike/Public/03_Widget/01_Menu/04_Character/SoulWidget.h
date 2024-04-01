@@ -22,7 +22,7 @@ protected:
 	class UHorizontalBox* HorizontalBox_GetSoul;
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* TextBlock_SoulAdd;
-	
+
 	UPROPERTY(Transient)
 	float CurExp;
 	UPROPERTY(Transient)
@@ -39,12 +39,12 @@ protected:
 public:
 	virtual void NativeConstruct() override;
 	/*virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;*/
-	
+
 	UFUNCTION()
 	void OnCharacterInformationUpdateEvent();
 	UFUNCTION()
 	void OnUpdateEXPEvent(float AddEXP);
-	
+
 	UFUNCTION()
 	void OnLerpEXPEvent(float Alpha);
 };

@@ -27,44 +27,45 @@ enum class EJumpProcess : uint8
 };
 
 UCLASS()
-class SOULLIKE_API AJumpPad : public AActor,public IInteractionInterface
+class SOULLIKE_API AJumpPad : public AActor, public IInteractionInterface
 {
 	GENERATED_BODY()
 
 	friend class UJumpMovementComponent;
+
 protected:
 	UPROPERTY(VisibleAnywhere)
 	class USceneComponent* RootSceneComponent;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UBillboardComponent* JumpPoint_Top;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UBillboardComponent* JumpPoint_Bottom;
-	
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UBoxComponent* TopBoxComponent;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UBoxComponent* BottomBoxComponent;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UStaticMeshComponent* ActivateMeshComponent;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UNiagaraComponent* ActivateParticleComponent;
 
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsActivated = false;
 	//컴포넌트 무브 함수를 통해서 플레이어를 강제 이동시킬 때, 이동 시간입니다. 짧을수록 빠르게 움직입니다.
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float ComponentMoveTime = 0.5f;
 
 	UPROPERTY(BlueprintReadWrite)
 	TObjectPtr<class APlayerCharacter> OverlappedPlayer;
 	UPROPERTY()
 	TObjectPtr<UPrimitiveComponent> CurOverlappedComponent;
-	UPROPERTY(Transient,VisibleAnywhere)
+	UPROPERTY(Transient, VisibleAnywhere)
 	EJumpMoveType JumpMoveType = EJumpMoveType::NONE;
-	UPROPERTY(Transient,VisibleAnywhere)
+	UPROPERTY(Transient, VisibleAnywhere)
 	EJumpProcess JumpProcess = EJumpProcess::NONE;
-	
+
 	UPROPERTY(Transient)
 	FVector MoveTargetPoint;
 	//점프중 이동하게되는 속도입니다.
@@ -73,7 +74,8 @@ protected:
 	//점프로 이동중 목표지점과의 거리가 이 수치 이하가 된다면, 이동완료처리를 합니다.
 	UPROPERTY(EditAnywhere)
 	float MoveCompleteCheckDistance = 25.f;
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	AJumpPad();
 
@@ -82,22 +84,24 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void PostInitializeComponents() override;
 	virtual void Tick(float DeltaSeconds) override;
-	
+
 	void TryActivatePad();
 
 	virtual void Interaction_Implementation(ABaseCharacter* Start) override;
 	virtual void FinishInteraction_Implementation() override;
-	
+
 	UFUNCTION()
-	void OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	void OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	                                     UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
 	                                     const FHitResult& SweepResult);
 	UFUNCTION()
-	void OnBoxComponentEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void OnBoxComponentEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	                                   UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UWidgetComponent* ShowInteractionWidget();
 	void HideInteractionWidget();
-	
-	bool IsNearActivateMesh(UPrimitiveComponent* CheckTargetComponent,UPrimitiveComponent* CompareComponent);
+
+	bool IsNearActivateMesh(UPrimitiveComponent* CheckTargetComponent, UPrimitiveComponent* CompareComponent);
 
 
 	UFUNCTION()
@@ -108,9 +112,10 @@ protected:
 	void JumpDown();
 	UFUNCTION()
 	void JumpLand();
-	
+
 	UFUNCTION()
 	void StartActivatePad();
+
 public:
 	void SetActivate();
 };

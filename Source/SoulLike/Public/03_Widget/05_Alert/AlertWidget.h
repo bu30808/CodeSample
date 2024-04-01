@@ -16,6 +16,7 @@ enum class EAlertMsgType :uint8
 	Error,
 	NoUseDeco
 };
+
 DECLARE_DYNAMIC_DELEGATE(FOnButtonClicked);
 
 /**
@@ -32,15 +33,16 @@ protected:
 
 	UPROPERTY(meta=(BindWidget))
 	class UButton* Button_Ok;
-	
+
 	UPROPERTY(EditAnywhere)
 	TMap<EAlertMsgType, FLinearColor> Colors;
-	
+
 	FOnButtonClicked OnClicked;
-	
+
 	virtual void NativeConstruct() override;
 	UFUNCTION()
 	void OnClickedOKButton();
+
 public:
 	void SetAlertMsg(EAlertMsgType AlertMsgType, FText Msg, const FOnButtonClicked& OnClickedEvent);
 };

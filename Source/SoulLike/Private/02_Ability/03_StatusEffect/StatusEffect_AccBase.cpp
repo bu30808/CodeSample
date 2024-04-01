@@ -18,26 +18,29 @@ bool UStatusEffect_AccBase::ApplyInstantEffect_Implementation(ABaseCharacter* Ta
                                                               float DeltaTime)
 {
 	bool result = Super::ApplyInstantEffect_Implementation(Target, AdditionalInfo, DeltaTime);
-	
-	for(auto iter : AttributeEffects)
+
+	for (auto iter : AttributeEffects)
 	{
 		EStatusEffect statusEffect;
 		float accValue = 0;
 		float resistValue = 0;
-		UAttributeHelperLibrary::AttributeEffectElementToStatusEffectValues(Target->GetAttributeComponent(),iter.Attribute,statusEffect,accValue,resistValue);
+		UAttributeHelperLibrary::AttributeEffectElementToStatusEffectValues(
+			Target->GetAttributeComponent(), iter.Attribute, statusEffect, accValue, resistValue);
 
-		UE_LOGFMT(LogEffect,Log,"{0}에게 적용할 상태이상 {1}의 수치 : {2}, {3}의 상태이상 저항 : {4}",GetNameSafe(Target),StaticEnum<EStatusEffect>()->GetValueAsString(statusEffect),accValue,GetNameSafe(Target),resistValue);
-		
+		UE_LOGFMT(LogEffect, Log, "{0}에게 적용할 상태이상 {1}의 수치 : {2}, {3}의 상태이상 저항 : {4}", GetNameSafe(Target),
+		          StaticEnum<EStatusEffect>()->GetValueAsString(statusEffect), accValue, GetNameSafe(Target),
+		          resistValue);
+
 		//UKismetSystemLibrary::PrintString(Target,FString::Printf(TEXT("적용할 상태이상 수치 : %f, 저항수치 : %f"),iter.ApplyValue,resistValue));
 
-		Target->GetAttributeComponent()->OnUpdateStatusEffect.Broadcast(statusEffect,accValue,resistValue);
-
+		Target->GetAttributeComponent()->OnUpdateStatusEffect.Broadcast(statusEffect, accValue, resistValue);
 	}
-	
+
 	return result;
 }
 
 bool UStatusEffect_AccBase::CanApplyEffect_Implementation(ABaseCharacter* Target, bool bShowLog) const
 {
-	return Super::CanApplyEffect_Implementation(Target, bShowLog) && !Target->GetAbilityComponent()->HasEffectTag(CheckStatusEffectTag);
+	return Super::CanApplyEffect_Implementation(Target, bShowLog) && !Target->GetAbilityComponent()->HasEffectTag(
+		CheckStatusEffectTag);
 }

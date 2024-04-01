@@ -62,7 +62,7 @@ public:
 	//이팩트를 스폰할 트레이스를 그리는 시간 주기를 설정합니다.
 	UPROPERTY(EditAnywhere, Category="NiagaraTraceSetting")
 	float NiagaraSpawnTraceTickRate = 0.15f;
-	UPROPERTY(EditAnywhere, Category="NiagaraTraceSetting",meta=(EditCondition="bSpawnNiagaraWhenHitNonCharacter"))
+	UPROPERTY(EditAnywhere, Category="NiagaraTraceSetting", meta=(EditCondition="bSpawnNiagaraWhenHitNonCharacter"))
 	class UNiagaraSystem* NiagaraEmitter;
 
 	UPROPERTY()
@@ -133,7 +133,7 @@ protected:
 	//트레이스에 감지된 대상들을 저장하는 배열입니다.
 	UPROPERTY(BlueprintReadWrite, Category="TraceResult")
 	TArray<FHitResult> HitActors;
-	
+
 
 	//히트가 감지되면 호출되는 이벤트입니다.
 	UPROPERTY(BlueprintAssignable)
@@ -170,6 +170,7 @@ protected:
 	//같은 팀(아군)인 경우에도 피해를 줄 것인가 결정합니다.
 	UPROPERTY(EditAnywhere)
 	bool bIgnoreAlly = true;
+
 public:
 	//초기화
 	//트레이스를 그릴 메시가 변경될때마다 호출하세요.
@@ -186,7 +187,6 @@ public:
 #if WITH_EDITOR
 	virtual void CopyValues(UAbilityEffect* Effect) override;
 #endif
-
 
 protected:
 	/*/**
@@ -228,15 +228,16 @@ protected:
 	//소켓의 이전 프레임의 위치를 기억하는 맵입니다.
 	UPROPERTY()
 	TMap<FName, FVector> LastKnownNiagaraSpawnSocketLocation;
-	
+
 	void ActivateNiagaraSpawnTrace(AActor* Target);
 	UFUNCTION()
 	void CreateSpawnNiagaraEffectTrace();
 	void SpawnNiagaraEffect(const TArray<FHitResult>& Hits) const;
 	void SpawnNiagaraEffect(const FHitResult& Hit) const;
 	void UpdateLastNiagaraSpawnSocketLocation();
-	
-	virtual void ProcessEffect_Implementation(class ABaseCharacter* Target, AActor* EffectBy,UAbilityBase* From, UObject* AdditionalData = nullptr) override;
+
+	virtual void ProcessEffect_Implementation(class ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From,
+	                                          UObject* AdditionalData = nullptr) override;
 	virtual void OnTaskTickEvent_Implementation(float DeltaTime) override;
 	virtual void EndEffect_Implementation(ABaseCharacter* Target) override;
 
@@ -245,7 +246,7 @@ protected:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsAlreadyHit(AActor* Actor);
 
-	
+
 	/**
 	 * Hit 대상에게 EffectedBy로 부터 넉다운을 적용하려면 호출하십시오.
 	 * 무적인 대상에게는 적용되지 않습니다.
@@ -256,5 +257,6 @@ protected:
 	 * @param bReset 이 값이 참인 경우, 이미 넉다운이 적용되어 있을 떄, 적용된 넉다운을 취소하고 새로 적용합니다.
 	 */
 	UFUNCTION(BlueprintCallable)
-	void ApplyKnockDown(const FHitResult& Hit,class ABaseCharacter* EffectedBy, FGameplayTag KnockdownTag,bool bRotationToHitPoint, bool bReset);
+	void ApplyKnockDown(const FHitResult& Hit, class ABaseCharacter* EffectedBy, FGameplayTag KnockdownTag,
+	                    bool bRotationToHitPoint, bool bReset);
 };

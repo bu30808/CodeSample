@@ -66,7 +66,7 @@ protected:
 
 	UPROPERTY()
 	TWeakObjectPtr<class UEquipWidget> ParentWidget;
-	
+
 	//장착 해제 이벤트
 	FOnUnEquipped OnUnEquipped;
 
@@ -81,7 +81,7 @@ protected:
 	bool IsCorrectType(UInventoryData* InventoryData) const;
 
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
-							  UDragDropOperation* InOperation) override;
+	                          UDragDropOperation* InOperation) override;
 
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
@@ -92,12 +92,11 @@ public:
 	void SetButtonInfo(TWeakObjectPtr<UItemData> NewData);
 	void SetEquipSlotType(EEquipSlotType NewType);
 	void SetEquipButtonType(EEquipButtonType NewType);
-	void SetSlotIndex(int32 NewIndex){Index = NewIndex;}
-	int32 GetIndex() const {return Index;}
+	void SetSlotIndex(int32 NewIndex) { Index = NewIndex; }
+	int32 GetIndex() const { return Index; }
 
 	FGuid GetEquippedID() const;
 	void SetParentsWidget(class UEquipWidget* PWidget);
-	
 };
 
 

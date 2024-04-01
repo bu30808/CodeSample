@@ -8,17 +8,17 @@
 void UPopUpBasedWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
-	if(bUseAsPopUp)
+
+	if (bUseAsPopUp)
 	{
 		UWidgetHelperLibrary::PopUpWidgetProcess(this, bRemovable);
-		OnVisibilityChanged.AddUniqueDynamic(this,&UPopUpBasedWidget::OnVisibilityChangedEvent);
+		OnVisibilityChanged.AddUniqueDynamic(this, &UPopUpBasedWidget::OnVisibilityChangedEvent);
 	}
 }
 
 void UPopUpBasedWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
-	if(bUseAsPopUp)
+	if (bUseAsPopUp)
 	{
 		UWidgetHelperLibrary::PopUpWidgetProcess(this, bRemovable);
 	}

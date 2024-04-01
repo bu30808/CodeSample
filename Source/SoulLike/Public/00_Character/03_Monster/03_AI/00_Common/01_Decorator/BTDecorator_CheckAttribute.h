@@ -27,7 +27,7 @@ class SOULLIKE_API UBTDecorator_CheckAttribute : public UBTDecorator_BlackboardB
 
 protected:
 	UBTDecorator_CheckAttribute();
-	
+
 
 	UPROPERTY(EditAnywhere)
 	TEnumAsByte<EArithmeticKeyOperation::Type> ArithmeticOperation;
@@ -36,12 +36,12 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	EAttributeCheckType AttributeCheckType;
-	UPROPERTY(EditAnywhere,meta=(EditCondition ="AttributeCheckType == EAttributeCheckType::Absolute"))
+	UPROPERTY(EditAnywhere, meta=(EditCondition ="AttributeCheckType == EAttributeCheckType::Absolute"))
 	float AbsoluteValue;
-	UPROPERTY(EditAnywhere,meta=(EditCondition ="AttributeCheckType == EAttributeCheckType::Percent"))
+	UPROPERTY(EditAnywhere, meta=(EditCondition ="AttributeCheckType == EAttributeCheckType::Percent"))
 	float PercentValue;
 
 	virtual bool CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const override;
 	bool CheckAttributeOperationAbsolute(const FAttribute* attribute) const;
-	bool CheckAttributeOperationPercent(UAttributeComponent* attComp,const FAttribute* const attribute) const ;
+	bool CheckAttributeOperationPercent(UAttributeComponent* attComp, const FAttribute* const attribute) const;
 };

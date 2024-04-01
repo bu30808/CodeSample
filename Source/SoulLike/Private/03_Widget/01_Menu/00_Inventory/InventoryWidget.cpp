@@ -13,19 +13,18 @@ void UInventoryWidget::NativeConstruct()
 {
 	bUseAsPopUp = true;
 	bRemovable = false;
-	
+
 	Super::NativeConstruct();
 
-	if(Button_Close)
+	if (Button_Close)
 	{
-		Button_Close->OnClicked.AddUniqueDynamic(this,&UInventoryWidget::OnClickedCloseButton);
+		Button_Close->OnClicked.AddUniqueDynamic(this, &UInventoryWidget::OnClickedCloseButton);
 	}
 
-	if(UMG_ItemList)
+	if (UMG_ItemList)
 	{
 		UMG_ItemList->InventorySetting(this);
 	}
-	
 }
 
 void UInventoryWidget::OnClickedCloseButton()
@@ -35,9 +34,9 @@ void UInventoryWidget::OnClickedCloseButton()
 
 void UInventoryWidget::ShowItemInformation(UInventoryData* Data)
 {
-	if(UMG_ItemInfo)
+	if (UMG_ItemInfo)
 	{
-		if(auto itemData = Cast<UItemData>(Data))
+		if (auto itemData = Cast<UItemData>(Data))
 		{
 			UMG_ItemInfo->SetInfo(itemData->InventoryItem);
 		}

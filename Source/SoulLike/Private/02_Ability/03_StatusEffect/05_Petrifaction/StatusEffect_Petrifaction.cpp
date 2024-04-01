@@ -17,37 +17,38 @@ UStatusEffect_Petrifaction::UStatusEffect_Petrifaction()
 }
 
 void UStatusEffect_Petrifaction::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy,
-	UAbilityBase* From, UObject* AdditionalData)
+                                                              UAbilityBase* From, UObject* AdditionalData)
 {
-	Target->SetIgnoreMoveInput(true,EffectBy,UniqueEffectTag);
-	Target->SetIgnoreLookInput(true,EffectBy,UniqueEffectTag);
+	Target->SetIgnoreMoveInput(true, EffectBy, UniqueEffectTag);
+	Target->SetIgnoreLookInput(true, EffectBy, UniqueEffectTag);
 
-	if(auto instance = Target->GetMesh()->GetAnimInstance())
+	if (auto instance = Target->GetMesh()->GetAnimInstance())
 	{
 		instance->Montage_Pause();
 		Target->GetMesh()->bPauseAnims = true;
 	}
 
 	Target->ChangeStatusEffectMaterial(EStatusEffect::PETRIFACTION);
-	
+
 	FTimerHandle killTimerHandle;
-	FTimerDelegate killTimerDel = FTimerDelegate::CreateUObject(this,&UStatusEffect_Petrifaction::KillTarget,Target,EffectBy);
-	Target->GetWorldTimerManager().SetTimer(killTimerHandle,killTimerDel,3.f,false);
-	
+	FTimerDelegate killTimerDel = FTimerDelegate::CreateUObject(this, &UStatusEffect_Petrifaction::KillTarget, Target,
+	                                                            EffectBy);
+	Target->GetWorldTimerManager().SetTimer(killTimerHandle, killTimerDel, 3.f, false);
 }
 
 bool UStatusEffect_Petrifaction::CanApplyEffect_Implementation(ABaseCharacter* Target, bool bShowLog) const
 {
-	return Super::CanApplyEffect_Implementation(Target, bShowLog) && !Target->GetAbilityComponent()->HasEffectTag(UniqueEffectTag);
+	return Super::CanApplyEffect_Implementation(Target, bShowLog) && !Target->GetAbilityComponent()->HasEffectTag(
+		UniqueEffectTag);
 }
 
-void UStatusEffect_Petrifaction::KillTarget(ABaseCharacter* Target,AActor* EffectBy)
+void UStatusEffect_Petrifaction::KillTarget(ABaseCharacter* Target, AActor* EffectBy)
 {
 	/*Target->OnDead.Broadcast(Target,EffectBy);*/
-	if(Target->GetCharacterState() != ECharacterState::DEAD)
+	if (Target->GetCharacterState() != ECharacterState::DEAD)
 	{
 		Target->SetCharacterState(ECharacterState::DEAD);
-		UGameplayStatics::OpenLevel(this,FName(UGameplayStatics::GetCurrentLevelName(Target)));
+		UGameplayStatics::OpenLevel(this, FName(UGameplayStatics::GetCurrentLevelName(Target)));
 	}
 }
 
@@ -59,26 +60,27 @@ UStatusEffect_PetrifactionAcc::UStatusEffect_PetrifactionAcc()
 }
 
 bool UStatusEffect_PetrifactionAcc::ApplyInstantEffect_Implementation(ABaseCharacter* Target, UObject* AdditionalInfo,
-	float DeltaTime)
+                                                                      float DeltaTime)
 {
-	if(UKismetSystemLibrary::DoesImplementInterface(Target,UBossMonsterInterface::StaticClass()))
+	if (UKismetSystemLibrary::DoesImplementInterface(Target, UBossMonsterInterface::StaticClass()))
 	{
 		EndEffect(Target);
 		return false;
 	}
-	
-	bool result =  Super::ApplyInstantEffect_Implementation(Target, AdditionalInfo, DeltaTime);
 
-	if(auto attComp = Target->GetAttributeComponent())
+	bool result = Super::ApplyInstantEffect_Implementation(Target, AdditionalInfo, DeltaTime);
+
+	if (auto attComp = Target->GetAttributeComponent())
 	{
-		for(auto iter : AttributeEffects)
+		for (auto iter : AttributeEffects)
 		{
 			EStatusEffect statusEffect;
 			float accValue;
 			float resistValue;
-			UAttributeHelperLibrary::AttributeEffectElementToStatusEffectValues(attComp,iter.Attribute,statusEffect,accValue,resistValue);
+			UAttributeHelperLibrary::AttributeEffectElementToStatusEffectValues(
+				attComp, iter.Attribute, statusEffect, accValue, resistValue);
 
-			attComp->OnUpdateStatusEffect.Broadcast(statusEffect,accValue,resistValue);
+			attComp->OnUpdateStatusEffect.Broadcast(statusEffect, accValue, resistValue);
 		}
 	}
 

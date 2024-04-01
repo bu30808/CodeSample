@@ -25,26 +25,26 @@ void UJumpMovementComponent::BeginPlay()
 
 	// ...
 	Pawn = GetOwner<APlayerCharacter>();
-	
 }
 
 void UJumpMovementComponent::ActivateJumpPad(class AJumpPad* JumpPad)
 {
-	if(Pawn)
+	if (Pawn)
 	{
 		CurJumpPad = JumpPad;
-		Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(this,&UJumpMovementComponent::OnMontageBlendingOutEvent);
+		Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(
+			this, &UJumpMovementComponent::OnMontageBlendingOutEvent);
 		Pawn->PlayAnimMontage(ActivateMontage);
 	}
 }
 
 void UJumpMovementComponent::PlayJumpStartMontage(AJumpPad* JumpPad)
 {
-	if(CurJumpPad)
+	if (CurJumpPad)
 	{
 		CurJumpPad->JumpMove();
 	}
-	
+
 	/*Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(this,&UJumpMovementComponent::OnMontageBlendingOutEvent);
 	Pawn->PlayAnimMontage(JumpStartMontage);*/
 }
@@ -56,23 +56,23 @@ void UJumpMovementComponent::PlayJumpLandMontage()
 
 void UJumpMovementComponent::OnMontageBlendingOutEvent(UAnimMontage* Montage, bool bInterrupted)
 {
-	if(Pawn)
+	if (Pawn)
 	{
-		if(Montage == ActivateMontage)
+		if (Montage == ActivateMontage)
 		{
-			if(CurJumpPad)
+			if (CurJumpPad)
 			{
 				CurJumpPad->SetActivate();
-			}	
+			}
 			Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.RemoveAll(this);
 		}
 
-		if(Montage == JumpStartMontage)
+		if (Montage == JumpStartMontage)
 		{
-			if(CurJumpPad)
+			if (CurJumpPad)
 			{
 				CurJumpPad->JumpMove();
-			}	
+			}
 			Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.RemoveAll(this);
 		}
 	}

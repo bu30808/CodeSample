@@ -14,55 +14,73 @@ enum class EAttackType : uint8;
 //멀티케스트가 아니기 때문에 한번에 한개의 함수만 바인드 가능합니다.
 //피해량, 피해를 준 대상, 피해를 입은 대상
 /*DECLARE_DELEGATE_RetVal_ThreeParams(float, FOnIncreaseDamage, const float, class ABaseCharacter*, ABaseCharacter*);*/
-DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnIncreaseDamage, const float,Damage, class ABaseCharacter*,DamageBy, ABaseCharacter*,DamagedCharacer);
+DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnIncreaseDamage, const float, Damage, class ABaseCharacter*,
+                                            DamageBy, ABaseCharacter*, DamagedCharacer);
+
 //받는 피해량이 감소하는 이벤트
-DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnDecreaseGotHitDamage, const float,Damage, class ABaseCharacter*,DamageBy, ABaseCharacter*,DamagedCharacer);
+DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnDecreaseGotHitDamage, const float, Damage, class ABaseCharacter*,
+                                            DamageBy, ABaseCharacter*, DamagedCharacer);
+
 //방어력을 변경하는 이벤트
 //방어력, 피해를 준 대상, 피해를 입은 대상
-DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnChangeDefence, const float, Damage, class ABaseCharacter*,DamageBy,
-                                    ABaseCharacter*,DamagedCharacer);
+DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnChangeDefence, const float, Damage, class ABaseCharacter*,
+                                            DamageBy,
+                                            ABaseCharacter*, DamagedCharacer);
 
 //입는 피해량이 증가하는 이벤트
-DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnIncreaseGotHitDamage, const float, Damage, class ABaseCharacter*,DamageBy,
-                                    ABaseCharacter*,DamagedCharacer);
+DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnIncreaseGotHitDamage, const float, Damage, class ABaseCharacter*,
+                                            DamageBy,
+                                            ABaseCharacter*, DamagedCharacer);
+
 //달리는 속도 증가
-DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseRunSpeed, const float,Original);
+DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseRunSpeed, const float, Original);
 
 //SP 소모 감소
-DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnDecreaseAbilitySP, const float,Origianl);
+DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnDecreaseAbilitySP, const float, Origianl);
+
 //회피거리 증가(회피시 가해지는 힘의 크기를 증가시킵니다)
-DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseDodgeDistance, const float,Original);
+DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseDodgeDistance, const float, Original);
+
 //SP회복량 증가
-DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseRecoverSPAmount, const float,Original);
+DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseRecoverSPAmount, const float, Original);
+
 //회피 무적시간 증가.
-DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseDodgeInvincibilityTime, const float,Original);
+DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseDodgeInvincibilityTime, const float, Original);
 
 //경험치 획득량 증가
-DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseGetExp, const float,Original);
+DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseGetExp, const float, Original);
 
 //피격시 호출되는 이벤트, 피격당한 플레이어/타격한 대상/피해량
-DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnGotHit, APlayerCharacter*, DamagedCharacer, ABaseCharacter*,DamagedBy, const float,Damage);
+DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnGotHit, APlayerCharacter*, DamagedCharacer, ABaseCharacter*, DamagedBy,
+                                     const float, Damage);
+
 //피격시 호출되는 이벤트, 리턴이 필요할때 사용하세요.
-DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnGotHitWithReturn, const float,Damage, class ABaseCharacter*,DamagedBy, ABaseCharacter*,DamagedCharacer);
+DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnGotHitWithReturn, const float, Damage, class ABaseCharacter*,
+                                            DamagedBy, ABaseCharacter*, DamagedCharacer);
+
 //회피에 성공하면 실행될 이벤트
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnSuccessDodge, APlayerCharacter*,Player);
+DECLARE_DYNAMIC_DELEGATE_OneParam(FOnSuccessDodge, APlayerCharacter*, Player);
+
 //회피에 성공하면 다음 피해량이 증가
-DECLARE_DYNAMIC_DELEGATE_RetVal_TwoParams(float, FOnIncreaseDamWhenSuccDodge, APlayerCharacter*,Player, const float,Origianl);
+DECLARE_DYNAMIC_DELEGATE_RetVal_TwoParams(float, FOnIncreaseDamWhenSuccDodge, APlayerCharacter*, Player, const float,
+                                          Origianl);
 
 //공격이 적중하면 사용할 이벤트
 //피해량, 피해를 준 대상(플레이어), 피해를 입은 대상
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnSuccessDamageHit, class ABaseCharacter*,DamagedBy, ABaseCharacter*,DamagedCharacer);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnSuccessDamageHit, class ABaseCharacter*, DamagedBy, ABaseCharacter*,
+                                   DamagedCharacer);
 
 
 //치유효과 증감
 //치유량 / 치유를 받은 캐릭터
-DECLARE_DYNAMIC_DELEGATE_RetVal_TwoParams(float, FOnChangeHealAmount, float,Original, ABaseCharacter*,HealedCharacter);
+DECLARE_DYNAMIC_DELEGATE_RetVal_TwoParams(float, FOnChangeHealAmount, float, Original, ABaseCharacter*, HealedCharacter)
+;
 
 //플레이어가 몬스터를 잡았을 떄 호출됩니다.
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnKillMonster, APlayerCharacter*,Player, ABaseMonster*,KilledMonster);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnKillMonster, APlayerCharacter*, Player, ABaseMonster*, KilledMonster);
 
 //회피 최소 SP요구량 설정 이벤트.
-DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnDodgeMinimumSP, const float,Original);
+DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnDodgeMinimumSP, const float, Original);
 
 
 /*

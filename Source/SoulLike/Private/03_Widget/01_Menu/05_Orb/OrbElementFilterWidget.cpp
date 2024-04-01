@@ -79,7 +79,7 @@ void UOrbElementFilterWidget::NativePreConstruct()
 void UOrbElementFilterWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
+
 	if (CheckBox)
 	{
 		CheckBox->SetIsChecked(bInitCheck);

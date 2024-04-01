@@ -18,7 +18,7 @@ EBTNodeResult::Type UBTTask_ClearFocus::ExecuteTask(UBehaviorTreeComponent& Owne
 {
 	if (auto aiCon = OwnerComp.GetAIOwner())
 	{
-		if(auto pawn = aiCon->GetPawn<ABaseCharacter>())
+		if (auto pawn = aiCon->GetPawn<ABaseCharacter>())
 		{
 			pawn->bUseControllerRotationYaw = false;
 			pawn->GetCharacterMovement()->bOrientRotationToMovement = true;

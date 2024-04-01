@@ -123,9 +123,9 @@ public:
 	void BindEvent(const FKeyPressedInfo& ActionInfo, const FOnKeyPressedWithAction& OnKeyPressed,
 	               const FOnKeyNotPressed& OnKeyNotPressed);
 
-	
 
 	DECLARE_DYNAMIC_DELEGATE_OneParam(FOnKeyPressedWithActionBP, class UInputAction*, Action);
+
 	DECLARE_DYNAMIC_DELEGATE(FOnKeyNotPressedBP);
 
 	void UnBindEvent(const FKeyPressedInfo& ActionInfo);

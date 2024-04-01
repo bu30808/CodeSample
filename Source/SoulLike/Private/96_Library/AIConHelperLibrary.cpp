@@ -10,20 +10,20 @@
 
 void UAIConHelperLibrary::ChangePlayerState(AActor* AIConOrMonster, AActor* Player, EPlayerCharacterState NewState)
 {
-	if(AIConOrMonster->IsA<ABaseMonster>())
+	if (AIConOrMonster->IsA<ABaseMonster>())
 	{
 		ABaseMonster* mon = Cast<ABaseMonster>(AIConOrMonster);
-		if(mon->ShouldForceCombatState())
+		if (mon->ShouldForceCombatState())
 		{
-			Cast<APlayerCharacter>(Player)->SetPlayerStateBy(NewState,mon);
+			Cast<APlayerCharacter>(Player)->SetPlayerStateBy(NewState, mon);
 		}
-		
-	}else
+	}
+	else
 	{
 		AMonsterAIController* aiCon = Cast<AMonsterAIController>(AIConOrMonster);
-		if(aiCon->ShouldForceCombatState())
+		if (aiCon->ShouldForceCombatState())
 		{
-			Cast<APlayerCharacter>(Player)->SetPlayerStateBy(NewState,aiCon->GetPawn());
+			Cast<APlayerCharacter>(Player)->SetPlayerStateBy(NewState, aiCon->GetPawn());
 		}
 	}
 }

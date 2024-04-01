@@ -26,7 +26,7 @@ class SOULLIKE_API AMonsterAIController : public AAIController
 public:
 	AMonsterAIController();
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool ShouldForceCombatState();
 	//대상을 감지했을 떄 호출됨.
 	UFUNCTION()
@@ -57,9 +57,9 @@ public:
 	virtual void PostInitializeComponents() override;
 
 	virtual void UpdateControlRotation(float DeltaTime, bool bUpdatePawn) override;
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsBehaviorTreeRunning();
-	
+
 	void OverrideSightConfig(class UMonsterDataAsset* MonsterDataAsset);
 
 protected:

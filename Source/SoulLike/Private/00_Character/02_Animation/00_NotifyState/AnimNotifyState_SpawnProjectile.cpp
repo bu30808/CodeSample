@@ -14,7 +14,6 @@ UAnimNotifyState_SpawnProjectile::UAnimNotifyState_SpawnProjectile()
 #if WITH_EDITOR
 	bShouldFireInEditor = true;
 #endif
-
 }
 
 
@@ -82,7 +81,6 @@ void UAnimNotifyState_SpawnProjectile::NotifyEnd(USkeletalMeshComponent* MeshCom
 						p->DetachFromActor(FDetachmentTransformRules(DetachmentRule, true));
 						if (bUseBlackboard)
 						{
-							
 							p->LaunchProjectileWithOption(ProjectileDirection, ProjectileShootType);
 						}
 						else
@@ -96,7 +94,6 @@ void UAnimNotifyState_SpawnProjectile::NotifyEnd(USkeletalMeshComponent* MeshCom
 								p->LaunchProjectile(MeshComp->GetForwardVector());
 							}
 						}
-						
 					}
 				}
 			}

@@ -32,11 +32,11 @@ void ULadderMovementComponent::BeginPlay()
 
 void ULadderMovementComponent::SetUseLadderMovement(bool Value)
 {
-	if(Pawn)
+	if (Pawn)
 	{
 		bUseLadderMovement = Value;
 		Pawn->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(
-						this, &ULadderMovementComponent::OnPlayMontageBlendOutEvent);
+			this, &ULadderMovementComponent::OnPlayMontageBlendOutEvent);
 		if (bUseLadderMovement)
 		{
 			Pawn->GetCharacterMovement()->SetMovementMode(MOVE_Flying);
@@ -93,7 +93,7 @@ FVector ULadderMovementComponent::GetClimbMoveLocation()
 					                                            UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
 					                                            ignoreActors, EDrawDebugTrace::None, hit, true))
 					{
-						UKismetSystemLibrary::PrintString(this,hit.GetActor()->GetActorNameOrLabel());
+						UKismetSystemLibrary::PrintString(this, hit.GetActor()->GetActorNameOrLabel());
 						if (!hit.bStartPenetrating)
 						{
 							FVector resultVector;
@@ -188,7 +188,7 @@ void ULadderMovementComponent::ReadyToLadderClimbDown(ALadder* Ladder)
 	//위치를 맞추기 위해서 전방백터에서 일부를 곱해서 제거합니다.
 	const FVector& topLoc = LadderActor->GetEnterTop()->GetComponentLocation() + Pawn->GetActorForwardVector() * -15.f;
 	UKismetSystemLibrary::MoveComponentTo(capsuleComp, topLoc, Ladder->GetActorRotation(), false, false,
-										  ClimbTime, false, EMoveComponentAction::Move, latentInfo);
+	                                      ClimbTime, false, EMoveComponentAction::Move, latentInfo);
 }
 
 ELadderMove ULadderMovementComponent::GetClimbLadderType(ALadder* Ladder)
@@ -301,7 +301,7 @@ void ULadderMovementComponent::AddLadderMovementInput(float ScaleValue)
 			}
 		}
 
-		if(GetNextHandLocation() == FVector::ZeroVector)
+		if (GetNextHandLocation() == FVector::ZeroVector)
 		{
 			LadderClimbType = ELadderClimbType::EscapeFromTop;
 			Pawn->PlayAnimMontage(LadderExit_TopMontage);
@@ -330,7 +330,7 @@ void ULadderMovementComponent::OnPlayMontageBlendOutEvent(UAnimMontage* Montage,
 		{
 			auto capsuleComp = Pawn->GetCapsuleComponent();
 			capsuleComp->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-			
+
 			Pawn->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 			IInteractionInterface::Execute_FinishInteraction(LadderActor);
 			LadderActor = nullptr;

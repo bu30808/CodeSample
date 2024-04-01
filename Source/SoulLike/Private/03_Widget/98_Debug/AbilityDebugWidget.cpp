@@ -28,8 +28,10 @@ void UAbilityDebugWidget::NativeConstruct()
 		abComp->OnAddCue.AddUniqueDynamic(this, &UAbilityDebugWidget::OnAddCueEvent);
 		abComp->OnRemoveCue.AddUniqueDynamic(this, &UAbilityDebugWidget::OnRemoveCueEvent);
 
-		GetOwningPlayerPawn<ABaseCharacter>()->OnTriggerIgnoreMoveInput.AddUObject(this,&UAbilityDebugWidget::OnTriggerIgnoreMoveInputEvent);
-		GetOwningPlayerPawn<APlayerCharacter>()->OnChangePlayerState.AddUniqueDynamic(this,&UAbilityDebugWidget::OnChangePlayerStateEvent);
+		GetOwningPlayerPawn<ABaseCharacter>()->OnTriggerIgnoreMoveInput.AddUObject(
+			this, &UAbilityDebugWidget::OnTriggerIgnoreMoveInputEvent);
+		GetOwningPlayerPawn<APlayerCharacter>()->OnChangePlayerState.AddUniqueDynamic(
+			this, &UAbilityDebugWidget::OnChangePlayerStateEvent);
 	}
 #endif
 }
@@ -94,18 +96,15 @@ void UAbilityDebugWidget::OnApplyEffectEvent(const FGameplayTagContainer& Effect
 	if (AppliedEffectsList)
 	{
 		AppliedEffectsList->ClearListItems();
-		
-		for(auto iter : EffectTag)
-		{
 
-			if(auto data = NewObject<UAbilityEffectDebuggingData>())
+		for (auto iter : EffectTag)
+		{
+			if (auto data = NewObject<UAbilityEffectDebuggingData>())
 			{
 				data->AbilityEffectTag = iter;
 				AppliedEffectsList->AddItem(data);
 			}
-			
 		}
-		
 	}
 }
 
@@ -114,17 +113,15 @@ void UAbilityDebugWidget::OnEndEffectEvent(const FGameplayTagContainer& EffectTa
 	if (AppliedEffectsList)
 	{
 		AppliedEffectsList->ClearListItems();
-		
-		for(auto iter : EffectTag)
+
+		for (auto iter : EffectTag)
 		{
-			if(auto data = NewObject<UAbilityEffectDebuggingData>())
+			if (auto data = NewObject<UAbilityEffectDebuggingData>())
 			{
 				data->AbilityEffectTag = iter;
 				AppliedEffectsList->AddItem(data);
 			}
-			
 		}
-		
 	}
 }
 
@@ -156,12 +153,12 @@ void UAbilityDebugWidget::OnRemoveCueEvent(const FGameplayTag& CueTag)
 
 void UAbilityDebugWidget::OnTriggerIgnoreMoveInputEvent(const TMap<FIgnoreInputHandler, uint8>& IgnoreMoveInputMap)
 {
-	if(AppliedIgnoreInputList){
+	if (AppliedIgnoreInputList)
+	{
 		AppliedIgnoreInputList->ClearListItems();
-		for(auto iter : IgnoreMoveInputMap)
+		for (auto iter : IgnoreMoveInputMap)
 		{
-
-			if(auto data = NewObject<UIgnoreMoveInputDebuggingData>())
+			if (auto data = NewObject<UIgnoreMoveInputDebuggingData>())
 			{
 				data->By = iter.Key.AccruedActor;
 				data->Tag = iter.Key.AccruedTag;
@@ -169,9 +166,7 @@ void UAbilityDebugWidget::OnTriggerIgnoreMoveInputEvent(const TMap<FIgnoreInputH
 
 				AppliedIgnoreInputList->AddItem(data);
 			}
-			
 		}
-
 	}
 }
 

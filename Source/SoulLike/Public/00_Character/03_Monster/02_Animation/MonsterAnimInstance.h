@@ -18,7 +18,6 @@ class SOULLIKE_API UMonsterAnimInstance : public UBaseAnimInstance
 	GENERATED_BODY()
 
 protected:
-	
 	//특정 대상에 대해서 포커스를 가지고 있나?
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsFocus = false;
@@ -35,18 +34,17 @@ protected:
 
 	//ChangeBoneTransform함수 내부에서 변경됩니다.
 	//AI타겟을 바라보는데 사용됩니다.
-	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FRotator NeckRotation;
 
-	
+
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+
 public:
 	virtual void AnimNotify_OnHitEnter_Implementation() override;
 	virtual void AnimNotify_OnHitExit_Implementation() override;
+
 protected:
 	virtual void ChangeBoneTransform_Implementation(float DeltaTime) override;
 	virtual void ClearBoneTransform_Implementation(float DeltaTime) override;
-	
 };
-
-

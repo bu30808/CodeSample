@@ -8,15 +8,13 @@
 #include "Components/RichTextBlock.h"
 
 
-
 void UAlertWidget::NativeConstruct()
 {
 	bUseAsPopUp = true;
 	bRemovable = true;
-	
+
 	Super::NativeConstruct();
-	Button_Ok->OnClicked.AddUniqueDynamic(this,&UAlertWidget::OnClickedOKButton);
-	
+	Button_Ok->OnClicked.AddUniqueDynamic(this, &UAlertWidget::OnClickedOKButton);
 }
 
 void UAlertWidget::OnClickedOKButton()
@@ -28,27 +26,28 @@ void UAlertWidget::OnClickedOKButton()
 void UAlertWidget::SetAlertMsg(EAlertMsgType AlertMsgType, FText Msg, const FOnButtonClicked& OnClickedEvent)
 {
 	FString msg;
-	switch (AlertMsgType) {
+	switch (AlertMsgType)
+	{
 	case EAlertMsgType::Normal:
-		msg+="<alert.normal>";
+		msg += "<alert.normal>";
 		break;
 	case EAlertMsgType::Warning:
-		msg+="<alert.warning>";
+		msg += "<alert.warning>";
 		break;
 	case EAlertMsgType::Error:
-		msg+="<alert.error>";
+		msg += "<alert.error>";
 		break;
 	default: ;
 	}
 
 	msg += Msg.ToString();
-	if(AlertMsgType!=EAlertMsgType::NoUseDeco)
+	if (AlertMsgType != EAlertMsgType::NoUseDeco)
 	{
-		msg+= "</>";
+		msg += "</>";
 	}
 	RichTextBlock_Msg->SetText(FText::FromString(msg));
 	OnClicked = OnClickedEvent;
-	
-	
+
+
 	//RichTextBlock_Msg->SetColorAndOpacity(FSlateColor(Colors[AlertMsgType]));
 }

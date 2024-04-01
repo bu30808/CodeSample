@@ -18,20 +18,17 @@ void UBossItemGetWidget::NativeConstruct()
 	Super::NativeConstruct();
 
 	VerticalBox_Element->ClearChildren();
-	Button_OK->OnClicked.AddUniqueDynamic(this,&UBossItemGetWidget::OnClicked);
+	Button_OK->OnClicked.AddUniqueDynamic(this, &UBossItemGetWidget::OnClicked);
 }
 
 void UBossItemGetWidget::AddItemElement(AItemActor* Item)
 {
-	
-	if(BossItemGetElementObject)
+	if (BossItemGetElementObject)
 	{
-	
-		if(auto widget = CreateWidget<UBossItemGetElementWidget>(GetOwningPlayer(),BossItemGetElementObject))
+		if (auto widget = CreateWidget<UBossItemGetElementWidget>(GetOwningPlayer(), BossItemGetElementObject))
 		{
 			VerticalBox_Element->AddChildToVerticalBox(widget);
-			widget->SetItemInformation(Item->GetItemInformation(),Item->GetItemCount());
+			widget->SetItemInformation(Item->GetItemInformation(), Item->GetItemCount());
 		}
-		
 	}
 }

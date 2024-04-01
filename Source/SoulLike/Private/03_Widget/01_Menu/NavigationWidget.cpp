@@ -26,7 +26,6 @@ void UNavigationWidget::Init(UMainMenuWidget* MenuWidget)
 void UNavigationWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	
 }
 
 
@@ -34,7 +33,7 @@ void UNavigationWidget::Init(UMainWidget* Widget)
 {
 	MainWidget = Widget;
 
-	if(MainWidget.IsValid())
+	if (MainWidget.IsValid())
 	{
 		Button_CharacterInformation->Button->OnClicked.AddUniqueDynamic(Widget, &UMainWidget::OpenCharacterInformation);
 		Button_Item->Button->OnClicked.AddUniqueDynamic(Widget, &UMainWidget::OpenInventory);

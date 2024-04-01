@@ -58,13 +58,12 @@ void UAbilitySubsystem::RemoveProjectiles(ABaseCharacter* Owner)
 {
 	if (Projectiles.Contains(Owner))
 	{
-		for(auto iter : Projectiles)
+		for (auto iter : Projectiles)
 		{
-			for(auto p : iter.Value)
+			for (auto p : iter.Value)
 			{
 				p->Destroy();
 			}
-			
 		}
 		Projectiles.Remove(Owner);
 	}

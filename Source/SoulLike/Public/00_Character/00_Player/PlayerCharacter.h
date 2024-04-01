@@ -6,10 +6,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputAction.h"
 #include "InputActionValue.h"
-#include "00_Character/BaseCharacter.h"
-#include "02_Ability/AbilityCue.h"
-#include "03_Widget/MainWidget.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "00_Character/BaseCharacter.h"
+#include "93_SaveGame/SoulLikeSaveGame.h"
 #include "PlayerCharacter.generated.h"
 
 #define ECC_Monster ECC_GameTraceChannel1
@@ -104,23 +103,36 @@ protected:
 
 	UPROPERTY(Transient)
 	TArray<class UMaterialInstanceDynamic*> BodyMaterialInstance;
-	
+	//세이브 파일 없이 첫 시작시 불러올 테이블에 저장된 레이어 행 이름입니다.
+	UPROPERTY(EditAnywhere)
+	TArray<FName> StartLayerRowNames = {"/Game/DataLayer/Runtime/WaterFallLayer.WaterFallLayer","/Game/DataLayer/Runtime/WaterFall_NS_Layer.WaterFall_NS_Layer"};
+
 	void CreateBodyMaterialInstance();
-	
+
+	UPROPERTY(EditAnywhere)
+	class UAnimMontage* StartKneelMontage;
+	void KneelStart();
+	UFUNCTION(BlueprintCallable)
+	void LoadStartLayer();
+	UFUNCTION(BlueprintCallable)
 	void LoadGame();
-	void OnAfterLoadGame();
+	UFUNCTION()
+	void OnFinishLoadGame();
 	UFUNCTION(BlueprintCallable)
 	void CreateSoulTomb();
+	UFUNCTION(BlueprintCallable)
+	void OnAfterLoadStartLayerEvent();
 
 	UPROPERTY(Transient)
 	FVector LastGroundedLocation;
 	FTimerHandle GroundLocationSaveTimerHandle;
 	UFUNCTION()
 	void SaveLastGroundedLocation();
+
 public:
-	const FVector& GetLastGroundedLocation() const {return LastGroundedLocation;}
+	const FVector& GetLastGroundedLocation() const { return LastGroundedLocation; }
+
 protected:
-	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -415,11 +427,11 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	class UWidgetComponent* ShowInteractionWidget(const AActor* Target, const UInputAction* Action,
-												  const FText& ActionName);
+	                                              const FText& ActionName);
 	UFUNCTION(BlueprintCallable)
 	//보여주진 않고 그냥 가져만 옵니다. Visiblity를 켜야 보입니다.
 	class UWidgetComponent* GetInteractionWidget(const AActor* Target, const UInputAction* Action,
-												 const FText& ActionName);
+	                                             const FText& ActionName);
 	UFUNCTION(BlueprintCallable)
 	void HideInteractionWidget();
 
@@ -428,7 +440,7 @@ public:
 protected:
 	//키를 표시해주는 위젯 컴포넌트를 가져옵니다.
 	class UWidgetComponent* GetPressKeyWidget(FName KeyName, const FText& ActionName);
-	
+
 
 	virtual void ChangeMovementState(EMovementState Type, float Multiplier) override;
 	/**********************************************입력방향*********************************************************/
@@ -485,6 +497,10 @@ private:
 	FTimerHandle PeaceTimerHandle;
 
 public:
+
+	UFUNCTION(BlueprintPure,BlueprintCallable)
+	EPlayerCharacterState GetPlayerCurrentState(){return CurrentState;}
+	
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnChangePlayerState OnChangePlayerState;
 
@@ -507,15 +523,16 @@ public:
 	void OnChangedMoveSpeedAttributeEvent();
 
 	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy) override;
+	void StartTeleportToOtherBonfire();
 
 private:
 	//이동할 다른 화톳불이 있는 레벨 이름입니다.
 	UPROPERTY()
-	FName OtherBonfireLevelName;
+	FBonfireInformation TeleportOtherBonfireInformation;
 
 public:
 	//다른 화톳불로 이동하는 함수입니다.
-	void TeleportToOtherBonfire(FName LevelName);
+	void TeleportToOtherBonfire(const FBonfireInformation& TeleportBonfireInforation);
 	UFUNCTION()
 	void OnEndPlayTeleportMontage(UAnimMontage* Montage, bool bInterrupted);
 

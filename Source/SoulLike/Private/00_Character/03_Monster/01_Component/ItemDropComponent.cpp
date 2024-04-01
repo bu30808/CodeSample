@@ -93,7 +93,7 @@ void UItemDropComponent::PostInitProperties()
 void UItemDropComponent::BossDropItem(ABaseCharacter* DropBy)
 {
 	APlayerCharacter* player = nullptr;
-	
+
 	if (DropBy->IsA<APlayerCharacter>())
 	{
 		player = Cast<APlayerCharacter>(DropBy);
@@ -117,8 +117,8 @@ void UItemDropComponent::BossDropItem(ABaseCharacter* DropBy)
 				if (const auto item = GetWorld()->SpawnActor<AItemActor>(load, spawnParam))
 				{
 					//TODO 여기서 아이템 획득 위젯을 대문짝만하게 보여줍니다.
-					UWidgetHelperLibrary::ShowBossItemGetWidget(Cast<AUserController>(player->GetController()),item);
-					player->GetInventoryComponent()->AddItem(item,false);
+					UWidgetHelperLibrary::ShowBossItemGetWidget(Cast<AUserController>(player->GetController()), item);
+					player->GetInventoryComponent()->AddItem(item, false);
 				}
 			}
 		}
@@ -191,9 +191,9 @@ void UItemDropComponent::GiveExp(ABaseCharacter* DropBy)
 		//우두머리의 경우 다이렉트로 플레이어에게 경험치를 추가해줍니다.
 		if (UKismetSystemLibrary::DoesImplementInterface(GetOwner(), UBossMonsterInterface::StaticClass()))
 		{
-			if(auto attComp = Cast<APlayerCharacter>(DropBy)->GetAttributeComponent())
+			if (auto attComp = Cast<APlayerCharacter>(DropBy)->GetAttributeComponent())
 			{
-				UE_LOGFMT(LogCharacter,Warning,"보스 처치 보상 즉시 지급");
+				UE_LOGFMT(LogCharacter, Warning, "보스 처치 보상 즉시 지급");
 				attComp->SetEXP(attComp->GetEXP() + Exp);
 				attComp->OnCharacterInformationUpdate.Broadcast();
 			}
@@ -215,5 +215,4 @@ void UItemDropComponent::GiveExp(ABaseCharacter* DropBy)
 			expOrb->StartProjectile(DropBy);
 		}
 	}
-	
 }

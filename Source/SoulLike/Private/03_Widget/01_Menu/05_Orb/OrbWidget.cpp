@@ -125,7 +125,7 @@ void UOrbWidget::CreateOrbMatrixFirst(const FInventoryItem& OrbCoreItem)
 							SetEquippedInOrbListWidget(OrbCoreItem.UniqueID, EOrbType::CORE, true);
 							CoreMatrixElementWidget = e;
 						}
-						
+
 						UniformGridPanel_Matrix->AddChildToUniformGrid(e, i, j);
 						if (auto slot = Cast<UUniformGridSlot>(e->Slot))
 						{
@@ -135,7 +135,7 @@ void UOrbWidget::CreateOrbMatrixFirst(const FInventoryItem& OrbCoreItem)
 
 						e->SetOwnerWidget(this);
 						e->SetInfo(matrix[i][j]);
-												
+
 						MatrixElements.Add(e);
 					}
 				}
@@ -177,9 +177,8 @@ void UOrbWidget::OverrideOrbMatrix(const FInventoryItem& OrbCoreItem)
 							CoreMatrixElementWidget = e;
 							SetEquippedInOrbListWidget(OrbCoreItem.UniqueID, EOrbType::CORE, true);
 						}
-						
+
 						e->SetInfo(matrix[i][j]);
-						
 					}
 				}
 			}
@@ -238,13 +237,14 @@ UOrbMatrixElementWidget* UOrbWidget::IsOrbEquipped(const FGuid& OrbID)
 void UOrbWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
 	Super::OnVisibilityChangedEvent(InVisibility);
-	
-	if(auto pawn = GetOwningPlayerPawn<APlayerCharacter>())
+
+	if (auto pawn = GetOwningPlayerPawn<APlayerCharacter>())
 	{
 		pawn->OrbBackgroundActor->ShowRender(IsVisible());
 		if (IsVisible())
-		{	
-			UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),FGameplayTag::RequestGameplayTag("Tutorial.Orb"));
+		{
+			UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),
+			                                         FGameplayTag::RequestGameplayTag("Tutorial.Orb"));
 			UMG_OrbElementListCore->Refresh();
 			UMG_OrbElementListFragment->Refresh();
 
@@ -269,7 +269,7 @@ void UOrbWidget::NativePreConstruct()
 		player->GetInventoryComponent()->OnAddItem.AddUniqueDynamic(this, &UOrbWidget::OnAddOrbItem);
 	}
 
-	if(Image_OrbRender)
+	if (Image_OrbRender)
 	{
 		Image_OrbRender->SetIsEnabled(false);
 	}
@@ -290,7 +290,7 @@ void UOrbWidget::NativePreConstruct()
 void UOrbWidget::NativeConstruct()
 {
 	bUseAsPopUp = true;
-	bRemovable =false;
+	bRemovable = false;
 	Super::NativeConstruct();
 
 	if (OrbMatrixElementWidgetObject)
@@ -302,7 +302,6 @@ void UOrbWidget::NativeConstruct()
 	}
 
 	OnClickedFragmentButton();
-
 }
 
 void UOrbWidget::SetEquippedInOrbListWidget(const FGuid& OrbID, EOrbType OrbType, bool bEquipped)

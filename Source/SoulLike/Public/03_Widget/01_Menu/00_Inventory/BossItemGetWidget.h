@@ -17,7 +17,7 @@ class SOULLIKE_API UBossItemGetWidget : public UUserWidget
 protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UBossItemGetElementWidget> BossItemGetElementObject;
-	
+
 	UPROPERTY(meta=(BindWidget))
 	class UVerticalBox* VerticalBox_Element;
 	UPROPERTY(meta=(BindWidget))
@@ -25,9 +25,9 @@ protected:
 
 	UFUNCTION()
 	void OnClicked();
-	
+
 	virtual void NativeConstruct() override;
+
 public:
 	void AddItemElement(class AItemActor* Item);
-	
 };

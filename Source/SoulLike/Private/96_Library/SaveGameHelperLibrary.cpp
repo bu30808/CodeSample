@@ -10,7 +10,7 @@
 
 bool USaveGameHelperLibrary::IsSavableGameMode(UObject* WorldContext)
 {
-	if(WorldContext)
+	if (WorldContext)
 	{
 		return UGameplayStatics::GetGameMode(WorldContext)->IsA<ASoulLikeGameMode>();
 	}
@@ -25,11 +25,11 @@ USoulLikeInstance* USaveGameHelperLibrary::GetSoulLikeInstance(UObject* WorldCon
 
 bool USaveGameHelperLibrary::IsActivatedBonfire(ABonfire* Bonfire)
 {
-	if(Bonfire)
+	if (Bonfire)
 	{
-		if(IsSavableGameMode(Bonfire))
+		if (IsSavableGameMode(Bonfire))
 		{
-			if(const auto instance = GetSoulLikeInstance(Bonfire))
+			if (const auto instance = GetSoulLikeInstance(Bonfire))
 			{
 				return instance->IsActivatedBonfire(Bonfire);
 			}
@@ -41,28 +41,27 @@ bool USaveGameHelperLibrary::IsActivatedBonfire(ABonfire* Bonfire)
 
 bool USaveGameHelperLibrary::IsAlreadyPickUppedItem(AItemActor* Item)
 {
-
-	if(Item)
+	if (Item)
 	{
-		if(IsSavableGameMode(Item))
+		if (IsSavableGameMode(Item))
 		{
-			if(const auto instance = GetSoulLikeInstance(Item))
+			if (const auto instance = GetSoulLikeInstance(Item))
 			{
 				return instance->IsAlreadyPickUppedItem(Item);
 			}
 		}
 	}
-	
+
 	return false;
 }
 
 bool USaveGameHelperLibrary::IsAlreadyReadTutorial(ATutorialActor* TutorialActor)
 {
-	if(TutorialActor)
+	if (TutorialActor)
 	{
-		if(IsSavableGameMode(TutorialActor))
+		if (IsSavableGameMode(TutorialActor))
 		{
-			if(const auto instance = GetSoulLikeInstance(TutorialActor))
+			if (const auto instance = GetSoulLikeInstance(TutorialActor))
 			{
 				return instance->IsAlreadyReadTutorial(TutorialActor);
 			}
@@ -74,11 +73,11 @@ bool USaveGameHelperLibrary::IsAlreadyReadTutorial(ATutorialActor* TutorialActor
 
 void USaveGameHelperLibrary::SaveKillBoss(ABaseMonster* BossMonster)
 {
-	if(BossMonster)
+	if (BossMonster)
 	{
-		if(IsSavableGameMode(BossMonster))
+		if (IsSavableGameMode(BossMonster))
 		{
-			if(const auto instance = GetSoulLikeInstance(BossMonster))
+			if (const auto instance = GetSoulLikeInstance(BossMonster))
 			{
 				instance->SaveKilledBoss(BossMonster);
 			}
@@ -86,13 +85,13 @@ void USaveGameHelperLibrary::SaveKillBoss(ABaseMonster* BossMonster)
 	}
 }
 
-bool USaveGameHelperLibrary::IsBossKilled(UObject* WorldContext,FGameplayTag BossMonsterTag)
+bool USaveGameHelperLibrary::IsBossKilled(UObject* WorldContext, FGameplayTag BossMonsterTag)
 {
-	if(BossMonsterTag.IsValid())
+	if (BossMonsterTag.IsValid())
 	{
-		if(IsSavableGameMode(WorldContext))
+		if (IsSavableGameMode(WorldContext))
 		{
-			if(const auto instance = GetSoulLikeInstance(WorldContext))
+			if (const auto instance = GetSoulLikeInstance(WorldContext))
 			{
 				return instance->IsBossKilled(BossMonsterTag);
 			}
@@ -100,4 +99,9 @@ bool USaveGameHelperLibrary::IsBossKilled(UObject* WorldContext,FGameplayTag Bos
 	}
 
 	return false;
+}
+
+bool USaveGameHelperLibrary::IsSameLevel(UObject* CurLevelContext, const FString& CompareLevel)
+{
+	return UGameplayStatics::GetCurrentLevelName(CurLevelContext).Equals(CompareLevel);
 }

@@ -13,10 +13,11 @@ USTRUCT(BlueprintType)
 struct FTutorialInformation : public FTableRowBase
 {
 	GENERATED_BODY()
+
 public:
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<class UTexture2D> TutorialImage;
-	UPROPERTY(EditAnywhere,meta=(MultiLine))
+	UPROPERTY(EditAnywhere, meta=(MultiLine))
 	FText TutorialMsg;
 };
 
@@ -27,14 +28,14 @@ UCLASS()
 class SOULLIKE_API UTutorialWidget : public UPopUpBasedWidget
 {
 	GENERATED_BODY()
-protected:
 
+protected:
 	UPROPERTY(EditAnywhere)
 	class UDataTable* TutorialDataTable;
-	
-	UPROPERTY(meta=(BindWidget),BlueprintReadOnly)
+
+	UPROPERTY(meta=(BindWidget), BlueprintReadOnly)
 	class UImage* Image_Tuto;
-	UPROPERTY(meta=(BindWidget),BlueprintReadOnly)
+	UPROPERTY(meta=(BindWidget), BlueprintReadOnly)
 	class UTextBlock* TextBlock_Msg;
 
 	UPROPERTY(BlueprintReadWrite)
@@ -42,7 +43,7 @@ protected:
 
 public:
 	virtual void OnVisibilityChangedEvent(ESlateVisibility InVisibility) override;
-	
+
 	virtual void NativeConstruct() override;
 
 	void SetTutorial(FGameplayTag Tag, class AActor* TutorialObject);

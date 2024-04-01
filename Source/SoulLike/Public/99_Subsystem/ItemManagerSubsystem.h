@@ -49,5 +49,4 @@ public:
 	const FItemInformation* GetOrbFragmentItemInformation(FGameplayTag ItemTag) const;
 	const FItemInformation* GetEnhancementItemInformation(FGameplayTag ItemTag) const;
 	const FItemInformation* GetPotionItemInformation(FGameplayTag ItemTag);
-	
 };

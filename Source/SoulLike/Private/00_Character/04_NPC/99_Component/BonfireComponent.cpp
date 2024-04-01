@@ -84,7 +84,7 @@ void UBonfireComponent::OnBonfireTeleportListWidgetVisibilityChangedEvent(ESlate
 
 void UBonfireComponent::CreateTeleportListWidget(APlayerCharacter* Player)
 {
-	if(BonfireTeleportListWidget==nullptr)
+	if (BonfireTeleportListWidget == nullptr)
 	{
 		if (Player)
 		{

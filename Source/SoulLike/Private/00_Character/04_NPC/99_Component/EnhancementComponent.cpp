@@ -46,10 +46,10 @@ void UEnhancementComponent::PostInitProperties()
 
 	if (GetWorld())
 	{
-		if(auto instance =  Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
+		if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
 		{
-			OnUpgradeEquipment.AddUniqueDynamic(instance,&USoulLikeInstance::OnUpgradeEquipmentEvent);
-			
+			OnUpgradeEquipment.AddUniqueDynamic(instance, &USoulLikeInstance::OnUpgradeEquipmentEvent);
+
 			if (const auto system = instance->GetSubsystem<UEnhancementSubsystem>())
 			{
 				EnhancementMaterial = system->GetEquipmentEnhancementMaterial();
@@ -62,9 +62,9 @@ void UEnhancementComponent::PostInitProperties()
 
 void UEnhancementComponent::OnEnhancementWidgetVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
-	if(EnhancementWidget.IsValid())
+	if (EnhancementWidget.IsValid())
 	{
-		if(!EnhancementWidget->IsVisible())
+		if (!EnhancementWidget->IsVisible())
 		{
 			EnhancementWidget = nullptr;
 		}
@@ -73,9 +73,8 @@ void UEnhancementComponent::OnEnhancementWidgetVisibilityChangedEvent(ESlateVisi
 
 void UEnhancementComponent::CreateEnhancementWidget(const ABaseCharacter* InteractPlayer)
 {
-	if(EnhancementWidget==nullptr)
+	if (EnhancementWidget == nullptr)
 	{
-
 		if (EnhancementWidgetObject)
 		{
 			if (const auto pc = InteractPlayer->GetController<APlayerController>())
@@ -83,11 +82,12 @@ void UEnhancementComponent::CreateEnhancementWidget(const ABaseCharacter* Intera
 				if (EnhancementWidget.IsValid() == false)
 				{
 					EnhancementWidget = CreateWidget<UEnhancementWidget>(pc,
-																		 EnhancementWidgetObject);
+					                                                     EnhancementWidgetObject);
 					EnhancementWidget->Button_Close->OnClicked.AddUniqueDynamic(
 						GetOwner<ANPCBase>(), &ANPCBase::FinishInteraction);
 				}
-				EnhancementWidget->OnVisibilityChanged.AddUniqueDynamic(this,&UEnhancementComponent::OnEnhancementWidgetVisibilityChangedEvent);
+				EnhancementWidget->OnVisibilityChanged.AddUniqueDynamic(
+					this, &UEnhancementComponent::OnEnhancementWidgetVisibilityChangedEvent);
 				EnhancementWidget->SetEnhancementComponent(this);
 			}
 		}
@@ -149,7 +149,8 @@ bool UEnhancementComponent::CanEnhance(const ABaseCharacter* Character, const FI
 				const FInventoryItem* item = invenComp->GetItemByTag(iter.Key);
 				if (item->ItemCount < iter.Value)
 				{
-					UE_LOGFMT(LogTemp, Error, "필요한 아이템의 갯수가 모자람 :{0}", item->GetItemInformation()->Item_Name.ToString());
+					UE_LOGFMT(LogTemp, Error, "필요한 아이템의 갯수가 모자람 :{0}",
+					          item->GetItemInformation()->Item_Name.ToString());
 					return false;
 				}
 			}
@@ -169,6 +170,7 @@ bool UEnhancementComponent::CanEnhance(const ABaseCharacter* Character, const FI
 bool UEnhancementComponent::Upgrade(const ABaseCharacter* Character, const FGuid& UniqueID,
                                     EAttributeType IncreaseAttribute)
 {
+	UE_LOGFMT(LogTemp, Log, "강화11111111111111111111111");
 	if (Character)
 	{
 		const auto attComp = Character->GetAttributeComponent();
@@ -186,7 +188,7 @@ bool UEnhancementComponent::Upgrade(const ABaseCharacter* Character, const FGuid
 			findItem = invenComp->GetInventoryItem(UniqueID);
 		}
 
-
+		UE_LOGFMT(LogTemp, Log, "강화22222222222222222222");
 		const auto& enhanceInfo = Cast<AEquipmentItemActor>(findItem.GetSpawndItemActor())->GetEnhancementInfo();
 		const auto& nextNeed = GetNextEnhancementInfo(enhanceInfo.CurEnhancement);
 
@@ -202,11 +204,11 @@ bool UEnhancementComponent::Upgrade(const ABaseCharacter* Character, const FGuid
 
 		//경험치를 제거합니다.
 		attComp->SetEXP(attComp->GetEXP() - nextNeed.NeedSouls);
-
+		UE_LOGFMT(LogTemp, Log, "강화3333333333333333333333333");
 		Cast<AEquipmentItemActor>(findItem.GetSpawndItemActor())->IncreaseEnhance(IncreaseAttribute);
 		//TODO 강화된 장비 상태를 저장합니다.
-		OnUpgradeEquipment.Broadcast(UniqueID,Cast<AEquipmentItemActor>(findItem.GetSpawndItemActor()));
-		
+		OnUpgradeEquipment.Broadcast(UniqueID, Cast<AEquipmentItemActor>(findItem.GetSpawndItemActor()));
+
 
 		return true;
 	}

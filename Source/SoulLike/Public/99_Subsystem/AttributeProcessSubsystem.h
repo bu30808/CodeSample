@@ -33,5 +33,4 @@ public:
 	TArray<FAttributeEffect> UpdateAttributeEffectsAffectedByOwnersAttribute(
 		const class UAttributeComponent* AttributeComponent, TArray<FAttributeEffect> AttributeEffects,
 		EAttackType AttackType);
-
 };

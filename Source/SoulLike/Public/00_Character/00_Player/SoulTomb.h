@@ -11,34 +11,33 @@ UCLASS()
 class SOULLIKE_API ASoulTomb : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	ASoulTomb();
 
 protected:
 	//사망해서 드롭한 경험치가 저장될 변수입니다.
-	UPROPERTY(VisibleAnywhere,BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	float EXP;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UBoxComponent* BoxComponent;
 
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class UNiagaraComponent* NiagaraComponent;
 
 
 	UFUNCTION()
 	void OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayReason);
-	
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
 
 public:
 	void Activate(float exp, const FVector& Location);
 	void Deactivate();
-	void SetEXP(float exp){EXP = exp;}
+	void SetEXP(float exp) { EXP = exp; }
 
 	//플레이어 캐릭터에게 EXP를 되돌려줍니다.
 	void Absorption(class APlayerCharacter* PlayerCharacter);

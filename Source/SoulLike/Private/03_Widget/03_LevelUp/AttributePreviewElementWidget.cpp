@@ -39,6 +39,7 @@ void UAttributePreviewElementWidget::Init(EAttributeType Attribute)
 	{
 		if (auto att = player->GetAttributeComponent()->GetAttributeByType(AttributeType))
 		{
+			UE_LOGFMT(LogTemp,Log,"레벨업 엘리먼트 초기화 : {0} : {1}/{2}",StaticEnum<EAttributeType>()->GetValueAsString(Attribute),att->GetBase(),att->GetCurrent());
 			BaseValue = att->GetBase();
 			TextBlock_Cur->SetText(FText::AsNumber(att->GetBase()));
 		}
@@ -67,12 +68,11 @@ void UAttributePreviewElementWidget::SetPreview(float PreviewVal) const
 
 void UAttributePreviewElementWidget::Reset() const
 {
-
 	HorizontalBox_Next->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void UAttributePreviewElementWidget::UpdatePreview(float AddValue)
-{	
+{
 	AccValue += AddValue;
 
 	TextBlock_Next->SetText(FText::AsNumber(BaseValue + AccValue));

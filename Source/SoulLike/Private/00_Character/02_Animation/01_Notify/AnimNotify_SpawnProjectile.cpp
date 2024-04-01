@@ -8,13 +8,14 @@
 #include "99_Subsystem/AbilitySubsystem.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Logging/StructuredLog.h"
 
 class UAbilitySubsystem;
 
 UAnimNotify_SpawnProjectile::UAnimNotify_SpawnProjectile()
 {
-#if WITH_EDITOR
 	bIsNativeBranchingPoint = true;
+#if WITH_EDITOR
 	bShouldFireInEditor = true;
 #endif
 }
@@ -22,7 +23,6 @@ UAnimNotify_SpawnProjectile::UAnimNotify_SpawnProjectile()
 void UAnimNotify_SpawnProjectile::BranchingPointNotify(FBranchingPointNotifyPayload& BranchingPointPayload)
 {
 	Super::BranchingPointNotify(BranchingPointPayload);
-
 	if (ProjectileObject)
 	{
 		if (BranchingPointPayload.SkelMeshComponent)
@@ -42,7 +42,7 @@ void UAnimNotify_SpawnProjectile::BranchingPointNotify(FBranchingPointNotifyPayl
 
 				const FVector location = BranchingPointPayload.SkelMeshComponent->GetSocketLocation(SocketName);
 				const FRotator rotation = BranchingPointPayload.SkelMeshComponent->GetComponentRotation();
-
+				
 				if (const auto projectile = world->SpawnActor<AProjectileActor>(
 					ProjectileObject, location, rotation, spawnParam))
 				{
@@ -55,7 +55,6 @@ void UAnimNotify_SpawnProjectile::BranchingPointNotify(FBranchingPointNotifyPayl
 							projectile->SetEffect(EffectObjects);
 
 							auto projectiles = system->GetProjectiles(character);
-
 							for (const auto p : projectiles)
 							{
 								if (p->IsValidLowLevel())
@@ -78,10 +77,16 @@ void UAnimNotify_SpawnProjectile::BranchingPointNotify(FBranchingPointNotifyPayl
 									}
 								}
 							}
+						}else
+						{
+							UE_LOGFMT(LogTemp,Error,"UAbilitySubsystem 서브시스템을 가져올 수 없습니다.");
 						}
 					}
 				}
 			}
 		}
+	}else
+	{
+		UE_LOGFMT(LogTemp,Error,"ProjectileObject is nullptr");
 	}
 }

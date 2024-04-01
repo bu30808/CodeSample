@@ -36,7 +36,7 @@ protected:
 	class UProjectileMovementComponent* ProjectileMovementComponent;
 
 	//이 오브젝트가 가지고 있는 경험치
-	UPROPERTY(VisibleAnywhere,Transient)
+	UPROPERTY(VisibleAnywhere, Transient)
 	float Exp = 0;
 
 	//플레이어가 계속 움직이는 경우, 유도 프로젝타일이라도 제대로 따라가지 못하고 빙빙 도는 경우가 있기 때문에,

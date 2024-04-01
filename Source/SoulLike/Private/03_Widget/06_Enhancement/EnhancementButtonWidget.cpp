@@ -19,8 +19,7 @@
 
 namespace GlobalEnhancementButtonWidgetText
 {
-	const FText noEnhancementItemText = NSLOCTEXT("EnhancementButtonWidget","NoEnhancementItemTxt","강화할 아이템을 올려주세요");
-
+	const FText noEnhancementItemText = NSLOCTEXT("EnhancementButtonWidget", "NoEnhancementItemTxt", "강화할 아이템을 올려주세요");
 }
 #undef LOCTEXT_NAMESPACE
 
@@ -32,8 +31,8 @@ void UEnhancementButtonWidget::SetInfoFromInventoryButton(const UItemButtonWidge
 	EnhancementItemType = EEnhancementItemType::FromInventory;
 	ItemUniqueID = item.UniqueID;
 	TextBlock_ItemName->SetText(item.GetItemInformation()->Item_Name);
-	
-	UWidgetHelperLibrary::SetToolTipWidget(this,  UItemHelperLibrary::GetItemDetailText(
+
+	UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetItemDetailText(
 		                                       item, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
 
 	EnhancementWidget->SetEnhancementInfo(item);
@@ -46,18 +45,21 @@ void UEnhancementButtonWidget::SetInfoFromOrbButton(UOrbListButtonWidget* OrbLis
 	if (UItemHelperLibrary::IsOrbCore(item))
 	{
 		EnhancementItemType = EEnhancementItemType::FromInventory;
+		UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetItemDetailText(
+			                                       item, GetOwningPlayerPawn<ABaseCharacter>()->
+			                                       GetInventoryComponent()));
+
+		Image->SetColorAndOpacity(FLinearColor::White);
 	}
 	else
 	{
 		EnhancementItemType = EEnhancementItemType::FromOrbFragmentHandler;
+		UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetFragmentToolTipText(item));
+		Image->SetColorAndOpacity(UItemHelperLibrary::GetFragmentColorByType(item));
 	}
 
 	ItemUniqueID = item.UniqueID;
 	TextBlock_ItemName->SetText(item.GetItemInformation()->Item_Name);
-	
-	UWidgetHelperLibrary::SetToolTipWidget(this,  UItemHelperLibrary::GetItemDetailText(
-		                                       item, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
-
 
 	EnhancementWidget->SetEnhancementInfo(item);
 }
@@ -119,11 +121,13 @@ void UEnhancementButtonWidget::SetDefaultToolTip()
 {
 	if (GetToolTip() == nullptr)
 	{
-		SetToolTip(UWidgetHelperLibrary::GetSimpleToolTipWidget(GetOwningPlayer(), GlobalEnhancementButtonWidgetText::noEnhancementItemText));
+		SetToolTip(UWidgetHelperLibrary::GetSimpleToolTipWidget(GetOwningPlayer(),
+		                                                        GlobalEnhancementButtonWidgetText::noEnhancementItemText));
 	}
 	else
 	{
-		Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(GlobalEnhancementButtonWidgetText::noEnhancementItemText);
+		Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(
+			GlobalEnhancementButtonWidgetText::noEnhancementItemText);
 	}
 }
 
@@ -142,6 +146,7 @@ void UEnhancementButtonWidget::SetOwnerWidget(UEnhancementWidget* E_Widget)
 
 void UEnhancementButtonWidget::OverrideToolTip(const FInventoryItem& RefreshedItem)
 {
-	UWidgetHelperLibrary::SetToolTipWidget(this,  UItemHelperLibrary::GetItemDetailText(
-		                                       RefreshedItem, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
+	UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetItemDetailText(
+		                                       RefreshedItem,
+		                                       GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
 }

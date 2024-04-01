@@ -120,7 +120,7 @@ void UCharacterRenderWidget::OnClickedResetButton()
 void UCharacterRenderWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
-	if(Image_PlayerRenderTarget)
+	if (Image_PlayerRenderTarget)
 	{
 		Image_PlayerRenderTarget->SetIsEnabled(false);
 	}

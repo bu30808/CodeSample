@@ -12,6 +12,7 @@ class SOULLIKE_API APotionItemActor : public AConsumeItemActor
 	GENERATED_BODY()
 
 	friend class UGameLoadHandler;
+
 public:
 	// Sets default values for this actor's properties
 	APotionItemActor();
@@ -32,7 +33,7 @@ protected:
 
 public:
 	FText GetEnhancedDescription();
-	
+
 	//현 강화 수치를 가져옴
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	int32 GetEnhancementValue();

@@ -12,23 +12,29 @@ enum class EAttributePointType : uint8;
 enum class EAttributeType : uint8;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnChangedAttribute, float, value, float, maxValue);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangedMaxAttribute, float, maxValue);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterInformationUpdate);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUpdateEXP, float, addExp);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAddAttributeEffectAdditionalInformation, const FAttributeEffect&,
-                                             Effect, class UAbilityEffectAdditionalInformation*, AdditionalInformation,float,DeltaTime);
+                                               Effect, class UAbilityEffectAdditionalInformation*,
+                                               AdditionalInformation, float, DeltaTime);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRemoveAttributeEffectAdditionalInformation, const FAttributeEffect&,
-                                             Effect, class UAbilityEffectAdditionalInformation*, AdditionalInformation,float,DeltaTime);
+                                               Effect, class UAbilityEffectAdditionalInformation*,
+                                               AdditionalInformation, float, DeltaTime);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnMultiplicationAttributeEffectAdditionalInformation,
-                                             const FAttributeEffect&, Effect,
-                                             class UAbilityEffectAdditionalInformation*, AdditionalInformation,float,DeltaTime);
+                                               const FAttributeEffect&, Effect,
+                                               class UAbilityEffectAdditionalInformation*, AdditionalInformation, float,
+                                               DeltaTime);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnDivisionAttributeEffectAdditionalInformation, const FAttributeEffect&,
-                                             Effect, class UAbilityEffectAdditionalInformation*, AdditionalInformation,float,DeltaTime);
+                                               Effect, class UAbilityEffectAdditionalInformation*,
+                                               AdditionalInformation, float, DeltaTime);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChangedMoveSpeedAttribute);
 
@@ -65,7 +71,6 @@ public:
 
 	UPROPERTY(EditAnywhere, Category=SP)
 	float RecoverSP = 0;
-
 
 
 	//********************공격력********************
@@ -133,13 +138,13 @@ public:
 	//********************이동속도*******************
 	UPROPERTY(EditAnywhere, Category="MoveSpeed")
 	float MoveSpeed = 400;
-	
+
 	void Override(const FAttributeInit& Other)
 	{
 		HP = Other.HP;
 		MP = Other.MP;
 		SP = Other.SP;
-		
+
 		MaxHP = Other.MaxHP;
 		MaxMP = Other.MaxMP;
 		MaxSP = Other.MaxSP;
@@ -153,7 +158,7 @@ public:
 		PhysicalDefense = Other.PhysicalDefense;
 		MagicalDefense = Other.MagicalDefense;
 
-		ActionSpeed =Other.ActionSpeed;
+		ActionSpeed = Other.ActionSpeed;
 
 		Endurance = Other.Endurance;
 
@@ -166,13 +171,13 @@ public:
 		MaxMPPoint = Other.MaxMPPoint;
 		MaxSPPoint = Other.MaxSPPoint;
 
-		
+
 		PoisonResist = Other.PoisonResist;
 		DeadlyPoisonResist = Other.DeadlyPoisonResist;
 		BurnResist = Other.BurnResist;
 		ChillResist = Other.ChillResist;
 		BleedResist = Other.BleedResist;
-		PetrifactionResist= Other.PetrifactionResist;
+		PetrifactionResist = Other.PetrifactionResist;
 
 		MoveSpeed = Other.MoveSpeed;
 	}
@@ -324,40 +329,42 @@ enum class EStatusEffect : uint8
 	MAX
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnUpdateStatusEffect,EStatusEffect,StatusEffect,float,Value,float,ResistValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnUpdateStatusEffect, EStatusEffect, StatusEffect, float, Value, float,
+                                               ResistValue);
 
 UCLASS()
 class SOULLIKE_API UStatusEffectValueHandler : public UObject
 {
 	GENERATED_BODY()
+
 public:
 	UStatusEffectValueHandler();
-protected:
 
+protected:
 	//상태이상 누적치를 얼마만큼씩 감소시킬지 정의하는 맵입니다.
 	UPROPERTY()
-	TMap<EStatusEffect,float> ReduceValueDefineMap;
-	
+	TMap<EStatusEffect, float> ReduceValueDefineMap;
+
 public:
 	UPROPERTY()
 	EStatusEffect TargetStatusEffect;
 	UPROPERTY()
 	class UAttributeComponent* AttributeComponent;
-	
-	
+
+
 	void Init(class UAttributeComponent* AttComp, EStatusEffect StatusEffect);
 	UFUNCTION()
 	void ReduceAccValue(float DeltaTime);
-
 };
 
 UCLASS()
 class SOULLIKE_API UStatusEffectData : public UDataAsset
 {
 	GENERATED_BODY()
+
 public:
 	UPROPERTY(EditAnywhere)
-	TMap<EStatusEffect,TSubclassOf<class UAbilityEffect>> StatusEffect;
+	TMap<EStatusEffect, TSubclassOf<class UAbilityEffect>> StatusEffect;
 };
 
 /*
@@ -372,12 +379,12 @@ class SOULLIKE_API UAttributeComponent : public UActorComponent
 #endif
 
 	friend class UGameLoadHandler;
+
 public:
 	// Sets default values for this component's properties
 	UAttributeComponent();
 
 protected:
-	
 	// Called when the game starts
 	virtual void BeginPlay() override;
 	virtual void PostInitProperties() override;
@@ -396,7 +403,7 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	class UStatusEffectData* StatusEffectData;
-	
+
 	//키에 해당하는 능력치에 투자하면 어떤 다른 능력치가 얼마나 오르는지 기억하고 있는 변수입니다.
 	TMap<EAttributeType, TArray<TPair<EAttributeType, float>>> AttributePerPointMap;
 
@@ -411,7 +418,8 @@ public:
 	//필요한 어트리뷰트를 초기화 합니다.
 	void InitAttributes();
 	//레벨업 포인트를 제외한 어트리뷰트를 복구합니다.
-	void LoadAttributeNotIncludeLevelUpPoint(const TMap<EAttributeType, FAttribute>& SavedAttribute, bool ShouldUpdateProgressBar, bool bIsRespawn);
+	void LoadAttributeNotIncludeLevelUpPoint(const TMap<EAttributeType, FAttribute>& SavedAttribute,
+	                                         bool ShouldUpdateProgressBar, bool bIsRespawn);
 	//레벨업 포인트를 복구합니다.
 	void LoadLevelUpPointAttributes(const TMap<EAttributeType, FAttribute>& LevelUpPoint);
 
@@ -424,7 +432,7 @@ protected:
 public:
 	//레벨업시 어떤 어트리뷰트에 몇 포인트를 투자했는지 받아와서 반영합니다.
 	void AddLevelUpPoint(EAttributePointType AttributePointType, const int32& Point);
-	
+
 	//장비나 아이템에 의해서 Cur값이 변경되었을 때, 갱신합니다.
 	//void RecalculateAttributeValues();
 protected:
@@ -433,12 +441,16 @@ protected:
 	TMap<EAttributeType, FAttribute*> AttributesNotIncludeLevelUpPoint;
 	//레벨업시 투자한 포인트 정보를 담은 맵입니다. 절대 덮어쓰지 마세요.
 	TMap<EAttributeType, FAttribute*> LevelUpPointAttributes;
-	
+
 public:
-	const TMap<EAttributeType,FAttribute*>& GetAllAttributeNotIncludeLevelUpPoint(){return AttributesNotIncludeLevelUpPoint;}
+	const TMap<EAttributeType, FAttribute*>& GetAllAttributeNotIncludeLevelUpPoint()
+	{
+		return AttributesNotIncludeLevelUpPoint;
+	}
+
 	const FAttribute* GetAttributeByType(EAttributeType Type);
 
-	const TMap<EAttributeType,FAttribute*>& GetAllLevelUpAttribute(){return LevelUpPointAttributes;}
+	const TMap<EAttributeType, FAttribute*>& GetAllLevelUpAttribute() { return LevelUpPointAttributes; }
 	const FAttribute* GetLevelUpAttributeByType(EAttributeType Type);
 
 protected:
@@ -535,7 +547,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attribute")
 	FAttribute MaxMPPoint;
 	ATTRIBUTE_GET_SET(MaxMPPoint)
-
 	//********************저항력*******************
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Resist")
 	FAttribute PoisonResist;
@@ -574,16 +585,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="StatusEffectAcc")
 	FAttribute PetrifactionAcc;
 	ATTRIBUTE_GET_SET(PetrifactionAcc)
-
 	//누적값 감소용 타이머를 저장하는 맵
 	UPROPERTY()
 	TMap<EStatusEffect, TWeakObjectPtr<class UGameplayTask_LaunchEvent>> DecreaseAccTasks;
-	
+
 	//********************이동속도*******************
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attribute")
 	FAttribute MoveSpeed;
 	ATTRIBUTE_GET_SET(MoveSpeed)
-	
+
 public:
 	//위젯에서 호출됩니다. 바인딩된 이벤트를 한번 내부에서 호출해서 프로그래스바를 갱신합니다.
 	void InitProgressWidget() const;
@@ -605,14 +615,14 @@ public:
 	//위젯에 캐릭터 정보를 연동하는 이벤트입니다.
 	FOnCharacterInformationUpdate OnCharacterInformationUpdate;
 	//스테이터스 이팩트가 업데이트되면 호출되는 이벤트입니다.
-	UPROPERTY(BlueprintAssignable,BlueprintCallable)
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnUpdateStatusEffect OnUpdateStatusEffect;
 
 	//경험치 획득시 호출됩니다.
 	FOnUpdateEXP OnUpdateExp;
 
 	//이동속도 어트리뷰트가 프로세서를 통해 변경되었을 때 호출됩니다.
-	UPROPERTY(BlueprintAssignable,BlueprintCallable)
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnChangedMoveSpeedAttribute OnChangedMoveSpeedAttribute;
 
 	FOnAddAttributeEffectAdditionalInformation OnAddAttributeEffectAdditionalInformation;
@@ -632,5 +642,4 @@ public:
 
 	UFUNCTION()
 	void OnUpdateStatusEffectEvent(EStatusEffect StatusEffect, float Value, float ResistValue);
-
 };

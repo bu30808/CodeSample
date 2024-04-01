@@ -16,7 +16,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerBuyItemFromNPC, const FMerc
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerBuyAbilityFromNPC, const FMerchandiseAbility&, MerchandiseAbility);
 
-DECLARE_DELEGATE_OneParam(FOnAddListViewWidget, UUserWidget* Widget);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAddListViewWidget, UUserWidget*, Widget);
 
 
 UCLASS()
@@ -100,14 +100,13 @@ protected:
 	TMap<FGuid, class UItemData*> ListViewItems;
 	UPROPERTY()
 	TMap<FGameplayTag, class UAbilityData*> ListViewAbilities;
-	
+
 
 	void OnEntryWidgetGeneratedEvent(UUserWidget& UserWidget);
 
 	virtual void NativeConstruct() override;
 	UFUNCTION()
 	void OnClickedCloseButton();
-
 
 	virtual void OnVisibilityChangedEvent(ESlateVisibility InVisibility) override;
 
@@ -130,7 +129,9 @@ public:
 	//아이템 목록과 어빌리티 목록을 읽어와 리스트를 구성합니다.
 	void CreateInventoryItemList();
 	//리스트뷰가 뒤늦게 갱신되는 문제를 우회하기 위해 사용하는 함수입니다. EnhancementWidget을 참고하세요.
+	UFUNCTION()
 	void HideWidgetIfNotSpirit(UUserWidget* Widget);
+	UFUNCTION()
 	void HideWidgetIfNotArmor(UUserWidget* Widget);
 
 	//아이템 정보에 해당하는 리스트뷰의 위젯을 찾아서 정보를 새로고침합니다.
@@ -138,7 +139,6 @@ public:
 	//생성된 아이템 버튼이 호버되었을 때 호출됩니다.
 	UFUNCTION()
 	void OnItemButtonHovered(class UInventoryData* Data);
-
 
 protected:
 	//어빌리티 종류를 정부 숨깁니다.
@@ -170,12 +170,13 @@ protected:
 
 	UPROPERTY()
 	EItemListType ItemListType;
+
 public:
-	EItemListType GetItemListType() const {return ItemListType;}
-	
+	EItemListType GetItemListType() const { return ItemListType; }
+
 	UPROPERTY()
 	TWeakObjectPtr<UUserWidget> ParentsUMG;
-	
+
 	//퀵슬롯 세팅창에서 이용할 설정으로 변경합니다.
 	void QuickSlotSetting() const;
 	//장비변경창에서 이용할 설정으로 변경합니다.

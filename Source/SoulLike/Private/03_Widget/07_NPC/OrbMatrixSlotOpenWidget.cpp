@@ -18,16 +18,17 @@
 
 
 #define LOCTEXT_NAMESPACE "OrbMatrixSlotOpenWidget"
+
 namespace GlobalOrbMatrixSlotOpenText
 {
-	static const FText unlockText= NSLOCTEXT("OrbMatrixSlotOpenWidget","SlotUnlockText","비용을 지불하여 슬롯 개방");
-	static const FText alreadyOpenedAlertText= NSLOCTEXT("OrbMatrixSlotOpenWidget","AlertText","이미 개방된 슬롯입니다.");
+	static const FText unlockText = NSLOCTEXT("OrbMatrixSlotOpenWidget", "SlotUnlockText", "비용을 지불하여 슬롯 개방");
+	static const FText alreadyOpenedAlertText = NSLOCTEXT("OrbMatrixSlotOpenWidget", "AlertText", "이미 개방된 슬롯입니다.");
 }
 #undef LOCTEXT_NAMESPACE
 void UOrbMatrixSlotOpenWidget::ShowUnlockCost(int32 Cost)
 {
-	
-	TextBlock_UnLock->SetText(FText::FromString(FString::FormatAsNumber(Cost) + GlobalOrbMatrixSlotOpenText::unlockText.ToString()));
+	TextBlock_UnLock->SetText(
+		FText::FromString(FString::FormatAsNumber(Cost) + GlobalOrbMatrixSlotOpenText::unlockText.ToString()));
 }
 
 UOrbMatrix* UOrbMatrixSlotOpenWidget::GetCoreMatrix(const FInventoryItem& OrbCoreItem)
@@ -46,7 +47,6 @@ void UOrbMatrixSlotOpenWidget::OnClickedOrbMatrixElement(const FOrbMatrixElement
 {
 	if (!MatrixInfo.bLock)
 	{
-		
 		TextBlock_UnLock->SetText(GlobalOrbMatrixSlotOpenText::alreadyOpenedAlertText);
 		Button_UnLock->SetIsEnabled(false);
 		UE_LOGFMT(LogTemp, Error, "이미 열린 슬롯입니다.");
@@ -146,7 +146,7 @@ void UOrbMatrixSlotOpenWidget::OnClickedUnLock()
 
 void UOrbMatrixSlotOpenWidget::OnClickedCloseButton()
 {
-	UWidgetHelperLibrary::CloseWidgetSetting(GetOwningPlayer(),this);
+	UWidgetHelperLibrary::CloseWidgetSetting(GetOwningPlayer(), this);
 	RemoveFromParent();
 }
 
@@ -162,12 +162,13 @@ void UOrbMatrixSlotOpenWidget::NativeConstruct()
 	Button_Close->OnClicked.AddUniqueDynamic(this, &UOrbMatrixSlotOpenWidget::OnClickedCloseButton);
 
 
-	if(auto pawn = GetOwningPlayerPawn<APlayerCharacter>())
+	if (auto pawn = GetOwningPlayerPawn<APlayerCharacter>())
 	{
 		pawn->OrbBackgroundActor->ShowRender(true);
 	}
-	
-	UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),FGameplayTag::RequestGameplayTag("Tutorial.Orb.SlotOpen"));
+
+	UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),
+	                                         FGameplayTag::RequestGameplayTag("Tutorial.Orb.SlotOpen"));
 }
 
 void UOrbMatrixSlotOpenWidget::Init()
@@ -217,10 +218,10 @@ void UOrbMatrixSlotOpenWidget::OverrideOrbMatrix(const FInventoryItem& OrbCoreIt
 
 void UOrbMatrixSlotOpenWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
-	if(auto pawn = GetOwningPlayerPawn<APlayerCharacter>())
+	if (auto pawn = GetOwningPlayerPawn<APlayerCharacter>())
 	{
 		pawn->OrbBackgroundActor->ShowRender(IsVisible());
 	}
-	
-	UWidgetHelperLibrary::PopUpWidgetProcess(this,bUseAsPopUp);
+
+	UWidgetHelperLibrary::PopUpWidgetProcess(this, bUseAsPopUp);
 }

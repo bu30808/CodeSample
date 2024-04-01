@@ -31,7 +31,8 @@ void UDebugElementWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 
 		Image_Ability->SetBrushFromSoftTexture(info.AbilityImage);
 
-		FString msg = info.AbilityName.ToString() + "\n" + info.AbilityTag.ToString() + "\n" + info.AbilityDescription.ToString();
+		FString msg = info.AbilityName.ToString() + "\n" + info.AbilityTag.ToString() + "\n" + info.AbilityDescription.
+			ToString();
 		Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(FText::FromString(msg));
 
 		return;
@@ -62,13 +63,14 @@ void UDebugIgnoreMoveInputWidget::NativeOnListItemObjectSet(UObject* ListItemObj
 {
 	IUserObjectListEntry::NativeOnListItemObjectSet(ListItemObject);
 
-	if(auto data = Cast<UIgnoreMoveInputDebuggingData>(ListItemObject))
+	if (auto data = Cast<UIgnoreMoveInputDebuggingData>(ListItemObject))
 	{
 		TextBlock_Tag->SetText(FText::FromString(data->Tag.ToString()));
-		if(data->By.IsValid())
+		if (data->By.IsValid())
 		{
 			TextBlock_Who->SetText(FText::FromString(data->By->GetActorNameOrLabel()));
-		}else
+		}
+		else
 		{
 			TextBlock_Who->SetText(FText::FromString(TEXT("NULL")));
 		}

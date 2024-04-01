@@ -6,6 +6,7 @@
 #include "02_Ability/AbilityBase.h"
 #include "04_Item/ItemActor.h"
 #include "04_Item/00_Consume/00_Potion/PotionItemActor.h"
+#include "Logging/StructuredLog.h"
 #include "SoulLike/SoulLike.h"
 
 
@@ -87,6 +88,7 @@ bool UItemHelperLibrary::IsOrbFragment(const FInventoryItem& Info)
 }
 
 #define LOCTEXT_NAMESPACE "ItemToolTipHelper"
+
 FText UItemHelperLibrary::GetItemToolTipText(const FInventoryItem& Item, UInventoryComponent* InventoryComponent)
 {
 	FText msg = FText::Format(NSLOCTEXT("ItemToolTipHelper", "BaseDescription", "{0}"), Item.GetFormattedDescription());
@@ -102,7 +104,7 @@ FText UItemHelperLibrary::GetItemToolTipText(const FInventoryItem& Item, UInvent
 		msg = FText::Format(NSLOCTEXT("ItemToolTipHelper", "NotSellable", "{0}\n<error>{1}</>"), msg, notSellableText);
 	}
 
-	if (InventoryComponent->IsEquipped(
+	if (InventoryComponent->IsEquippedEquipment(
 		Item.UniqueID))
 	{
 		FText equippedText = NSLOCTEXT("ItemToolTipHelper", "EquippedText", "장착됨");
@@ -118,108 +120,103 @@ FText UItemHelperLibrary::GetItemToolTipText(const FInventoryItem& Item, UInvent
 
 FText UItemHelperLibrary::GetFragmentToolTipText(const FInventoryItem& Item)
 {
-		
 	if (const auto itemInfo = Item.GetItemInformation())
 	{
 		FFormatOrderedArguments args;
-		args.Add(FText::FromString("<orb.name>"+itemInfo->Item_Name.ToString()+"</>)"));// -1
-		
+		args.Add(FText::FromString("<orb.name>" + itemInfo->Item_Name.ToString() + "</>\n")); // -1
+
 		if (IsOrbFragment(Item))
 		{
 			const auto frag = static_cast<const FOrbFragmentInformation*>(itemInfo);
-			
-			args.Add(SlotTypeToDecoText(frag->SlotType)); //0
-			args.Add(OrbMatrixSlotTypeToText(frag->SlotType));//1
-			args.Add(RarityToDecoText(frag->Rarity));//2
-			args.Add(RarityToText(frag->Rarity));//3
-			
-			/*msg += "\n" + SlotTypeToDecoText(frag->SlotType) + SlotTypeToString(frag->SlotType) + "</>";
-			msg += "\n" + RarityToDecoText(frag->Rarity);
-			msg += RarityToString(frag->Rarity) + "</>\n";*/
 
-			args.Add(Item.GetFormattedDescription());//4
-			
-			FText additionalAbilityText = NSLOCTEXT("FragmentToolTipHelper", "FragmentAdditionalAbilityText","추가 특성");
-			args.Add(FText::FromString(additionalAbilityText.ToString()+"\n"));//5
-			
+			args.Add(SlotTypeToDecoText(frag->SlotType)); //0
+			args.Add(FText::FromString(OrbMatrixSlotTypeToText(frag->SlotType).ToString() + "</>\n")); //1
+			args.Add(RarityToDecoText(frag->Rarity)); //2
+			args.Add(FText::FromString(RarityToText(frag->Rarity).ToString() + "</>\n")); //3
+			args.Add(FText::FromString("\n" + Item.GetFormattedDescription().ToString() + "\n")); //4
+
+			FText additionalAbilityText = NSLOCTEXT("FragmentToolTipHelper", "FragmentAdditionalAbilityText", "추가 특성");
+			args.Add(FText::FromString(additionalAbilityText.ToString() + "\n")); //5
+
 			if (frag->Abilities.Num() > 0)
 			{
 				FString abilitys = "";
-				
+
 				for (auto ab : frag->Abilities)
 				{
-					abilitys += "<orb.talent>" + ab.GetDefaultObject()->GetAbilityInformation().AbilityName.ToString() + "</>\n";
-					abilitys += "<orb.talent.desc>"+ab.GetDefaultObject()->GetAbilityInformation().AbilityDescription.ToString()+ "</>\n";
+					abilitys += "<orb.talent>" + ab.GetDefaultObject()->GetAbilityInformation().AbilityName.ToString() +
+						"</>\n";
+					abilitys += "<orb.talent.desc>" + ab.GetDefaultObject()->GetAbilityInformation().AbilityDescription.
+					                                     ToString() + "</>\n";
 				}
 
-				args.Add(FText::FromString(abilitys));//6
-			}else
-			{
-				args.Add(FText::FromString("-\n"));//6
+				args.Add(FText::FromString(abilitys + "\n")); //6
 			}
-			
-		
-			FText equipmentInfoText = NSLOCTEXT("FragmentToolTipHelper", "equipmentInfoText","장비 정보");
-			args.Add(FText::FromString(equipmentInfoText.ToString()+"\n"));//7
-			
+			else
+			{
+				args.Add(FText::FromString("-\n")); //6
+			}
+
+
+			FText equipmentInfoText = NSLOCTEXT("FragmentToolTipHelper", "equipmentInfoText", "장비 정보");
+			args.Add(FText::FromString(equipmentInfoText.ToString() + "\n")); //7
+
 			if (auto equip = Cast<AEquipmentItemActor>(Item.GetSpawndItemActor()))
 			{
 				FString equipment = "";
-				equipment += equip->GetAttributeDescription().ToString() +"\n";
-				equipment += equip->GetEnhancedLevelDescription().ToString()+"\n\n";
-				equipment += equip->GetEnhancedAttributeDescription().ToString()+"\n";
-				args.Add(FText::FromString(equipment));//8
-				
+				equipment += equip->GetAttributeDescription().ToString() + "\n";
+				equipment += equip->GetEnhancedLevelDescription().ToString() + "\n\n";
+				equipment += equip->GetEnhancedAttributeDescription().ToString() + "\n";
+				args.Add(FText::FromString(equipment)); //8
+
+				UE_LOGFMT(LogTemp, Log, "이 아이템의 강화 단계 : {0}", equip->GetEnhancementInfo().CurEnhancement);
+				for (auto iter : equip->GetEnhancementInfo().EnhancementMap)
+				{
+					UE_LOGFMT(LogTemp, Log, "이 아이템의 강화 상태 : {0} {1}",
+					          StaticEnum<EAttributeType>()->GetValueAsString(iter.Key), iter.Value);
+				}
+
 				/*resultMsg += equip->GetAttributeDescription() +"\n";
 				resultMsg += equip->GetEnhancedLevelDescription()+"\n\n";
 				resultMsg += equip->GetEnhancedAttributeDescription()+"\n";*/
-			}else
+			}
+			else
 			{
-				args.Add(FText::FromString("-"));//8
+				args.Add(FText::FromString("-")); //8
 			}
 
 			if (Item.GetItemInformation()->bSellable)
 			{
 				FString sell = "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
 					FString::FormatAsNumber(itemInfo->Item_Price) + "</>";
-				args.Add(FText::FromString(sell));//9
+				args.Add(FText::FromString(sell)); //9
 				/*
 				resultMsg += "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
 					FString::FormatAsNumber(itemInfo->Item_Price) + "</>";*/
 			}
 			else
 			{
-				FText notSellableText =  NSLOCTEXT("FragmentToolTipHelper", "NotSellableText", "판매불가");
-				args.Add(FText::FromString("\n<error>"+notSellableText.ToString()+"</>"));//9
+				FText notSellableText = NSLOCTEXT("FragmentToolTipHelper", "NotSellableText", "판매불가");
+				args.Add(FText::FromString("\n<error>" + notSellableText.ToString() + "</>")); //9
 				//resultMsg += TEXT("\n<error>판매불가</>");
 			}
 
-			if (Cast<ABaseCharacter>(Item.GetSpawndItemActor()->GetOwner())->GetInventoryComponent()->IsEquipped(
-				Item.UniqueID))
+			if (Cast<ABaseCharacter>(Item.GetSpawndItemActor()->GetOwner())->GetInventoryComponent()->
+			                                                                 IsEquippedEquipment(
+				                                                                 Item.UniqueID))
 			{
-				FText equippedText =  NSLOCTEXT("FragmentToolTipHelper", "EquippedText", "장착됨");
-				args.Add(FText::FromString("\n<equipped>"+equippedText.ToString()+"</>"));//10
+				FText equippedText = NSLOCTEXT("FragmentToolTipHelper", "EquippedText", "장착됨");
+				args.Add(FText::FromString("\n<equipped>" + equippedText.ToString() + "</>")); //10
 				//resultMsg += TEXT("\n<equipped>장착됨</>");
-			}else
-			{
-				args.Add(FText::GetEmpty());//10
 			}
-
-			
+			else
+			{
+				args.Add(FText::GetEmpty()); //10
+			}
 		}
 
-		/*FString ItemName = TEXT("Magic Sword");
-		float ItemPrice = 99.99f;
-		FFormatOrderedArguments Args;
-		Args.Add(FText::FromString(ItemName));
-		Args.Add(FText::AsNumber(ItemPrice));
-
-		FText FormattedText = FText::Format(
-			NSLOCTEXT("YourNamespace", "ItemSale", "Item: {0}, Price: ${1}"),
-			Args
-		);
-		*/
-		return FText::Format(NSLOCTEXT("FragmentToolTipHelper","FragmentToolTipText","{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}"),args);
+		return FText::Format(NSLOCTEXT("FragmentToolTipHelper", "FragmentToolTipText",
+		                               "{0}{1}{2}{3}{4}{5}{6}{7}{8}{9}{10}{11}"), args);
 	}
 
 	return FText::FromString("ERROR");
@@ -227,11 +224,11 @@ FText UItemHelperLibrary::GetFragmentToolTipText(const FInventoryItem& Item)
 #undef LOCTEXT_NAMESPACE
 
 #define LOCTEXT_NAMESPACE "ItemDetaulTextHelper"
+
 FText UItemHelperLibrary::GetItemDetailText(const FInventoryItem& Item, UInventoryComponent* InventoryComponent)
 {
-
 	FFormatOrderedArguments args;
-	
+
 	if (IsEquipment(Item))
 	{
 		if (auto equip = Cast<AEquipmentItemActor>(Item.GetSpawndItemActor()))
@@ -241,11 +238,12 @@ FText UItemHelperLibrary::GetItemDetailText(const FInventoryItem& Item, UInvento
 			msg += equip->GetEnhancedLevelDescription().ToString() + "\n\n";
 			msg += equip->GetEnhancedAttributeDescription().ToString() + "\n";
 
-			args.Add(FText::FromString(msg));//0
+			args.Add(FText::FromString(msg)); //0
 		}
-	}else
+	}
+	else
 	{
-		args.Add(FText::FromString(""));//0
+		args.Add(FText::FromString("")); //0
 	}
 
 	if (IsHPPotion(Item) || IsMPPotion(Item))
@@ -253,38 +251,40 @@ FText UItemHelperLibrary::GetItemDetailText(const FInventoryItem& Item, UInvento
 		if (auto potion = Cast<APotionItemActor>(Item.GetSpawndItemActor()))
 		{
 			FString msg = potion->GetEnhancedDescription().ToString() + "\n";
-			args.Add(FText::FromString(msg));//1
+			args.Add(FText::FromString(msg)); //1
 		}
-	}else
+	}
+	else
 	{
-		args.Add(FText::FromString(""));//1
+		args.Add(FText::FromString("")); //1
 	}
 
 
 	if (Item.GetItemInformation()->bSellable)
 	{
-		FString msg =  "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
+		FString msg = "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
 			FString::FormatAsNumber(Item.GetItemInformation()->Item_Price) + "</>";
 
-		args.Add(FText::FromString(msg));//2
+		args.Add(FText::FromString(msg)); //2
 	}
 	else
 	{
-		FText defaultStatText =  NSLOCTEXT("ItemDetaulTextHelper", "NotSellableText", "판매불가");
-		args.Add(FText::FromString("\n<error>"+defaultStatText.ToString()+"</>"));//2
+		FText defaultStatText = NSLOCTEXT("ItemDetaulTextHelper", "NotSellableText", "판매불가");
+		args.Add(FText::FromString("\n<error>" + defaultStatText.ToString() + "</>")); //2
 	}
 
-	if (InventoryComponent->IsEquipped(
+	if (InventoryComponent->IsEquippedEquipment(
 		Item.UniqueID))
 	{
-		FText equippedText =  NSLOCTEXT("ItemDetaulTextHelper", "EquippedText", "장착됨");
-		args.Add(FText::FromString("\n<equipped>"+equippedText.ToString()+"</>"));//3
-	}else
+		FText equippedText = NSLOCTEXT("ItemDetaulTextHelper", "EquippedText", "장착됨");
+		args.Add(FText::FromString("\n<equipped>" + equippedText.ToString() + "</>")); //3
+	}
+	else
 	{
-		args.Add(FText::FromString(""));//3
+		args.Add(FText::FromString("")); //3
 	}
 
-	return FText::Format(NSLOCTEXT("ItemDetaulTextHelper","ItemDetailText","{0}{1}{2}{3}"),args);
+	return FText::Format(NSLOCTEXT("ItemDetaulTextHelper", "ItemDetailText", "{0}{1}{2}{3}"), args);
 }
 #undef LOCTEXT_NAMESPACE
 
@@ -377,7 +377,9 @@ bool UItemHelperLibrary::IsMPPotion(const FInventoryItem& Item)
 	return Item.GetItemInformation()->Item_Tag.MatchesTagExact(
 		FGameplayTag::RequestGameplayTag("Item.Consume.Potion.Mp"));
 }
+
 #define LOCTEXT_NAMESPACE "ItemTypeToText"
+
 FText UItemHelperLibrary::ItemTypeToText(const FItemInformation* ItemInformation)
 {
 	switch (ItemInformation->Item_Type)
@@ -385,15 +387,15 @@ FText UItemHelperLibrary::ItemTypeToText(const FItemInformation* ItemInformation
 	case EItemType::NONE:
 		break;
 	case EItemType::CONSUME:
-		return NSLOCTEXT("ItemTypeToText","ConsumeText","소비");
+		return NSLOCTEXT("ItemTypeToText", "ConsumeText", "소비");
 	case EItemType::EQUIPMENT:
-		return NSLOCTEXT("ItemTypeToText","EquipmentText","장비");
+		return NSLOCTEXT("ItemTypeToText", "EquipmentText", "장비");
 	case EItemType::ABILITY:
-		return NSLOCTEXT("ItemTypeToText","AbilityText","어빌리티");
+		return NSLOCTEXT("ItemTypeToText", "AbilityText", "어빌리티");
 	case EItemType::ENHANCEMENT:
-		return NSLOCTEXT("ItemTypeToText","EnhancmentText","강화소재");
+		return NSLOCTEXT("ItemTypeToText", "EnhancmentText", "강화소재");
 	case EItemType::ETC:
-	return NSLOCTEXT("ItemTypeToText","ETCText","기타");
+		return NSLOCTEXT("ItemTypeToText", "ETCText", "기타");
 	}
 
 	return FText::FromString("ERROR");
@@ -425,4 +427,35 @@ void UItemHelperLibrary::PotionReplenishment(APlayerCharacter* Player)
 			                                           inventoryItem->ItemCount);
 		}
 	}
+}
+
+FLinearColor UItemHelperLibrary::GetFragmentColorByType(const FInventoryItem& Fragment)
+{
+	if (const auto itemInfo = Fragment.GetItemInformation())
+	{
+		if (const auto orb = static_cast<const FOrbFragmentInformation*>(itemInfo))
+		{
+			switch (orb->SlotType)
+			{
+			case EOrbMatrixSlotType::NONE:
+				break;
+			case EOrbMatrixSlotType::LINE:
+				break;
+			case EOrbMatrixSlotType::CORE:
+				break;
+			case EOrbMatrixSlotType::PHYSICAL:
+				return FLinearColor::Red;
+			case EOrbMatrixSlotType::MAGICAL:
+				return FLinearColor::Blue;
+			case EOrbMatrixSlotType::DEFENCE:
+				return FLinearColor::Gray;
+			case EOrbMatrixSlotType::FREE:
+				return FLinearColor::Yellow;
+			case EOrbMatrixSlotType::MAX:
+				break;
+			default: ;
+			}
+		}
+	}
+	return FLinearColor::White;
 }

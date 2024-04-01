@@ -53,7 +53,7 @@ protected:
 	class UWrapBox* WrapBox;
 	UPROPERTY(meta=(BindWidget))
 	class UWrapBox* WrapBox_Filter;
-	
+
 	/*
 	UPROPERTY(meta=(BindWidget))
 	class UUniformGridPanel* UniformGridPanel;
@@ -74,13 +74,12 @@ protected:
 	TArray<class UOrbListButtonWidget*> WrappedChild;
 	UPROPERTY()
 	TArray<class UOrbListButtonWidget*> FilteredChild;
-	
+
 	UPROPERTY(EditAnywhere)
 	EOrbElementListType OrbElementListType;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UOrbListButtonWidget> OrbListButtonWidgetObject;
 
-	
 
 	//필터기능에 의해 걸러진 아이템 리스트입니다.
 	UPROPERTY()
@@ -98,7 +97,7 @@ protected:
 
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
-	
+
 	/*void OnEntryWidgetGeneratedEvent(UUserWidget& UserWidget);*/
 public:
 	UFUNCTION()
@@ -111,7 +110,7 @@ public:
 	/*void AddItem(const FOrbCoreInformation* Info);*/
 	void AddItem(const FInventoryItem& OrbInfo);
 	void SetEquipped(const FGuid& OrbID, bool bEquipped);
-	
+
 	//모든 필터를 재 적용 하도록 합니다.
 	void ForceReFiltering();
 	/*TArray<UOrbData*> FindSameSlotType();*/
@@ -141,5 +140,4 @@ public:
 	void GetWidgetBySlotType(EOrbMatrixSlotType Type);
 
 	virtual void RemoveFromParent() override;
-	
 };

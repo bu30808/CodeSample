@@ -54,7 +54,6 @@ protected:
 	TWeakObjectPtr<class UPotionEnhancementComponent> PotionEnhancementComponent;
 
 public:
-
 	virtual void OnVisibilityChangedEvent(ESlateVisibility InVisibility) override;
 
 	UFUNCTION()

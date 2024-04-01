@@ -34,5 +34,4 @@ protected:
 
 public:
 	void Init(class UMainWidget* Widget);
-	
 };

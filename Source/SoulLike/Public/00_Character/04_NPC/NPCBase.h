@@ -86,7 +86,7 @@ public:
 
 	UFUNCTION()
 	void OnNPCWidgetVisibilityChangedEvent(ESlateVisibility InVisibility);
-	
+
 	UFUNCTION(BlueprintCallable)
 	void AddNPCWidget();
 
@@ -125,6 +125,4 @@ private:
 	void OnLoadedItemList(UObject* ItemTable);
 	UFUNCTION()
 	void OnLoadedAbilityList(UObject* AbilityTable);
-	
-
 };

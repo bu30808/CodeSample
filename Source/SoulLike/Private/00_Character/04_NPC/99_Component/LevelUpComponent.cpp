@@ -27,9 +27,9 @@ ULevelUpComponent::ULevelUpComponent()
 
 void ULevelUpComponent::OnLevelUpWidgetVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
-	if(LevelUpWidget.IsValid())
+	if (LevelUpWidget.IsValid())
 	{
-		if(!LevelUpWidget->IsVisible())
+		if (!LevelUpWidget->IsVisible())
 		{
 			LevelUpWidget = nullptr;
 		}
@@ -38,7 +38,7 @@ void ULevelUpComponent::OnLevelUpWidgetVisibilityChangedEvent(ESlateVisibility I
 
 void ULevelUpComponent::CreateLevelUpWidget()
 {
-	if(LevelUpWidget==nullptr)
+	if (LevelUpWidget == nullptr)
 	{
 		if (LevelUpWidgetObject)
 		{
@@ -52,8 +52,9 @@ void ULevelUpComponent::CreateLevelUpWidget()
 					LevelUpWidget->Button_Close->OnClicked.AddUniqueDynamic(
 						GetOwner<ANPCBase>(), &ANPCBase::FinishInteraction);
 				}
-			
-				LevelUpWidget->OnVisibilityChanged.AddUniqueDynamic(this,&ULevelUpComponent::OnLevelUpWidgetVisibilityChangedEvent);
+
+				LevelUpWidget->OnVisibilityChanged.AddUniqueDynamic(
+					this, &ULevelUpComponent::OnLevelUpWidgetVisibilityChangedEvent);
 			}
 		}
 	}
@@ -63,7 +64,7 @@ void ULevelUpComponent::CreateLevelUpWidget()
 void ULevelUpComponent::ShowLevelUpWidget()
 {
 	CreateLevelUpWidget();
-	
+
 	if (LevelUpWidget->IsInViewport() == false)
 	{
 		LevelUpWidget->AddToViewport();

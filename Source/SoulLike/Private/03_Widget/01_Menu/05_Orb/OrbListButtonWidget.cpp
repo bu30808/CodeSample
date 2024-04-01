@@ -16,27 +16,28 @@
 void UOrbListButtonWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-	/*if (Button)
-	{
-		Button->OnHovered.AddUniqueDynamic(this, &UOrbListButtonWidget::OnHoveredEvent);
-	}*/
 }
 
-/*
-void UOrbListButtonWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
-{
-	IUserObjectListEntry::NativeOnListItemObjectSet(ListItemObject);
-	SetData(ListItemObject);
-}*/
 
 void UOrbListButtonWidget::OnHoveredEvent()
 {
-	if (OrbData!=nullptr)
+	if (OrbData != nullptr)
 	{
-		OnHovered.Broadcast(OrbData.Get());
+		auto invenComp = GetOwningPlayerPawn<APlayerCharacter>()->GetInventoryComponent();
+		if (UItemHelperLibrary::IsOrbFragment(OrbData->Data))
+		{
+			OrbData->Data = invenComp->GetFragment(OrbData->Data.UniqueID);
+			SetData(OrbData);
+		}
+		else
+		{
+			OrbData->Data = invenComp->GetInventoryItem(OrbData->Data.UniqueID);
+			SetData(OrbData);
+		}
 	}
 
-	UGameplayStatics::PlaySound2D(this,HoverSound);
+
+	UGameplayStatics::PlaySound2D(this, HoverSound);
 }
 
 
@@ -45,7 +46,7 @@ void UOrbListButtonWidget::SetData(UObject* Item)
 	if (Item->IsA<UOrbData>())
 	{
 		OrbData = Cast<UOrbData>(Item);
-		
+
 		const auto& OrbItem = OrbData->Data;
 		if (OrbItem.GetItemInformation() == nullptr)
 		{
@@ -53,7 +54,7 @@ void UOrbListButtonWidget::SetData(UObject* Item)
 			return;
 		}
 		Image->SetBrushFromSoftTexture(OrbItem.GetItemInformation()->Item_Image);
-	
+
 		if (UItemHelperLibrary::IsOrbFragment(OrbItem))
 		{
 			const auto frag = static_cast<const FOrbFragmentInformation*>(OrbItem.GetItemInformation());
@@ -76,9 +77,12 @@ void UOrbListButtonWidget::SetData(UObject* Item)
 			}
 
 			UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetFragmentToolTipText(OrbItem));
-		}else
+		}
+		else
 		{
-			UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetItemDetailText(OrbItem,GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
+			UWidgetHelperLibrary::SetToolTipWidget(
+				this, UItemHelperLibrary::GetItemDetailText(
+					OrbItem, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
 		}
 
 		if (OrbData->bIsEquipped)
@@ -89,14 +93,12 @@ void UOrbListButtonWidget::SetData(UObject* Item)
 		{
 			Image_Equipped->SetVisibility(ESlateVisibility::Collapsed);
 		}
-
-	
 	}
 }
 
 void UOrbListButtonWidget::SetEquipped(bool bEquipped)
 {
-	if(OrbData!=nullptr)
+	if (OrbData != nullptr)
 	{
 		OrbData->bIsEquipped = bEquipped;
 		SetData(OrbData.Get());
@@ -105,7 +107,7 @@ void UOrbListButtonWidget::SetEquipped(bool bEquipped)
 
 void UOrbListButtonWidget::UpdateData(const FInventoryItem& OrbInfo)
 {
-	if(OrbData!=nullptr)
+	if (OrbData != nullptr)
 	{
 		OrbData->Data = OrbInfo;
 	}

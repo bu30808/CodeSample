@@ -16,19 +16,18 @@ class SOULLIKE_API UBTDecorator_DirectionCheck : public UBTDecorator_BlackboardB
 	GENERATED_BODY()
 
 public:
-	
 	UPROPERTY(EditAnywhere)
 	EDirection DirectionToCheck;
 
 	//이 값 만큼을 전방이라고 생각합니다.
 	UPROPERTY(EditAnywhere)
-	float FrontDegree =90.f;
+	float FrontDegree = 90.f;
 	//전방을 적용한 뒤, 이 값 만큼을 좌측이라고 생각합니다.
 	UPROPERTY(EditAnywhere)
-	float LeftDegree =90.f;
+	float LeftDegree = 90.f;
 	//전방을 적용한 뒤, 이 값 만큼을 우측이라고 생각합니다.
 	UPROPERTY(EditAnywhere)
-	float RightDegree =90.f;
+	float RightDegree = 90.f;
 
 	UBTDecorator_DirectionCheck();
 	virtual FString GetStaticDescription() const override;

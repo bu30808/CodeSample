@@ -78,4 +78,7 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	UUserWidget* GetWidget(FGameplayTag WidgetTag);
+
+	UFUNCTION(BlueprintCallable)
+	void RemoveWidget(FGameplayTag WidgetTag);
 };

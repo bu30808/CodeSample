@@ -336,7 +336,13 @@ void AEquipmentItemActor::ForceApplyAbility(AActor* Target)
 void AEquipmentItemActor::IncreaseEnhance(EAttributeType IncreaseAttribute)
 {
 	Enhancement.IncreaseEnhance(IncreaseAttribute);
-	UKismetSystemLibrary::PrintString(this,TEXT("강화수치 증가 :") + FString::FormatAsNumber(Enhancement.CurEnhancement));
+
+	UE_LOGFMT(LogTemp, Log, "강화 수치가 증가했습니다 : {0}", Enhancement.CurEnhancement);
+	for (auto iter : Enhancement.EnhancementMap)
+	{
+		UE_LOGFMT(LogTemp, Log, "강화 상태 : {0} {1}", StaticEnum<EAttributeType>()->GetValueAsString(iter.Key),
+		          iter.Value);
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

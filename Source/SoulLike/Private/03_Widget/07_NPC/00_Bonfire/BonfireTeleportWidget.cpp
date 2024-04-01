@@ -19,27 +19,26 @@ void UBonfireTeleportWidget::NativeConstruct()
 	bRemovable = true;
 	Super::NativeConstruct();
 
-	Button_OK->OnClicked.AddUniqueDynamic(this,&UBonfireTeleportWidget::OnClickedOKEvent);
-	Button_Cancel->OnClicked.AddUniqueDynamic(this,&UBonfireTeleportWidget::OnClickedCancelEvent);
+	Button_OK->OnClicked.AddUniqueDynamic(this, &UBonfireTeleportWidget::OnClickedOKEvent);
+	Button_Cancel->OnClicked.AddUniqueDynamic(this, &UBonfireTeleportWidget::OnClickedCancelEvent);
 }
 
 void UBonfireTeleportWidget::OnClickedOKEvent()
 {
-	if(SelectedElement.IsValid())
+	if (SelectedElement.IsValid())
 	{
 		const auto& info = SelectedElement->GetTeleportInformation();
 
 		//이 정보를 저장한 뒤, 레벨을 다시 로드합니다.
-		if(auto instance = Cast<USoulLikeInstance>(GetGameInstance()))
+		if (auto instance = Cast<USoulLikeInstance>(GetGameInstance()))
 		{
 			//다음에 로드시 이동해야할 화톳불 정보를 저장합니다.
 			//다시 로드할 때, 위 정보에 해당하는 위치로 이동하도록 합니다.
-			RemoveFromParent();
+			SetVisibility(ESlateVisibility::Collapsed);
 			instance->SaveTeleportBonfire(info);
-			GetOwningPlayerPawn<APlayerCharacter>()->TeleportToOtherBonfire(FName(info.LevelName));
+			GetOwningPlayerPawn<APlayerCharacter>()->TeleportToOtherBonfire(info);
 			//UGameplayStatics::OpenLevel(GetWorld(),FName(info.LevelName));
 		}
-		
 	}
 }
 
@@ -50,29 +49,30 @@ void UBonfireTeleportWidget::OnClickedCancelEvent()
 
 void UBonfireTeleportWidget::CreateList(UBonfireComponent* BonfireComponent)
 {
-	if(BonfireComponent && TeleportElementWidgetObject!=nullptr )
+	if (BonfireComponent && TeleportElementWidgetObject != nullptr)
 	{
 		ScrollBox_TeleportList->ClearChildren();
-		
+
 		auto owner = Cast<ABonfire>(BonfireComponent->GetOwner());
 		const auto& list = owner->GetTeleportList();
-		for(auto iter :list)
+		for (auto iter : list)
 		{
-			if(auto element = CreateWidget<UTeleportElementWidget>(GetOwningPlayer(),TeleportElementWidgetObject))
+			
+			if (auto element = CreateWidget<UTeleportElementWidget>(GetOwningPlayer(), TeleportElementWidgetObject))
 			{
-				element->SetInfo(*iter,this);
+				element->SetInfo(*iter, this);
 
 				//UKismetSystemLibrary::PrintString(this, iter->LocationName + "/" + owner->GetBonfireInformation().LocationName);
 				ScrollBox_TeleportList->AddChild(element);
 
-				if(iter->LocationName.EqualTo(owner->GetBonfireInformation().LocationName))
+				if (iter->LocationName.EqualTo(owner->GetBonfireInformation().LocationName))
 				{
 					SetPreviewImage(iter->LocationImage);
 					element->ShowCurLocation();
 				}
 
-				element->SetIsEnabled(IsActivated(UGameplayStatics::GetCurrentLevelName(BonfireComponent), iter->OwnersSafeName));
-				
+				element->SetIsEnabled(IsActivated(UGameplayStatics::GetCurrentLevelName(BonfireComponent),
+				                                  iter->OwnersSafeName));
 			}
 		}
 	}
@@ -95,12 +95,11 @@ void UBonfireTeleportWidget::SetPreviewImage(const TSoftObjectPtr<UTexture2D>& L
 
 void UBonfireTeleportWidget::SetSelectedInformation(UTeleportElementWidget* TeleportElementWidget)
 {
-	if(SelectedElement.IsValid())
+	if (SelectedElement.IsValid())
 	{
 		SelectedElement->SetUnSelected();
 	}
 
 	SelectedElement = TeleportElementWidget;
 	TeleportElementWidget->SetSelected();
-
 }

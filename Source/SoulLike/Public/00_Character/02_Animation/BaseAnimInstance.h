@@ -27,38 +27,39 @@ protected:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 
-	UPROPERTY(Transient,EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	float Speed;
-	UPROPERTY(Transient,EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	bool IsFalling;
-	UPROPERTY(Transient,EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	float Pitch;
-	UPROPERTY(Transient,EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	float Roll;
-	UPROPERTY(Transient,EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	float Yaw;
 
-	UPROPERTY(Transient,EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	TWeakObjectPtr<class ABaseCharacter> Character;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	float Direction;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	FVector Velocity;
-	
+
 	//피격 당했으면 참.
-	UPROPERTY(Transient,EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	ECharacterState CharacterState;
 	//피격 당한 좌표와의 각도
-	UPROPERTY(Transient,EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
+	UPROPERTY(Transient, EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	float HitDegree;
 
-	UPROPERTY(Transient,BlueprintReadOnly)
+	UPROPERTY(Transient, BlueprintReadOnly)
 	bool bModifyBoneTransform;
-	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	float BoneTransformLerpSpeed = 10.f;
-	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bShouldMove;
+
 public:
 	UFUNCTION(BlueprintNativeEvent)
 	void AnimNotify_OnHitEnter();
@@ -66,13 +67,19 @@ public:
 	UFUNCTION(BlueprintNativeEvent)
 	void AnimNotify_OnHitExit();
 	virtual void AnimNotify_OnHitExit_Implementation();
+
 protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void ChangeBoneTransform(float DeltaTime);
-	virtual void ChangeBoneTransform_Implementation(float DeltaTime){ }
+
+	virtual void ChangeBoneTransform_Implementation(float DeltaTime)
+	{
+	}
 
 	UFUNCTION(BlueprintNativeEvent)
 	void ClearBoneTransform(float DeltaTime);
-	virtual void ClearBoneTransform_Implementation(float DeltaTime){ }
-	
+
+	virtual void ClearBoneTransform_Implementation(float DeltaTime)
+	{
+	}
 };

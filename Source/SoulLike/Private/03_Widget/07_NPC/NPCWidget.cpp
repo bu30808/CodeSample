@@ -16,15 +16,15 @@
 
 namespace GlobalNPCWidgetText
 {
-	const FText talkText = NSLOCTEXT("EnhancementButtonWidget","TalkText","대화");
-	const FText merchantText = NSLOCTEXT("EnhancementButtonWidget","MerchantText","상점");
-	const FText levelUpText = NSLOCTEXT("EnhancementButtonWidget","LevelUpText","레벨업");
-	const FText enhancementText = NSLOCTEXT("EnhancementButtonWidget","EnhancementText","강화");
-	const FText potionEnhancementText = NSLOCTEXT("EnhancementButtonWidget","PotionEnhancementText","회복약 업그레이드");
-	const FText orbMatrixSlotOpenText = NSLOCTEXT("EnhancementButtonWidget","OrbMatrixSlotOpenText","신력 슬롯 개방");
-	const FText teleportBonfireText = NSLOCTEXT("EnhancementButtonWidget","TeleportBonfireText","이동");
-	const FText exitText = NSLOCTEXT("EnhancementButtonWidget","ExitText","나가기");
-	const FText noText = NSLOCTEXT("EnhancementButtonWidget","NoText","없는 액션 타입입니다.");
+	const FText talkText = NSLOCTEXT("EnhancementButtonWidget", "TalkText", "대화");
+	const FText merchantText = NSLOCTEXT("EnhancementButtonWidget", "MerchantText", "상점");
+	const FText levelUpText = NSLOCTEXT("EnhancementButtonWidget", "LevelUpText", "레벨업");
+	const FText enhancementText = NSLOCTEXT("EnhancementButtonWidget", "EnhancementText", "강화");
+	const FText potionEnhancementText = NSLOCTEXT("EnhancementButtonWidget", "PotionEnhancementText", "회복약 업그레이드");
+	const FText orbMatrixSlotOpenText = NSLOCTEXT("EnhancementButtonWidget", "OrbMatrixSlotOpenText", "신력 슬롯 개방");
+	const FText teleportBonfireText = NSLOCTEXT("EnhancementButtonWidget", "TeleportBonfireText", "이동");
+	const FText exitText = NSLOCTEXT("EnhancementButtonWidget", "ExitText", "나가기");
+	const FText noText = NSLOCTEXT("EnhancementButtonWidget", "NoText", "없는 액션 타입입니다.");
 }
 #undef LOCTEXT_NAMESPACE
 
@@ -63,7 +63,6 @@ void UNPCWidget::NativeConstruct()
 	bUseAsPopUp = true;
 	bRemovable = true;
 	Super::NativeConstruct();
-	
 }
 
 

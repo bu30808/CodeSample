@@ -20,11 +20,12 @@ public:
 	UBTTask_MoveRandomPoint();
 	UFUNCTION()
 	void OnMoveCompleteEvent(FAIRequestID RequestID, EPathFollowingResult::Type Result);
-	
+
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 	//virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 	virtual EBTNodeResult::Type AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
-	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTNodeResult::Type TaskResult) override;
+	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
+	                            EBTNodeResult::Type TaskResult) override;
 	virtual FString GetStaticDescription() const override;
 	//가져올 범위 반지름
 	UPROPERTY(EditAnywhere)
@@ -44,29 +45,32 @@ class SOULLIKE_API UBTTask_MoveToDirection : public UBTTask_BlackboardBase
 
 public:
 	UBTTask_MoveToDirection();
-	
+
 	UFUNCTION()
 	void OnMoveCompleteEvent(FAIRequestID RequestID, EPathFollowingResult::Type Result);
 
-	static FVector GetControlDirLocation(AAIController* AIController, EDirection Direction, float Distance = 1, bool bRandom = false, float RandMin = 0, float RandMax = 0);
-	static FVector GetDirLocation(AAIController* AIController, EDirection Direction, float Distance = 1, bool bRandom= false, float RandMin = 0, float RandMax = 0);
-	
+	static FVector GetControlDirLocation(AAIController* AIController, EDirection Direction, float Distance = 1,
+	                                     bool bRandom = false, float RandMin = 0, float RandMax = 0);
+	static FVector GetDirLocation(AAIController* AIController, EDirection Direction, float Distance = 1,
+	                              bool bRandom = false, float RandMin = 0, float RandMax = 0);
+
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 	virtual EBTNodeResult::Type AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 	virtual FString GetStaticDescription() const override;
-	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTNodeResult::Type TaskResult) override;
-	
+	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
+	                            EBTNodeResult::Type TaskResult) override;
+
 	UPROPERTY(EditAnywhere)
 	EDirection MoveDirection;
 	UPROPERTY(EditAnywhere)
 	bool bUseControlDirection = false;
 	UPROPERTY(EditAnywhere)
 	bool bRandomInMoveDistance = false;
-	UPROPERTY(EditAnywhere,meta=(EditCondition="!bRandomInMoveDistance"))
+	UPROPERTY(EditAnywhere, meta=(EditCondition="!bRandomInMoveDistance"))
 	float MoveDistance;
-	UPROPERTY(EditAnywhere,meta=(EditCondition="bRandomInMoveDistance"))
+	UPROPERTY(EditAnywhere, meta=(EditCondition="bRandomInMoveDistance"))
 	float RandomRangeMin;
-	UPROPERTY(EditAnywhere,meta=(EditCondition="bRandomInMoveDistance"))
+	UPROPERTY(EditAnywhere, meta=(EditCondition="bRandomInMoveDistance"))
 	float RandomRangeMax;
 	UPROPERTY(EditAnywhere)
 	float AcceptanceRadius;
@@ -81,8 +85,6 @@ class SOULLIKE_API UBTTask_JumpMove : public UBTTask_BlackboardBase
 	GENERATED_BODY()
 
 protected:
-	
-
 	UPROPERTY()
 	TObjectPtr<AAIController> AICon;
 	UPROPERTY(EditAnywhere)
@@ -91,14 +93,15 @@ protected:
 	EDirection MoveDirection;
 	UPROPERTY(EditAnywhere)
 	bool bUseControlDirection = false;
-	
+
 	UBTTask_JumpMove();
 	UFUNCTION()
 	void OnJumpEnded(const FHitResult& Hit);
-	
+
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 	virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 	virtual FString GetStaticDescription() const override;
 	virtual EBTNodeResult::Type AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
-	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, EBTNodeResult::Type TaskResult) override;
+	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
+	                            EBTNodeResult::Type TaskResult) override;
 };

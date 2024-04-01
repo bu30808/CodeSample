@@ -25,15 +25,16 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	{
 		bUseLadder = LadderMovementComponent->GetUseLadderMovement();
 
-		if(bStartClimbLadder)
+		if (bStartClimbLadder)
 		{
-			if(bShouldUpdateNewLadderLocation)
+			if (bShouldUpdateNewLadderLocation)
 			{
 				bShouldUpdateNewLadderLocation = false;
 				CreateNewLadderLocation();
 			}
 
-			switch (LadderMovementComponent->GetLadderClimbType()) {
+			switch (LadderMovementComponent->GetLadderClimbType())
+			{
 			case ELadderClimbType::EnterFromTop:
 				OnLadderEnterFromTop();
 				break;
@@ -45,8 +46,8 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			case ELadderClimbType::EscapeFromBottom:
 				break;
 			}
-
-		}else
+		}
+		else
 		{
 			bShouldUpdateNewLadderLocation = true;
 		}
@@ -112,7 +113,6 @@ void UPlayerAnimInstance::AnimNotify_OnLadderIdleExit_Implementation()
 	if (Character.IsValid())
 	{
 		LadderRightHandLocation = LadderMovementComponent->GetNextHandLocation();
-
 	}
 }
 
@@ -123,7 +123,6 @@ void UPlayerAnimInstance::AnimNotify_OnLadderRightExit_Implementation()
 		//다음 손인 왼손으로 초기화
 		LadderMovementComponent->SetLadderHandOrder(ELadderHandOrder::LEFT);
 		LadderLeftHandLocation = LadderMovementComponent->GetNextHandLocation();
-	
 	}
 }
 
@@ -134,7 +133,6 @@ void UPlayerAnimInstance::AnimNotify_OnLadderLeftExit_Implementation()
 		//다음인 오른손으로 초기화
 		LadderMovementComponent->SetLadderHandOrder(ELadderHandOrder::RIGHT);
 		LadderRightHandLocation = LadderMovementComponent->GetNextHandLocation();
-	
 	}
 }
 

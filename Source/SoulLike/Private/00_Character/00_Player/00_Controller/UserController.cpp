@@ -16,7 +16,7 @@ AUserController::AUserController()
 {
 	WidgetManagerComponent = CreateDefaultSubobject<UWidgetManagerComponent>(TEXT("WidgetManagerComponent"));
 	InputHandlerComponent = CreateDefaultSubobject<UInputHandlerComponent>(TEXT("InputHandler"));
-	
+
 	TeamId = static_cast<uint8>(ETeam::Player);
 }
 
@@ -27,14 +27,13 @@ void AUserController::OnPossess(APawn* InPawn)
 
 void AUserController::AddToPopUp(UUserWidget* Widget)
 {
-	UE_LOGFMT(LogSlate,Log,"팝업위젯에 추가됨 : {0}",Widget->GetName());
-	UWidgetHelperLibrary::OpenWidgetSetting(this,Widget);
+	UE_LOGFMT(LogSlate, Log, "팝업위젯에 추가됨 : {0}", Widget->GetName());
+	UWidgetHelperLibrary::OpenWidgetSetting(this, Widget);
 	PopUpStack.Push(Widget);
 }
 
 void AUserController::RemoveFromPopUp(UUserWidget* Widget, bool bIsRemovable)
 {
-
 	if (PopUpStack.Num() <= 0)
 	{
 		return;
@@ -43,30 +42,27 @@ void AUserController::RemoveFromPopUp(UUserWidget* Widget, bool bIsRemovable)
 	if (PopUpStack.Top() == Widget)
 	{
 		auto pop = PopUpStack.Pop();
-		UWidgetHelperLibrary::CloseWidgetSetting(this,pop,false);
+		UWidgetHelperLibrary::CloseWidgetSetting(this, pop, false);
 		if (bIsRemovable)
 		{
-			UE_LOGFMT(LogSlate,Log,"팝업위젯 영구 제거 1 : {0}",pop->GetName());
+			UE_LOGFMT(LogSlate, Log, "팝업위젯 영구 제거 1 : {0}", pop->GetName());
 			pop->RemoveFromParent();
-			return;
 		}
-
 	}
 	else
 	{
 		const auto index = PopUpStack.Find(Widget);
 		if (index != INDEX_NONE)
 		{
-			UWidgetHelperLibrary::CloseWidgetSetting(this,Widget,false);
+			UWidgetHelperLibrary::CloseWidgetSetting(this, Widget, false);
 			if (bIsRemovable)
 			{
-				UE_LOGFMT(LogSlate,Log,"팝업위젯 영구 제거 2 : {0}",Widget->GetName());
+				UE_LOGFMT(LogSlate, Log, "팝업위젯 영구 제거 2 : {0}", Widget->GetName());
 				Widget->RemoveFromParent();
 			}
 			PopUpStack.RemoveAt(index);
 		}
 	}
-	
 }
 
 void AUserController::ClosePopUp()
@@ -76,7 +72,7 @@ void AUserController::ClosePopUp()
 		return;
 	}
 	auto top = PopUpStack.Top();
-	UE_LOGFMT(LogSlate,Log,"팝업위젯 닫기 요청 : {0}",top->GetName());
+	UE_LOGFMT(LogSlate, Log, "팝업위젯 닫기 요청 : {0}", top->GetName());
 	top->SetVisibility(ESlateVisibility::Collapsed);
 }
 
@@ -87,18 +83,18 @@ bool AUserController::IsThereAnyPopUp()
 
 void AUserController::SetMouseSensitivity(float Sensitivity)
 {
-	if(PlayerInput){
+	if (PlayerInput)
+	{
 		PlayerInput->SetMouseSensitivity(Sensitivity);
 	}
 }
 
 float AUserController::GetMouseSensitivity()
 {
-	if(PlayerInput)
+	if (PlayerInput)
 	{
 		return PlayerInput->GetMouseSensitivityX();
 	}
 
 	return 0.5f;
 }
-

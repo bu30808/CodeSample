@@ -71,7 +71,7 @@ UUserWidget* UWidgetManagerComponent::AddWidget(FGameplayTag WidgetTag, int32 ZO
 	}
 	else
 	{
-		if(Widgets[WidgetTag]->IsValidLowLevel()==false)
+		if (Widgets[WidgetTag]->IsValidLowLevel() == false)
 		{
 			if (auto widgetClass = GetWidgetClassFromTable(WidgetTag))
 			{
@@ -83,12 +83,12 @@ UUserWidget* UWidgetManagerComponent::AddWidget(FGameplayTag WidgetTag, int32 ZO
 				}
 			}
 		}
-		
+
 		if (Widgets[WidgetTag]->IsInViewport() == false)
 		{
 			Widgets[WidgetTag]->AddToViewport(ZOrder);
 		}
-		
+
 		return Widgets[WidgetTag];
 	}
 
@@ -103,4 +103,14 @@ UUserWidget* UWidgetManagerComponent::GetWidget(FGameplayTag WidgetTag)
 	}
 
 	return nullptr;
+}
+
+void UWidgetManagerComponent::RemoveWidget(FGameplayTag WidgetTag)
+{
+	if (Widgets.Contains(WidgetTag))
+	{
+		auto widget = Widgets[WidgetTag];
+		Widgets.Remove(WidgetTag);
+		widget->RemoveFromParent();
+	}
 }

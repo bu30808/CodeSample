@@ -43,12 +43,10 @@ class UIgnoreMoveInputDebuggingData : public UObject
 	GENERATED_BODY()
 
 public:
-	
 	TWeakObjectPtr<AActor> By;
 	FGameplayTag Tag;
 	int32 Count;
 };
-
 
 
 /**
@@ -60,11 +58,10 @@ class SOULLIKE_API UAbilityDebugWidget : public UUserWidget
 	GENERATED_BODY()
 
 protected:
-
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* TextBlock_PlayerState;
 
-	
+
 	UPROPERTY(meta=(BindWidget))
 	class UListView* AvailableAbilitiesList;
 	UPROPERTY(meta=(BindWidget))
@@ -76,7 +73,7 @@ protected:
 	UPROPERTY(meta=(BindWidget))
 	class UListView* AppliedIgnoreInputList;
 
-	
+
 	virtual void NativeConstruct() override;
 
 	UPROPERTY()
@@ -108,11 +105,10 @@ protected:
 	void OnAddCueEvent(const FGameplayTag& CueTag);
 	UFUNCTION()
 	void OnRemoveCueEvent(const FGameplayTag& CueTag);
-	
+
 	UFUNCTION()
 	void OnTriggerIgnoreMoveInputEvent(const TMap<FIgnoreInputHandler, uint8>& IgnoreMoveInputMap);
 
 	UFUNCTION()
 	void OnChangePlayerStateEvent(EPlayerCharacterState State);
-	
 };

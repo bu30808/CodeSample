@@ -19,10 +19,11 @@
 #include "96_Library/ItemHelperLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #define LOCTEXT_NAMESPACE "EquipButtonWidget"
+
 namespace GlobalEquipButtonWidgetText
 {
-	static const FText emptyText= NSLOCTEXT("EquipButtonWidget","SlotUnlockText","비어있음");
-	static const FText cannotUnEquipText= NSLOCTEXT("EquipButtonWidget","CannotUnEquipText","무기는 장착 해제할 수 없습니다.");
+	static const FText emptyText = NSLOCTEXT("EquipButtonWidget", "SlotUnlockText", "비어있음");
+	static const FText cannotUnEquipText = NSLOCTEXT("EquipButtonWidget", "CannotUnEquipText", "무기는 장착 해제할 수 없습니다.");
 }
 #undef LOCTEXT_NAMESPACE
 
@@ -50,23 +51,22 @@ void UEquipButtonWidget::SetButtonInfo(TWeakObjectPtr<UItemData> NewData)
 {
 	if (const auto info = NewData->InventoryItem.GetItemInformation())
 	{
-
-		if(IsVisible()==false)
+		if (IsVisible() == false)
 		{
 			SetVisibility(ESlateVisibility::Visible);
 		}
-		
+
 		ItemData = NewData;
 
 		auto itemName = info->Item_Name.ToString();
-		if(itemName.Len()>10)
+		if (itemName.Len() > 10)
 		{
 			itemName = itemName.Left(10);
-			itemName+="...";
+			itemName += "...";
 		}
 		TextBlock_Name->SetText(FText::FromString(itemName));
 		Image->SetBrushFromSoftTexture(info->Item_Image);
-		
+
 		/*
 		auto tooltip = ItemData->InventoryItem.GetFormattedDescription() + "\n\n" +
 			UItemHelperLibrary::GetItemDetailString(ItemData->InventoryItem,
@@ -128,49 +128,48 @@ bool UEquipButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDr
 					//이전 장비를 해제합니다.
 					if (ItemData.IsValid())
 					{
-						
 						//같은 장비가 드롭다운됐다면 아무것도 안 합니다.
 						auto preID = ItemData->InventoryItem.UniqueID;
-						if(preID == Cast<UItemData>(data)->InventoryItem.UniqueID)
+						if (preID == Cast<UItemData>(data)->InventoryItem.UniqueID)
 						{
 							return false;
 						}
 
 						//이 부분에서 다시 장착 이미지가 설정되는 문제가 있습니다.
-						if(auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
+						if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
 						{
 							invenComp->UnEquip(preID);
 						}
 
-						UE_LOGFMT(LogTemp,Error,"장비버튼 {0}이 드롭되었습니다.",inventoryButton->GetName());
+						UE_LOGFMT(LogTemp, Error, "장비버튼 {0}이 드롭되었습니다.", inventoryButton->GetName());
 						//다른 장비 슬롯에 장착된 같은 아이디의 아이템이 있다면, 슬롯을 비웁니다.
-						if(ParentWidget.IsValid())
+						if (ParentWidget.IsValid())
 						{
 							int32 outIndex;
-							if(auto button = ParentWidget->GetRingSlotByUniqueID(Cast<UItemData>(data)->InventoryItem.UniqueID,outIndex))
+							if (auto button = ParentWidget->GetRingSlotByUniqueID(
+								Cast<UItemData>(data)->InventoryItem.UniqueID, outIndex))
 							{
-								UE_LOGFMT(LogTemp,Error,"장비버튼 {0}를 비웁니다.",button->GetName());
+								UE_LOGFMT(LogTemp, Error, "장비버튼 {0}를 비웁니다.", button->GetName());
 								button->OnUnEquipped.Broadcast();
 								button->Clean();
 							}
 						}
 
 						//이전 아이템 버튼의 장착 표시를 끕니다.
-						if(ItemData->OwnItemButtonWidget.IsValid())
+						if (ItemData->OwnItemButtonWidget.IsValid())
 						{
 							ItemData->OwnItemButtonWidget->SetEquipped(false);
 						}
-						
 					}
 
 					//이 버튼의 정보를 설정합니다.
 					SetButtonInfo(Cast<UItemData>(data));
-					UGameplayStatics::PlaySound2D(this,EquipSound);
+					UGameplayStatics::PlaySound2D(this, EquipSound);
 					//장비 아이템을 사용 합니다.
 					GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()->UseItem(
 						Cast<UItemData>(data)->InventoryItem.UniqueID);
 
-					UE_LOGFMT(LogTemp,Error,"장비버튼 {0}에 장착 아이콘을 켭니다.",inventoryButton->GetName());
+					UE_LOGFMT(LogTemp, Error, "장비버튼 {0}에 장착 아이콘을 켭니다.", inventoryButton->GetName());
 					inventoryButton->SetEquipped(true);
 
 					return true;
@@ -207,7 +206,9 @@ void UEquipButtonWidget::UnEquip()
 				}
 				else
 				{
-					UWidgetHelperLibrary::ShowAlertMsg(GetOwningPlayer<AUserController>(), EAlertMsgType::Normal,GlobalEquipButtonWidgetText::cannotUnEquipText,FOnButtonClicked());
+					UWidgetHelperLibrary::ShowAlertMsg(GetOwningPlayer<AUserController>(), EAlertMsgType::Normal,
+					                                   GlobalEquipButtonWidgetText::cannotUnEquipText,
+					                                   FOnButtonClicked());
 				}
 			}
 		}
@@ -245,22 +246,25 @@ FReply UEquipButtonWidget::NativeOnMouseButtonUp(const FGeometry& InGeometry, co
 
 void UEquipButtonWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	if(EquipButtonType == EEquipButtonType::EQUIPMENT)
+	if (EquipButtonType == EEquipButtonType::EQUIPMENT)
 	{
-		if(ParentWidget.IsValid())
+		if (ParentWidget.IsValid())
 		{
 			ParentWidget->ShowItemInformation(ItemData.Get());
 		}
-	}else
+	}
+	else
 	{
-		if(ItemData.IsValid()){
+		if (ItemData.IsValid())
+		{
 			FString tooltip = ItemData->InventoryItem.GetFormattedDescription().ToString() + "\n\n" +
 				UItemHelperLibrary::GetItemDetailText(ItemData->InventoryItem,
-				                                        GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()).ToString();
+				                                      GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()).
+				ToString();
 			UWidgetHelperLibrary::SetToolTipWidget(this, FText::FromString(tooltip));
 		}
 	}
-	
+
 	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
 }
 
@@ -295,4 +299,3 @@ void UEquipButtonWidget::SetParentsWidget(UEquipWidget* PWidget)
 {
 	ParentWidget = PWidget;
 }
-

@@ -50,7 +50,7 @@ public:
 	//일회성으로 사용되는 큐인 경우 거짓을 주세요.
 	UPROPERTY()
 	bool bIsNotInstanceCue = false;
-	bool IsValid() const {return CueTag.IsValid();}
+	bool IsValid() const { return CueTag.IsValid(); }
 };
 
 UCLASS()

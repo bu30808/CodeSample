@@ -17,7 +17,7 @@ class SOULLIKE_API AEquipmentItemActor : public AItemActor
 
 
 	friend class UGameLoadHandler;
-	
+
 protected:
 	//장비의 강화 수치를 저장할 변수입니다.
 	UPROPERTY(VisibleAnywhere)
@@ -25,10 +25,12 @@ protected:
 
 
 	virtual void PostInitializeComponents() override;
+
 public:
 	virtual FText GetEnhancedLevelDescription();
 	virtual FText GetAttributeDescription();
 	virtual FText GetEnhancedAttributeDescription();
+
 protected:
 	virtual FText GetFormattedDescription_Implementation() override;
 	virtual void

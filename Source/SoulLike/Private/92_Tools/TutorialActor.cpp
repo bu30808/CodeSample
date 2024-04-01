@@ -14,20 +14,19 @@
 // Sets default values
 ATutorialActor::ATutorialActor()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
-	
-	BoxComponent= CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
+
+	BoxComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("BoxComponent"));
 	RootComponent = BoxComponent;
 
 	BillboardComponent = CreateDefaultSubobject<UBillboardComponent>(TEXT("BillboardComponent"));
 	BillboardComponent->SetupAttachment(RootComponent);
-	
 }
 
 void ATutorialActor::OnDestroyedEvent(AActor* DestroyedActor)
 {
-	if(auto instance = UGameplayStatics::GetGameInstance(GetWorld()))
+	if (auto instance = UGameplayStatics::GetGameInstance(GetWorld()))
 	{
 		Cast<USoulLikeInstance>(instance)->SaveTutorial(this);
 	}
@@ -37,8 +36,8 @@ void ATutorialActor::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	OnActorBeginOverlap.AddUniqueDynamic(this,&ATutorialActor::OnActorBeginOverlapEvent);
-	OnDestroyed.AddUniqueDynamic(this,&ATutorialActor::OnDestroyedEvent);
+	OnActorBeginOverlap.AddUniqueDynamic(this, &ATutorialActor::OnActorBeginOverlapEvent);
+	OnDestroyed.AddUniqueDynamic(this, &ATutorialActor::OnDestroyedEvent);
 }
 
 // Called when the game starts or when spawned
@@ -46,30 +45,27 @@ void ATutorialActor::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(USaveGameHelperLibrary::IsAlreadyReadTutorial(this))
+	if (USaveGameHelperLibrary::IsAlreadyReadTutorial(this))
 	{
 		Destroy();
 	}
-	
 }
 
 void ATutorialActor::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* OtherActor)
 {
-	if(OtherActor->IsA<APlayerCharacter>())
+	if (OtherActor->IsA<APlayerCharacter>())
 	{
-
 		SetActorEnableCollision(false);
-		
-		if(auto pc = Cast<APlayerController>(Cast<APlayerCharacter>(OtherActor)->GetController()))
+
+		if (auto pc = Cast<APlayerController>(Cast<APlayerCharacter>(OtherActor)->GetController()))
 		{
-			if(!TutoWidget.IsValid())
+			if (!TutoWidget.IsValid())
 			{
-				TutoWidget = CreateWidget<UTutorialWidget>(pc,TutorialWidgetObject);
+				TutoWidget = CreateWidget<UTutorialWidget>(pc, TutorialWidgetObject);
 			}
-		
-			TutoWidget->SetTutorial(TutorialTag,this);
+
+			TutoWidget->SetTutorial(TutorialTag, this);
 			TutoWidget->AddToViewport();
 		}
 	}
 }
-

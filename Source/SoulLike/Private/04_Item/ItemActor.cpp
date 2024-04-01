@@ -43,14 +43,14 @@ AItemActor::AItemActor()
 
 void AItemActor::DestroyIfPlayerAlreadyGetThisItemFromField()
 {
-	if(USaveGameHelperLibrary::IsAlreadyPickUppedItem(this))
+	if (USaveGameHelperLibrary::IsAlreadyPickUppedItem(this))
 	{
 		Destroy();
-	}else
-	{
-		UE_LOGFMT(LogTemp,Log,"다음 필드 아이템은 필드에서 획득된 적이 없습니다 : {0}",GetNameSafe(this));
 	}
-	
+	else
+	{
+		UE_LOGFMT(LogTemp, Log, "다음 필드 아이템은 필드에서 획득된 적이 없습니다 : {0}", GetNameSafe(this));
+	}
 }
 
 // Called when the game starts or when spawned

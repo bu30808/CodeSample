@@ -28,13 +28,13 @@ void UMonsterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 			if (const auto aiCon = monster->GetController<AAIController>())
 			{
 				bIsFocus = (aiCon->GetFocusActor() != nullptr);
-				if(aiCon->GetBlackboardComponent()!=nullptr){
+				if (aiCon->GetBlackboardComponent() != nullptr)
+				{
 					bIsFindTarget = aiCon->GetBlackboardComponent()->GetValueAsObject("Target") ? true : false;
 				}
 			}
 
 			MonsterState = monster->GetMonsterState();
-
 		}
 	}
 }
@@ -47,12 +47,12 @@ void UMonsterAnimInstance::AnimNotify_OnHitEnter_Implementation()
 void UMonsterAnimInstance::AnimNotify_OnHitExit_Implementation()
 {
 	Super::AnimNotify_OnHitExit_Implementation();
-	
+
 	if (auto monster = Cast<ABaseMonster>(Character))
 	{
 		if (const auto aiCon = monster->GetController<AMonsterAIController>())
 		{
-			if(!aiCon->IsBehaviorTreeRunning())
+			if (!aiCon->IsBehaviorTreeRunning())
 			{
 				aiCon->StartBehavior();
 			}
@@ -64,21 +64,24 @@ void UMonsterAnimInstance::ChangeBoneTransform_Implementation(float DeltaTime)
 {
 	Super::ChangeBoneTransform_Implementation(DeltaTime);
 
-	if(Character.IsValid())
+	if (Character.IsValid())
 	{
-		if(auto bbComp = UAIBlueprintHelperLibrary::GetBlackboard(Character.Get()))
+		if (auto bbComp = UAIBlueprintHelperLibrary::GetBlackboard(Character.Get()))
 		{
-			if(auto target = Cast<AActor>(bbComp->GetValueAsObject("Target")))
+			if (auto target = Cast<AActor>(bbComp->GetValueAsObject("Target")))
 			{
 				/*auto targetRot = UKismetMathLibrary::FindLookAtRotation(Character->GetActorLocation(),target->GetActorLocation());
 				targetRot.Yaw = UKismetAnimationLibrary::CalculateDirection(UKismetMathLibrary::GetForwardVector(targetRot),Character->GetActorRotation());
 				NeckRotation = FMath::RInterpTo(NeckRotation,targetRot,DeltaTime,BoneTransformLerpSpeed);*/
-				
-				auto targetRot = UKismetMathLibrary::FindLookAtRotation(Character->GetActorLocation(),Cast<AActor>(target)->GetActorLocation());
-				targetRot.Yaw = FMath::Clamp(UKismetAnimationLibrary::CalculateDirection(UKismetMathLibrary::GetForwardVector(targetRot),Character->GetActorRotation()),-80,80);
-				NeckRotation = FMath::RInterpTo(NeckRotation,targetRot,DeltaTime,BoneTransformLerpSpeed);
-				
-			}else
+
+				auto targetRot = UKismetMathLibrary::FindLookAtRotation(Character->GetActorLocation(),
+				                                                        Cast<AActor>(target)->GetActorLocation());
+				targetRot.Yaw = FMath::Clamp(
+					UKismetAnimationLibrary::CalculateDirection(UKismetMathLibrary::GetForwardVector(targetRot),
+					                                            Character->GetActorRotation()), -80, 80);
+				NeckRotation = FMath::RInterpTo(NeckRotation, targetRot, DeltaTime, BoneTransformLerpSpeed);
+			}
+			else
 			{
 				NeckRotation = FRotator::ZeroRotator;
 			}
@@ -89,5 +92,5 @@ void UMonsterAnimInstance::ChangeBoneTransform_Implementation(float DeltaTime)
 void UMonsterAnimInstance::ClearBoneTransform_Implementation(float DeltaTime)
 {
 	Super::ClearBoneTransform_Implementation(DeltaTime);
-	NeckRotation = FMath::RInterpTo(NeckRotation,FRotator::ZeroRotator,DeltaTime,BoneTransformLerpSpeed);
+	NeckRotation = FMath::RInterpTo(NeckRotation, FRotator::ZeroRotator, DeltaTime, BoneTransformLerpSpeed);
 }

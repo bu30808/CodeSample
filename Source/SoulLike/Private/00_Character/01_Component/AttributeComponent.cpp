@@ -94,7 +94,6 @@ void UStatusEffectValueHandler::ReduceAccValue(float DeltaTime)
 }
 
 
-
 // Sets default values for this component's properties
 UAttributeComponent::UAttributeComponent()
 {
@@ -130,7 +129,7 @@ void UAttributeComponent::BeginPlay()
 
 	OnUpdateStatusEffect.AddUniqueDynamic(this, &UAttributeComponent::OnUpdateStatusEffectEvent);
 
-	if(GetOwner())
+	if (GetOwner())
 	{
 		GetOwner<ACharacter>()->GetCharacterMovement()->MaxWalkSpeed = GetMoveSpeed();
 	}
@@ -217,19 +216,20 @@ void UAttributeComponent::InitAttributes()
 	EXP.Init(0);
 }
 
-void UAttributeComponent::LoadAttributeNotIncludeLevelUpPoint(const TMap<EAttributeType, FAttribute>& SavedAttribute, bool ShouldUpdateProgressBar, bool bIsRespawn)
+void UAttributeComponent::LoadAttributeNotIncludeLevelUpPoint(const TMap<EAttributeType, FAttribute>& SavedAttribute,
+                                                              bool ShouldUpdateProgressBar, bool bIsRespawn)
 {
 	for (auto iter : SavedAttribute)
 	{
 		AttributesNotIncludeLevelUpPoint[iter.Key]->Load(iter.Value);
 	}
 
-	if(bIsRespawn)
+	if (bIsRespawn)
 	{
 		SetHP(GetMaxHP());
 	}
-	
-	if(ShouldUpdateProgressBar)
+
+	if (ShouldUpdateProgressBar)
 	{
 		InitProgressWidget();
 	}
@@ -524,7 +524,6 @@ void UAttributeComponent::AddLevelUpPoint(EAttributePointType AttributePointType
 			OnChangeMaxHPValue.Broadcast(GetMaxHP());
 			OnChangeMaxMPValue.Broadcast(GetMaxMP());
 			OnChangeMaxSPValue.Broadcast(GetMaxSP());
-
 		}
 	}
 }

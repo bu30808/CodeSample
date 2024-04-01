@@ -49,5 +49,5 @@ protected:
 	virtual UDragAndDropOperation* WidgetDragDetected();
 	//드래그시 커스텀 위젯을 그림자로 사용하려면 bUseCustomDragShadowWidget변수를 참으로 준 뒤, 덮어쓰세요.
 	UFUNCTION(BlueprintCallable)
-	virtual UUserWidget* CreateCustomDragShadowWidget(){return nullptr;}
+	virtual UUserWidget* CreateCustomDragShadowWidget() { return nullptr; }
 };

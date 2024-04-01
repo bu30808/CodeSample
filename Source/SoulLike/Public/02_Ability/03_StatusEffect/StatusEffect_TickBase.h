@@ -14,10 +14,10 @@ UCLASS(DefaultToInstanced)
 class SOULLIKE_API UStatusEffect_TickBase : public UAbilityEffect
 {
 	GENERATED_BODY()
-protected:
 
+protected:
 	UStatusEffect_TickBase();
-	
+
 	UPROPERTY(EditAnywhere)
 	float Amount = 0.001f;
 

@@ -19,18 +19,19 @@ class ASoulLikeGameMode : public AGameModeBase
 	 * 1.레벨 이름은 저장할 필요가 없습니다. 어차피 레벨을 이동한 경우 저장한 데이터가 필요가 없어지기 때문이죠.
 	 * 2.레이어 이름도 저장할 필요가 없습니다. 굳이 레이어 가리지 않고 모든 대상이 필요하기 때문이죠.
 	 */
-	
+
 	//재스폰할 몬스터 정보
 	//Key - safename / Value- - 리스폰 정보 세트
 	UPROPERTY(Transient)
 	TMap<FName, FActorSave> RespawnInfos;
-	
+
 	//셀에 로드된 몬스터의 상태를 복구하기 위해 저장하는 변수
 	//key - safename / value - 상태정보
-	TMap<FName,FCharacterSave> TemporarySavedMonsterState;
+	TMap<FName, FCharacterSave> TemporarySavedMonsterState;
+
 public:
 	ASoulLikeGameMode();
-	
+
 	//플레이어가 휴식하면 리스폰 시킬 몬스터로 추가합니다.
 	void AddToRespawnMonster(ABaseMonster* BaseMonster);
 	//리스폰할 목록에서 제거합니다.
@@ -42,8 +43,8 @@ public:
 	//다시 로드되었을 때, 체력상태등을 복구하기 위함입니다.
 	UFUNCTION()
 	void SaveMonsterAttributeWhenUnload(const ABaseMonster* BaseMonster);
-	
-	
+
+
 	//플레이어가 휴식할 때, 필드 몬스터를 재 스폰하기 위해 호출됩니다.
 	UFUNCTION()
 	void RespawnMonsters(class APlayerCharacter* Player);
@@ -60,9 +61,10 @@ public:
 	UFUNCTION()
 	void ClearTemporarySavedMonsterData(APlayerCharacter* Player);
 
-private:
-	void Respawn(const UWorld* World, const FTransform& SpawnTr, TSubclassOf<AActor> MonsterClass, const TArray<TObjectPtr<const
-	             UDataLayerAsset>>& LayerInfo);
+	/*
+	private:
+		void Respawn(const UWorld* World, const FTransform& SpawnTr, TSubclassOf<AActor> MonsterClass, const TArray<TObjectPtr<const
+		             UDataLayerAsset>>& LayerInfo);*/
 };
 
 

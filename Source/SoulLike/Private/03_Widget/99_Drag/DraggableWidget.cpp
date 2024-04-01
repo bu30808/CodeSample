@@ -76,7 +76,6 @@ void UDraggableWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEve
 	{
 		oper->DraggedWidget->SetVisibility(ESlateVisibility::Visible);
 		oper->DraggedWidget->SetRenderOpacity(oper->OriginalOpacity);
-
 	}
 }
 
@@ -85,20 +84,19 @@ UDragAndDropOperation* UDraggableWidget::WidgetDragDetected()
 	if (auto DragOper =
 		Cast<UDragAndDropOperation>(UWidgetBlueprintLibrary::CreateDragDropOperation(DragDropOperationObject)))
 	{
-		
 		DragOper->DraggedWidget = this;
 		DragOper->DraggedWidget->SetVisibility(ESlateVisibility::HitTestInvisible);
 		DragOper->OriginalOpacity = GetRenderOpacity();
 
-		if(bUseCustomDragShadowWidget)
+		if (bUseCustomDragShadowWidget)
 		{
 			DragOper->DefaultDragVisual = CreateCustomDragShadowWidget();
-		}else
+		}
+		else
 		{
 			DragOper->DefaultDragVisual = this;
 			DragOper->DefaultDragVisual->SetRenderOpacity(0.5f);
 		}
-		
 
 
 		DragOper->Pivot = EDragPivot::MouseDown;

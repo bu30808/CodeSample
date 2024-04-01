@@ -43,7 +43,9 @@ void UAnimNotifyState_AddForce::NotifyBegin(USkeletalMeshComponent* MeshComp, UA
 				if (Owner->IsA<APlayerCharacter>())
 				{
 					UE_LOGFMT(LogTemp, Warning, "{0} {1} : 플레이어 입력을 막습니다, 힘 추가 노티파이 ", __FUNCTION__, __LINE__);
-					Owner->SetIgnoreMoveInput(true,Owner.Get(),FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Animation.NotifyState.AddForce"));
+					Owner->SetIgnoreMoveInput(true, Owner.Get(),
+					                          FGameplayTag::RequestGameplayTag(
+						                          "Common.Passive.IgnoreMoveInput.Animation.NotifyState.AddForce"));
 				}
 			}
 
@@ -53,15 +55,15 @@ void UAnimNotifyState_AddForce::NotifyBegin(USkeletalMeshComponent* MeshComp, UA
 			}
 			else
 			{
-				switch(ForceApplicationMode)
+				switch (ForceApplicationMode)
 				{
 				case EForceApplicationMode::InputDirection:
 					SaveStartControllerInput();
 					break;
 				case EForceApplicationMode::CustomDirectionSetting:
-					if(!bUseControllerDir)
+					if (!bUseControllerDir)
 					{
-						if(ForceDirection == EDirection::Up)
+						if (ForceDirection == EDirection::Up)
 						{
 							Owner->GetCharacterMovement()->GravityScale = 0;
 						}
@@ -70,7 +72,7 @@ void UAnimNotifyState_AddForce::NotifyBegin(USkeletalMeshComponent* MeshComp, UA
 					break;
 				default: ;
 				}
-				
+
 				/*
 				if (IsPlayerCharacter())
 				{
@@ -91,12 +93,13 @@ void UAnimNotifyState_AddForce::StopMovementWhenFalling()
 	//아래로 트레이스를 그려 뭔가 없으면 중지하도록 합시다.
 	const float& halfHeight = Owner->GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 	const float& radius = Owner->GetCapsuleComponent()->GetScaledCapsuleRadius();
-	const FVector& targetLoc = Owner->GetActorLocation() - FVector(0,0,halfHeight);
+	const FVector& targetLoc = Owner->GetActorLocation() - FVector(0, 0, halfHeight);
 
 	FHitResult hit;
-	if(!UKismetSystemLibrary::CapsuleTraceSingle(Owner.Get(),  targetLoc, targetLoc, radius, halfHeight,
-	                                             UEngineTypes::ConvertToTraceType(ECC_Visibility), false, TArray<AActor*>(),
-	                                             EDrawDebugTrace::ForOneFrame, hit, true))
+	if (!UKismetSystemLibrary::CapsuleTraceSingle(Owner.Get(), targetLoc, targetLoc, radius, halfHeight,
+	                                              UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
+	                                              TArray<AActor*>(),
+	                                              EDrawDebugTrace::ForOneFrame, hit, true))
 	{
 		Owner->GetCharacterMovement()->StopMovementImmediately();
 	}
@@ -116,9 +119,9 @@ void UAnimNotifyState_AddForce::NotifyTick(USkeletalMeshComponent* MeshComp, UAn
 		else
 		{
 			//특정 상태이상에 걸려서 움직이지 못 하는 상황인지 확인합니다.
-			if(UAbilityHelperLibrary::IsMovementBlockedByStatusEffect(Owner.Get()) == false)
+			if (UAbilityHelperLibrary::IsMovementBlockedByStatusEffect(Owner.Get()) == false)
 			{
-				switch(ForceApplicationMode)
+				switch (ForceApplicationMode)
 				{
 				case EForceApplicationMode::InputDirection:
 					ApplyForceByInputDirection(FrameDeltaTime);
@@ -147,7 +150,9 @@ void UAnimNotifyState_AddForce::NotifyEnd(USkeletalMeshComponent* MeshComp, UAni
 			if (Owner->IsA<APlayerCharacter>())
 			{
 				UE_LOGFMT(LogTemp, Log, "{0} {1} : 플레이어 입력을 되돌립니다, 힘 추가 노티파이 ", __FUNCTION__, __LINE__);
-				Owner->SetIgnoreMoveInput(false,Owner.Get(),FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Animation.NotifyState.AddForce"));
+				Owner->SetIgnoreMoveInput(false, Owner.Get(),
+				                          FGameplayTag::RequestGameplayTag(
+					                          "Common.Passive.IgnoreMoveInput.Animation.NotifyState.AddForce"));
 			}
 		}
 	}
@@ -193,28 +198,31 @@ void UAnimNotifyState_AddForce::SaveStartControllerInput()
 	{
 		auto player = Cast<APlayerCharacter>(Owner);
 
-		if(player->GetAbilityComponent()->IsAlreadyActivated(LockOnTag))
+		if (player->GetAbilityComponent()->IsAlreadyActivated(LockOnTag))
 		{
-			if(player->GetPressMove())
+			if (player->GetPressMove())
 			{
 				MoveDirectionVector = UMathHelperLibrary::GetControllerInputDir(Owner->GetControlRotation(),
-																					player->
-																					MovementInputVector);
-			}else
+					player->
+					MovementInputVector);
+			}
+			else
 			{
 				auto rot = Owner->GetControlRotation();
-				
-				MoveDirectionVector = UKismetMathLibrary::GetForwardVector(FRotator(0,rot.Yaw,rot.Roll)) * -1;
+
+				MoveDirectionVector = UKismetMathLibrary::GetForwardVector(FRotator(0, rot.Yaw, rot.Roll)) * -1;
 			}
-		}else
+		}
+		else
 		{
-			if(player->MovementInputVector.IsZero())
+			if (player->MovementInputVector.IsZero())
 			{
 				MoveDirectionVector = player->GetActorForwardVector();
-			}else
+			}
+			else
 			{
 				MoveDirectionVector = UMathHelperLibrary::GetControllerInputDir(Owner->GetControlRotation(),
-																					player->MovementInputVector);
+					player->MovementInputVector);
 			}
 		}
 	}
@@ -229,9 +237,11 @@ void UAnimNotifyState_AddForce::ApplyForceByInputDirection(float DeltaTime) cons
 
 void UAnimNotifyState_AddForce::ApplyForceByDirectionValue(float DeltaTime) const
 {
-	auto power =  ApplyTalent() * DeltaTime;
-	Owner->GetCharacterMovement()->AddImpulse(MoveDirectionVector * power,bVelocityChange);
-	UKismetSystemLibrary::DrawDebugArrow(Owner->GetWorld(),Owner->GetActorLocation(),MoveDirectionVector * 800.f + Owner->GetActorLocation(),300.f,FLinearColor::Yellow);
+	auto power = ApplyTalent() * DeltaTime;
+	Owner->GetCharacterMovement()->AddImpulse(MoveDirectionVector * power, bVelocityChange);
+	UKismetSystemLibrary::DrawDebugArrow(Owner->GetWorld(), Owner->GetActorLocation(),
+	                                     MoveDirectionVector * 800.f + Owner->GetActorLocation(), 300.f,
+	                                     FLinearColor::Yellow);
 }
 
 float UAnimNotifyState_AddForce::ApplyTalent() const
@@ -258,8 +268,7 @@ bool UAnimNotifyState_AddForce::IsPlayerCharacter() const
 
 FVector UAnimNotifyState_AddForce::GetMoveDirFromForceDirectionValue()
 {
-
-	if(bUseControllerDir)
+	if (bUseControllerDir)
 	{
 		switch (ForceDirection)
 		{
@@ -283,7 +292,8 @@ FVector UAnimNotifyState_AddForce::GetMoveDirFromForceDirectionValue()
 			break;
 		default: ;
 		}
-	}else
+	}
+	else
 	{
 		switch (ForceDirection)
 		{
@@ -299,7 +309,7 @@ FVector UAnimNotifyState_AddForce::GetMoveDirFromForceDirectionValue()
 		case EDirection::FrontLeft:
 		case EDirection::BackRight:
 		case EDirection::BackLeft:
-			UE_LOGFMT(LogTemp,Warning,"구현이 필요한 부분입니다 {0} {1}",__FUNCTION__,__LINE__);
+			UE_LOGFMT(LogTemp, Warning, "구현이 필요한 부분입니다 {0} {1}", __FUNCTION__, __LINE__);
 			break;
 		case EDirection::Down:
 			return Owner->GetActorUpVector() * -1;

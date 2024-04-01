@@ -140,7 +140,6 @@ protected:
 	 */
 	UPROPERTY(BlueprintReadWrite)
 	bool bEnableLockOnRotation = true;
-	
 
 
 	// Called when the game starts
@@ -150,7 +149,7 @@ public:
 	void SetEnableLockOnRotation(bool var) { bEnableLockOnRotation = var; }
 	bool GetEnableLockOnRotation() const { return bEnableLockOnRotation; }
 
-	
+
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
 	                           FActorComponentTickFunction* ThisTickFunction) override;

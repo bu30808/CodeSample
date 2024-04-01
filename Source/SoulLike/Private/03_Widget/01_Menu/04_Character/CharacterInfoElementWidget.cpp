@@ -10,6 +10,7 @@
 #include "03_Widget/SimpleToolTipWidget.h"
 #include "Logging/StructuredLog.h"
 #define LOCTEXT_NAMESPACE "CharacterInfoElementWidget"
+
 void UCharacterInfoElementWidget::Init(EAttributeType NewType)
 {
 	AttributeType = NewType;
@@ -67,8 +68,8 @@ FString UCharacterInfoElementWidget::MakeStringValue(const FAttribute& Attribute
 	{
 		return GetFloatAsStringWithPrecision(cur, 0);
 	}
-	const FText baseStatusText = NSLOCTEXT("CharacterInfoElementWidget","BaseStatusText","기본값");
-	const FText curStatusText =NSLOCTEXT("CharacterInfoElementWidget","CurStatusText","현재값");
+	const FText baseStatusText = NSLOCTEXT("CharacterInfoElementWidget", "BaseStatusText", "기본값");
+	const FText curStatusText = NSLOCTEXT("CharacterInfoElementWidget", "CurStatusText", "현재값");
 
 	if (AttributeType == EAttributeType::RecoverHP || AttributeType == EAttributeType::RecoverSP || AttributeType ==
 		EAttributeType::RecoverMP || AttributeType == EAttributeType::ActionSpeed)
@@ -77,9 +78,10 @@ FString UCharacterInfoElementWidget::MakeStringValue(const FAttribute& Attribute
 		{
 			UE_LOGFMT(LogTemp, Log, "어트리뷰트 타입 :{0}, 기본값 : {1} / 현재값 : {2}",
 			          StaticEnum<EAttributeType>()->GetValueAsString(AttributeType), base, cur);
-			
-			
-			return baseStatusText.ToString() + " : " + FString::SanitizeFloat(base) + ", "+curStatusText.ToString()+" : " +
+
+
+			return baseStatusText.ToString() + " : " + FString::SanitizeFloat(base) + ", " + curStatusText.ToString() +
+				" : " +
 				FString::SanitizeFloat(cur);
 		}
 		return FString::SanitizeFloat(cur);
@@ -87,7 +89,8 @@ FString UCharacterInfoElementWidget::MakeStringValue(const FAttribute& Attribute
 
 	if (base != cur)
 	{
-		return baseStatusText.ToString() + " : " +FString::FormatAsNumber(base) + ", "+curStatusText.ToString()+" : " + FString::FormatAsNumber(cur);
+		return baseStatusText.ToString() + " : " + FString::FormatAsNumber(base) + ", " + curStatusText.ToString() +
+			" : " + FString::FormatAsNumber(cur);
 	}
 
 	return FString::FormatAsNumber(cur);

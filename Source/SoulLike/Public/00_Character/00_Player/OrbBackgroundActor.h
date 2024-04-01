@@ -10,15 +10,15 @@ UCLASS()
 class SOULLIKE_API AOrbBackgroundActor : public AActor
 {
 	GENERATED_BODY()
-	
-public:	
+
+public:
 	// Sets default values for this actor's properties
 	AOrbBackgroundActor();
 
 protected:
 	UPROPERTY(VisibleAnywhere)
 	class USceneComponent* SceneComponent;
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	class USceneCaptureComponent2D* SceneCaptureComponent2D;
 	UPROPERTY(VisibleAnywhere)
 	class UNiagaraComponent* NiagaraComponent;
@@ -29,7 +29,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void PostInitializeComponents() override;
-public:	
+
+public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 	void ShowRender(bool bIsVisible);

@@ -22,7 +22,8 @@ EBTNodeResult::Type UBTTask_SetFocus::ExecuteTask(UBehaviorTreeComponent& OwnerC
 {
 	if (auto aiCon = OwnerComp.GetAIOwner())
 	{
-		if(auto pawn = aiCon->GetPawn<ABaseCharacter>()){
+		if (auto pawn = aiCon->GetPawn<ABaseCharacter>())
+		{
 			Cast<AMonsterAIController>(aiCon)->SetSmoothFocusInterpSpeed(SmoothFocusInterpSpeed);
 			pawn->bUseControllerRotationYaw = bUseControllerRotationYaw;
 			pawn->GetCharacterMovement()->bOrientRotationToMovement = !bUseControllerRotationYaw;
@@ -41,11 +42,11 @@ EBTNodeResult::Type UBTTask_SetFocus::ExecuteTask(UBehaviorTreeComponent& OwnerC
 			default: ;
 			}
 
-			if(bModifySkeletonTransform)
+			if (bModifySkeletonTransform)
 			{
 				pawn->bModifySkeletonTransform = bModifySkeletonTransform;
 			}
-		
+
 			return EBTNodeResult::Succeeded;
 		}
 	}

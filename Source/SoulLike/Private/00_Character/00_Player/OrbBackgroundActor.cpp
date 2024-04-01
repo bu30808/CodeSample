@@ -22,7 +22,7 @@ AOrbBackgroundActor::AOrbBackgroundActor()
 	SceneCaptureComponent2D->PostProcessBlendWeight = 0.f;
 	SceneCaptureComponent2D->bConsiderUnrenderedOpaquePixelAsFullyTranslucent = true;
 	SceneCaptureComponent2D->PrimitiveRenderMode = ESceneCapturePrimitiveRenderMode::PRM_UseShowOnlyList;
-	
+
 
 	SceneCaptureComponent2D->SetAutoActivate(false);
 
@@ -43,7 +43,8 @@ void AOrbBackgroundActor::BeginPlay()
 void AOrbBackgroundActor::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	if(SceneCaptureComponent2D){
+	if (SceneCaptureComponent2D)
+	{
 		SceneCaptureComponent2D->ShowOnlyComponent(NiagaraComponent);
 		SceneCaptureComponent2D->SetActive(false);
 	}
@@ -57,7 +58,6 @@ void AOrbBackgroundActor::Tick(float DeltaTime)
 
 void AOrbBackgroundActor::ShowRender(bool bIsVisible)
 {
-	
 	if (bIsVisible)
 	{
 		SceneCaptureComponent2D->TextureTarget = TextureTarget;

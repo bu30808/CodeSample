@@ -41,7 +41,6 @@ protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
-
 public:
 	void CreateActionList();
 	void SetNPC(class ANPCBase* NPC);

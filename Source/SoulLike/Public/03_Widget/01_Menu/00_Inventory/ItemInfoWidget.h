@@ -14,6 +14,7 @@ UCLASS()
 class SOULLIKE_API UItemInfoWidget : public UUserWidget
 {
 	GENERATED_BODY()
+
 protected:
 	UPROPERTY(meta=(BindWidget))
 	class UImage* Image_Item;

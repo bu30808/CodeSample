@@ -9,7 +9,8 @@
 #include "ItemButtonWidget.generated.h"
 
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHoveredInventoryItem,class UInventoryData*,Data);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHoveredInventoryItem, class UInventoryData*, Data);
+
 /**
  * 
  */
@@ -17,7 +18,8 @@ UCLASS()
 class SOULLIKE_API UItemButtonWidget : public UDraggableWidget, public IUserObjectListEntry
 {
 	GENERATED_BODY()
-friend class UItemListWidget;
+	friend class UItemListWidget;
+
 protected:
 	UPROPERTY(meta=(BindWidget))
 	class UImage* Image_Item;
@@ -38,6 +40,7 @@ protected:
 
 
 	static TWeakObjectPtr<UItemMenuWidget> ItemMenuWidget;
+
 protected:
 	UPROPERTY(EditAnywhere)
 	FLinearColor NormalColor = FLinearColor::White;
@@ -49,7 +52,7 @@ protected:
 	class USoundBase* HoverSound;
 	UPROPERTY(EditAnywhere)
 	class USoundBase* ClickSound;
-	
+
 
 	//이 버튼이 표시하고 있는 정보를 담은 변수입니다.
 	UPROPERTY()
@@ -72,7 +75,7 @@ protected:
 
 	UFUNCTION()
 	void OnClickedEvent();
-	
+
 	void ProcessInventoryData(UObject* ListItemObject);
 	void ProcessAbilityData(UObject* ListItemObject);
 
@@ -83,7 +86,7 @@ public:
 	void RefreshItemData(class UItemListWidget* ParentsWidget);
 	class UInventoryData* GetInventoryData() const { return InventoryData.Get(); }
 	void SetEquipped(bool bEquip) const;
-	
+
 	//상점 아이템 버튼이 드롭되었을때 호출되는 이벤트입니다.
 	FOnPlayerBuyItemFromNPC OnPlayerBuyItemFromNPC;
 	FOnPlayerBuyAbilityFromNPC OnPlayerBuyAbilityFromNPC;
@@ -96,12 +99,11 @@ public:
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 
-	UPROPERTY(Blueprintable,BlueprintCallable)
+	UPROPERTY(Blueprintable, BlueprintCallable)
 	FOnHoveredInventoryItem OnHovered;
-	
+
 	UFUNCTION()
 	void OnHoveredEvent();
 	UFUNCTION()
 	void OnUnhoveredEvent();
-	
 };

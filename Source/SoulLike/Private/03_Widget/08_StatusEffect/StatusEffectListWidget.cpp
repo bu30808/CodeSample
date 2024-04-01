@@ -46,7 +46,7 @@ void UStatusEffectListWidget::UpdateStatusEffect(EStatusEffect StatusEffect, flo
 
 void UStatusEffectListWidget::OnUpdateStatusEffect(EStatusEffect StatusEffect, float Value, float ResistValue)
 {
-	UE_LOGFMT(LogTemp,Log,"{0} / {1}",Value,ResistValue);
-	
+	UE_LOGFMT(LogTemp, Log, "{0} / {1}", Value, ResistValue);
+
 	UpdateStatusEffect(StatusEffect, Value / ResistValue);
 }

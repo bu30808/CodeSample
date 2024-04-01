@@ -21,8 +21,8 @@ protected:
 
 	UPROPERTY(meta=(BindWidget))
 	class UVerticalBox* VerticalBox_CharacterElement;
-	
-	
+
+
 	UPROPERTY()
 	TArray<class UCharacterInfoElementWidget*> Elements;
 

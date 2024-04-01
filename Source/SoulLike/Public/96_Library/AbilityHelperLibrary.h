@@ -34,24 +34,24 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static ABaseCharacter* GetTargetFromBlackboard_AICon(class AAIController* AICon, FName Key);
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static bool IsDead(AActor* Actor);
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static UGameInstance* GetGameInstance(class ABaseCharacter* Character);
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static FGenericTeamId GetTeam(ABaseCharacter* Character);
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static FGameplayTag GetStatusEffectTag(EStatusEffect StatusEffect);
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static bool IsMovementBlockedByStatusEffect(class ABaseCharacter* Character);
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static bool IsStatusEffectActive(class ABaseCharacter* Character, EStatusEffect StatusEffect);
 
 	UFUNCTION(BlueprintCallable)
-	static void PlaySound2D(UObject* WorldContext,class USoundBase* Sound);
+	static void PlaySound2D(UObject* WorldContext, class USoundBase* Sound);
 };

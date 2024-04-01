@@ -23,12 +23,11 @@ class SOULLIKE_API IBossMonsterInterface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 
 public:
-	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void ShowBossWidget(class ABaseMonster* Boss, AActor* PlayerCharacter);
 	virtual void ShowBossWidget_Implementation(class ABaseMonster* Boss, AActor* PlayerCharacter);
 
-	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void RemoveBossWidget(class ABaseMonster* Boss, AActor* PlayerCharacter);
 	virtual void RemoveBossWidget_Implementation(class ABaseMonster* Boss, AActor* PlayerCharacter);
-	
 };

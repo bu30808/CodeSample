@@ -40,7 +40,7 @@
 #include "97_Interface/01_Monster/ExecutionInterface.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 
-#include "99_Subsystem/LevelUpSubsystem.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "FurComponent.h"
@@ -49,9 +49,13 @@
 #include "00_Character/00_Player/01_Component/JumpMovementComponent.h"
 #include "00_Character/00_Player/01_Component/LadderMovementComponent.h"
 #include "91_Sky/DynamicSkyActor.h"
+#include "93_SaveGame/SoulLikeSaveGame.h"
+#include "96_Library/DataLayerHelperLibrary.h"
+#include "96_Library/SaveGameHelperLibrary.h"
 #include "99_Subsystem/WidgetInteractionSubsystem.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Engine/TextureRenderTarget2D.h"
+
 
 
 class UWidgetInteractionSubsystem;
@@ -66,7 +70,7 @@ APlayerCharacter::APlayerCharacter()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
-	
+
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 	GetMesh()->SetCollisionProfileName("PlayerMesh");
@@ -146,7 +150,7 @@ void APlayerCharacter::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor*
 		if (OtherActor->IsA<ASoulTomb>())
 		{
 			OverlappedOtherActor = OtherActor;
-			const FText restoreText = NSLOCTEXT("PlayerCharacter","ResotreSoulText","복구");
+			const FText restoreText = NSLOCTEXT("PlayerCharacter", "ResotreSoulText", "복구");
 			ShowInteractionWidget(OverlappedOtherActor.Get(), InputDataAsset->PickUpAction, restoreText);
 			return;
 		}
@@ -155,9 +159,8 @@ void APlayerCharacter::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor*
 		if (OtherActor->IsA<AItemActor>())
 		{
 			OverlappedOtherActor = OtherActor;
-			const FText getItemText = NSLOCTEXT("PlayerCharacter","GetItemText","획득");
+			const FText getItemText = NSLOCTEXT("PlayerCharacter", "GetItemText", "획득");
 			ShowInteractionWidget(OverlappedOtherActor.Get(), InputDataAsset->PickUpAction, getItemText);
-			return;
 		}
 	}
 }
@@ -185,7 +188,7 @@ void APlayerCharacter::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 	SetActorTickEnabled(false);
-	
+
 	OnActorBeginOverlap.AddUniqueDynamic(this, &APlayerCharacter::OnActorBeginOverlapEvent);
 	OnActorEndOverlap.AddUniqueDynamic(this, &APlayerCharacter::OnActorEndOverlapEvent);
 
@@ -236,17 +239,63 @@ void APlayerCharacter::CreateBodyMaterialInstance()
 	}
 }
 
+void APlayerCharacter::KneelStart()
+{
+	PlayAnimMontage(StartKneelMontage);
+}
+
+void APlayerCharacter::LoadStartLayer()
+{
+	
+	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
+	{
+		instance->LoadLayers(StartLayerRowNames);
+		//시작지점 스트리밍
+		if (const auto streamingSource = UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(this))
+		{
+			streamingSource->OnAfterStreamingComplete.AddUniqueDynamic(this,&APlayerCharacter::OnAfterLoadStartLayerEvent);
+			streamingSource->StreamingStart(GetActorLocation());
+		}
+		
+	}
+}
+
 void APlayerCharacter::CreateSoulTomb()
 {
 	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 	{
 		if (instance->IsUseGameSave())
 		{
-			if(instance->ExistSaveFile())
+			if (instance->ExistSaveFile())
 			{
 				instance->CreateSoulTomb(this);
 			}
 		}
+	}
+}
+
+void APlayerCharacter::OnAfterLoadStartLayerEvent()
+{
+	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
+	{
+		//기본 코어 장착
+		EquipDefaultCore();
+		//기본 무기 장착
+		EquipDefaultWeapon();
+		//기본 아이템 제공
+		GiveDefaultItem();
+		//스카이 타임 저장
+		instance->SaveSky(this);
+		instance->SaveDataLayer(this);
+		KneelStart();
+				
+		AttributeComponent->SetHP(AttributeComponent->GetMaxHP());
+		AttributeComponent->SetMP(AttributeComponent->GetMaxMP());
+		AttributeComponent->BroadcastHPEvent();
+		AttributeComponent->BroadcastMPEvent();
+
+		FTimerHandle timerHandle;
+		GetWorldTimerManager().SetTimer(timerHandle, this, &APlayerCharacter::OnFinishLoadGame, 1.f);
 	}
 }
 
@@ -257,72 +306,85 @@ void APlayerCharacter::LoadGame()
 		//초기화가 끝날때까지 입력 막음
 		DisableInput(pc);
 
-		
 		if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 		{
+			instance->SetPlayer(this);
 			if (instance->IsUseGameSave())
 			{
 				if (instance->ExistSaveFile() == false)
 				{
 					UKismetSystemLibrary::PrintString(this,TEXT("세이브 파일이 없는 상태입니다."));
-					//기본 코어 장착
-					EquipDefaultCore();
-					//기본 무기 장착
-					EquipDefaultWeapon();
-					//기본 아이템 제공
-					GiveDefaultItem();
-					//스카이 타임 저장
-					instance->SaveSky(this);
+					//첫 스타트 위치를 로드합니다.
+					LoadStartLayer();
 				}
 				else
 				{
-					instance->LoadGame(this);
+					instance->OnFinishLoadGame.AddUniqueDynamic(this, &APlayerCharacter::OnFinishLoadGame);
+					instance->LoadGame();
 				}
 			}
 			else
 			{
-				//기본 코어 장착
-				EquipDefaultCore();
-				//기본 무기 장착
-				EquipDefaultWeapon();
-				//기본 아이템 제공
-				GiveDefaultItem();
-
-				AttributeComponent->SetHP(AttributeComponent->GetMaxHP());
-				AttributeComponent->SetMP(AttributeComponent->GetMaxMP());
-				AttributeComponent->BroadcastHPEvent();
-				AttributeComponent->BroadcastMPEvent();
+				//첫 스타트 위치를 로드합니다.
+				LoadStartLayer();
 			}
 		}
-		
 	}
 }
 
-void APlayerCharacter::OnAfterLoadGame()
+void APlayerCharacter::OnFinishLoadGame()
 {
 	if (auto pc = GetController<AUserController>())
 	{
+		GetCapsuleComponent()->SetEnableGravity(true);
 		UWidgetBlueprintLibrary::SetInputMode_GameOnly(pc);
-		
+
 		//초기화가 끝날때까지 입력 막음
 		EnableInput(pc);
 		CameraBoom->bEnableCameraLag = true;
 		CameraBoom->bEnableCameraRotationLag = true;
 
-		auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this,0);
-		cameraManager->SetManualCameraFade(0,FColor::Black,true);
+		auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
+		cameraManager->StartCameraFade(1,0,3.f,FColor::Black,true);
 
-		CreateSoulTomb();
-		
+		MainWidget->SetVisibility(ESlateVisibility::Visible);
 		SetActorTickEnabled(true);
+
+		//오브 배경 스폰
+		if (OrbBackgroundActorObject)
+		{
+			if(OrbBackgroundActor==nullptr)
+			{
+				OrbBackgroundActor = GetWorld()->SpawnActor<AOrbBackgroundActor>(OrbBackgroundActorObject);
+				OrbBackgroundActor->ShowRender(false);
+				SceneCaptureComponent2D->SetActive(false);
+			}
+		}
+
+		//서브시스템은 게임이 종료될때까지 유지되는 것이므로, 레벨을 새로 로드 한 후에 초기화를 해 줘야 합니다.
+		pc->GetLocalPlayer()->GetSubsystem<UWidgetInteractionSubsystem>()->InitSubsystem();
+		
+		//n초마다 마지막으로 밟은 땅의 좌표를 기억합니다. 이 좌표에다 영혼무덤을 생성할 것입니다.
+		LastGroundedLocation = GetActorLocation();
+		if(GetWorldTimerManager().IsTimerActive(GroundLocationSaveTimerHandle)==false)
+		{
+			GetWorldTimerManager().SetTimer(GroundLocationSaveTimerHandle, this,
+											&APlayerCharacter::SaveLastGroundedLocation, 1.f, true);
+		}
+		pc->GetWidgetManagerComponent()->RemoveWidget(FGameplayTag::RequestGameplayTag("Widget.Loading"));
+		GetMoviePlayer()->StopMovie();
+
+		//딜레이를 안 주면 중간에 사라지기 때문에 어쩔수 없다.
+		FTimerHandle tombTimerHandle;
+		GetWorldTimerManager().SetTimer(tombTimerHandle,this,&APlayerCharacter::CreateSoulTomb,3.f,false);
 	}
 }
 
 void APlayerCharacter::SaveLastGroundedLocation()
 {
-	if(IsDead() == false)
+	if (IsDead() == false)
 	{
-		if(GetCharacterMovement()->IsMovingOnGround())
+		if (GetCharacterMovement()->IsMovingOnGround())
 		{
 			LastGroundedLocation = GetActorLocation();
 		}
@@ -334,8 +396,11 @@ void APlayerCharacter::BeginPlay()
 {
 	if (auto pc = GetController<AUserController>())
 	{
-		auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this,0);
-		cameraManager->SetManualCameraFade(1,FColor::Black,true);
+		GetCapsuleComponent()->SetEnableGravity(false);
+		pc->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("Widget.Loading"));
+		
+		auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
+		cameraManager->SetManualCameraFade(1, FColor::Black, true);
 
 		DynamicSkyActor = Cast<ADynamicSkyActor>(
 			UGameplayStatics::GetActorOfClass(this, ADynamicSkyActor::StaticClass()));
@@ -344,28 +409,20 @@ void APlayerCharacter::BeginPlay()
 		pc->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("widget.main"));
 		//메인메뉴 포인터 저장
 		SetMainWidget();
-		
-		Super::BeginPlay();
-		
-		LoadGame();
-	
-		//오브 배경 스폰
-		if (OrbBackgroundActorObject)
-		{
-			OrbBackgroundActor = GetWorld()->SpawnActor<AOrbBackgroundActor>(OrbBackgroundActorObject);
-			OrbBackgroundActor->ShowRender(false);
-			SceneCaptureComponent2D->SetActive(false);
-		}
-		
-		//서브시스템은 게임이 종료될때까지 유지되는 것이므로, 레벨을 새로 로드 한 후에 초기화를 해 줘야 합니다.
-		pc->GetLocalPlayer()->GetSubsystem<UWidgetInteractionSubsystem>()->InitSubsystem();
-		
-		FTimerHandle timerHandle;
-		GetWorldTimerManager().SetTimer(timerHandle,this,&APlayerCharacter::OnAfterLoadGame,1.f);
+		MainWidget->SetVisibility(ESlateVisibility::Collapsed);
 
-		//n초마다 마지막으로 밟은 땅의 좌표를 기억합니다. 이 좌표에다 영혼무덤을 생성할 것입니다.
-		LastGroundedLocation = GetActorLocation();
-		GetWorldTimerManager().SetTimer(GroundLocationSaveTimerHandle,this,&APlayerCharacter::SaveLastGroundedLocation,1.f,true);
+		Super::BeginPlay();
+		LoadGame();
+		
+		/*
+		//일단 플레이어의 주변이 스트리밍이 끝난 후에, 로드에 필요한 행동을 합니다.
+		if (const auto streamingSource = UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(this))
+		{
+			streamingSource->OnAfterStreamingComplete.AddUniqueDynamic(this,&APlayerCharacter::LoadGame);
+			streamingSource->StreamingStart(GetActorLocation());
+			
+		}*/
+		
 	}
 }
 
@@ -619,7 +676,6 @@ void APlayerCharacter::PickUp()
 		{
 			Cast<ASoulTomb>(OverlappedOtherActor)->Absorption(this);
 			OverlappedOtherActor = nullptr;
-			return;
 		}
 	}
 }
@@ -738,7 +794,7 @@ void APlayerCharacter::ReleaseSprint()
 
 void APlayerCharacter::EquipDefaultWeapon()
 {
-	UE_LOGFMT(LogCharacter,Log,"기본 무기 지급");
+	UE_LOGFMT(LogCharacter, Log, "기본 무기 지급");
 	if (DefaultSpirit)
 	{
 		const auto& id = InventoryComponent->SpawnAndAddItem(DefaultSpirit);
@@ -753,7 +809,7 @@ void APlayerCharacter::EquipDefaultWeapon()
 
 void APlayerCharacter::EquipDefaultCore()
 {
-	UE_LOGFMT(LogCharacter,Log,"기본 코어 지급");
+	UE_LOGFMT(LogCharacter, Log, "기본 코어 지급");
 	if (InventoryComponent && DefaultCore)
 	{
 		const auto& id = InventoryComponent->SpawnAndAddItem(DefaultCore);
@@ -923,12 +979,11 @@ UWidgetComponent* APlayerCharacter::GetInteractionWidget(const AActor* Target, c
 
 void APlayerCharacter::HideInteractionWidget()
 {
-	if (auto widget = GetPressKeyWidget("",FText::GetEmpty()))
+	if (auto widget = GetPressKeyWidget("", FText::GetEmpty()))
 	{
 		widget->SetVisibility(false);
 	}
 }
-
 
 UWidgetComponent* APlayerCharacter::GetPressKeyWidget(FName KeyName, const FText& ActionName)
 {
@@ -960,7 +1015,6 @@ UWidgetComponent* APlayerCharacter::GetPressKeyWidget(FName KeyName, const FText
 	}
 	InteractionWidgetComponent->SetVisibility(true);
 	return InteractionWidgetComponent;
-
 }
 
 void APlayerCharacter::ChangeMovementState(EMovementState Type, float Multiplier)
@@ -1068,11 +1122,11 @@ void APlayerCharacter::CheckExecutionMonster()
 	FVector hitLocation;
 	if (auto monster = GetPlayerForwardMonster(hitLocation))
 	{
-		if(monster->IsDead())
+		if (monster->IsDead())
 		{
 			return;
 		}
-	
+
 		if (IsExecutable(monster, hitLocation))
 		{
 			ExecutableMonster = monster;
@@ -1132,7 +1186,7 @@ bool APlayerCharacter::IsExecutable(ABaseMonster* Monster, const FVector& HitLoc
 			if (IExecutionInterface::Execute_GetIsExecutionable(Monster) && !Monster->IsMighty())
 			{
 				//플레이어가 몬스터의 후방에 위치하는지 확인합니다.
-				if (UMathHelperLibrary::PointToDirection(Monster, HitLocation, 90, 55, 55) == EDirection::Back)
+				if (UMathHelperLibrary::PointToDirection(Monster, HitLocation, 90, 75, 75) == EDirection::Back)
 				{
 					//Z축을 검사합니다. Z축이 일정 이상 차이나면 불가능합니다.
 					//UE_LOGFMT(LogTemp,Log,"내 Z축 : {0} / 몬스터 Z축 : {1}",GetMesh()->GetComponentLocation().Z,Monster->GetMesh()->GetComponentLocation().Z);
@@ -1183,6 +1237,7 @@ ABaseCharacter* APlayerCharacter::GetExecuteMonster()
 
 void APlayerCharacter::CheckAroundExistMonster()
 {
+	UE_LOGFMT(LogCharacter, Log, "CheckAroundExistMonster");
 	FHitResult hit;
 	bool bHit = UKismetSystemLibrary::SphereTraceSingle(GetWorld(), GetActorLocation(), GetActorLocation() + 1,
 	                                                    CombatCheckTraceRadius,
@@ -1190,7 +1245,7 @@ void APlayerCharacter::CheckAroundExistMonster()
 	                                                    TArray<AActor*>(), EDrawDebugTrace::ForOneFrame, hit, true);
 	if (!bHit)
 	{
-		UE_LOGFMT(LogCharacter,Log,"평화상태로 강제전환을 시도합니다.");
+		UE_LOGFMT(LogCharacter, Log, "평화상태로 강제전환을 시도합니다.");
 		ChangeCombatStateFrom.Empty();
 		SetPlayerState(EPlayerCharacterState::Peaceful);
 	}
@@ -1223,11 +1278,16 @@ void APlayerCharacter::SetPlayerState(EPlayerCharacterState NewState)
 
 void APlayerCharacter::SetPlayerStateBy(EPlayerCharacterState NewState, AActor* By)
 {
-	if (By == nullptr)
+	if(!IsValidLowLevel())
 	{
 		return;
 	}
-
+	
+	if(IsDead())
+	{
+		return;
+	}
+	
 	if (NewState == EPlayerCharacterState::Combat)
 	{
 		CurrentState = NewState;
@@ -1245,21 +1305,20 @@ void APlayerCharacter::SetPlayerStateBy(EPlayerCharacterState NewState, AActor* 
 	}
 	else
 	{
-
-		if(By == nullptr)
+		if (By == nullptr)
 		{
 			CurrentState = NewState;
 			OnChangePlayerState.Broadcast(CurrentState);
 			return;
 		}
-		
-		UE_LOGFMT(LogCharacter,Log,"평화상태로 전환 시도합니다.");
-		
+
+		UE_LOGFMT(LogCharacter, Log, "평화상태로 전환 시도합니다.");
+
 
 		if (ChangeCombatStateFrom.Num() > 0)
 		{
 			ChangeCombatStateFrom.Remove(By);
-			UE_LOGFMT(LogCharacter,Log,"스텍에서 다음 대상을 제거합니다 : {0}",GetNameSafe(By));
+			UE_LOGFMT(LogCharacter, Log, "스텍에서 다음 대상을 제거합니다 : {0}", GetNameSafe(By));
 			if (ChangeCombatStateFrom.Num() <= 0)
 			{
 				if (GetWorldTimerManager().TimerExists(PeaceTimerHandle))
@@ -1337,7 +1396,22 @@ void APlayerCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 }
 
 
-void APlayerCharacter::TeleportToOtherBonfire(FName LevelName)
+void APlayerCharacter::StartTeleportToOtherBonfire()
+{
+	if (auto instance = GetGameInstance<USoulLikeInstance>())
+	{
+		SetActorTickEnabled(false);
+		GetCapsuleComponent()->SetEnableGravity(false);
+		
+		MainWidget->SetVisibility(ESlateVisibility::Collapsed);
+		auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
+		cameraManager->StartCameraFade(0,1,2.f,FColor::Black,true,true);
+		instance->OnFinishLoadGame.AddUniqueDynamic(this, &APlayerCharacter::OnFinishLoadGame);
+		instance->TeleportToOtherBonfireLoad();
+	}
+}
+
+void APlayerCharacter::TeleportToOtherBonfire(const FBonfireInformation& TeleportBonfireInforation)
 {
 	if (InteractionWidgetComponent->IsValidLowLevel() && InteractionWidgetComponent->IsVisible())
 	{
@@ -1345,7 +1419,16 @@ void APlayerCharacter::TeleportToOtherBonfire(FName LevelName)
 	}
 
 	DisableInput(Cast<APlayerController>(GetController()));
-	OtherBonfireLevelName = LevelName;
+	TeleportOtherBonfireInformation = TeleportBonfireInforation;
+
+	//이동할 레벨이 같은지 확인합니다.
+	if(USaveGameHelperLibrary::IsSameLevel(this,TeleportOtherBonfireInformation.LevelName))
+	{
+		//같다면 즉시 로드 시작합니다.
+		StartTeleportToOtherBonfire();
+	}
+	
+	//아니라면 몽타주가 끝나고 레벨을 오픈합니다.
 	GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(
 		this, &APlayerCharacter::OnEndPlayTeleportMontage);
 	GetMesh()->GetAnimInstance()->Montage_Play(TeleportMontage);
@@ -1355,7 +1438,10 @@ void APlayerCharacter::OnEndPlayTeleportMontage(UAnimMontage* Montage, bool bInt
 {
 	if (Montage == TeleportMontage)
 	{
-		UGameplayStatics::OpenLevel(GetWorld(), OtherBonfireLevelName);
+		if(USaveGameHelperLibrary::IsSameLevel(this,TeleportOtherBonfireInformation.LevelName) == false)
+		{
+			UGameplayStatics::OpenLevel(GetWorld(), FName(TeleportOtherBonfireInformation.LevelName));
+		}
 	}
 }
 
@@ -1389,9 +1475,9 @@ void APlayerCharacter::ForceEndDodge()
 void APlayerCharacter::OnUpdateDeadDissolveTimeLine(float Value)
 {
 	FName param = "Percent";
-	for(auto iter : BodyMaterialInstance)
+	for (auto iter : BodyMaterialInstance)
 	{
-		iter->SetScalarParameterValue(param,Value);
+		iter->SetScalarParameterValue(param, Value);
 	}
 }
 

@@ -14,13 +14,13 @@ UCLASS()
 class SOULLIKE_API UBTTask_GetMoveLocation : public UBTTask_BlackboardBase
 {
 	GENERATED_BODY()
-protected:
 
+protected:
 	UPROPERTY(EditAnywhere)
 	EDirection Direction;
 	UPROPERTY(EditAnywhere)
 	float Distance;
-	
+
 	UBTTask_GetMoveLocation();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 };

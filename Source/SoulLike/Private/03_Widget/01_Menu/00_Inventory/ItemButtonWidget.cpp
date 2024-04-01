@@ -24,12 +24,12 @@ void UItemButtonWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	OnVisibilityChanged.AddUniqueDynamic(this,&UItemButtonWidget::OnVisibilityChangedEvent);
+	OnVisibilityChanged.AddUniqueDynamic(this, &UItemButtonWidget::OnVisibilityChangedEvent);
 }
 
 void UItemButtonWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
-	if(!IsVisible())
+	if (!IsVisible())
 	{
 		GetItemMenuWidget()->RemoveFromParent();
 	}
@@ -125,8 +125,8 @@ void UItemButtonWidget::ShowMenu()
 
 				//x,y 좌표를 좀 더 움직여서 메뉴에 마우스가 호버할 수 있도록 합니다.
 				//이렇게 해야 메뉴에서 호버 해제됐을때 메뉴 없애버릴수 있음.
-				x-=25.f;
-				y-=25.f;
+				x -= 25.f;
+				y -= 25.f;
 			}
 
 			//툴팁이 떠 있다면 잠깐 없앱니다.
@@ -149,9 +149,9 @@ void UItemButtonWidget::ShowMenu()
 
 void UItemButtonWidget::OnClickedEvent()
 {
-	UGameplayStatics::PlaySound2D(this,ClickSound);
+	UGameplayStatics::PlaySound2D(this, ClickSound);
 	Image_Background->SetBrushTintColor(PressedColor);
-	
+
 	if (InventoryData.IsValid() == false || InventoryData->IsA<UAbilityData>())
 	{
 		return;
@@ -162,12 +162,12 @@ void UItemButtonWidget::OnClickedEvent()
 		return;
 	}
 
-	if(OnPlayerBuyItemFromNPC.IsBound())
+	if (OnPlayerBuyItemFromNPC.IsBound())
 	{
 		return;
 	}
 
-	if(ItemListType == EItemListType::INVENTORY)
+	if (ItemListType == EItemListType::INVENTORY)
 	{
 		ShowMenu();
 	}
@@ -179,7 +179,7 @@ void UItemButtonWidget::ProcessInventoryData(UObject* ListItemObject)
 	{
 		InventoryData = data;
 		InventoryData->OwnItemButtonWidget = this;
-		
+
 		OnPlayerBuyItemFromNPC = data->OnPlayerBuyItemFromNPC;
 
 		if (const auto info = data->InventoryItem.GetItemInformation())
@@ -188,16 +188,19 @@ void UItemButtonWidget::ProcessInventoryData(UObject* ListItemObject)
 			TextBlock_ItemName->SetText(info->Item_Name);
 			TextBlock_Count->SetText(FText::AsNumber(data->InventoryItem.ItemCount));
 
-			if (GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()->IsEquipped(
-				data->InventoryItem.UniqueID))
+			if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
 			{
-				SetEquipped(true);
+				if (UItemHelperLibrary::IsEquipment(data->InventoryItem))
+				{
+					SetEquipped(invenComp->IsEquippedEquipment(
+						data->InventoryItem.UniqueID));
+				}
+
+				if (UItemHelperLibrary::IsConsume(data->InventoryItem))
+				{
+					SetEquipped(invenComp->IsRegistered(data->InventoryItem.UniqueID));
+				}
 			}
-			else
-			{
-				SetEquipped(false);
-			}
-			
 		}
 	}
 }
@@ -216,6 +219,11 @@ void UItemButtonWidget::ProcessAbilityData(UObject* ListItemObject)
 		TextBlock_Count->SetText(FText::AsNumber(1));
 
 		UWidgetHelperLibrary::SetToolTipWidget(this, info.AbilityDescription);
+
+		if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
+		{
+			SetEquipped(invenComp->IsRegistered(data->AbilityInformation.AbilityTag));
+		}
 	}
 }
 
@@ -225,28 +233,27 @@ UItemMenuWidget* UItemButtonWidget::GetItemMenuWidget()
 	{
 		ItemMenuWidget = CreateWidget<UItemMenuWidget>(GetOwningPlayer(), ItemMenuWidgetObject);
 	}
-	
+
 	ItemMenuWidget->ParentsWidget = this;
-	
+
 	return ItemMenuWidget.Get();
 }
 
 void UItemButtonWidget::RefreshItemData(class UItemListWidget* ParentsWidget)
 {
-	if(OnHovered.IsBound() == false)
+	if (OnHovered.IsBound() == false)
 	{
-		OnHovered.AddUniqueDynamic(ParentsWidget,&UItemListWidget::OnItemButtonHovered);
+		OnHovered.AddUniqueDynamic(ParentsWidget, &UItemListWidget::OnItemButtonHovered);
 	}
 
 	ItemListType = ParentsWidget->GetItemListType();
-	
-	
+
+
 	NativeOnListItemObjectSet(InventoryData.Get());
 }
 
 void UItemButtonWidget::SetEquipped(bool bEquip) const
 {
-	
 	if (Image_Equipped)
 	{
 		if (bEquip)
@@ -265,7 +272,7 @@ void UItemButtonWidget::SetEquipped(bool bEquip) const
 }
 
 bool UItemButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
-                                          UDragDropOperation* InOperation)
+                                     UDragDropOperation* InOperation)
 {
 	if (auto oper = Cast<UDragAndDropOperation>(InOperation))
 	{
@@ -303,7 +310,7 @@ FReply UItemButtonWidget::NativeOnMouseButtonUp(const FGeometry& InGeometry, con
 		OnClickedEvent();
 		return FReply::Handled();
 	}*/
-	
+
 	return Super::NativeOnMouseButtonUp(InGeometry, InMouseEvent);
 }
 
@@ -314,7 +321,7 @@ FReply UItemButtonWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, c
 	{
 		OnClickedEvent();
 	}
-	
+
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
 
@@ -332,20 +339,21 @@ void UItemButtonWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
 
 void UItemButtonWidget::OnHoveredEvent()
 {
-	UGameplayStatics::PlaySound2D(this,HoverSound);
+	UGameplayStatics::PlaySound2D(this, HoverSound);
 	Image_Background->SetBrushTintColor(HoverColor);
-	
-	if(InventoryData.IsValid()){
 
+	if (InventoryData.IsValid())
+	{
 		OnHovered.Broadcast(InventoryData.Get());
 
-		if(InventoryData->IsA<UItemData>())
+		if (InventoryData->IsA<UItemData>())
 		{
-				UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetItemToolTipText(
-					                                       Cast<UItemData>(InventoryData)->InventoryItem, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
-
+			UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetItemToolTipText(
+				                                       Cast<UItemData>(InventoryData)->InventoryItem,
+				                                       GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()));
 		}
-	}else
+	}
+	else
 	{
 		UKismetSystemLibrary::PrintString(this,TEXT("아이템 정보가 유효하지 않아 정보 출력이 불가능합니다."));
 	}

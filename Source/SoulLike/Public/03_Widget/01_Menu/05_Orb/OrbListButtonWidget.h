@@ -8,7 +8,8 @@
 #include "Blueprint/IUserObjectListEntry.h"
 #include "OrbListButtonWidget.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHoveredInventoryOrb,class UOrbData*,Data);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHoveredInventoryOrb, class UOrbData*, Data);
+
 /**
  * 
  */
@@ -27,24 +28,25 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	USoundBase* HoverSound;
-	
+
 	UPROPERTY()
 	TObjectPtr<class UOrbData> OrbData;
 
 	virtual void NativeConstruct() override;
 
-	UPROPERTY(Blueprintable,BlueprintCallable)
+	UPROPERTY(Blueprintable, BlueprintCallable)
 	FOnHoveredInventoryOrb OnHovered;
+
 	UFUNCTION()
 	void OnHoveredEvent();
+
 public:
-	class UOrbData* GetOrbData() const {return OrbData.Get();}
+	class UOrbData* GetOrbData() const { return OrbData.Get(); }
 	const FInventoryItem& GetOrbItem() const { return OrbData->Data; }
-	
+
 	void SetData(UObject* Item);
 	void SetEquipped(bool bEquipped);
 	void UpdateData(const FInventoryItem& OrbInfo);
-	
 
 protected:
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;

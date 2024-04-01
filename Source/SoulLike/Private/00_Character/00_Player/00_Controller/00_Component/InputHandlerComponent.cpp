@@ -45,15 +45,13 @@ void UInputHandlerComponent::TickComponent(float DeltaTime, ELevelTick TickType,
 void UInputHandlerComponent::StartWaitAction(const TArray<FKeyPressedInfo>& WaitAction, bool bTriggerImmediately)
 {
 	PressedActionMap.Empty();
-	
+
 	if (PC.IsValid())
 	{
 		bObserveTrigger = bTriggerImmediately;
 		//UKismetSystemLibrary::PrintString(this,TEXT("키 대기 시작"),true,true,FColor::Cyan,100.f);
 		for (auto& info : WaitAction)
 		{
-	
-
 			if (WaitActionTasks.Contains(info))
 			{
 				if (WaitActionTasks[info]->IsValidLowLevel())
@@ -70,14 +68,13 @@ void UInputHandlerComponent::StartWaitAction(const TArray<FKeyPressedInfo>& Wait
 				task->ReadyForActivation();
 			}
 		}
-
 	}
 }
 
 void UInputHandlerComponent::EndWaitAction(const TArray<FKeyPressedInfo>& WaitAction)
 {
 	bObserveTrigger = false;
-	
+
 	UE_LOGFMT(LogTemp, Log, "{0} {1} : 키 대기 구간을 종료하고, 입력이 있었다면 실행합니다.", __FUNCTION__, __LINE__);
 	//UKismetSystemLibrary::PrintString(this,TEXT("키 대기 종료"),true,true,FColor::Cyan,100.f);
 
@@ -89,18 +86,18 @@ void UInputHandlerComponent::EndWaitAction(const TArray<FKeyPressedInfo>& WaitAc
 		{
 			if (PressedActionMap[action] == true)
 			{
-				UKismetSystemLibrary::PrintString(this,TEXT("키 입력 액션 실행 : ")+action.AbilityTag.ToString(),true,true,FColor::Cyan,100.f);
+				UKismetSystemLibrary::PrintString(this,TEXT("키 입력 액션 실행 : ") + action.AbilityTag.ToString(), true, true,
+				                                  FColor::Cyan, 100.f);
 				BroadcastPressedEvent(action);
 				bIsPressed = true;
 				break;
 			}
 		}
 	}
-	
+
 
 	for (auto action : WaitAction)
 	{
-		
 		if (WaitActionTasks.Contains(action))
 		{
 			if (WaitActionTasks[action]->IsValidLowLevel())
@@ -114,11 +111,12 @@ void UInputHandlerComponent::EndWaitAction(const TArray<FKeyPressedInfo>& WaitAc
 		}
 	}
 
-	if(!bIsPressed)
+	if (!bIsPressed)
 	{
 		//UKismetSystemLibrary::PrintString(this,TEXT("키 입력이 없었습니다! : ") + WaitAction[0].AbilityTag.ToString(),true,true,FColor::Cyan,100.f);
 
-		if(WaitAction.Num()>0){
+		if (WaitAction.Num() > 0)
+		{
 			BroadcastNotPressedEvent(WaitAction[0]);
 		}
 	}
@@ -130,20 +128,15 @@ void UInputHandlerComponent::EndWaitAction(const TArray<FKeyPressedInfo>& WaitAc
 		BroadcastNotPressedEvent(action);
 	}
 	*/
-
-
 }
 
 void UInputHandlerComponent::BindEvent(const FKeyPressedInfo& ActionInfo, const FOnKeyPressedWithAction& OnKeyPressed,
                                        const FOnKeyNotPressed& OnKeyNotPressed)
 {
-
-	
 	const auto& key = InputLocalPlayerSubsystem->QueryKeysMappedToAction(ActionInfo.InputAction);
 	UE_LOGFMT(LogInput, Error, "{0} {1} : {2} 키 대기 이벤트 바인드", __FUNCTION__, __LINE__, key[0].ToString());
 	InputPressedActionMap.Add(ActionInfo, OnKeyPressed);
 	InputNotPressedMap.Add(ActionInfo, OnKeyNotPressed);
-	
 }
 
 
@@ -191,16 +184,14 @@ void UInputHandlerComponent::BroadcastNotPressedEvent(const FKeyPressedInfo& Wai
 		InputNotPressedMap[WaitAction].Broadcast();
 		InputNotPressedMap.Empty();
 	}
-	
 }
 
 void UInputHandlerComponent::OnPressedKeyDown(const FKeyPressedInfo& Action)
 {
-
 	auto key = InputLocalPlayerSubsystem->QueryKeysMappedToAction(Action.InputAction);
 	UKismetSystemLibrary::PrintString(this,TEXT("키 입력 감지됨 : ") + Action.InputAction->GetName());
 	UE_LOGFMT(LogTemp, Error, "{0} {1} : {2} 키 입력 확인됨.", __FUNCTION__, __LINE__, key[0].ToString());
-	if(bObserveTrigger)
+	if (bObserveTrigger)
 	{
 		BroadcastPressedEvent(Action);
 		return;

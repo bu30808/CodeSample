@@ -136,7 +136,7 @@ ABaseCharacter* UAbilityHelperLibrary::GetTargetFromBlackboard_AICon(AAIControll
 
 bool UAbilityHelperLibrary::IsDead(AActor* Actor)
 {
-	if(auto character = Cast<ABaseCharacter>(Actor))
+	if (auto character = Cast<ABaseCharacter>(Actor))
 	{
 		return character->IsDead();
 	}
@@ -150,12 +150,12 @@ UGameInstance* UAbilityHelperLibrary::GetGameInstance(ABaseCharacter* Character)
 
 FGenericTeamId UAbilityHelperLibrary::GetTeam(ABaseCharacter* Character)
 {
-	if(Character->IsA<APlayerCharacter>())
+	if (Character->IsA<APlayerCharacter>())
 	{
 		return Cast<AUserController>(Character->GetController())->GetGenericTeamId();
 	}
 
-	if(Character->IsA<ABaseMonster>())
+	if (Character->IsA<ABaseMonster>())
 	{
 		return Cast<AMonsterAIController>(Character->GetController())->GetGenericTeamId();
 	}
@@ -192,8 +192,9 @@ bool UAbilityHelperLibrary::IsMovementBlockedByStatusEffect(ABaseCharacter* Char
 {
 	const TArray arr = {
 		FGameplayTag::RequestGameplayTag("Common.StatusEffect.Freeze.Effect"),
-		FGameplayTag::RequestGameplayTag("Common.StatusEffect.Petrifaction.Effect")};
-	
+		FGameplayTag::RequestGameplayTag("Common.StatusEffect.Petrifaction.Effect")
+	};
+
 	const auto& tags = FGameplayTagContainer::CreateFromArray(arr);
 	return Character->GetAbilityComponent()->HasAnyEffectTag(tags);
 }
@@ -205,8 +206,8 @@ bool UAbilityHelperLibrary::IsStatusEffectActive(ABaseCharacter* Character, ESta
 
 void UAbilityHelperLibrary::PlaySound2D(UObject* WorldContext, USoundBase* Sound)
 {
-	if(WorldContext)
+	if (WorldContext)
 	{
-		UGameplayStatics::PlaySound2D(WorldContext,Sound);
+		UGameplayStatics::PlaySound2D(WorldContext, Sound);
 	}
 }

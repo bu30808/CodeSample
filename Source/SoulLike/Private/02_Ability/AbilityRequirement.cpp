@@ -9,7 +9,8 @@
 #include "02_Ability/AbilityEffect.h"
 #include "Logging/StructuredLog.h"
 
-bool UAbilityRequirement::IsActivateAbility(const FGameplayTag& AbilityTag, ABaseCharacter* AbilityOwner, UAbilityBase* Ability)
+bool UAbilityRequirement::IsActivateAbility(const FGameplayTag& AbilityTag, ABaseCharacter* AbilityOwner,
+                                            UAbilityBase* Ability)
 {
 	bool bCanActivate = IsCostEnough(AbilityOwner);
 	if (bCanActivate == false)
@@ -31,7 +32,8 @@ bool UAbilityRequirement::IsActivateAbility(const FGameplayTag& AbilityTag, ABas
 	bCanActivate &= HasAllEffectTagsToNeed(AbilityOwner);
 	if (bCanActivate == false)
 	{
-		UE_LOGFMT(LogTemp, Error, "{0} : 발동에 필요한 이팩트 태그를 충족하지 않습니다.{1} {2}", AbilityTag.ToString(),__FUNCTION__,__LINE__);
+		UE_LOGFMT(LogTemp, Error, "{0} : 발동에 필요한 이팩트 태그를 충족하지 않습니다.{1} {2}", AbilityTag.ToString(), __FUNCTION__,
+		          __LINE__);
 		return bCanActivate;
 	}
 
@@ -39,21 +41,24 @@ bool UAbilityRequirement::IsActivateAbility(const FGameplayTag& AbilityTag, ABas
 	bCanActivate &= !HasAnyEffectTagsToNOTNeed(AbilityOwner);
 	if (bCanActivate == false)
 	{
-		UE_LOGFMT(LogTemp, Error, "{0} : 발동에 필요하지 않은 이팩트 태그를 소유중입니다.{1} {2}", AbilityTag.ToString(),__FUNCTION__,__LINE__);
+		UE_LOGFMT(LogTemp, Error, "{0} : 발동에 필요하지 않은 이팩트 태그를 소유중입니다.{1} {2}", AbilityTag.ToString(), __FUNCTION__,
+		          __LINE__);
 		return bCanActivate;
 	}
 
 	bCanActivate &= HasAllActivatedAbilityTagsToNeed(AbilityOwner);
 	if (bCanActivate == false)
 	{
-		UE_LOGFMT(LogTemp, Error, "{0} : 발동에 필요한 어빌리티 태그를 충족하지 않습니다.{1} {2}", AbilityTag.ToString(),__FUNCTION__,__LINE__);
+		UE_LOGFMT(LogTemp, Error, "{0} : 발동에 필요한 어빌리티 태그를 충족하지 않습니다.{1} {2}", AbilityTag.ToString(), __FUNCTION__,
+		          __LINE__);
 		return bCanActivate;
 	}
 
 	bCanActivate &= !HasAnyActivatedAbilityTagsToNOTNeed(AbilityOwner);
 	if (bCanActivate == false)
 	{
-		UE_LOGFMT(LogTemp, Error, "{0} : 발동에 필요하지 않은 어빌리티 태그를 소유중입니다.{1} {2}", AbilityTag.ToString(),__FUNCTION__,__LINE__);
+		UE_LOGFMT(LogTemp, Error, "{0} : 발동에 필요하지 않은 어빌리티 태그를 소유중입니다.{1} {2}", AbilityTag.ToString(), __FUNCTION__,
+		          __LINE__);
 		return bCanActivate;
 	}
 

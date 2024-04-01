@@ -17,7 +17,7 @@
 // Add default functionality here for any IBossMonsterInterface functions that are not pure virtual.
 void IBossMonsterInterface::ShowBossWidget_Implementation(class ABaseMonster* Boss, AActor* PlayerCharacter)
 {
-	UE_LOGFMT(LogTemp,Warning,"보스 위젯을 추가합니다.");
+	UE_LOGFMT(LogTemp, Warning, "보스 위젯을 추가합니다.");
 	if (Boss)
 	{
 		if (auto widgetComp = Boss->GetHealthBarWidgetComponent())
@@ -25,7 +25,7 @@ void IBossMonsterInterface::ShowBossWidget_Implementation(class ABaseMonster* Bo
 			widgetComp->DestroyComponent();
 		}
 	}
-	
+
 	if (PlayerCharacter)
 	{
 		if (auto player = Cast<APlayerCharacter>(PlayerCharacter))
@@ -46,9 +46,9 @@ void IBossMonsterInterface::RemoveBossWidget_Implementation(ABaseMonster* Boss, 
 {
 	if (PlayerCharacter == nullptr)
 	{
-		PlayerCharacter = UGameplayStatics::GetPlayerCharacter(Boss,0);
+		PlayerCharacter = UGameplayStatics::GetPlayerCharacter(Boss, 0);
 	}
-	
+
 	if (auto player = Cast<APlayerCharacter>(PlayerCharacter))
 	{
 		if (auto pc = player->GetController<AUserController>())

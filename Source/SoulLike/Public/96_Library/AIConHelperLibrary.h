@@ -14,8 +14,8 @@ UCLASS()
 class SOULLIKE_API UAIConHelperLibrary : public UObject
 {
 	GENERATED_BODY()
-public:
 
+public:
 	UFUNCTION(BlueprintCallable)
-	static void ChangePlayerState(AActor* AIConOrMonster,AActor* Player,EPlayerCharacterState NewState);
+	static void ChangePlayerState(AActor* AIConOrMonster, AActor* Player, EPlayerCharacterState NewState);
 };

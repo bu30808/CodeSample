@@ -59,7 +59,6 @@ void UCharacterStatusWidget::NativeConstruct()
 
 		player->GetAttributeComponent()->OnCharacterInformationUpdate.AddUniqueDynamic(
 			this, &UCharacterStatusWidget::OnCharacterInformationUpdateEvent);
-		
 	}
 }
 

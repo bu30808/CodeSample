@@ -9,7 +9,7 @@
 #include "Engine/DataAsset.h"
 #include "OrbMatrixSlotOpenComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSlotOpen,class APlayerCharacter*,Player,class UOrbMatrix*,Matrix);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSlotOpen, class APlayerCharacter*, Player, class UOrbMatrix*, Matrix);
 
 UCLASS(BlueprintType)
 class SOULLIKE_API USlotOpenRewardDataAsset : public UDataAsset
@@ -32,6 +32,7 @@ class SOULLIKE_API UOrbMatrixSlotOpenComponent : public UActorComponent
 {
 	GENERATED_BODY()
 	friend class UOrbMatrix;
+
 public:
 	// Sets default values for this component's properties
 	UOrbMatrixSlotOpenComponent();
@@ -40,7 +41,7 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 	virtual void PostInitProperties() override;
-	
+
 	UPROPERTY()
 	TSubclassOf<class UOrbMatrixSlotOpenWidget> OrbMatrixSlotOpenWidgetObject;
 	UPROPERTY(Transient)
@@ -49,6 +50,7 @@ protected:
 	class USlotOpenRewardDataAsset* SlotOpenRewardDataAsset;
 	UPROPERTY()
 	FOnSlotOpen OnSlotOpen;
+
 public:
 	UFUNCTION()
 	void OnOrbMatrixSlotOpenWidgetVisibilityChangedEvent(ESlateVisibility InVisibility);

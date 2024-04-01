@@ -16,8 +16,8 @@ UBTTask_MoveToAttackRange::UBTTask_MoveToAttackRange()
 
 EBTNodeResult::Type UBTTask_MoveToAttackRange::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	AcceptableRadius = OwnerComp.GetBlackboardComponent()->GetValueAsFloat(AttackRangeKey.SelectedKeyName) - ErrorMargin;
-	
+	AcceptableRadius = OwnerComp.GetBlackboardComponent()->GetValueAsFloat(AttackRangeKey.SelectedKeyName) -
+		ErrorMargin;
+
 	return Super::ExecuteTask(OwnerComp, NodeMemory);
 }
-

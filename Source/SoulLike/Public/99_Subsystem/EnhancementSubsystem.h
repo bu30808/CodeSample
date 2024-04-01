@@ -23,6 +23,7 @@ protected:
 
 	UPROPERTY()
 	class UDataTable* PotionMaterialTable;
+
 public:
 	UEnhancementSubsystem();
 

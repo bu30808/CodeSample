@@ -19,9 +19,14 @@ class SOULLIKE_API UWidgetHelperLibrary : public UObject
 	GENERATED_BODY()
 
 public:
+
+	UFUNCTION(BlueprintCallable)
+	static void ShowOkCancelMsg(class AUserController* PC, EAlertMsgType AlertMsgType, FText Msg,
+							 const FOnButtonClicked& OnClickedOKButtonEvent,const FOnButtonClicked& OnClickedCancelButtonEvent);
 	//전달되는 Msg내부 String 가장 마지막줄 끝에 줄바꿈 넣지 마세요. 텍스트 데코레이터가 적용되지 않습니다.
 	UFUNCTION(BlueprintCallable)
-	static void ShowAlertMsg(class AUserController* PC, EAlertMsgType AlertMsgType, FText Msg, const FOnButtonClicked& OnClickedOKButtonEvent);
+	static void ShowAlertMsg(class AUserController* PC, EAlertMsgType AlertMsgType, FText Msg,
+	                         const FOnButtonClicked& OnClickedOKButtonEvent);
 
 	UFUNCTION(BlueprintCallable)
 	static class USimpleToolTipWidget* GetSimpleToolTipWidget(class APlayerController* PC, FText Msg);
@@ -38,7 +43,7 @@ public:
 	static void SetToolTipWidget(UUserWidget* TargetWidget, const FText& Msg);
 
 	static FString EnhancementTagToDecoString(const FGameplayTag& Key);
-	
+
 	UFUNCTION(BlueprintCallable)
 	static void ShowBossItemGetWidget(AUserController* PC, AItemActor* Item);
 
@@ -58,4 +63,3 @@ public:
 	UFUNCTION(BlueprintCallable)
 	static bool IsUseSaveGameMode(UObject* WorldContext);
 };
-

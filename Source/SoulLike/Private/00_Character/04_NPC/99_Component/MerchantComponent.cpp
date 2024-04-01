@@ -98,9 +98,9 @@ void UMerchantComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(auto instance =Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
+	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 	{
-		OnBuyItemFromPlayer.AddUniqueDynamic(instance,&USoulLikeInstance::OnNPCBuyItemFromPlayerEvent);
+		OnBuyItemFromPlayer.AddUniqueDynamic(instance, &USoulLikeInstance::OnNPCBuyItemFromPlayerEvent);
 	}
 }
 
@@ -140,7 +140,7 @@ void UMerchantComponent::CreateSellAbilityList(UDataTable* AbilityTable)
 
 void UMerchantComponent::CreateMerchantWidget(const ABaseCharacter* InteractPlayer)
 {
-	if(MerchantWidget==nullptr)
+	if (MerchantWidget == nullptr)
 	{
 		if (MerchantWidgetObject)
 		{
@@ -149,13 +149,14 @@ void UMerchantComponent::CreateMerchantWidget(const ABaseCharacter* InteractPlay
 				if (MerchantWidget.IsValid() == false)
 				{
 					MerchantWidget = CreateWidget<UMerchantWidget>(pc,
-																   MerchantWidgetObject);
+					                                               MerchantWidgetObject);
 					MerchantWidget->Button_Close->OnClicked.AddUniqueDynamic(
 						GetOwner<ANPCBase>(), &ANPCBase::FinishInteraction);
 				}
 			}
 
-			MerchantWidget->OnVisibilityChanged.AddUniqueDynamic(this,&UMerchantComponent::OnMerchantWidgetVisibilityChangedEvent);
+			MerchantWidget->OnVisibilityChanged.AddUniqueDynamic(
+				this, &UMerchantComponent::OnMerchantWidgetVisibilityChangedEvent);
 		}
 	}
 }
@@ -163,20 +164,20 @@ void UMerchantComponent::CreateMerchantWidget(const ABaseCharacter* InteractPlay
 void UMerchantComponent::ShowMerchantWidget(const ABaseCharacter* InteractPlayer)
 {
 	CreateMerchantWidget(InteractPlayer);
-	
+
 	if (MerchantWidget->IsInViewport() == false)
 	{
 		MerchantWidget->AddToViewport();
 	}
-	UE_LOGFMT(LogTemp,Log,"상점 아이템 리스트 생성0");
+	UE_LOGFMT(LogTemp, Log, "상점 아이템 리스트 생성0");
 	MerchantWidget->CreateMerchandiseList(this);
 }
 
 void UMerchantComponent::OnMerchantWidgetVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
-	if(MerchantWidget.IsValid())
+	if (MerchantWidget.IsValid())
 	{
-		if(!MerchantWidget->IsVisible())
+		if (!MerchantWidget->IsVisible())
 		{
 			MerchantWidget = nullptr;
 		}

@@ -13,7 +13,7 @@ UStatusEffect_Burn::UStatusEffect_Burn()
 
 	{
 		static ConstructorHelpers::FClassFinder<AAbilityCue> cueActor(TEXT(
-	"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/StatusEffect/Burn/AC_Burn.AC_Burn_C'"));
+			"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/StatusEffect/Burn/AC_Burn.AC_Burn_C'"));
 		if (cueActor.Succeeded())
 		{
 			FAbilityCueInformation cue;
@@ -23,7 +23,6 @@ UStatusEffect_Burn::UStatusEffect_Burn()
 			cue.AbilityCueType = EAbilityCueType::AttachToTarget;
 			InfiniteAbilityCues.Add(cue);
 		}
-	
 	}
 }
 
@@ -32,23 +31,23 @@ UStatusEffect_BurnAcc::UStatusEffect_BurnAcc()
 	UniqueEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.Burn.Acc.Effect");
 	CheckStatusEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.Burn.Effect");
 
-	AttributeEffects.Add(FAttributeEffect(EAttributeType::BurnAcc,EAttributeApplyMethod::ADD,0));
+	AttributeEffects.Add(FAttributeEffect(EAttributeType::BurnAcc, EAttributeApplyMethod::ADD, 0));
 }
 
 UStatusEffect_DodgeBurnDecrease::UStatusEffect_DodgeBurnDecrease()
 {
 	EffectApplyType = EEffectApplyType::Instant;
-	AttributeEffects.Add(FAttributeEffect(EAttributeType::BurnAcc,EAttributeApplyMethod::REMOVE,20));
+	AttributeEffects.Add(FAttributeEffect(EAttributeType::BurnAcc, EAttributeApplyMethod::REMOVE, 20));
 	UniqueEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.Burn.Reduce.Effect");
 }
 
 void UStatusEffect_DodgeBurnDecrease::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy,
-	UAbilityBase* From, UObject* AdditionalData)
+                                                                   UAbilityBase* From, UObject* AdditionalData)
 {
 	Super::ProcessEffect_Implementation(Target, EffectBy, From, AdditionalData);
 
-	if(auto attComp = Target->GetAttributeComponent())
+	if (auto attComp = Target->GetAttributeComponent())
 	{
-		attComp->OnUpdateStatusEffect.Broadcast(EStatusEffect::BURN,attComp->GetBurnAcc(),attComp->GetBurnResist());
+		attComp->OnUpdateStatusEffect.Broadcast(EStatusEffect::BURN, attComp->GetBurnAcc(), attComp->GetBurnResist());
 	}
 }

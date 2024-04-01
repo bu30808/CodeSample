@@ -12,13 +12,15 @@
 enum class EEquipType : uint8;
 enum class EItemType : uint8;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnBuyItemFromPlayer,class APlayerCharacter*,InteractPlayer,const FGuid&,ItemID);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnBuyItemFromPlayer, class APlayerCharacter*, InteractPlayer,
+                                             const FGuid&, ItemID);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSellItemToPlayer,class APlayerCharacter*,InteractPlayer,const FGuid&,ItemID);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSellItemToPlayer, class APlayerCharacter*, InteractPlayer, const FGuid&,
+                                             ItemID);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBuyAbilityFromPlayer,class APlayerCharacter*,InteractPlayer);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBuyAbilityFromPlayer, class APlayerCharacter*, InteractPlayer);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSellAbilityToPlayer,class APlayerCharacter*,InteractPlayer);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSellAbilityToPlayer, class APlayerCharacter*, InteractPlayer);
 
 USTRUCT()
 struct FBaseMerchandiseData : public FTableRowBase
@@ -165,17 +167,17 @@ protected:
 	UMerchantComponent();
 
 	//아이템 판매 리스트
-	UPROPERTY(VisibleAnywhere,Transient)
+	UPROPERTY(VisibleAnywhere, Transient)
 	TMap<FGuid, FMerchandiseItem> MerchandiseItem;
 	//어빌리티 판매 리스트
-	UPROPERTY(VisibleAnywhere,Transient)
+	UPROPERTY(VisibleAnywhere, Transient)
 	TMap<FGameplayTag, FMerchandiseAbility> MerchandiseAbility;
 
 	//재구매 리스트
-	UPROPERTY(VisibleAnywhere,Transient)
+	UPROPERTY(VisibleAnywhere, Transient)
 	TMap<FGuid, FMerchandiseItem> RepurchaseMerchandiseItem;
 	//어빌리티 재구매 리스트
-	UPROPERTY(VisibleAnywhere,Transient)
+	UPROPERTY(VisibleAnywhere, Transient)
 	TMap<FGameplayTag, FMerchandiseAbility> RepurchaseMerchandiseAbility;
 
 
@@ -206,7 +208,7 @@ public:
 
 	void CreateSellItemList(class UDataTable* ItemTable);
 	void CreateSellAbilityList(class UDataTable* AbilityTable);
-	
+
 	void CreateMerchantWidget(const ABaseCharacter* InteractPlayer);
 	//위젯을 생성하고 표시합니다.
 	UFUNCTION(BlueprintCallable)

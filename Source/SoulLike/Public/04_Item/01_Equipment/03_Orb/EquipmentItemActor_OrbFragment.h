@@ -97,9 +97,8 @@ protected:
 
 public:
 	//아이템 획득시 기존 랜덤정보가 들어있던 액터는 제거되기때문에, 정보를 덮어써야 합니다.
-//	void OverrideInfo(const FItemInformation* ItemInfo);
+	//	void OverrideInfo(const FItemInformation* ItemInfo);
 	virtual void SpawnPreSetting() override;
 
 private:
-	
 };

@@ -17,7 +17,6 @@ DEFINE_LOG_CATEGORY(LogSoulLikeGameMode)
 
 ASoulLikeGameMode::ASoulLikeGameMode()
 {
-	
 }
 
 void ASoulLikeGameMode::AddToRespawnMonster(ABaseMonster* BaseMonster)
@@ -28,67 +27,68 @@ void ASoulLikeGameMode::AddToRespawnMonster(ABaseMonster* BaseMonster)
 	{
 		RespawnInfos.Add(safeName);
 	}
-	
+
 	UE_LOGFMT(LogMonster, Log, "몬스터 추가 : {0}", safeName);
-	RespawnInfos[safeName] = FActorSave(BaseMonster,safeName,BaseMonster->GetClass(), BaseMonster->GetActorTransform());
+	RespawnInfos[safeName] = FActorSave(BaseMonster, safeName, BaseMonster->GetClass(),
+	                                    BaseMonster->GetActorTransform());
 }
 
 void ASoulLikeGameMode::RemoveFromRespawnMonster(const ABaseMonster* BaseMonster)
 {
-	if(BaseMonster->IsValidLowLevel())
+	if (BaseMonster->IsValidLowLevel())
 	{
 		const auto& safeName = GetNameSafe(BaseMonster);
 		RemoveFromRespawnMonsterWithSafeName(safeName);
 	}
-
 }
 
 void ASoulLikeGameMode::RemoveFromRespawnMonsterWithSafeName(const FString& SafeName)
 {
-
-		const auto& safeName = FName(SafeName);
-		if (!RespawnInfos.Contains(safeName))
-		{
-			return;
-		}
-		UE_LOGFMT(LogMonster, Log, "몬스터 제거 : {0}", safeName);
-		RespawnInfos.Remove(safeName);
+	const auto& safeName = FName(SafeName);
+	if (!RespawnInfos.Contains(safeName))
+	{
+		return;
+	}
+	UE_LOGFMT(LogMonster, Log, "몬스터 제거 : {0}", safeName);
+	RespawnInfos.Remove(safeName);
 }
 
 void ASoulLikeGameMode::SaveMonsterAttributeWhenUnload(const ABaseMonster* BaseMonster)
 {
 	const auto& safeName = FName(GetNameSafe(BaseMonster));
-	if(!TemporarySavedMonsterState.Contains(safeName))
+	if (!TemporarySavedMonsterState.Contains(safeName))
 	{
-		TemporarySavedMonsterState.Add(safeName,FCharacterSave());
+		TemporarySavedMonsterState.Add(safeName, FCharacterSave());
 		return;
 	}
 
 	const auto attComp = BaseMonster->GetAttributeComponent();
 	const auto& attributes = attComp->GetAllAttributeNotIncludeLevelUpPoint();
-	
-	for(const auto& iter : attributes)
+
+	for (const auto& iter : attributes)
 	{
-		TemporarySavedMonsterState[safeName].Attributes.Add(iter.Key,*iter.Value);
+		TemporarySavedMonsterState[safeName].Attributes.Add(iter.Key, *iter.Value);
 	}
 }
 
 void ASoulLikeGameMode::RespawnMonsters(class APlayerCharacter* Player)
 {
-	for(const auto& iter : RespawnInfos)
+	for (const auto& iter : RespawnInfos)
 	{
 		const auto& savedData = iter.Value;
 
-		if(!savedData.ActorPointer->IsValidLowLevel())
+		if (!savedData.ActorPointer->IsValidLowLevel())
 		{
 			UE_LOGFMT(LogMonster, Warning, "유효하지 않은 포인터라 리스폰할 수 없습니다. : {0}", savedData.ActorClass->GetName());
-		}else
+		}
+		else
 		{
-			if(savedData.ActorPointer->IsA<ABaseCharacter>())
+			if (savedData.ActorPointer->IsA<ABaseCharacter>())
 			{
-				if(Cast<ABaseCharacter>(savedData.ActorPointer)->IsDead())
+				if (Cast<ABaseCharacter>(savedData.ActorPointer)->IsDead())
 				{
-					UE_LOGFMT(LogMonster, Warning, "다음 몬스터를 리스폰 할 것입니다 : {0} {1}", savedData.ActorClass->GetName() ,GetNameSafe(savedData.ActorPointer));
+					UE_LOGFMT(LogMonster, Warning, "다음 몬스터를 리스폰 할 것입니다 : {0} {1}", savedData.ActorClass->GetName(),
+					          GetNameSafe(savedData.ActorPointer));
 					RemoveFromRespawnMonster(Cast<ABaseMonster>(savedData.ActorPointer));
 					Cast<ABaseMonster>(savedData.ActorPointer)->Activate();
 				}
@@ -100,93 +100,74 @@ void ASoulLikeGameMode::RespawnMonsters(class APlayerCharacter* Player)
 				}
 			}
 		}
-		
 	}
 }
 
 void ASoulLikeGameMode::OnDeadMonsterEvent(AActor* Who, AActor* DeadBy)
 {
-	if(Who)
+	if (Who)
 	{
 		const auto& safeName = FName(GetNameSafe(Who));
-		
-		if(!TemporarySavedMonsterState.Contains(safeName))
+
+		if (!TemporarySavedMonsterState.Contains(safeName))
 		{
-			if(auto character =  Cast<ABaseCharacter>(Who))
+			if (auto character = Cast<ABaseCharacter>(Who))
 			{
 				auto attComp = character->GetAttributeComponent();
-				TemporarySavedMonsterState.Add(safeName, FCharacterSave(Who,safeName,Who->GetClass(),Who->GetActorTransform(),attComp->GetAllAttributeNotIncludeLevelUpPoint(),character->GetCharacterState()));
+				TemporarySavedMonsterState.Add(safeName, FCharacterSave(Who, safeName, Who->GetClass(),
+				                                                        Who->GetActorTransform(),
+				                                                        attComp->
+				                                                        GetAllAttributeNotIncludeLevelUpPoint(),
+				                                                        character->GetCharacterState()));
 			}
-		}else
+		}
+		else
 		{
-			UE_LOGFMT(LogSave,Error,"이미 해당 몬스터의 상태정보가 저장되어 있습니다. : {0}",safeName);
+			UE_LOGFMT(LogSave, Error, "이미 해당 몬스터의 상태정보가 저장되어 있습니다. : {0}", safeName);
 		}
 
-		if(!DeadBy->IsA<APlayerCharacter>())
+		if (!DeadBy->IsA<APlayerCharacter>())
 		{
-			DeadBy = UGameplayStatics::GetPlayerCharacter(this,0);
+			DeadBy = UGameplayStatics::GetPlayerCharacter(this, 0);
 		}
 
-		Cast<APlayerCharacter>(DeadBy)->SetPlayerStateBy(EPlayerCharacterState::Peaceful,Who);
+		Cast<APlayerCharacter>(DeadBy)->SetPlayerStateBy(EPlayerCharacterState::Peaceful, Who);
 	}
 }
 
 void ASoulLikeGameMode::RestoreMonsterState(ABaseMonster* BaseMonster)
 {
-	if(BaseMonster)
+	if (BaseMonster)
 	{
 		const auto& safeName = FName(GetNameSafe(BaseMonster));
 
-		if(TemporarySavedMonsterState.Contains(safeName))
+		if (TemporarySavedMonsterState.Contains(safeName))
 		{
 			const auto& savedData = TemporarySavedMonsterState[safeName];
-			if(savedData.CharacterState == ECharacterState::DEAD)
+			if (savedData.CharacterState == ECharacterState::DEAD)
 			{
-				UE_LOGFMT(LogMonster,Log,"사망 상태로 되돌립니다 : {0}",safeName);
+				UE_LOGFMT(LogMonster, Log, "사망 상태로 되돌립니다 : {0}", safeName);
 				BaseMonster->SetActorTransform(savedData.ActorTransform);
 				BaseMonster->StopAITree();
 				BaseMonster->EnableRagdoll();
 				BaseMonster->RunDeactivateTimer();
-			}else
+			}
+			else
 			{
 				const auto attComp = BaseMonster->GetAttributeComponent();
 				attComp->LoadAttributeNotIncludeLevelUpPoint(savedData.Attributes, false, true);
 			}
 		}
-		
-		/*
-		const auto& layers =  BaseMonster->GetDataLayerAssets();
-		 if(layers.IsValidIndex(0))
-		{
-			const auto& fullPath = UDataLayerHelperLibrary::GetLayerFullPath(BaseMonster->GetWorld(), layers[0]);
-			if(DeadMonsters.Contains(fullPath))
-			{
-				if(DeadMonsters[fullPath].Contains(safeName))
-				{
-					UE_LOGFMT(LogMonster,Log,"사망 상태로 되돌립니다 : {0}",safeName);
-					BaseMonster->StopAITree();
-					BaseMonster->EnableRagdoll();
-					BaseMonster->RunDeactivateTimer();
-					return true;
-				}
-			}else
-			{
-				UE_LOGFMT(LogMonster,Log,"{0}가 속한 {1} 레이어에 대한 정보가 없습니다.",safeName,fullPath);
-			}
-		}else
-		{
-			UE_LOGFMT(LogMonster,Log,"{0}의 레이어가 유효하지 않습니다.",safeName);
-		}*/
 	}
 }
 
 bool ASoulLikeGameMode::IsContainDeadList(const ABaseMonster* BaseMonster)
 {
-	if(BaseMonster)
+	if (BaseMonster)
 	{
 		const auto& safeName = FName(GetNameSafe(BaseMonster));
-		
-		if(TemporarySavedMonsterState.Contains(safeName))
+
+		if (TemporarySavedMonsterState.Contains(safeName))
 		{
 			const auto& savedData = TemporarySavedMonsterState[safeName];
 			return savedData.CharacterState == ECharacterState::DEAD;
@@ -211,6 +192,7 @@ void ASoulLikeGameMode::ClearTemporarySavedMonsterData(APlayerCharacter* Player)
 	TemporarySavedMonsterState.Empty();
 }
 
+/*
 void ASoulLikeGameMode::Respawn(const UWorld* World, const FTransform& SpawnTr, TSubclassOf<AActor> MonsterClass, const TArray<TObjectPtr<const
 	                                UDataLayerAsset>>& LayerInfo)
 {
@@ -229,3 +211,4 @@ void ASoulLikeGameMode::Respawn(const UWorld* World, const FTransform& SpawnTr, 
 		UE_LOGFMT(LogMonster, Warning, "다음 몬스터를 리스폰합니다 : {0}", GetNameSafe(spawnMonster));
 	}
 }
+*/

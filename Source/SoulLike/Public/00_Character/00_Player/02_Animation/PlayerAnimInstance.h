@@ -15,7 +15,7 @@ UCLASS()
 class SOULLIKE_API UPlayerAnimInstance : public UBaseAnimInstance
 {
 	GENERATED_BODY()
-	
+
 	//이 값이 변경되면 애니메이션 블루프린트 내부 본 트렌스폼 변경에 사용됩니다.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	FRotator SpineRotation;
@@ -45,11 +45,12 @@ class SOULLIKE_API UPlayerAnimInstance : public UBaseAnimInstance
 	FVector LadderOldLocation;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess = "true"))
 	bool bStartClimbLadder;
-	
+
 	//다 올라갔을 때,
 	void OnLadderEscapeFromTop();
 	//다시 내려가려고 할 때
 	void OnLadderEnterFromTop();
+
 protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void AnimNotify_OnLadderIdleEnter();

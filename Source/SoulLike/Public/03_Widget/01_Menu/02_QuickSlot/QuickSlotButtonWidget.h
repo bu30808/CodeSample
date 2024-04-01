@@ -18,8 +18,11 @@ enum class EQuickSlotType
 
 struct FInventoryItem;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRegisterItemOrAbility,class APlayerCharacter*,Player,class UInventoryData*,Data,int32,Index);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRemoveAlreadyRegisteredSlot,class UInventoryData*,Data);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRegisterItemOrAbility, class APlayerCharacter*, Player,
+                                               class UInventoryData*, Data, int32, Index);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRemoveAlreadyRegisteredSlot, class UInventoryData*, Data);
+
 /**
  * 
  */
@@ -65,15 +68,15 @@ protected:
 
 
 	//메인위젯에 붙어있는 퀵슬롯과 연동합니다.
-	void LinkToMainWidgetSlot(bool bClear = false);
+	/*void LinkToMainWidgetSlot(bool bClear = false);*/
 public:
 	void SetQuickSlotType(EQuickSlotType NewType);
 
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
-	void Init(UInventoryData* Data);
-	void Clean();
+	void Init(UInventoryData* Data, bool bShouldClearData, bool bFromMainQuickSlot = false);
+	/*void Clean();*/
 
 	//메인위젯에 붙어있는 퀵슬롯 버튼만 호출하세요. 무한루프를 방지합니다.
 	void CleanMainQuickSlotButton();
@@ -84,7 +87,7 @@ public:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
-	
+
 	//장비창에서 이미 등록된 아이템을 다른 슬롯에 등록하려 했을 때, 기존슬롯의 정보를 지우는 이벤트
 	FOnRemoveAlreadyRegisteredSlot OnRemoveAlreadyRegisteredSlot;
 
@@ -113,10 +116,10 @@ public:
 
 	FGuid GetSlotItemUniqueID();
 	FGameplayTag GetSlotAbilityTag();
-	int32 GetSlotIndex() const {return Index;}
-	
+	int32 GetSlotIndex() const { return Index; }
+
 	void RestoreSlotFromItemGUID(const FGuid& ItemID);
 	void RestoreSlotFromAbilityTag(const FGameplayTag& AbilityTag);
 
-	UInventoryData* GetQuickSlotData() const {return InventoryData.Get(); }
+	UInventoryData* GetQuickSlotData() const { return InventoryData.Get(); }
 };

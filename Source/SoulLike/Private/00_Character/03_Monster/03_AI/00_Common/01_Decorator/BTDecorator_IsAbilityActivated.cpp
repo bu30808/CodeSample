@@ -17,13 +17,13 @@ UBTDecorator_IsAbilityActivated::UBTDecorator_IsAbilityActivated()
 bool UBTDecorator_IsAbilityActivated::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp,
                                                                  uint8* NodeMemory) const
 {
-	if(auto pawn = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
+	if (auto pawn = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
 	{
 		bool result = pawn->GetAbilityComponent()->IsAlreadyActivated(TagToCheck);
 		return result;
 	}
 
-	UE_LOGFMT(LogTemp,Error,"폰을 가져올 수 없습니다.");
-	
+	UE_LOGFMT(LogTemp, Error, "폰을 가져올 수 없습니다.");
+
 	return false;
 }

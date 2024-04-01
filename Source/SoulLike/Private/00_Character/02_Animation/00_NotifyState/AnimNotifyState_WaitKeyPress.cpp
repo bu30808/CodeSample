@@ -26,7 +26,7 @@ void UAnimNotifyState_WaitKeyPress::BranchingPointNotifyBegin(FBranchingPointNot
 		{
 			if (auto pc = character->GetController<AUserController>())
 			{
-				pc->GetInputHandlerComponent()->StartWaitAction(WaitAction,bTriggerImmediately);
+				pc->GetInputHandlerComponent()->StartWaitAction(WaitAction, bTriggerImmediately);
 			}
 		}
 	}

@@ -35,11 +35,12 @@ void UEquipWidget::NativePreConstruct()
 
 	for (auto i = 0; i < UniformGridPanel_Consume->GetChildrenCount(); i++)
 	{
-		if(auto widget = Cast<UQuickSlotButtonWidget>(UniformGridPanel_Consume->GetChildAt(i)))
+		if (auto widget = Cast<UQuickSlotButtonWidget>(UniformGridPanel_Consume->GetChildAt(i)))
 		{
 			widget->SetIndex(i);
 			widget->SetQuickSlotType(EQuickSlotType::CONSUME);
-			widget->OnRemoveAlreadyRegisteredSlot.AddUniqueDynamic(this, &UEquipWidget::OnRemoveAlreadyRegisteredSlotEvent);
+			widget->OnRemoveAlreadyRegisteredSlot.AddUniqueDynamic(
+				this, &UEquipWidget::OnRemoveAlreadyRegisteredSlotEvent);
 		}
 	}
 
@@ -99,7 +100,7 @@ void UEquipWidget::NativePreConstruct()
 		}
 	}
 
-	for(auto iter : AllEquipSlots)
+	for (auto iter : AllEquipSlots)
 	{
 		iter->SetParentsWidget(this);
 	}
@@ -114,15 +115,13 @@ void UEquipWidget::NativeConstruct()
 	{
 		UMG_ItemList->EquipSetting(this);
 	}
-	
 }
-
 
 
 void UEquipWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
 	Super::OnVisibilityChangedEvent(InVisibility);
-	
+
 	if (IsVisible())
 	{
 		UMG_ItemList->CreateInventoryItemList();
@@ -146,7 +145,6 @@ void UEquipWidget::AddRingSlot()
 		if (!widget->IsVisible())
 		{
 			widget->SetVisibility(ESlateVisibility::Visible);
-			return;
 		}
 	}
 }
@@ -169,7 +167,6 @@ void UEquipWidget::RemoveRingSlot()
 		{
 			widget->SetVisibility(ESlateVisibility::Collapsed);
 			Cast<UEquipButtonWidget>(widget)->UnEquip();
-			return;
 		}
 	}
 	/*if (AdditionalRingWidget.Num() > 0)
@@ -209,7 +206,7 @@ UEquipButtonWidget* UEquipWidget::GetEquipButtonByIndex(int32 FindIndex)
 
 void UEquipWidget::ShowItemInformation(UInventoryData* Data)
 {
-	if (UMG_ItemInfo && Data!=nullptr)
+	if (UMG_ItemInfo && Data != nullptr)
 	{
 		if (auto itemData = Cast<UItemData>(Data))
 		{
@@ -254,7 +251,7 @@ TArray<UWidget*> UEquipWidget::GetAllAbilityQuickSlots()
 
 void UEquipWidget::LoadConsumeQuickSlots(const TMap<int32, FGuid>& ConsumeQuick)
 {
-	for(auto iter : ConsumeQuick)
+	for (auto iter : ConsumeQuick)
 	{
 		const auto& index = iter.Key;
 		Cast<UQuickSlotButtonWidget>(UniformGridPanel_Consume->GetChildAt(index))->RestoreSlotFromItemGUID(iter.Value);
@@ -263,10 +260,11 @@ void UEquipWidget::LoadConsumeQuickSlots(const TMap<int32, FGuid>& ConsumeQuick)
 
 void UEquipWidget::LoadAbilityQuickSlots(const TMap<int32, FGameplayTag>& AbilityQuick)
 {
-	for(auto iter : AbilityQuick)
+	for (auto iter : AbilityQuick)
 	{
 		const auto& index = iter.Key;
-		Cast<UQuickSlotButtonWidget>(UniformGridPanel_Ability->GetChildAt(index))->RestoreSlotFromAbilityTag(iter.Value);
+		Cast<UQuickSlotButtonWidget>(UniformGridPanel_Ability->GetChildAt(index))->
+			RestoreSlotFromAbilityTag(iter.Value);
 	}
 }
 
@@ -283,7 +281,7 @@ void UEquipWidget::OnRemoveAlreadyRegisteredSlotEvent(UInventoryData* Data)
 				{
 					if (Cast<UItemData>(data)->InventoryItem.UniqueID == Cast<UItemData>(Data)->InventoryItem.UniqueID)
 					{
-						button->Clean();
+						button->Init(nullptr, true);
 						return;
 					}
 				}

@@ -11,12 +11,14 @@
 UENUM(BlueprintType)
 enum class EEnhancedPotionType:uint8
 {
-	HP,MP
+	HP,
+	MP
 };
 
 struct FPotionInformation;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUpgradePotion,const FGuid&,ID,class APotionItemActor*, PotionItemActor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUpgradePotion, const FGuid&, ID, class APotionItemActor*,
+                                             PotionItemActor);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SOULLIKE_API UPotionEnhancementComponent : public UActorComponent
@@ -35,7 +37,7 @@ protected:
 public:
 	UFUNCTION()
 	void OnPotionEnhancementWidgetVisibilityChangedEvent(ESlateVisibility InVisibility);
-	
+
 	void CreatePotionEnhancementWidget(const class ABaseCharacter* InteractPlayer);
 	void AddPotionEnhancementWidget(const class ABaseCharacter* InteractPlayer);
 
@@ -47,17 +49,15 @@ protected:
 
 	UPROPERTY()
 	FOnUpgradePotion OnUpgradePotion;
-	
+
 	TArray<FEnhancementMaterial*> PotionEnhancementMaterial;
 
 public:
 	const FEnhancementMaterial& GetNextEnhancementInfo(const int32& CurEnhancement);
-	bool CanEnhancePotion(class UInventoryComponent* InventoryComponent,EEnhancedPotionType EnhancedPotionType);
-	void UpgradePotion(UInventoryComponent* InventoryComponent,EEnhancedPotionType EnhancedPotionType);
-
+	bool CanEnhancePotion(class UInventoryComponent* InventoryComponent, EEnhancedPotionType EnhancedPotionType);
+	void UpgradePotion(UInventoryComponent* InventoryComponent, EEnhancedPotionType EnhancedPotionType);
 
 private:
 	const FInventoryItem* GetHPPotionItem(UInventoryComponent* InventoryComponent);
 	const FInventoryItem* GetMPPotionItem(UInventoryComponent* InventoryComponent);
-
 };

@@ -118,11 +118,13 @@ TArray<FAttributeEffect> UAttributeProcessSubsystem::UpdateAttributeEffectsAffec
 				switch (AttackType)
 				{
 				case EAttackType::Physical:
-					UE_LOGFMT(LogTemp,Log,"{0}의 물리 피해량 갱신 : {1} ",GetNameSafe(AttributeComponent->GetOwner()),AttributeComponent->GetPhysicalAttack());
+					UE_LOGFMT(LogTemp, Log, "{0}의 물리 피해량 갱신 : {1} ", GetNameSafe(AttributeComponent->GetOwner()),
+					          AttributeComponent->GetPhysicalAttack());
 					effect.ApplyValue += AttributeComponent->GetPhysicalAttack();
 					break;
 				case EAttackType::Magical:
-					UE_LOGFMT(LogTemp,Log,"{0}의 마법 피해량 갱신 : {1} ",GetNameSafe(AttributeComponent->GetOwner()),AttributeComponent->GetMagicalAttack());
+					UE_LOGFMT(LogTemp, Log, "{0}의 마법 피해량 갱신 : {1} ", GetNameSafe(AttributeComponent->GetOwner()),
+					          AttributeComponent->GetMagicalAttack());
 					effect.ApplyValue += AttributeComponent->GetMagicalAttack();
 					break;
 				default: ;

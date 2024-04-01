@@ -18,7 +18,7 @@ class SOULLIKE_API AWolfBoss : public ABaseMonster, public IBossMonsterInterface
 
 public:
 	AWolfBoss();
-	
+
 	UFUNCTION(BlueprintCallable)
 	void CreateDynamicMaterials();
 
@@ -35,23 +35,19 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Phase2EmissivePower;
 
-	
+
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<class ADynamicSkyActor> Sky;
 	UPROPERTY(Transient)
 	float OriginalTime;
-	UPROPERTY(EditAnywhere,Transient)
+	UPROPERTY(EditAnywhere, Transient)
 	float NightTime;
 
-
 public:
-
-
 	//타임라인 쓰기엔 블루프린트가 편하니까 블루프린트 내부에서 호출되어 변경됩니다.
 	UFUNCTION(BlueprintCallable)
 	void ChangePhase2ColorSet(float Alpha);
 
 	UFUNCTION(BlueprintCallable)
 	void ChangeSkyTime(float Time, float Alpha);
-	
 };

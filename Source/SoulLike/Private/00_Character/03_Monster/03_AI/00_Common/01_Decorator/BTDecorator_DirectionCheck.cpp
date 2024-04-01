@@ -32,7 +32,8 @@ bool UBTDecorator_DirectionCheck::CalculateRawConditionValue(UBehaviorTreeCompon
 		if (auto target = Cast<ABaseCharacter>(
 			OwnerComp.GetBlackboardComponent()->GetValueAsObject(GetSelectedBlackboardKey())))
 		{
-			return UMathHelperLibrary::PointToDirection(pawn, target->GetActorLocation(), FrontDegree, RightDegree, LeftDegree) ==
+			return UMathHelperLibrary::PointToDirection(pawn, target->GetActorLocation(), FrontDegree, RightDegree,
+			                                            LeftDegree) ==
 				DirectionToCheck;
 		}
 	}

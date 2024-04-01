@@ -8,10 +8,9 @@ void UAnimNotify_EnableRootMotion::Notify(USkeletalMeshComponent* MeshComp, UAni
                                           const FAnimNotifyEventReference& EventReference)
 {
 	Super::Notify(MeshComp, Animation, EventReference);
-	
+
 	if (MeshComp && MeshComp->GetOwner())
 	{
-		
 		if (auto instance = MeshComp->GetAnimInstance())
 		{
 			// 루트 모션 활성화

@@ -20,10 +20,10 @@ protected:
 	class UVerticalBox* VerticalBox_EffectList;
 
 	UPROPERTY()
-	TMap<EStatusEffect,class UStatusEffectProgressWidget*> AddedWidgetList;
+	TMap<EStatusEffect, class UStatusEffectProgressWidget*> AddedWidgetList;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UStatusEffectProgressWidget> StatusEffectProgressWidgetObject;
-	
+
 public:
 	virtual void NativeConstruct() override;
 	UFUNCTION(BlueprintCallable)
@@ -31,4 +31,3 @@ public:
 	UFUNCTION()
 	void OnUpdateStatusEffect(EStatusEffect StatusEffect, float Value, float ResistValue);
 };
-

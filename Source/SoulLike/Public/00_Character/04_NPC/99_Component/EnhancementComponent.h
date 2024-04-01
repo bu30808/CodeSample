@@ -11,7 +11,8 @@
 
 struct FEnhancementMaterial;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUpgradeEquipment,const FGuid&,ID,class AEquipmentItemActor*,EquipmentItemActor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUpgradeEquipment, const FGuid&, ID, class AEquipmentItemActor*,
+                                             EquipmentItemActor);
 
 UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SOULLIKE_API UEnhancementComponent : public UActorComponent
@@ -31,11 +32,12 @@ protected:
 	TSubclassOf<class UEnhancementWidget> EnhancementWidgetObject;
 	UPROPERTY(Transient)
 	TWeakObjectPtr<UEnhancementWidget> EnhancementWidget;
+
 public:
 	UPROPERTY()
 	FOnUpgradeEquipment OnUpgradeEquipment;
-protected:
 
+protected:
 	TArray<FEnhancementMaterial*> EnhancementMaterial;
 	TArray<FAttributeValuePerEnhancement*> AttributeValuePerEnhancement;
 

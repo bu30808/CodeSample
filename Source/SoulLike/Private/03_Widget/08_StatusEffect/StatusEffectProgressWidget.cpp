@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "03_Widget\08_StatusEffect\StatusEffectProgressWidget.h"
+#include "03_Widget/08_StatusEffect/StatusEffectProgressWidget.h"
 
 #include "Components/Image.h"
 #include "Kismet/KismetMaterialLibrary.h"
@@ -9,7 +9,7 @@
 
 void UStatusEffectProgressWidget::SetDynamicMaterial()
 {
-	if(Image_Progress)
+	if (Image_Progress)
 	{
 		if (ProgressMaterial)
 		{
@@ -30,7 +30,7 @@ void UStatusEffectProgressWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
 	SetDynamicMaterial();
-	DynamicMat->SetVectorParameterValue("ProgressColor1",DefaultProgressColor);
+	DynamicMat->SetVectorParameterValue("ProgressColor1", DefaultProgressColor);
 }
 
 void UStatusEffectProgressWidget::NativeConstruct()
@@ -42,23 +42,23 @@ void UStatusEffectProgressWidget::NativeConstruct()
 
 void UStatusEffectProgressWidget::SetProgress(float Value)
 {
-	if(DynamicMat)
+	if (DynamicMat)
 	{
-	//	UKismetSystemLibrary::PrintString(this,FString::SanitizeFloat(Value));
-		DynamicMat->SetScalarParameterValue("Progress",Value);
+		//	UKismetSystemLibrary::PrintString(this,FString::SanitizeFloat(Value));
+		DynamicMat->SetScalarParameterValue("Progress", Value);
 
 		//가득 찼다면,
-		if(Value >= 1.f)
+		if (Value >= 1.f)
 		{
 			//프로그래스바의 색을 변경합니다.
-			DynamicMat->SetVectorParameterValue("ProgressColor1",ProgressFullColor);
+			DynamicMat->SetVectorParameterValue("ProgressColor1", ProgressFullColor);
 		}
 	}
 }
 
 void UStatusEffectProgressWidget::SetImage(EStatusEffect StatusEffect)
 {
-	if(StatusEffectImage.Contains(StatusEffect))
+	if (StatusEffectImage.Contains(StatusEffect))
 	{
 		Image_StatusEffect->SetBrushFromSoftTexture(StatusEffectImage[StatusEffect]);
 	}

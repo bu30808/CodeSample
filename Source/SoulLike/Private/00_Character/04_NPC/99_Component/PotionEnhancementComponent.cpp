@@ -54,7 +54,6 @@ void UPotionEnhancementComponent::PostInitProperties()
 				PotionEnhancementMaterial = system->GetPotionEnhancementMaterial();
 			}
 		}
-		
 	}
 }
 
@@ -110,12 +109,14 @@ const FEnhancementMaterial& UPotionEnhancementComponent::GetNextEnhancementInfo(
 	return *PotionEnhancementMaterial[CurEnhancement];
 }
 
-bool UPotionEnhancementComponent::CanEnhancePotion(UInventoryComponent* InventoryComponent,EEnhancedPotionType EnhancedPotionType)
+bool UPotionEnhancementComponent::CanEnhancePotion(UInventoryComponent* InventoryComponent,
+                                                   EEnhancedPotionType EnhancedPotionType)
 {
 	if (InventoryComponent)
 	{
 		FGameplayTag potionTag;
-		switch (EnhancedPotionType) {
+		switch (EnhancedPotionType)
+		{
 		case EEnhancedPotionType::HP:
 			potionTag = FGameplayTag::RequestGameplayTag("Item.Consume.Potion.Hp");
 			break;
@@ -123,20 +124,19 @@ bool UPotionEnhancementComponent::CanEnhancePotion(UInventoryComponent* Inventor
 			potionTag = FGameplayTag::RequestGameplayTag("Item.Consume.Potion.mp");
 			break;
 		}
-		
+
 		//강화소재가 있는지 확인합니다.
-		if(auto instance =  Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
+		if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(GetWorld())))
 		{
 			if (const auto system = instance->GetSubsystem<UEnhancementSubsystem>())
 			{
-
 				//해당 물약을 소지중인가요?
 				if (auto potion = InventoryComponent->GetItemByTag(potionTag))
 				{
-
 					const auto attComp = InventoryComponent->GetOwner<ABaseCharacter>()->GetAttributeComponent();
 					//현 강화정보
-					const auto& enhanceInfo = static_cast<const FPotionInformation*>(potion->GetItemInformation())->Enhancement;
+					const auto& enhanceInfo = static_cast<const FPotionInformation*>(potion->GetItemInformation())->
+						Enhancement;
 					//다음 업그레이드에 필요한 요구사항
 					auto nextNeed = GetNextEnhancementInfo(enhanceInfo.CurEnhancement);
 
@@ -162,7 +162,8 @@ bool UPotionEnhancementComponent::CanEnhancePotion(UInventoryComponent* Inventor
 							const FInventoryItem* item = InventoryComponent->GetItemByTag(iter.Key);
 							if (item->ItemCount < iter.Value)
 							{
-								UE_LOGFMT(LogTemp, Error, "필요한 아이템의 갯수가 모자람 :{0}", item->GetItemInformation()->Item_Name.ToString());
+								UE_LOGFMT(LogTemp, Error, "필요한 아이템의 갯수가 모자람 :{0}",
+								          item->GetItemInformation()->Item_Name.ToString());
 								return false;
 							}
 						}
@@ -172,11 +173,9 @@ bool UPotionEnhancementComponent::CanEnhancePotion(UInventoryComponent* Inventor
 							return false;
 						}
 					}
-					
+
 					return true;
 				}
-		
-
 			}
 		}
 	}
@@ -184,14 +183,16 @@ bool UPotionEnhancementComponent::CanEnhancePotion(UInventoryComponent* Inventor
 	return false;
 }
 
-void UPotionEnhancementComponent::UpgradePotion(UInventoryComponent* InventoryComponent,EEnhancedPotionType EnhancedPotionType)
+void UPotionEnhancementComponent::UpgradePotion(UInventoryComponent* InventoryComponent,
+                                                EEnhancedPotionType EnhancedPotionType)
 {
 	if (InventoryComponent)
 	{
-		if (CanEnhancePotion(InventoryComponent,EnhancedPotionType))
+		if (CanEnhancePotion(InventoryComponent, EnhancedPotionType))
 		{
 			const FInventoryItem* potionItem = nullptr;
-			switch (EnhancedPotionType) {
+			switch (EnhancedPotionType)
+			{
 			case EEnhancedPotionType::HP:
 				potionItem = GetHPPotionItem(InventoryComponent);
 				break;
@@ -199,24 +200,23 @@ void UPotionEnhancementComponent::UpgradePotion(UInventoryComponent* InventoryCo
 				potionItem = GetMPPotionItem(InventoryComponent);
 				break;
 			}
-			
-			if ( potionItem != nullptr )
-			{
 
-				
+			if (potionItem != nullptr)
+			{
 				if (const auto potionActor = Cast<APotionItemActor>(potionItem->GetSpawndItemActor()))
 				{
 					//현 강화상황
-					const auto& enhanceInfo = static_cast<const FPotionInformation*>(potionItem->GetItemInformation())->Enhancement;
+					const auto& enhanceInfo = static_cast<const FPotionInformation*>(potionItem->GetItemInformation())->
+						Enhancement;
 					//다음 업그레이드에 필요한 요구사항
 					auto nextNeed = GetNextEnhancementInfo(enhanceInfo.CurEnhancement);
-					
+
 					potionActor->IncreaseEnhance();
 					//강화에 필요한 소재를 소모합니다.
 					for (auto iter : nextNeed.NeedItems)
 					{
 						auto matID = InventoryComponent->GetItemByTag(iter.Key);
-						InventoryComponent->DecreaseItemCount(matID->UniqueID,iter.Value);
+						InventoryComponent->DecreaseItemCount(matID->UniqueID, iter.Value);
 					}
 					OnUpgradePotion.Broadcast(potionItem->UniqueID, potionActor);
 				}
@@ -247,4 +247,3 @@ const FInventoryItem* UPotionEnhancementComponent::GetMPPotionItem(UInventoryCom
 
 	return nullptr;
 }
-

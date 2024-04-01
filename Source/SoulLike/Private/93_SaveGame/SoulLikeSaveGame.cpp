@@ -4,7 +4,9 @@
 #include "93_SaveGame/SoulLikeSaveGame.h"
 
 #include "00_Character/00_Player/SoulTomb.h"
+#include "00_Character/01_Component/AbilityComponent.h"
 #include "00_Character/04_NPC/99_Component/BonfireComponent.h"
+#include "03_Widget/QuickSlotWidget.h"
 #include "03_Widget/01_Menu/00_Inventory/InventoryWidget.h"
 #include "03_Widget/01_Menu/02_QuickSlot/QuickSlotButtonWidget.h"
 
@@ -20,6 +22,7 @@
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
+#include "WorldPartition/DataLayer/DataLayerAsset.h"
 #include "WorldPartition/DataLayer/DataLayerSubsystem.h"
 
 DEFINE_LOG_CATEGORY(LogSave)
@@ -35,6 +38,7 @@ void FFieldItem::Add(const FString& LayerAssetFullPath, const FString& SafeName)
 }
 
 
+/*
 void UGameLoadHandler::LoadLevel(UWorld* World, const FString& MapName)
 {
 	if (MapName.IsEmpty())
@@ -50,19 +54,20 @@ void UGameLoadHandler::LoadLevel(UWorld* World, const FString& MapName)
 		UGameplayStatics::OpenLevel(World, FName(*MapName));
 	}
 }
+*/
 
 void UGameLoadHandler::LoadInventory(UInventoryComponent* InventoryComponent, const TArray<FItemSave>& SaveInventory)
 {
 	if (auto world = InventoryComponent->GetWorld())
 	{
-		UE_LOGFMT(LogSave, Warning, "인벤토리 로드");
 		InventoryComponent->Inventory.Empty();
-		
+
 		for (auto iter : SaveInventory)
 		{
 			TSubclassOf<AItemActor> subclass = LoadClass<AItemActor>(InventoryComponent->GetWorld(),
 			                                                         *iter.ItemClassPath);
-			const auto& item = FInventoryItem(InventoryComponent->GetOwner(), subclass, iter.ItemCount, iter.UniqueID,true);
+			const auto& item = FInventoryItem(InventoryComponent->GetOwner(), subclass, iter.ItemCount, iter.UniqueID,
+			                                  true);
 			InventoryComponent->Inventory.Emplace(iter.UniqueID, item);
 			InventoryComponent->OnAddItem.Broadcast(InventoryComponent->GetOwner<ABaseCharacter>(), item, nullptr);
 		}
@@ -108,14 +113,13 @@ void UGameLoadHandler::LoadOrbMatrix(UInventoryComponent* InventoryComponent, co
 void UGameLoadHandler::LoadFragment(UInventoryComponent* InventoryComponent, const TArray<FItemSave>& SaveFragments)
 {
 	InventoryComponent->Fragments.Empty();
-	UE_LOGFMT(LogSave, Warning, "파편 로드");
 	for (auto iter : SaveFragments)
 	{
 		const auto& uniqueID = iter.UniqueID;
 		const auto& count = iter.ItemCount;
 
 		TSubclassOf<AItemActor> subclass = LoadClass<AItemActor>(InventoryComponent->GetWorld(), *iter.ItemClassPath);
-		UE_LOGFMT(LogSave,Log,"저장된 파편 목록입니다 : {0}",iter.ItemClassPath);
+		UE_LOGFMT(LogSave, Log, "저장된 파편 목록입니다 : {0}", iter.ItemClassPath);
 		if (subclass)
 		{
 			const FInventoryItem& fragment = FInventoryItem(InventoryComponent->GetOwner(), subclass, count, uniqueID);
@@ -150,9 +154,6 @@ void UGameLoadHandler::LoadWeapon(UInventoryComponent* InventoryComponent, const
 	{
 		InventoryComponent->EquippedWeapon = UniqueID;
 		InventoryComponent->UseItem(UniqueID);
-
-		/*InventoryComponent->Inventory[UniqueID].Use(InventoryComponent->GetOwner());
-		*/
 
 		if (auto mainWidget = InventoryComponent->GetOwner<APlayerCharacter>()->GetMainWidget())
 		{
@@ -216,7 +217,6 @@ void UGameLoadHandler::LoadAttribute(UAttributeComponent* AttributeComponent,
 {
 	AttributeComponent->LoadLevelUpPointAttributes(LevelUpPointAttributesMap);
 	AttributeComponent->LoadAttributeNotIncludeLevelUpPoint(AttributesNotIncludeLevelUpPointMap, true, bIsRespawn);
-	
 }
 
 
@@ -243,37 +243,81 @@ void UGameLoadHandler::RestorePotionEnhancement(UInventoryComponent* InventoryCo
 }
 
 void UGameLoadHandler::RestoreQuickSlotState(APlayerCharacter* Player, const TMap<int32, FGuid>& ItemQuickSlotMap,
-                                             const TMap<int32, FGameplayTag>& AbilityQuickSlotMap)
+                                             const TMap<int32, FGameplayTag>& AbilityQuickSlotMap,
+                                             int32 SelectedConsumeQuickSlot, int32 SelectedAbilityQuickSlot,
+                                             const TSet<FGuid>& EquippedQuickSlotConsumeItems,
+                                             const TSet<FGameplayTag>& EquippedQuickSlotAbilities)
 {
 	if (Player)
 	{
-		if (auto mainWidget = Player->GetMainWidget())
+		auto invenComp = Player->GetInventoryComponent();
+		auto abComp = Player->GetAbilityComponent();
+
+		if (invenComp != nullptr && abComp != nullptr)
 		{
-			mainWidget->UMG_Equipment->LoadConsumeQuickSlots(ItemQuickSlotMap);
-			mainWidget->UMG_Equipment->LoadAbilityQuickSlots(AbilityQuickSlotMap);
+			invenComp->CurConsumeQuickSlotIndex = SelectedConsumeQuickSlot;
+			invenComp->CurAbilityQuickSlotIndex = SelectedAbilityQuickSlot;
+
+
+			if (auto mainWidget = Player->GetMainWidget())
+			{
+				mainWidget->UMG_Equipment->LoadConsumeQuickSlots(ItemQuickSlotMap);
+				mainWidget->UMG_Equipment->LoadAbilityQuickSlots(AbilityQuickSlotMap);
+
+				for (auto iter : EquippedQuickSlotConsumeItems)
+				{
+					//2. 이 아이템 코드를 가진 아이템 버튼을 찾아서 장착 체크 합니다.
+					mainWidget->UMG_Inventory->UMG_ItemList->
+					            RefreshFromInventoryItem(invenComp->GetInventoryItem(iter));
+				}
+
+				for (auto iter : EquippedQuickSlotAbilities)
+				{
+					//TODO - 추후 등록 가능한 어빌리티가 생기면 작성해야 합니다.
+				}
+
+
+				if (ItemQuickSlotMap.Contains(SelectedConsumeQuickSlot))
+				{
+					const auto& consumeGUID = ItemQuickSlotMap[SelectedConsumeQuickSlot];
+					if (consumeGUID != FGuid())
+					{
+						mainWidget->UMG_QuickSlot->LoadSelectedConsumeQuickSlot(
+							invenComp->GetInventoryItem(consumeGUID));
+					}
+				}
+
+				if (AbilityQuickSlotMap.Contains(SelectedAbilityQuickSlot))
+				{
+					const auto& abilityTag = AbilityQuickSlotMap[SelectedAbilityQuickSlot];
+					if (abilityTag.IsValid())
+					{
+						mainWidget->UMG_QuickSlot->LoadSelectedAbilityQuickSlot(abComp->GetAbilityByTag(abilityTag));
+					}
+				}
+			}
 		}
 	}
 }
 
-void UGameLoadHandler::CreateSoulTomb(APlayerCharacter* Player, TSubclassOf<ASoulTomb> TombObject, const FDeadState& DeadState)
-{
 
+void UGameLoadHandler::CreateSoulTomb(APlayerCharacter* Player, TSubclassOf<ASoulTomb> TombObject,
+                                      const FDeadState& DeadState)
+{
 	if (!DeadState.bShouldCreateSoulTomb)
 	{
 		return;
 	}
-	
-	if(Player)
+
+	if (Player)
 	{
 		FActorSpawnParameters spawnParam;
 		spawnParam.Instigator = Player;
 		spawnParam.Owner = Player;
-		
-		auto tomb =Player->GetWorld()->SpawnActor<ASoulTomb>(TombObject);
-		tomb->Activate(DeadState.EXP,DeadState.DeadLocation);
-		
-	}
 
+		auto tomb = Player->GetWorld()->SpawnActor<ASoulTomb>(TombObject);
+		tomb->Activate(DeadState.EXP, DeadState.DeadLocation);
+	}
 }
 
 void UGameLoadHandler::RestoreBonfire(APlayerCharacter* Player, const TArray<FString>& SavedBonfire)
@@ -291,26 +335,102 @@ void UGameLoadHandler::RestoreBonfire(APlayerCharacter* Player, const TArray<FSt
 	}
 }
 
-void UGameLoadHandler::TeleportToBonfire(APlayerCharacter* Player, const FBonfireInformation& BonfireInfo)
+
+void UGameLoadHandler::RestoreDataLayer(APlayerCharacter* Player, const TSet<FName>& ActivateLayersPath,
+                                        UDataTable* LayerTable)
 {
-	Player->SetActorLocation(BonfireInfo.Location);
+	if (LayerTable == nullptr)
+	{
+		return;
+	}
+
+	if (UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(Player->GetWorld()))
+	{
+		UE_LOGFMT(LogSave, Log, "RestoreDataLayer");
+		for (auto iter : ActivateLayersPath)
+		{
+			if (auto find = LayerTable->FindRow<FDataLayerTable>(iter, ""))
+			{
+				if (auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAsset(find->DataLayerAsset))
+				{
+					UE_LOGFMT(LogSave, Log, "레이어 복구 성공 : {0}", iter);
+					dataLayerSubsystem->SetDataLayerRuntimeState(instance, EDataLayerRuntimeState::Activated);
+				}
+				else
+				{
+					UE_LOGFMT(LogSave, Error, "이 이름에 해당하는 레이어를 찾을 수 없습니다 : {0}", iter);
+				}
+			}
+			else
+			{
+				UKismetSystemLibrary::PrintString(
+					Player,TEXT("이 이름에 해당하는 레이어를 데이터테이블에서 찾을 수 없습니다 :") + iter.ToString());
+			}
+
+			/*if (auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAssetName(iter))
+			{
+				UE_LOGFMT(LogSave, Log, "레이어 복구 성공 : {0}", iter);
+				dataLayerSubsystem->SetDataLayerRuntimeState(instance, EDataLayerRuntimeState::Activated);
+			}
+			else
+			{
+				/*UE_LOGFMT(LogSave, Error, "이 이름에 해당하는 레이어를 찾을 수 없습니다 : {0}", iter);#1#
+				UKismetSystemLibrary::PrintString(Player,TEXT("이 이름에 해당하는 레이어를 찾을 수 없습니다 :") + iter.ToString());
+			}*/
+		}
+	}
+	else
+	{
+		UE_LOGFMT(LogSave, Error, "데이터 레이어 서브시스템을 가져올 수 없습니다.");
+	}
 }
 
-void UGameLoadHandler::RestoreDataLayer(APlayerCharacter* Player, const TSet<FName>& ActivateLayersPath)
+void UGameLoadHandler::RestoreDataLayer(APlayerCharacter* Player, const FName& LayerToLoadRowName,
+                                        UDataTable* LayerTable)
 {
 	if (UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(Player->GetWorld()))
 	{
-		
-		for (auto iter : ActivateLayersPath)
+		if (auto find = LayerTable->FindRow<FDataLayerTable>(LayerToLoadRowName, ""))
 		{
-			if (auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAssetName(iter))
+			if (auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAsset(find->DataLayerAsset))
+			{
+				UE_LOGFMT(LogSave, Log, "레이어 복구 성공 : {0}", LayerToLoadRowName);
+				dataLayerSubsystem->SetDataLayerRuntimeState(instance, EDataLayerRuntimeState::Activated);
+			}
+			else
+			{
+				UE_LOGFMT(LogSave, Error, "이 이름에 해당하는 레이어를 찾을 수 없습니다 : {0}", LayerToLoadRowName);
+			}
+		}
+	}
+}
+
+void UGameLoadHandler::RestoreDataLayer(APlayerCharacter* Player, const TArray<TSoftObjectPtr<UDataLayerAsset>>& Layers)
+{
+	if (UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(Player->GetWorld()))
+	{
+		UE_LOGFMT(LogSave, Log, "RestoreDataLayer");
+		for (auto iter : Layers)
+		{
+			UE_LOGFMT(LogSave, Log, "레이어 복구 시도 : {0}", iter.ToSoftObjectPath().ToString());
+			if (auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAssetName(
+				FName(iter.ToSoftObjectPath().ToString())))
 			{
 				dataLayerSubsystem->SetDataLayerRuntimeState(instance, EDataLayerRuntimeState::Activated);
 			}
 			else
 			{
-				UE_LOGFMT(LogSave, Error, "이 이름에 해당하는 레이어를 찾을 수 없습니다 : {0}", iter);
+				/*UE_LOGFMT(LogSave, Error, "이 이름에 해당하는 레이어를 찾을 수 없습니다 : {0}", iter);*/
+				UKismetSystemLibrary::PrintString(Player,TEXT("이 이름에 해당하는 레이어를 찾을 수 없습니다 :") + iter.ToString());
 			}
+			/*if (auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAsset(iter))
+			{
+				dataLayerSubsystem->SetDataLayerRuntimeState(instance, EDataLayerRuntimeState::Activated);
+			}
+			else
+			{
+				UE_LOGFMT(LogSave, Error, "이 이름에 해당하는 레이어를 찾을 수 없습니다 : {0}", iter->GetName());
+			}*/
 		}
 	}
 	else
@@ -332,7 +452,6 @@ void UGameLoadHandler::RestoreSky(APlayerCharacter* Player, float CurrentSkyTime
 
 USoulLikeSaveGame::USoulLikeSaveGame()
 {
-
 }
 
 
@@ -677,52 +796,64 @@ void USoulLikeSaveGame::SaveLastSavePoint(const FString& LevelName, const FTrans
 	SavedLastSavePoint.LevelName = LevelName;
 	SavedLastSavePoint.SavedTransform = LastTransform;
 	SavedLastSavePoint.SavedBonfireName = GetNameSafe(BonfireComponent->GetOwner());
-}
+	SavedLastSavePoint.ActivateLayersPath.Empty();
 
+	if (UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(GetWorld()))
+	{
+		auto activateLayers = dataLayerSubsystem->GetEffectiveActiveDataLayerNames();
+		for (auto iter : activateLayers)
+		{
+			if (const auto instance = dataLayerSubsystem->GetDataLayerInstance<FName>(
+				iter, BonfireComponent->GetOwner()->GetLevel()))
+			{
+				UE_LOGFMT(LogSave, Log, "마지막 저장 장소를 저장합니다 : {0}", iter);
+				SavedLastSavePoint.ActivateLayersPath.Emplace(instance->GetDataLayerFullName());
+			}
+		}
+	}
+
+
+	UE_LOGFMT(LogSave, Log, "저장된 마지막 세이브 포인트 정보 : {0} {1} {2}", SavedLastSavePoint.LevelName,
+	          SavedLastSavePoint.SavedTransform.GetLocation().ToString(), SavedLastSavePoint.SavedBonfireName);
+}
 
 
 void USoulLikeSaveGame::SavePlacementItemState(class APlayerCharacter* Player,
                                                AItemActor* ItemActor)
 {
 	//레이어가 유효하지 않거나, 오너가 플레이어인경우 레벨에 배치되어있는 아이템이 아니라고 간주합니다.
-	if(ItemActor->GetOwner() == Player){
-		UE_LOGFMT(LogSave,Warning,"다음 아이템은 오너가 플레이어라 제거할 필요가 없습니다 : {0}",GetNameSafe(ItemActor));
-		return;
-	}
-
-
-	const auto& layers = ItemActor->GetDataLayerAssets();
-	if(!layers.IsValidIndex(0))
+	if (ItemActor->GetOwner() == Player)
 	{
-		UE_LOGFMT(LogSave,Warning,"다음 아이템은 레이어가 유효하지 않아 아이템 획득 상태를 저장할 수 없습니다 : {0}",GetNameSafe(ItemActor));
+		UE_LOGFMT(LogSave, Warning, "다음 아이템은 오너가 플레이어라 제거할 필요가 없습니다 : {0}", GetNameSafe(ItemActor));
 		return;
 	}
-	
-	
+
 
 	const auto& levelName = UGameplayStatics::GetCurrentLevelName(ItemActor);
 	const auto& safeName = FName(GetNameSafe(ItemActor));
-	
+
 	if (levelName.IsEmpty())
 	{
-		UE_LOGFMT(LogSave,Warning,"다음 아이템은 레벨 이름이 유효하지 않아 아이템 획득 상태를 저장할 수 없습니다 : {0}",GetNameSafe(ItemActor));
+		UE_LOGFMT(LogSave, Warning, "다음 아이템은 레벨 이름이 유효하지 않아 아이템 획득 상태를 저장할 수 없습니다 : {0}", GetNameSafe(ItemActor));
 		return;
 	}
-	
+
 	if (!PickUppedItems.Contains(levelName))
 	{
 		PickUppedItems.Add(levelName);
 	}
-	
-	PickUppedItems[levelName].Information.Emplace(FActorSave(ItemActor,safeName,ItemActor->GetClass(),ItemActor->GetActorTransform()));
-	for(auto iter : PickUppedItems[levelName].Information)
+
+	PickUppedItems[levelName].Information.Emplace(FActorSave(ItemActor, safeName, ItemActor->GetClass(),
+	                                                         ItemActor->GetActorTransform()));
+	for (auto iter : PickUppedItems[levelName].Information)
 	{
-		UE_LOGFMT(LogSave,Log,"저장된 다음 필드 아이템 : {0}",iter.ActorSafeName);
+		UE_LOGFMT(LogSave, Log, "저장된 다음 필드 아이템 : {0}", iter.ActorSafeName);
 	}
-	for(auto iter : PickUppedItems[levelName].Information)
+	for (auto iter : PickUppedItems[levelName].Information)
 	{
-		if(iter == safeName){
-			UE_LOGFMT(LogSave,Log,"다음 필드 아이템을 획득하여 상태를 저장합니다 : {0}",safeName);
+		if (iter == safeName)
+		{
+			UE_LOGFMT(LogSave, Log, "다음 필드 아이템을 획득하여 상태를 저장합니다 : {0}", safeName);
 			break;
 		}
 	}
@@ -738,7 +869,8 @@ void USoulLikeSaveGame::SaveAddedItem(const FInventoryItem& ItemInfo)
 	{
 		const auto& classPath = ItemInfo.GetItemInformation()->ItemActorObject->GetPathName();
 		Fragments.Add(FItemSave(uniqueID, classPath, ItemInfo.ItemCount));
-		UE_LOGFMT(LogSave,Log,"SaveAddedItem : 다음 인벤토리 파편을 저장합니다 : {0}",ItemInfo.GetItemInformation()->Item_Name.ToString());
+		UE_LOGFMT(LogSave, Log, "SaveAddedItem : 다음 인벤토리 파편을 저장합니다 : {0}",
+		          ItemInfo.GetItemInformation()->Item_Name.ToString());
 		//변경된 메트릭스 저장
 		SaveOrbMatrix(ItemInfo.GetSpawndItemActor()->GetOwner<APlayerCharacter>());
 		return;
@@ -755,7 +887,8 @@ void USoulLikeSaveGame::SaveAddedItem(const FInventoryItem& ItemInfo)
 	{
 		const auto& classPath = ItemInfo.GetItemInformation()->ItemActorObject->GetPathName();
 		const auto& count = ItemInfo.ItemCount;
-		UE_LOGFMT(LogSave,Log,"SaveAddedItem : 다음 인벤토리 아이템을 저장합니다 : {0}",ItemInfo.GetItemInformation()->Item_Name.ToString());
+		UE_LOGFMT(LogSave, Log, "SaveAddedItem : 다음 인벤토리 아이템을 저장합니다 : {0}",
+		          ItemInfo.GetItemInformation()->Item_Name.ToString());
 		InventoryItem.Emplace(FItemSave(uniqueID, classPath, count));
 	}
 	/*UE_LOGFMT(LogSave, Log, "인벤토리에 추가된 아이템을 저장합니다 : {0}, {1} {2}", ItemInfo.GetItemInformation()->Item_Name,
@@ -769,7 +902,7 @@ void USoulLikeSaveGame::SaveAddedItem(const FInventoryItem& ItemInfo)
 	UE_LOGFMT(LogSave, Log, "-------------------------------------------------------");*/
 }
 
-void USoulLikeSaveGame::SaveUsedItem(const FInventoryItem& ItemInfo)
+void USoulLikeSaveGame::SaveUsedItem(APlayerCharacter* UsedBy, const FInventoryItem& ItemInfo)
 {
 	//공통부분
 	const auto& uniqueID = ItemInfo.UniqueID;
@@ -784,13 +917,22 @@ void USoulLikeSaveGame::SaveUsedItem(const FInventoryItem& ItemInfo)
 
 	if (InventoryItem.Contains(uniqueID))
 	{
-		UE_LOGFMT(LogSave, Log, "인벤토리에 사용된 아이템을 저장합니다 : {0}, {1} {2}", ItemInfo.GetItemInformation()->Item_Name.ToString(),
-		          ItemInfo.ItemCount, uniqueID);
-
-		InventoryItem.FindByPredicate([uniqueID](const FItemSave& Element)
+		int32 findIndex = InventoryItem.IndexOfByPredicate([uniqueID](const FItemSave& Element)
 		{
 			return Element.UniqueID == uniqueID;
-		})->ItemCount = ItemInfo.ItemCount;
+		});
+
+		if (findIndex != INDEX_NONE)
+		{
+			InventoryItem[findIndex].ItemCount = ItemInfo.ItemCount;
+			UE_LOGFMT(LogSave, Log, "사용한 아이템을 저장합니다 : {0} ,남은 갯수 : {1}개",
+			          UsedBy->GetInventoryComponent()->GetInventoryItem(InventoryItem[findIndex].UniqueID).
+			          GetItemInformation()->Item_Name.ToString(), InventoryItem[findIndex].ItemCount);
+		}
+		else
+		{
+			UE_LOGFMT(LogSave, Error, "저장할 아이템을 가져올 수 없습니다!!");
+		}
 		//장비 아이템인 경우
 		if (UItemHelperLibrary::IsEquipment(ItemInfo))
 		{
@@ -807,13 +949,13 @@ void USoulLikeSaveGame::SaveUsedItem(const FInventoryItem& ItemInfo)
 
 			if (UItemHelperLibrary::IsWeapon(ItemInfo))
 			{
-				if (ItemInfo.GetSpawndItemActor()->GetOwner<APlayerCharacter>()->GetInventoryComponent()->IsEquipped(
-					ItemInfo.UniqueID))
+				if (ItemInfo.GetSpawndItemActor()->GetOwner<APlayerCharacter>()->GetInventoryComponent()->
+				             IsEquippedEquipment(
+					             ItemInfo.UniqueID))
 				{
 					UE_LOGFMT(LogSave, Log, "인벤토리에 사용된 무기 아이템을 저장합니다 : {0}, {1}",
 					          ItemInfo.GetItemInformation()->Item_Name.ToString(), ItemInfo.ItemCount);
 					WeaponID = uniqueID;
-					return;
 				}
 			}
 		}
@@ -836,10 +978,13 @@ void USoulLikeSaveGame::SaveRemovedItem(const FGuid& RemoveItemUniqueID)
 	}
 }
 
-void USoulLikeSaveGame::SaveRegisterQuickSlotState(UInventoryData* Data, int32 Index)
+void USoulLikeSaveGame::SaveRegisterItemQuickSlotState(UInventoryData* Data, int32 Index,
+                                                       const TSet<FGuid>& QuickSlotItems)
 {
 	if (Data->IsA<UItemData>())
 	{
+		EquippedQuickSlotItems = QuickSlotItems;
+
 		auto data = Cast<UItemData>(Data);
 		const auto& id = data->InventoryItem.UniqueID;
 		//이미 등록된 아이디라면 제거하고 다시 등록합시다.
@@ -853,11 +998,16 @@ void USoulLikeSaveGame::SaveRegisterQuickSlotState(UInventoryData* Data, int32 I
 		}
 
 		ItemQuickSlotMap.Add(Index, id);
-		return;
 	}
+}
 
+
+void USoulLikeSaveGame::SaveRegisterAbilityQuickSlotState(UInventoryData* Data, int32 Index,
+                                                          const TSet<FGameplayTag>& QuickSlotAbilities)
+{
 	if (Data->IsA<UAbilityData>())
 	{
+		EquippedQuickSlotAbilities = QuickSlotAbilities;
 		auto data = Cast<UAbilityData>(Data);
 		const auto& tag = data->AbilityInformation.AbilityTag;
 
@@ -872,51 +1022,6 @@ void USoulLikeSaveGame::SaveRegisterQuickSlotState(UInventoryData* Data, int32 I
 		}
 
 		AbilityQuickSlotMap.Add(Index, tag);
-		return;
-	}
-}
-
-void USoulLikeSaveGame::SaveUnRegisterQuickSlotState(UInventoryData* Data, int32 Index)
-{
-	if (Data == nullptr)
-	{
-		return;
-	}
-
-	if (Data->IsA<UItemData>())
-	{
-		auto data = Cast<UItemData>(Data);
-		const auto& id = data->InventoryItem.UniqueID;
-
-		//이미 등록된 아이디라면 제거
-		for (auto iter = ItemQuickSlotMap.CreateIterator(); iter; ++iter)
-		{
-			if (iter.Value() == id)
-			{
-				iter.RemoveCurrent();
-				break;
-			}
-		}
-
-		return;
-	}
-
-	if (Data->IsA<UAbilityData>())
-	{
-		auto data = Cast<UAbilityData>(Data);
-		const auto& tag = data->AbilityInformation.AbilityTag;
-
-		//이미 등록된 아이디라면 제거
-		for (auto iter = AbilityQuickSlotMap.CreateIterator(); iter; ++iter)
-		{
-			if (iter.Value().MatchesTagExact(tag))
-			{
-				iter.RemoveCurrent();
-				break;
-			}
-		}
-
-		return;
 	}
 }
 
@@ -972,7 +1077,8 @@ void USoulLikeSaveGame::SaveUpgradePotionItem(const FGuid& ID, const FEnhancemen
 
 void USoulLikeSaveGame::SaveUnEquipItem(const FInventoryItem& ItemInfo)
 {
-	UE_LOGFMT(LogSave, Log, "장착 해제 아이템 저장 : {0} {1}", ItemInfo.GetItemInformation()->Item_Name.ToString(), ItemInfo.UniqueID);
+	UE_LOGFMT(LogSave, Log, "장착 해제 아이템 저장 : {0} {1}", ItemInfo.GetItemInformation()->Item_Name.ToString(),
+	          ItemInfo.UniqueID);
 
 	//공통부분
 	const auto& uniqueID = ItemInfo.UniqueID;
@@ -984,7 +1090,6 @@ void USoulLikeSaveGame::SaveUnEquipItem(const FInventoryItem& ItemInfo)
 		//변경된 메트릭스 저장
 		//UKismetSystemLibrary::PrintString(ItemInfo.GetSpawndItemActor(),TEXT("파편 장착 해제"));
 		SaveOrbMatrix(ItemInfo.GetSpawndItemActor()->GetOwner<APlayerCharacter>());
-		return;
 	}
 
 	//장착해제랑 인벤토리 저장이랑 뭔상관이지? 이거 왜 있는거야?
@@ -1070,16 +1175,17 @@ void USoulLikeSaveGame::SaveActivateBonfire(ABonfire* Bonfire)
 	{
 		const auto& safeName = FName(GetNameSafe(Bonfire));
 		const auto& levelName = UGameplayStatics::GetCurrentLevelName(Bonfire);
-		if(!ActivateBonfire.Contains(levelName))
+		if (!ActivateBonfire.Contains(levelName))
 		{
 			ActivateBonfire.Add(levelName);
 		}
 		UE_LOGFMT(LogSave, Log, "화톳불 / 저장 : {0}", safeName);
-		
-		if(!ActivateBonfire[levelName].Information.Array().Contains(safeName))
+
+		if (!ActivateBonfire[levelName].Information.Array().Contains(safeName))
 		{
 			UE_LOGFMT(LogSave, Log, "이 화톳불을 저장합니다 : {0}", safeName);
-			ActivateBonfire[levelName].Information.Add(FActorSave(Bonfire,safeName,Bonfire->GetClass(),Bonfire->GetActorTransform()));
+			ActivateBonfire[levelName].Information.Add(
+				FActorSave(Bonfire, safeName, Bonfire->GetClass(), Bonfire->GetActorTransform()));
 		}
 	}
 }
@@ -1098,13 +1204,15 @@ void USoulLikeSaveGame::SaveInventory(APlayerCharacter* Player)
 		{
 			if (!InventoryItem.Contains(iter.Key))
 			{
-				UE_LOGFMT(LogSave,Log,"SaveInventory : 처음으로 다음 인벤토리 아이템을 저장합니다 : {0}",iter.Value.GetItemInformation()->Item_Name.ToString());
+				UE_LOGFMT(LogSave, Log, "SaveInventory : 처음으로 다음 인벤토리 아이템을 저장합니다 : {0}",
+				          iter.Value.GetItemInformation()->Item_Name.ToString());
 				const auto& classPath = iter.Value.GetItemInformation()->ItemActorObject->GetPathName();
 				InventoryItem.Emplace(FItemSave(iter.Key, classPath, iter.Value.ItemCount));
 			}
 			else
 			{
-				UE_LOGFMT(LogSave,Log,"SaveInventory : 이미 저장되었으니 업데이트. 다음 인벤토리 아이템을 저장합니다 : {0}",iter.Value.GetItemInformation()->Item_Name.ToString());
+				UE_LOGFMT(LogSave, Log, "SaveInventory : 이미 저장되었으니 업데이트. 다음 인벤토리 아이템을 저장합니다 : {0}",
+				          iter.Value.GetItemInformation()->Item_Name.ToString());
 				InventoryItem.FindByKey(iter.Key)->ItemCount = iter.Value.ItemCount;
 			}
 		}
@@ -1114,13 +1222,15 @@ void USoulLikeSaveGame::SaveInventory(APlayerCharacter* Player)
 		{
 			if (!Fragments.Contains(iter.Key))
 			{
-				UE_LOGFMT(LogSave,Log,"SaveInventory : 다음 인벤토리 파편을 저장합니다 : {0}",iter.Value.GetItemInformation()->Item_Name.ToString());
+				UE_LOGFMT(LogSave, Log, "SaveInventory : 다음 인벤토리 파편을 저장합니다 : {0}",
+				          iter.Value.GetItemInformation()->Item_Name.ToString());
 				const auto& classPath = iter.Value.GetItemInformation()->ItemActorObject->GetPathName();
 				Fragments.Emplace(FItemSave(iter.Key, classPath, iter.Value.ItemCount));
 			}
 			else
 			{
-				UE_LOGFMT(LogSave,Log,"SaveInventory : 이미 저장되었으니 업데이트. 다음 인벤토리 파편을 저장합니다 : {0}",iter.Value.GetItemInformation()->Item_Name.ToString());
+				UE_LOGFMT(LogSave, Log, "SaveInventory : 이미 저장되었으니 업데이트. 다음 인벤토리 파편을 저장합니다 : {0}",
+				          iter.Value.GetItemInformation()->Item_Name.ToString());
 				Fragments.FindByKey(iter.Key)->ItemCount = iter.Value.ItemCount;
 			}
 		}
@@ -1134,18 +1244,12 @@ void USoulLikeSaveGame::SaveDataLayer(APlayerCharacter* Player)
 		auto activateLayers = dataLayerSubsystem->GetEffectiveActiveDataLayerNames();
 		for (auto iter : activateLayers)
 		{
+			UE_LOGFMT(LogSave, Log, "레이어 정보를 저장합니다 : {0}", iter);
 			if (const auto instance = dataLayerSubsystem->GetDataLayerInstance<FName>(iter, Player->GetLevel()))
 			{
+				UE_LOGFMT(LogSave, Log, "저장한 레이어 정보의 경로 이름 : {0}", instance->GetDataLayerFullName());
 				ActivateLayersPath.Emplace(instance->GetDataLayerFullName());
-
-				/*UE_LOGFMT(LogSave,Log,"레이어 읽기 테스트 : {0}, {1}, {2}, {3}",
-					iter,
-					StaticEnum<EDataLayerRuntimeState>()->GetValueAsString(dataLayerSubsystem->GetDataLayerRuntimeState(instance)),
-					instance->GetDataLayerFullName(),
-					instance->GetDataLayerFName());*/
 			}
-
-			//UE_LOGFMT(LogSave,Log,"활성화된 데이터 레이어를 저장합니다 : {0}",iter);
 		}
 	}
 }
@@ -1160,8 +1264,18 @@ void USoulLikeSaveGame::SaveSkyTime(APlayerCharacter* Player)
 
 void USoulLikeSaveGame::SaveKilledBoss(const FGameplayTag& BossTag)
 {
-	UE_LOGFMT(LogSave,Log,"처치한 우두머리 정보를 기록합니다. : {0}",BossTag.ToString());
+	UE_LOGFMT(LogSave, Log, "처치한 우두머리 정보를 기록합니다. : {0}", BossTag.ToString());
 	KilledBossMonstersTag.Emplace(BossTag);
+}
+
+void USoulLikeSaveGame::SaveSelectedConsumeQuickSlotIndex(int32 SelectedIndex)
+{
+	SelectedConsumeQuickSlot = SelectedIndex;
+}
+
+void USoulLikeSaveGame::SaveSelectedAbilityQuickSlotIndex(int32 SelectedIndex)
+{
+	SelectedAbilityQuickSlot = SelectedIndex;
 }
 
 void USoulLikeSaveGame::SaveReadTutorialActor(ATutorialActor* TutorialActor)

@@ -22,12 +22,11 @@ DEFINE_LOG_CATEGORY(LogAbility)
 
 void UAbilityDamageTalent::SelfBind()
 {
-
-	if(!IsRooted())
+	if (!IsRooted())
 	{
 		AddToRoot();
 	}
-	
+
 	if (OnChangeHealAmount.IsBound() == false)
 	{
 		OnChangeHealAmount.BindDynamic(this, &UAbilityDamageTalent::OnChangeHealAmountEvent);
@@ -76,7 +75,7 @@ void UAbilityDamageTalent::Bind(UAbilityTalentComponent* ATComp)
 	if (ATComp)
 	{
 		SelfBind();
-		UE_LOGFMT(LogTemp, Warning, "피해 특성 바인드 : {0}",GetName());
+		UE_LOGFMT(LogTemp, Warning, "피해 특성 바인드 : {0}", GetName());
 		ATComp->OnIncreasePhysicalDamage.Emplace(this, OnIncreasePhysicalDamage);
 		ATComp->OnIncreaseMagicalDamage.Emplace(this, OnIncreaseMagicalDamage);
 
@@ -95,7 +94,6 @@ void UAbilityDamageTalent::Bind(UAbilityTalentComponent* ATComp)
 
 void UAbilityDamageTalent::UnBind(UAbilityTalentComponent* ATComp)
 {
-	
 	if (ATComp)
 	{
 		UE_LOGFMT(LogTemp, Warning, "특성 바인드 해제");
@@ -111,21 +109,20 @@ void UAbilityDamageTalent::UnBind(UAbilityTalentComponent* ATComp)
 		ATComp->OnChangeHealAmount[this].Unbind();
 	}
 
-	if(IsRooted())
+	if (IsRooted())
 	{
 		RemoveFromRoot();
 	}
-	
 }
 
 
 void UAbilityDefenceTalent::SelfBind()
 {
-	if(!IsRooted())
+	if (!IsRooted())
 	{
 		AddToRoot();
 	}
-	
+
 	if (OnChangeHealAmount.IsBound() == false)
 	{
 		OnChangeHealAmount.BindDynamic(this, &UAbilityDefenceTalent::OnChangeHealAmountEvent);
@@ -229,16 +226,16 @@ void UAbilityDefenceTalent::Bind(UAbilityTalentComponent* ATComp)
 		ATComp->OnIncreaseRunSpeed.Emplace(this, OnIncreaseRunSpeed);
 
 		ATComp->OnDecreaseDodgeSP.Emplace(this, OnDecreaseDodgeSP);
-		for(auto iter : ATComp->OnDecreaseDodgeSP)
+		for (auto iter : ATComp->OnDecreaseDodgeSP)
 		{
-			UE_LOGFMT(LogTemp,Log,"회피SP 바인드된 오브젝트 : {0}",iter.Key->GetName());
+			UE_LOGFMT(LogTemp, Log, "회피SP 바인드된 오브젝트 : {0}", iter.Key->GetName());
 		}
 
-		
+
 		ATComp->OnIncreaseDodgeDistance.Emplace(this, OnIncreaseDodgeDistance);
-		for(auto iter : ATComp->OnIncreaseDodgeDistance)
+		for (auto iter : ATComp->OnIncreaseDodgeDistance)
 		{
-			UE_LOGFMT(LogTemp,Log,"회피거리 바인드된 오브젝트 : {0}",iter.Key->GetName());
+			UE_LOGFMT(LogTemp, Log, "회피거리 바인드된 오브젝트 : {0}", iter.Key->GetName());
 		}
 
 		ATComp->OnIncreaseRecoverSPAmount.Emplace(this, OnIncreaseRecoverSPAmount);
@@ -265,7 +262,6 @@ void UAbilityDefenceTalent::Bind(UAbilityTalentComponent* ATComp)
 
 void UAbilityDefenceTalent::UnBind(UAbilityTalentComponent* ATComp)
 {
-
 	if (ATComp)
 	{
 		UE_LOGFMT(LogTemp, Warning, "특성 바인드 해제");
@@ -349,7 +345,7 @@ void UAbilityDefenceTalent::UnBind(UAbilityTalentComponent* ATComp)
 		}
 	}
 
-	if(IsRooted())
+	if (IsRooted())
 	{
 		RemoveFromRoot();
 	}
@@ -358,11 +354,11 @@ void UAbilityDefenceTalent::UnBind(UAbilityTalentComponent* ATComp)
 
 void UAbilityFreeTalent::SelfBind()
 {
-	if(!IsRooted())
+	if (!IsRooted())
 	{
 		AddToRoot();
 	}
-	
+
 	if (OnIncreaseGetExp.IsBound() == false)
 	{
 		OnIncreaseGetExp.BindDynamic(this, &UAbilityFreeTalent::OnIncreaseGetExpEvent);
@@ -392,7 +388,6 @@ void UAbilityFreeTalent::Bind(UAbilityTalentComponent* ATComp)
 
 void UAbilityFreeTalent::UnBind(UAbilityTalentComponent* ATComp)
 {
-		
 	if (ATComp)
 	{
 		ATComp->OnIncreaseGetExp[this].Unbind();
@@ -400,7 +395,7 @@ void UAbilityFreeTalent::UnBind(UAbilityTalentComponent* ATComp)
 		ATComp->OnDodgeMinimumSP.Unbind();
 	}
 
-	if(IsRooted())
+	if (IsRooted())
 	{
 		RemoveFromRoot();
 	}
@@ -445,25 +440,24 @@ UAnimMontage* UAbilityBase::GetNextMontage()
 float UAbilityBase::PlayMontageWithCustomChain(ABaseCharacter* Target, UAnimMontage* Montage, float CustomChainValue)
 {
 	if (auto subsystem = UGameplayStatics::GetGameInstance(AbilityOwner.Get())->GetSubsystem<
-				UAttackChainSubsystem>())
+		UAttackChainSubsystem>())
 	{
 		UE_LOGFMT(LogTemp, Log, "커스텀 체인 저장 : {0} , {1}", ChainTag.ToString(), CustomChainValue);
 		subsystem->AddChainValue(ChainTag, CustomChainValue);
 	}
-	
-	const auto& playRate =Target->GetAttributeComponent()->GetActionSpeed();
-	return Target->GetMesh()->GetAnimInstance()->Montage_Play(Montage,playRate);
+
+	const auto& playRate = Target->GetAttributeComponent()->GetActionSpeed();
+	return Target->GetMesh()->GetAnimInstance()->Montage_Play(Montage, playRate);
 }
 
 void UAbilityBase::SetAbilityInformation()
 {
-
-	if(!AbilityTag.IsValid())
+	if (!AbilityTag.IsValid())
 	{
 		AbilityInformation = FAbilityInformation();
 		return;
 	}
-	
+
 	if (AbilityInformationTable != nullptr)
 	{
 		FString contextString;
@@ -472,7 +466,8 @@ void UAbilityBase::SetAbilityInformation()
 		{
 			AbilityInformation = *findInfo;
 		}
-	}else
+	}
+	else
 	{
 		AbilityInformation = FAbilityInformation();
 	}
@@ -503,9 +498,9 @@ void UAbilityBase::TryActivateAbility_Implementation(UObject* AdditionalInfo)
 {
 	bAlreadyEndAbility = false;
 
-	OnCommitResultFailed.AddUniqueDynamic(this,&UAbilityBase::OnCommitResultFailedEvent);
-	OnCommitFailedByCost.AddUniqueDynamic(this,&UAbilityBase::OnCommitFailedByCostEvent);
-	OnCommitFailedByCooldown.AddUniqueDynamic(this,&UAbilityBase::OnCommitFailedByCooldownEvent);
+	OnCommitResultFailed.AddUniqueDynamic(this, &UAbilityBase::OnCommitResultFailedEvent);
+	OnCommitFailedByCost.AddUniqueDynamic(this, &UAbilityBase::OnCommitFailedByCostEvent);
+	OnCommitFailedByCooldown.AddUniqueDynamic(this, &UAbilityBase::OnCommitFailedByCooldownEvent);
 
 	if (CommitAbility())
 	{
@@ -551,18 +546,17 @@ void UAbilityBase::ActivateAbility_Implementation(UObject* AdditionalInfo)
 
 void UAbilityBase::CancelAbility_Implementation()
 {
-
-	if(AbilityOwner.IsValid())
+	if (AbilityOwner.IsValid())
 	{
-		if(auto instance = AbilityOwner->GetMesh()->GetAnimInstance())
+		if (auto instance = AbilityOwner->GetMesh()->GetAnimInstance())
 		{
-			if(Montages.Contains( instance->GetCurrentActiveMontage()))
+			if (Montages.Contains(instance->GetCurrentActiveMontage()))
 			{
-				instance->Montage_Stop(0.25f,instance->GetCurrentActiveMontage());
+				instance->Montage_Stop(0.25f, instance->GetCurrentActiveMontage());
 			}
 		}
 	}
-	
+
 	EndAbility();
 }
 
@@ -676,12 +670,13 @@ void UAbilityBase::ApplyTargetEffect(ABaseCharacter* Character)
 	FOnEffectExpired OnExpiredTargetEffect;
 	OnExpiredTargetEffect.BindDynamic(this, &UAbilityBase::OnExpiredTargetEffect);
 
-	Character->GetAbilityComponent()->ApplyEffects(TargetEffectInstance, Character, OnExpiredTargetEffect, this, nullptr);
+	Character->GetAbilityComponent()->ApplyEffects(TargetEffectInstance, Character, OnExpiredTargetEffect, this,
+	                                               nullptr);
 }
 
 void UAbilityBase::EndSelfEffect(ABaseCharacter* Character) const
 {
-	UE_LOGFMT(LogEffect,Log,"셀프 이팩트 종료!!");
+	UE_LOGFMT(LogEffect, Log, "셀프 이팩트 종료!!");
 	Character->GetAbilityComponent()->EndEffects(SelfEffectInstance);
 }
 
@@ -726,7 +721,6 @@ void UAbilityBase::ApplyCost()
 		UE_LOGFMT(LogAbility, Warning, "코스트 적용 : {0}", AbilityTag.ToString());
 		if (auto costObject = AbilityInformation.AbilityRequirement->GetDefaultObject<UAbilityRequirement>()->GetCost())
 		{
-
 			if (auto costEffect = DuplicateObject<UAbilityEffect>(costObject.GetDefaultObject(), AbilityOwner.Get()))
 			{
 				AbilityOwner->GetAbilityComponent()->ApplyEffect(costEffect, AbilityOwner.Get(), FOnEffectExpired(),
@@ -877,8 +871,7 @@ void UAbilityBase::BindTalent()
 	{
 		if (const auto atComp = Cast<APlayerCharacter>(AbilityTarget)->GetAbilityTalentComponent())
 		{
-			
-			for(auto t : AbilityTalent)
+			for (auto t : AbilityTalent)
 			{
 				if (auto copy = DuplicateObject(t.GetDefaultObject(), this))
 				{
@@ -887,7 +880,6 @@ void UAbilityBase::BindTalent()
 				}
 				//t.GetDefaultObject()->Bind(atComp);
 			}
-			
 		}
 	}
 }
@@ -910,7 +902,7 @@ void UAbilityBase::UnBindTalent()
 
 void UAbilityBase::BindDeadEvent()
 {
-	if(!bShouldBindDeadEvent)
+	if (!bShouldBindDeadEvent)
 	{
 		return;
 	}
@@ -922,7 +914,7 @@ void UAbilityBase::BindDeadEvent()
 
 void UAbilityBase::UnBindDeadEvent()
 {
-	if(!bShouldBindDeadEvent)
+	if (!bShouldBindDeadEvent)
 	{
 		return;
 	}
@@ -1029,7 +1021,7 @@ AActor* UAbilityBase::SpawnActor(TSubclassOf<AActor> ActorObject)
 		spawnParam.Owner = AbilityOwner.Get();
 		spawnParam.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-		return AbilityOwner->GetWorld()->SpawnActor(ActorObject, 0, 0, spawnParam);
+		return AbilityOwner->GetWorld()->SpawnActor(ActorObject, nullptr, nullptr, spawnParam);
 	}
 
 	return nullptr;
@@ -1059,12 +1051,12 @@ float UAbilityBase::GetOwnersActionSpeed()
 
 UWorld* UAbilityBase::GetWorld() const
 {
-	if(AbilityOwner.IsValid())
+	if (AbilityOwner.IsValid())
 	{
 		return AbilityOwner->GetWorld();
 	}
 
-	if(AbilityTarget.IsValid())
+	if (AbilityTarget.IsValid())
 	{
 		return AbilityTarget->GetWorld();
 	}

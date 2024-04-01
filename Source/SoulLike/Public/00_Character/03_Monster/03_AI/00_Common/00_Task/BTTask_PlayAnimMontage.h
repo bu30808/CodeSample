@@ -33,9 +33,10 @@ class SOULLIKE_API UBTTask_PlayAnimMontage : public UBTTask_BlackboardBase
 	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
 	                            EBTNodeResult::Type TaskResult) override;
 	//virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
-	
+
 	UFUNCTION()
 	void OnMontageBlendingOutEvent(UAnimMontage* Montage, bool bInterrupted);
+
 public:
 	UPROPERTY(EditAnywhere)
 	class UAnimMontage* MontageToPlay;

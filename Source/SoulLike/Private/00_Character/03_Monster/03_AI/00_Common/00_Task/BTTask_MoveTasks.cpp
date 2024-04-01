@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "00_Character\03_Monster\03_AI\00_Common\00_Task\BTTask_MoveTasks.h"
+#include "00_Character/03_Monster/03_AI/00_Common/00_Task/BTTask_MoveTasks.h"
 
 #include "AIController.h"
 #include "NavigationSystem.h"
@@ -21,65 +21,67 @@ UBTTask_MoveRandomPoint::UBTTask_MoveRandomPoint()
 
 void UBTTask_MoveRandomPoint::OnMoveCompleteEvent(FAIRequestID RequestID, EPathFollowingResult::Type Result)
 {
-	switch (Result) {
+	switch (Result)
+	{
 	case EPathFollowingResult::Success:
-		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Succeeded);
+		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()), EBTNodeResult::Succeeded);
 		break;
 	case EPathFollowingResult::Blocked:
 	case EPathFollowingResult::OffPath:
 	case EPathFollowingResult::Aborted:
 	case EPathFollowingResult::Skipped_DEPRECATED:
 	case EPathFollowingResult::Invalid:
-		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Failed);
+		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()), EBTNodeResult::Failed);
 		break;
 	}
 }
 
 EBTNodeResult::Type UBTTask_MoveRandomPoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	
 	if (auto character = OwnerComp.GetAIOwner()->GetPawn())
 	{
 		AICon = OwnerComp.GetAIOwner();
-		if(UNavigationSystemV1* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(AICon->GetWorld()))
+		if (UNavigationSystemV1* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(AICon->GetWorld()))
 		{
 			FNavLocation result;
 			if (NavSystem->GetRandomReachablePointInRadius(character->GetActorLocation(), Radius, result))
 			{
 				DrawDebugPoint(character->GetWorld(), result.Location, 100.f, FColor::Blue);
-				OwnerComp.GetAIOwner()->ReceiveMoveCompleted.AddUniqueDynamic(this,&UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
+				OwnerComp.GetAIOwner()->ReceiveMoveCompleted.AddUniqueDynamic(
+					this, &UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
 				// 이동 명령을 내립니다.
-				OwnerComp.GetAIOwner()->MoveToLocation(result.Location,50.f);
+				OwnerComp.GetAIOwner()->MoveToLocation(result.Location, 50.f);
 				return EBTNodeResult::InProgress;
 			}
-		}else
+		}
+		else
 		{
-			UE_LOGFMT(LogAICon,Error,"{0} 네비게이션을 가져올 수 없습니다.",GetNameSafe(AICon->GetPawn()));
+			UE_LOGFMT(LogAICon, Error, "{0} 네비게이션을 가져올 수 없습니다.", GetNameSafe(AICon->GetPawn()));
 		}
 	}
 
-	UE_LOGFMT(LogAICon,Error,"{0} 랜덤 좌표 생성에 실패했습니다.",GetNameSafe(AICon->GetPawn()));
+	UE_LOGFMT(LogAICon, Error, "{0} 랜덤 좌표 생성에 실패했습니다.", GetNameSafe(AICon->GetPawn()));
 	return EBTNodeResult::Failed;
 }
 
 
 EBTNodeResult::Type UBTTask_MoveRandomPoint::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	UE_LOGFMT(LogTemp,Warning,"랜덤 포인트 이동 중지당함.");
+	UE_LOGFMT(LogTemp, Warning, "랜덤 포인트 이동 중지당함.");
 	if (AAIController* AIController = OwnerComp.GetAIOwner())
 	{
 		AIController->StopMovement();
 	}
-	
+
 	return Super::AbortTask(OwnerComp, NodeMemory);
 }
 
 void UBTTask_MoveRandomPoint::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
-	EBTNodeResult::Type TaskResult)
+                                             EBTNodeResult::Type TaskResult)
 {
 	Super::OnTaskFinished(OwnerComp, NodeMemory, TaskResult);
 
-	AICon->ReceiveMoveCompleted.RemoveDynamic(this,&UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
+	AICon->ReceiveMoveCompleted.RemoveDynamic(this, &UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
 }
 
 FString UBTTask_MoveRandomPoint::GetStaticDescription() const
@@ -94,39 +96,44 @@ UBTTask_MoveToDirection::UBTTask_MoveToDirection()
 
 void UBTTask_MoveToDirection::OnMoveCompleteEvent(FAIRequestID RequestID, EPathFollowingResult::Type Result)
 {
-	switch (Result) {
+	switch (Result)
+	{
 	case EPathFollowingResult::Success:
-		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Succeeded);
+		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()), EBTNodeResult::Succeeded);
 		break;
 	case EPathFollowingResult::Blocked:
 	case EPathFollowingResult::OffPath:
 	case EPathFollowingResult::Aborted:
 	case EPathFollowingResult::Skipped_DEPRECATED:
 	case EPathFollowingResult::Invalid:
-		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Failed);
+		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()), EBTNodeResult::Failed);
 		break;
 	}
 }
 
-FVector UBTTask_MoveToDirection::GetControlDirLocation(AAIController* AIController, EDirection Direction, float Distance, bool bRandom, float RandMin, float RandMax)
+FVector UBTTask_MoveToDirection::GetControlDirLocation(AAIController* AIController, EDirection Direction,
+                                                       float Distance, bool bRandom, float RandMin, float RandMax)
 {
-
 	float distance = Distance;
-	if(bRandom)
+	if (bRandom)
 	{
-		distance = FMath::RandRange(RandMin,RandMax);
+		distance = FMath::RandRange(RandMin, RandMax);
 	}
-	
+
 	switch (Direction)
 	{
 	case EDirection::Front:
-		return UKismetMathLibrary::GetForwardVector( FRotator(0, AIController->GetControlRotation().Yaw,0)) * distance + AIController->GetPawn()->GetActorLocation();		
+		return UKismetMathLibrary::GetForwardVector(FRotator(0, AIController->GetControlRotation().Yaw, 0)) * distance +
+			AIController->GetPawn()->GetActorLocation();
 	case EDirection::Right:
-		return UKismetMathLibrary::GetRightVector(FRotator(0, AIController->GetControlRotation().Yaw,0)) * distance + AIController->GetPawn()->GetActorLocation();
+		return UKismetMathLibrary::GetRightVector(FRotator(0, AIController->GetControlRotation().Yaw, 0)) * distance +
+			AIController->GetPawn()->GetActorLocation();
 	case EDirection::Left:
-		return UKismetMathLibrary::GetRightVector(FRotator(0, AIController->GetControlRotation().Yaw,0)) * distance * -1 + AIController->GetPawn()->GetActorLocation();
+		return UKismetMathLibrary::GetRightVector(FRotator(0, AIController->GetControlRotation().Yaw, 0)) * distance * -
+			1 + AIController->GetPawn()->GetActorLocation();
 	case EDirection::Back:
-		return UKismetMathLibrary::GetForwardVector(FRotator(0, AIController->GetControlRotation().Yaw,0)) * distance * -1 + AIController->GetPawn()->GetActorLocation();
+		return UKismetMathLibrary::GetForwardVector(FRotator(0, AIController->GetControlRotation().Yaw, 0)) * distance *
+			-1 + AIController->GetPawn()->GetActorLocation();
 	case EDirection::FrontRight:
 	case EDirection::FrontLeft:
 	case EDirection::BackRight:
@@ -141,24 +148,25 @@ FVector UBTTask_MoveToDirection::GetControlDirLocation(AAIController* AIControll
 	return FVector::ZeroVector;
 }
 
-FVector UBTTask_MoveToDirection::GetDirLocation(AAIController* AIController, EDirection Direction, float Distance, bool bRandom, float RandMin, float RandMax)
+FVector UBTTask_MoveToDirection::GetDirLocation(AAIController* AIController, EDirection Direction, float Distance,
+                                                bool bRandom, float RandMin, float RandMax)
 {
 	float distance = Distance;
-	if(bRandom)
+	if (bRandom)
 	{
-		distance = FMath::RandRange(RandMin,RandMax);
+		distance = FMath::RandRange(RandMin, RandMax);
 	}
 
 	auto pawn = AIController->GetPawn();
-	
+
 	switch (Direction)
 	{
 	case EDirection::Front:
-		return pawn->GetActorForwardVector() * distance + pawn->GetActorLocation();		
+		return pawn->GetActorForwardVector() * distance + pawn->GetActorLocation();
 	case EDirection::Right:
 		return pawn->GetActorRightVector() * distance + pawn->GetActorLocation();
 	case EDirection::Left:
-		return pawn->GetActorRightVector() * distance * -1 +pawn->GetActorLocation();
+		return pawn->GetActorRightVector() * distance * -1 + pawn->GetActorLocation();
 	case EDirection::Back:
 		return pawn->GetActorForwardVector() * distance * -1 + pawn->GetActorLocation();
 	case EDirection::FrontRight:
@@ -181,19 +189,22 @@ EBTNodeResult::Type UBTTask_MoveToDirection::ExecuteTask(UBehaviorTreeComponent&
 	{
 		AICon = OwnerComp.GetAIOwner();
 
-		AICon->ReceiveMoveCompleted.AddUniqueDynamic(this,&UBTTask_MoveToDirection::OnMoveCompleteEvent);
+		AICon->ReceiveMoveCompleted.AddUniqueDynamic(this, &UBTTask_MoveToDirection::OnMoveCompleteEvent);
 
 		FVector moveLocation;
-		if(bUseControlDirection)
+		if (bUseControlDirection)
 		{
-			moveLocation = GetControlDirLocation(AICon,MoveDirection, MoveDistance, bRandomInMoveDistance, RandomRangeMin, RandomRangeMax);
-		}else
-		{
-			moveLocation = GetDirLocation(AICon,MoveDirection, MoveDistance, bRandomInMoveDistance, RandomRangeMin, RandomRangeMax);
+			moveLocation = GetControlDirLocation(AICon, MoveDirection, MoveDistance, bRandomInMoveDistance,
+			                                     RandomRangeMin, RandomRangeMax);
 		}
-		
+		else
+		{
+			moveLocation = GetDirLocation(AICon, MoveDirection, MoveDistance, bRandomInMoveDistance, RandomRangeMin,
+			                              RandomRangeMax);
+		}
+
 		// 이동 명령을 내립니다.
-		OwnerComp.GetAIOwner()->MoveToLocation(moveLocation,AcceptanceRadius);
+		OwnerComp.GetAIOwner()->MoveToLocation(moveLocation, AcceptanceRadius);
 
 		return EBTNodeResult::InProgress;
 	}
@@ -207,7 +218,7 @@ EBTNodeResult::Type UBTTask_MoveToDirection::AbortTask(UBehaviorTreeComponent& O
 	{
 		AIController->StopMovement();
 	}
-	
+
 	return Super::AbortTask(OwnerComp, NodeMemory);
 }
 
@@ -217,26 +228,25 @@ FString UBTTask_MoveToDirection::GetStaticDescription() const
 }
 
 void UBTTask_MoveToDirection::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
-	EBTNodeResult::Type TaskResult)
+                                             EBTNodeResult::Type TaskResult)
 {
 	Super::OnTaskFinished(OwnerComp, NodeMemory, TaskResult);
 
-	AICon->ReceiveMoveCompleted.RemoveDynamic(this,&UBTTask_MoveToDirection::OnMoveCompleteEvent);
+	AICon->ReceiveMoveCompleted.RemoveDynamic(this, &UBTTask_MoveToDirection::OnMoveCompleteEvent);
 }
 
 UBTTask_JumpMove::UBTTask_JumpMove()
 {
 	bCreateNodeInstance = true;
-	bNotifyTick =true;
+	bNotifyTick = true;
 	bNotifyTaskFinished = true;
 	NodeName = TEXT("점프이동");
 }
 
 void UBTTask_JumpMove::OnJumpEnded(const FHitResult& Hit)
 {
-	AICon->GetPawn<ACharacter>()->LandedDelegate.RemoveDynamic(this,&UBTTask_JumpMove::OnJumpEnded);
-	FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Succeeded);
-	
+	AICon->GetPawn<ACharacter>()->LandedDelegate.RemoveDynamic(this, &UBTTask_JumpMove::OnJumpEnded);
+	FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()), EBTNodeResult::Succeeded);
 }
 
 EBTNodeResult::Type UBTTask_JumpMove::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
@@ -244,35 +254,34 @@ EBTNodeResult::Type UBTTask_JumpMove::ExecuteTask(UBehaviorTreeComponent& OwnerC
 	if (auto character = OwnerComp.GetAIOwner()->GetPawn())
 	{
 		AICon = OwnerComp.GetAIOwner();
-		if(AICon!=nullptr)
+		if (AICon != nullptr)
 		{
-			if(UNavigationSystemV1* navSystem = UNavigationSystemV1::GetCurrent(AICon))
+			if (UNavigationSystemV1* navSystem = UNavigationSystemV1::GetCurrent(AICon))
 			{
 				FVector moveLocation;
-				if(bUseControlDirection)
+				if (bUseControlDirection)
 				{
-					moveLocation = UBTTask_MoveToDirection::GetControlDirLocation(AICon,MoveDirection);
-				}else
+					moveLocation = UBTTask_MoveToDirection::GetControlDirLocation(AICon, MoveDirection);
+				}
+				else
 				{
-					moveLocation = UBTTask_MoveToDirection::GetDirLocation(AICon,MoveDirection);
+					moveLocation = UBTTask_MoveToDirection::GetDirLocation(AICon, MoveDirection);
 				}
 
-				DrawDebugPoint(AICon->GetWorld(),moveLocation,50.f,FColor::Yellow,true,10.f);
-				
+				DrawDebugPoint(AICon->GetWorld(), moveLocation, 50.f, FColor::Yellow, true, 10.f);
+
 				FNavLocation StartNavLocation;
-				if(navSystem->ProjectPointToNavigation(moveLocation, StartNavLocation))
+				if (navSystem->ProjectPointToNavigation(moveLocation, StartNavLocation))
 				{
-					UKismetSystemLibrary::PrintString(this,"JUMP");
-					AICon->GetPawn<ACharacter>()->LandedDelegate.AddUniqueDynamic(this,&UBTTask_JumpMove::OnJumpEnded);
+					UKismetSystemLibrary::PrintString(this, "JUMP");
+					AICon->GetPawn<ACharacter>()->LandedDelegate.AddUniqueDynamic(this, &UBTTask_JumpMove::OnJumpEnded);
 					AICon->GetPawn<ACharacter>()->Jump();
 					return EBTNodeResult::InProgress;
 				}
-	
 			}
-		
 		}
 	}
-	
+
 	return EBTNodeResult::Failed;
 }
 
@@ -281,22 +290,26 @@ void UBTTask_JumpMove::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMe
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
 
 	auto pawn = AICon->GetPawn();
-	
-	if(bUseControlDirection)
+
+	if (bUseControlDirection)
 	{
 		switch (MoveDirection)
 		{
 		case EDirection::Front:
-			pawn->AddActorWorldOffset(UKismetMathLibrary::GetForwardVector(AICon->GetControlRotation()) * OffsetPower*DeltaSeconds);
+			pawn->AddActorWorldOffset(
+				UKismetMathLibrary::GetForwardVector(AICon->GetControlRotation()) * OffsetPower * DeltaSeconds);
 			break;
 		case EDirection::Right:
-			pawn->AddActorWorldOffset(UKismetMathLibrary::GetRightVector(AICon->GetControlRotation()) * OffsetPower*DeltaSeconds);
+			pawn->AddActorWorldOffset(
+				UKismetMathLibrary::GetRightVector(AICon->GetControlRotation()) * OffsetPower * DeltaSeconds);
 			break;
 		case EDirection::Left:
-			pawn->AddActorWorldOffset(UKismetMathLibrary::GetRightVector(AICon->GetControlRotation())*-1 * OffsetPower*DeltaSeconds);
+			pawn->AddActorWorldOffset(
+				UKismetMathLibrary::GetRightVector(AICon->GetControlRotation()) * -1 * OffsetPower * DeltaSeconds);
 			break;
 		case EDirection::Back:
-			pawn->AddActorWorldOffset(UKismetMathLibrary::GetForwardVector(AICon->GetControlRotation())*-1 * OffsetPower*DeltaSeconds);
+			pawn->AddActorWorldOffset(
+				UKismetMathLibrary::GetForwardVector(AICon->GetControlRotation()) * -1 * OffsetPower * DeltaSeconds);
 			break;
 		case EDirection::FrontRight:
 		case EDirection::FrontLeft:
@@ -308,9 +321,9 @@ void UBTTask_JumpMove::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMe
 			break;
 		default: ;
 		}
-
-	}else
-	{	
+	}
+	else
+	{
 		switch (MoveDirection)
 		{
 		case EDirection::Front:
@@ -350,9 +363,9 @@ EBTNodeResult::Type UBTTask_JumpMove::AbortTask(UBehaviorTreeComponent& OwnerCom
 }
 
 void UBTTask_JumpMove::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
-	EBTNodeResult::Type TaskResult)
+                                      EBTNodeResult::Type TaskResult)
 {
-	if(AICon!=nullptr)
+	if (AICon != nullptr)
 	{
 		AICon->GetPawn<ACharacter>()->StopJumping();
 	}

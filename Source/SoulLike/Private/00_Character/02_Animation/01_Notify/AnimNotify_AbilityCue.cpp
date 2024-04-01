@@ -16,9 +16,8 @@ UAnimNotify_AbilityCue::UAnimNotify_AbilityCue()
 }
 
 void UAnimNotify_AbilityCue::Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
-	const FAnimNotifyEventReference& EventReference)
+                                    const FAnimNotifyEventReference& EventReference)
 {
-
 	if (MeshComp->GetOwner())
 	{
 		if (const auto character = MeshComp->GetOwner<ABaseCharacter>())

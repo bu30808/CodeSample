@@ -8,7 +8,6 @@
 #include "00_Character/01_Component/InventoryComponent.h"
 #include "03_Widget/01_Menu/00_Inventory/InventoryWidget.h"
 #include "03_Widget/01_Menu/00_Inventory/ItemButtonWidget.h"
-#include "03_Widget/01_Menu/00_Inventory/ItemMenuWidget.h"
 #include "03_Widget/01_Menu/03_Equipment/EquipWidget.h"
 #include "03_Widget/04_Merchant/MerchantButtonWidget.h"
 #include "04_Item/ItemActor.h"
@@ -20,7 +19,7 @@
 
 void UItemListWidget::OnEntryWidgetGeneratedEvent(UUserWidget& UserWidget)
 {
-	OnAddListViewWidget.ExecuteIfBound(&UserWidget);
+	OnAddListViewWidget.Broadcast(&UserWidget);
 	ListView_Item->SetScrollbarVisibility(ESlateVisibility::Visible);
 
 	if (UserWidget.IsA<UItemButtonWidget>())
@@ -31,14 +30,12 @@ void UItemListWidget::OnEntryWidgetGeneratedEvent(UUserWidget& UserWidget)
 			{
 				button->RefreshItemData(this);
 			}
-			
 		}
 	}
 }
 
 void UItemListWidget::NativeConstruct()
 {
-	
 	Super::NativeConstruct();
 
 	ListView_Item->ClearListItems();
@@ -63,6 +60,7 @@ void UItemListWidget::NativeConstruct()
 			invenComp->OnAddItem.AddUniqueDynamic(this, &UItemListWidget::OnAddItemEvent);
 			invenComp->OnRemoveItem.AddUniqueDynamic(this, &UItemListWidget::OnRemoveItemEvent);
 			invenComp->OnInventoryWidgetUpdate.AddUniqueDynamic(this, &UItemListWidget::OnInventoryUpdateEvent);
+			OnAddListViewWidget.AddUniqueDynamic(invenComp, &UInventoryComponent::OnItemButtonWidgetGeneratedEvent);
 		}
 
 		if (auto abComp = Owner->GetAbilityComponent())
@@ -81,6 +79,7 @@ void UItemListWidget::OnClickedCloseButton()
 	SetVisibility(ESlateVisibility::Collapsed);
 }
 
+
 void UItemListWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
 #if !WITH_EDITOR
@@ -90,7 +89,6 @@ void UItemListWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 		CreateItemList_All();
 	}
 #endif
-
 }
 
 void UItemListWidget::CreateItemList_All()
@@ -269,9 +267,10 @@ void UItemListWidget::RefreshFromInventoryItem(const FInventoryItem& Item)
 
 void UItemListWidget::OnItemButtonHovered(UInventoryData* Data)
 {
-	if(ParentsUMG.IsValid())
+	if (ParentsUMG.IsValid())
 	{
-		switch(ItemListType) {
+		switch (ItemListType)
+		{
 		case EItemListType::INVENTORY:
 			Cast<UInventoryWidget>(ParentsUMG)->ShowItemInformation(Data);
 			break;
@@ -279,13 +278,12 @@ void UItemListWidget::OnItemButtonHovered(UInventoryData* Data)
 			Cast<UEquipWidget>(ParentsUMG)->ShowItemInformation(Data);
 			break;
 		case EItemListType::MERCHANT:
-			
+
 			break;
 		case EItemListType::ENHANCEMENT:
 			Cast<UEnhancementWidget>(ParentsUMG)->ShowItemInformation(Data);
 			break;
 		}
-	
 	}
 }
 
@@ -312,12 +310,11 @@ void UItemListWidget::HiddenItem() const
 }
 
 void UItemListWidget::OnAddItemEvent(class ABaseCharacter* UsedBy, const FInventoryItem& ItemInfo,
-                                      AItemActor* ItemActor)
+                                     AItemActor* ItemActor)
 {
-
-	UE_LOGFMT(LogTemp,Log,"인벤토리 위젯 업데이트");
+	UE_LOGFMT(LogTemp, Log, "인벤토리 위젯 업데이트");
 	/*UKismetSystemLibrary::PrintString(this,StaticEnum<EItemListType>()->GetValueAsString(ItemListType));*/
-	
+
 	if (IsOrbItem(ItemInfo))
 	{
 		return;
@@ -335,10 +332,10 @@ void UItemListWidget::OnAddItemEvent(class ABaseCharacter* UsedBy, const FInvent
 		{
 			data->OnPlayerBuyItemFromNPC = OnPlayerBuyItemFromNPC;
 			data->InventoryItem = ItemInfo;
-			
+
 			ListView_Item->AddItem(data);
 			ListViewItems.Add(ItemInfo.UniqueID, data);
-			
+
 			ListView_Item->SetScrollbarVisibility(ESlateVisibility::Visible);
 		}
 	}
@@ -355,12 +352,11 @@ void UItemListWidget::OnRemoveItemEvent(ABaseCharacter* Player, const FGuid& Ite
 
 void UItemListWidget::OnInventoryUpdateEvent(const FGuid& ItemUniqueID, const int32& NewCount)
 {
-	UE_LOGFMT(LogTemp, Log, "{0} {1}", __FUNCTION__, __LINE__);
 	if (ListViewItems.Contains(ItemUniqueID))
 	{
-		//UE_LOGFMT(LogTemp,Log,"{0} {1}",__FUNCTION__,__LINE__);
+		UE_LOGFMT(LogTemp, Log, "{0} {1}. 다음 아이템을 가진 버튼을 찾아 업데이트를 시도합니다 : {2}", __FUNCTION__, __LINE__,
+		          ListViewItems[ItemUniqueID]->InventoryItem.GetItemInformation()->Item_Name.ToString());
 		ListViewItems[ItemUniqueID]->InventoryItem.ItemCount = NewCount;
-		//UE_LOGFMT(LogTemp,Log,"업데이트 된 후의 갯수 : {0} ,{1} {2}",ListViewItems[ItemUniqueID]->InventoryItem.ItemCount,__FUNCTION__,__LINE__);
 		if (auto button = ListView_Item->GetEntryWidgetFromItem<UItemButtonWidget>(ListViewItems[ItemUniqueID]))
 		{
 			button->RefreshItemData(this);
@@ -456,7 +452,7 @@ void UItemListWidget::QuickSlotSetting() const
 void UItemListWidget::EquipSetting(UEquipWidget* ParentsWidget)
 {
 	ParentsUMG = ParentsWidget;
-	
+
 	ItemListType = EItemListType::EQUIPMENT;
 	Button_Close->SetVisibility(ESlateVisibility::Collapsed);
 

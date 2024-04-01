@@ -306,7 +306,7 @@ float UAbilityTalentComponent::CalculateModifiedDodgeSPWithTraits(float Original
 			sum += FMath::Clamp(iter.Value.Execute(OriginalStamina), 0, OriginalStamina);
 		}
 	}
-	
+
 	return sum;
 }
 
@@ -471,7 +471,8 @@ void UAbilityTalentComponent::BroadcastOnSuccessDodge(APlayerCharacter* Player)
 
 void UAbilityTalentComponent::BroadcastOnSuccessHit(ABaseCharacter* DamagedBy, ABaseCharacter* DamagedCharacter)
 {
-	UE_LOGFMT(LogTemp, Warning, "{0}가 {1}에 대해 피해특성 적용하기 직전입니다.",DamagedBy->GetActorNameOrLabel(),DamagedCharacter->GetActorNameOrLabel());
+	UE_LOGFMT(LogTemp, Warning, "{0}가 {1}에 대해 피해특성 적용하기 직전입니다.", DamagedBy->GetActorNameOrLabel(),
+	          DamagedCharacter->GetActorNameOrLabel());
 	for (auto iter : OnSuccessDamageHit)
 	{
 		if (iter.Value.IsBound())

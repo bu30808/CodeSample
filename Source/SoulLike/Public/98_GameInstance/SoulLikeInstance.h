@@ -6,6 +6,7 @@
 #include "00_Character/04_NPC/Bonfire.h"
 #include "03_Widget/01_Menu/00_Inventory/ItemListWidget.h"
 #include "92_Tools/TutorialActor.h"
+#include "92_Tools/WorldStreamingSourceActor.h"
 #include "Engine/GameInstance.h"
 #include "WorldPartition/DataLayer/DataLayerInstance.h"
 #include "SoulLikeInstance.generated.h"
@@ -15,6 +16,17 @@ DECLARE_LOG_CATEGORY_EXTERN(LogInstance, Log, All);
 class AItemActor;
 class ABaseMonster;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFinishLoadGame);
+DECLARE_DYNAMIC_DELEGATE(FOnDeletedSaveFile);
+
+USTRUCT(BlueprintType)
+struct FDataLayerTable : public FTableRowBase
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(EditAnywhere)
+	class UDataLayerAsset* DataLayerAsset;
+};
 
 /**
  * 
@@ -36,11 +48,21 @@ private:
 
 	UPROPERTY()
 	TSubclassOf<class ASoulTomb> SoulTombClass;
+	
+	UPROPERTY()
+	TSubclassOf<class AWorldStreamingSourceActor> WorldStreamingSourceActorClass;
+	UPROPERTY()
+	TObjectPtr<APlayerCharacter> CurrentPlayer;
+	//dataLayerSubsystem->GetDataLayerInstanceFromAssetName가 패키징하면 레이어를 못 찾는 문제가 있어서, 데이터테이블에 우겨넣고 씁니다.
+	UPROPERTY()
+	class UDataTable* DataLayerTable;
+
 public:
-	class UDataLayerAsset* GetAlwaysActivatedLayer() const {return AlwaysActivatedLayer;};
+	class UDataLayerAsset* GetAlwaysActivatedLayer() const { return AlwaysActivatedLayer; }
+	void SetPlayer(APlayerCharacter* PlayerCharacter){CurrentPlayer = PlayerCharacter;}
 
 	UPROPERTY()
-	int32 SaveIndex=0;
+	int32 SaveIndex = 0;
 
 	//이 변수를 직접 사용하지 마세요.
 	//GetSaveGameInstance함수를 통해서 불러오세요.
@@ -53,59 +75,97 @@ public:
 	UPROPERTY()
 	TSubclassOf<class UUserWidget> LoadingWidgetClass;
 
-	/*UPROPERTY()
-	class USoulLikeSaveGame* SaveGameInstance;*/
-public:
 	virtual void Init() override;
 	//로딩스크린 생성
 	void PreLoadMapEvent(const FString& LevelName);
 	//월드 로드 이후 호출됨.
 	void OnPostLoadMapWithWorldEvent(UWorld* World);
-	
+
 	bool IsUseGameSave() const;
+	bool IsRespawn();
 
-
-	
 	UFUNCTION(BlueprintCallable)
-	void LoadGame(class APlayerCharacter* Player);
+	void DeleteSaveFile(const FOnDeletedSaveFile& OnDeletedSaveFile,FString SlotName = "SaveFile");
 
-	void LoadLayer(class APlayerCharacter* Player);
-	void LoadSky(class APlayerCharacter* Player);
-	bool LoadPlayerLocation(class APlayerCharacter* Player);
-	void LoadInventory(class APlayerCharacter* Player);
-	void LoadAttribute(class APlayerCharacter* Player, bool bIsRespawn);
-	void LoadQuickSlotState(class APlayerCharacter* Player);
+	UPROPERTY(BlueprintCallable)
+	FOnFinishLoadGame OnFinishLoadGame;
+
+	UFUNCTION(BlueprintCallable)
+	void LoadGame();
+	
+	//공통적으로 로드되는 부분
+	UFUNCTION()
+	void LoadCommon();
+
+	//저장된 레벨과 현 레벨에 다르면 레벨을 새로 엽니다.
+	void LoadLevel(const FString& LevelName);
+
+	//EGameLoadType::NORMAL일때 사용됩니다.
+	void NormalLoad();
+
+	//EGameLoadType::RESPAWN 이거나 EGameLoadType::TELEPORT_TO_LAST_SAVEPOINT일때 사용됩니다.
+	void RespawnOrLastSavePointLoad();
+
+	//EGameLoadType::TELEPORT_TO_OTHER_BONFIRE일때 사용됩니다.
+	void TeleportToOtherBonfireLoad();
+
+	//리스폰 후 회복약 재충전
+	UFUNCTION()
+	void PotionReplenishment();
+
+	//화톳불이 속한 레이어를 복구합니다.
+	void LoadBonfireLayer(const TSet<FName>& Layers);
+	void LoadBonfireLayer(const TArray<TSoftObjectPtr<UDataLayerAsset>>& Layers);
+
+	//레이어를 복구합니다.
+	void LoadLayer();
+	void LoadLayers(const TArray<FName>& LayerRowNames);
+	void LoadLayer(const FName& LayerRowName);
+
+	//화톳불에 저장된 시간으로 되돌립니다.
+	UFUNCTION()
+	void LoadSkyFromBonfire();
+	//마지막 하늘 시간으로 되돌립니다.
+	UFUNCTION()
+	void LoadSky();
+
+	/*void LoadPlayerLocation(class APlayerCharacter* Player, AWorldStreamingSourceActor* StreamingActor);*/
+
+	//스트리밍 액터를 스폰하여 가져옵니다.
+	class AWorldStreamingSourceActor* CreateWorldStreamingActor();
+
+	void LoadInventory();
+	void LoadAttribute(bool bIsRespawn);
+	void LoadQuickSlotState();
 	void CreateSoulTomb(class APlayerCharacter* Player);
-	
+
+	UFUNCTION()
+	void MarkLoadFinish();
 
 
+	//퀵슬롯에 선택된 인덱스 번호를 저장하기 위한 이벤트입니다.
+	UFUNCTION()
+	void OnUpdateMainAbilityQuickSlotEvent(const FGameplayTag& Tag, bool bRemove, int32 SlotIndex);
+	UFUNCTION()
+	void OnUpdateMainConsumeQuickSlotEvent(const FInventoryItem& Item, bool bRemove, int32 SlotIndex);
 
 
-
-
-
-
-
-
-
-	
 	UFUNCTION(BlueprintCallable)
 	void ClearSave();
 	UFUNCTION(BlueprintCallable)
 	void TeleportToLastSavePoint(class APlayerCharacter* Player);
 
-	
+
 	//저장후 호출되는 콜백
 	void OnSaved(const FString& SlotName, const int32 UserIndex, bool bSucc);
-	
+
 	class USoulLikeSaveGame* GetSaveGameInstance(const FString& SlotName = "SaveFile");
 	void SaveGameInstanceToSlot(class USoulLikeSaveGame* SaveInstance, const FString& SlotName = "SaveFile");
-	
 
 
 	//필드에 배치된 아이템을 획득하면 상태를 저장하기 위해 호출됩니다.
 	UFUNCTION()
-	void OnSaveLevelItemPlacementStateEvent(ABaseCharacter* GetBy,  AItemActor* GotItemActor);
+	void OnSaveLevelItemPlacementStateEvent(ABaseCharacter* GetBy, AItemActor* GotItemActor);
 	//아이템을 획득하면 저장
 	UFUNCTION()
 	void OnAddItemEvent(ABaseCharacter* UsedBy, const FInventoryItem& ItemInfo, class AItemActor* GotItemActor);
@@ -126,7 +186,7 @@ public:
 	void OnUnEquipItemEvent(ABaseCharacter* UnEquippedBy, const FInventoryItem& ItemInfo);
 	//플레이어가 NPC에게 아이템을 팔면 호출됩니다.
 	UFUNCTION()
-	void OnNPCBuyItemFromPlayerEvent(class APlayerCharacter* InteractPlayer,const FGuid& ItemID);
+	void OnNPCBuyItemFromPlayerEvent(class APlayerCharacter* InteractPlayer, const FGuid& ItemID);
 	//체크포인트에서 체크포인트 정보를 저장하는 기능을 합니다.
 	UFUNCTION()
 	void SaveWithLastSavePoint(APlayerCharacter* Player, UBonfireComponent* BonfireComponent);
@@ -135,7 +195,7 @@ public:
 	void OnRemoveItemEvent(class ABaseCharacter* UsedBy, const FGuid& RemoveItemUniqueID);
 	//퀵슬롯에 아이템이 등록되면 호출됩니다.
 	UFUNCTION()
-	void OnRegisterQuickSlotItemOrAbility(APlayerCharacter* Player, class UInventoryData* Data,int32 Index);
+	void OnRegisterQuickSlotItemOrAbility(APlayerCharacter* Player, class UInventoryData* Data, int32 Index);
 	//퀵슬롯에 아이템이 해제되면 호출됩니다.
 	UFUNCTION()
 	void OnUnRegisterQuickSlotItemOrAbility(APlayerCharacter* Player, UInventoryData* Data, int32 Index);
@@ -145,7 +205,7 @@ public:
 	void OnDeadPlayer(APlayerCharacter* PlayerCharacter);
 
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool ExistSaveFile();
 
 	//활성화된 화톳불을 저장합니다.
@@ -156,7 +216,6 @@ public:
 	bool IsActivatedBonfire(const FString& LevelName, const FString& SafeName);
 	UFUNCTION()
 	void SaveTeleportBonfire(const FBonfireInformation& BonfireInfo);
-
 
 
 	//읽은 튜토리얼 액터를 저장합니다.
@@ -176,8 +235,10 @@ public:
 
 	//하늘 상태를 저장합니다.
 	void SaveSky(APlayerCharacter* Player);
+	void SaveDataLayer(APlayerCharacter* Player);
 
 	friend class USaveGameHelperLibrary;
+
 protected:
 	//이미 활성화된 화톳불인지 확인하여 리턴하는 함수입니다. 헬퍼 라이브러리를 통해서 호출하세요.
 	bool IsActivatedBonfire(const class ABonfire* Bonfire);
@@ -188,5 +249,3 @@ protected:
 	//해당 태그를 가진 우두머리가 처치된적이 있는지 확인합니다.
 	bool IsBossKilled(const FGameplayTag& BossMonsterTag);
 };
-
-

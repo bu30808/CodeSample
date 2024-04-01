@@ -99,7 +99,7 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 				{
 					if (bShouldManualFinish == false)
 					{
-						UE_LOGFMT(LogTemp,Warning,"11111111111111111111111");
+						UE_LOGFMT(LogTemp, Warning, "11111111111111111111111");
 						FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 					}
 				}
@@ -152,28 +152,28 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 
 				TArray<AActor*> ignoreActors;
 				ignoreActors.Emplace(Cast<AActor>(ABaseMonster::StaticClass()));
-				
+
 				{
-					
 					FHitResult hit;
 					TArray<TEnumAsByte<EObjectTypeQuery>> objectTypes;
 					objectTypes.Emplace(UEngineTypes::ConvertToObjectType(PLAYER_TRACE_CHANNEL));
-					
+
 					bool bHit = UKismetSystemLibrary::BoxTraceSingleForObjects(target->GetWorld(), startLoc, endLoc,
-					                                                           FVector(10, 10, 500), FRotator::ZeroRotator,
+					                                                           FVector(10, 10, 500),
+					                                                           FRotator::ZeroRotator,
 					                                                           objectTypes, false,
-					                                                           ignoreActors, EDrawDebugTrace::ForOneFrame, hit,
+					                                                           ignoreActors,
+					                                                           EDrawDebugTrace::ForOneFrame, hit,
 					                                                           true);
 					if (bHit)
 					{
 						if (hit.GetActor() == target)
 						{
-							UE_LOGFMT(LogTemp,Warning,"222222222222222222222");
+							UE_LOGFMT(LogTemp, Warning, "222222222222222222222");
 							FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 						}
 					}
 				}
-				
 			}
 		}
 	}
@@ -246,8 +246,8 @@ void UBTTask_AITurn::Turn()
 				//이미 각도 안이면 멈춥니다.
 				if (FMath::Abs(DeltaYaw) < StopDeltaYaw)
 				{
-					UE_LOGFMT(LogAICon,Warning,"이미 목표 각도 안이므로 종료합니다 : {0}",DeltaYaw);
-					UE_LOGFMT(LogTemp,Warning,"333333333333333333333333");
+					UE_LOGFMT(LogAICon, Warning, "이미 목표 각도 안이므로 종료합니다 : {0}", DeltaYaw);
+					UE_LOGFMT(LogTemp, Warning, "333333333333333333333333");
 					FinishLatentTask(*OwnerComp, EBTNodeResult::Succeeded);
 					return;
 				}
@@ -271,8 +271,8 @@ void UBTTask_AITurn::Turn()
 						}
 						else
 						{
-							UE_LOGFMT(LogAICon,Warning,"델타값이 0이라 종료합니다. : {0}",DeltaYaw);
-							UE_LOGFMT(LogTemp,Warning,"4444444444444444444444");
+							UE_LOGFMT(LogAICon, Warning, "델타값이 0이라 종료합니다. : {0}", DeltaYaw);
+							UE_LOGFMT(LogTemp, Warning, "4444444444444444444444");
 							FinishLatentTask(*OwnerComp, EBTNodeResult::Succeeded);
 						}
 					}

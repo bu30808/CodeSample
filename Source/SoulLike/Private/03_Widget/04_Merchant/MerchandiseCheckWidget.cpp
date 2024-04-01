@@ -16,12 +16,11 @@
 void UMerchandiseCheckWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
 	Super::OnVisibilityChangedEvent(InVisibility);
-	
+
 	if (IsVisible())
 	{
 		TradeCount = 1;
 	}
-	
 }
 
 void UMerchandiseCheckWidget::NativeConstruct()
@@ -38,7 +37,6 @@ void UMerchandiseCheckWidget::NativeConstruct()
 
 
 	TextBlock_Count->SetText(FText::AsNumber(1));
-	
 }
 
 void UMerchandiseCheckWidget::TradeItem() const

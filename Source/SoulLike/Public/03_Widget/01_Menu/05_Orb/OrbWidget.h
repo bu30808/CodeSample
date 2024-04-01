@@ -23,7 +23,7 @@ class SOULLIKE_API UOrbWidget : public UPopUpBasedWidget
 	GENERATED_BODY()
 
 	friend class UOrbMatrixElementWidget;
-	
+
 public:
 	UPROPERTY(meta=(BindWidget))
 	class UButton* Button_Close;
@@ -58,7 +58,6 @@ protected:
 	void OnAddOrbItem(class ABaseCharacter* UsedBy, const FInventoryItem& ItemInfo, AItemActor* ItemActor);
 
 
-
 	void EquipOrbCore(const FInventoryItem& OrbCoreItem);
 	void EquipOrbFragment(const FInventoryItem& OrbFragmentItem);
 
@@ -83,7 +82,7 @@ protected:
 
 public:
 	UOrbMatrixElementWidget* IsOrbEquipped(const FGuid& OrbID);
-	
+
 	virtual void OnVisibilityChangedEvent(ESlateVisibility InVisibility) override;
 
 	virtual void NativePreConstruct() override;

@@ -65,7 +65,6 @@ UItemManagerSubsystem::UItemManagerSubsystem()
 }
 
 
-
 const FItemInformation* UItemManagerSubsystem::GetConsumeItemInformation(FGameplayTag ItemTag) const
 {
 	if (ConsumeItemTable)

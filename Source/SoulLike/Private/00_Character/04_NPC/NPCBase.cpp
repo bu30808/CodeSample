@@ -37,9 +37,9 @@ void ANPCBase::BeginPlay()
 void ANPCBase::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-	for(auto iter : NPCActions)
+	for (auto iter : NPCActions)
 	{
-		switch(iter)
+		switch (iter)
 		{
 		case ENPCActionType::Talk:
 			break;
@@ -67,7 +67,7 @@ void ANPCBase::PostInitializeComponents()
 
 			break;
 		case ENPCActionType::LevelUp:
-			
+
 			if (LevelUpComponent == nullptr)
 			{
 				// 액터에 커스텀 액터 컴포넌트 생성
@@ -117,12 +117,12 @@ void ANPCBase::PostInitializeComponents()
 void ANPCBase::Interaction_Implementation(ABaseCharacter* Start)
 {
 	IInteractionInterface::Interaction_Implementation(Start);
-		
+
 	InteractionActor = Start;
 
-	for(auto iter : NPCActions)
+	for (auto iter : NPCActions)
 	{
-		switch(iter)
+		switch (iter)
 		{
 		case ENPCActionType::Talk:
 			break;
@@ -166,9 +166,9 @@ void ANPCBase::FinishInteraction_Implementation()
 
 void ANPCBase::OnNPCWidgetVisibilityChangedEvent(ESlateVisibility InVisibility)
 {
-	if(NPCWidget.IsValid())
+	if (NPCWidget.IsValid())
 	{
-		if(!NPCWidget->IsVisible())
+		if (!NPCWidget->IsVisible())
 		{
 			NPCWidget = nullptr;
 		}
@@ -185,16 +185,16 @@ void ANPCBase::AddNPCWidget()
 			NPCWidget = CreateWidget<UNPCWidget>(pc, NPCWidgetObject);
 		}
 		/*UWidgetHelperLibrary::OpenWidgetSetting(pc, NPCWidget.Get());*/
-		
+
 		NPCWidget->SetNPC(this);
 		NPCWidget->SetNPCName(NPCName);
-		NPCWidget->OnVisibilityChanged.AddUniqueDynamic(this,&ANPCBase::OnNPCWidgetVisibilityChangedEvent);
+		NPCWidget->OnVisibilityChanged.AddUniqueDynamic(this, &ANPCBase::OnNPCWidgetVisibilityChangedEvent);
 
 		if (NPCWidget->IsInViewport() == false)
 		{
 			NPCWidget->AddToViewport();
 		}
-		
+
 		NPCWidget->CreateActionList();
 		NPCWidget->BindAction();
 	}

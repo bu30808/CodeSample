@@ -7,6 +7,7 @@
 #include "00_Character/00_Player/00_Controller/00_Component/WidgetManagerComponent.h"
 #include "03_Widget/01_Menu/00_Inventory/BossItemGetWidget.h"
 #include "03_Widget/05_Alert/AlertWidget.h"
+#include "03_Widget/05_Alert/OKCancelWidget.h"
 #include "03_Widget/11_Tutorial/TutorialWidget.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "99_Subsystem/ToolTipWidgetSubsystem.h"
@@ -18,14 +19,34 @@
 #include "SoulLike/SoulLike.h"
 
 
-void UWidgetHelperLibrary::ShowAlertMsg(AUserController* PC, EAlertMsgType AlertMsgType, FText Msg, const FOnButtonClicked& OnClickedOKButtonEvent)
+void UWidgetHelperLibrary::ShowOkCancelMsg(AUserController* PC, EAlertMsgType AlertMsgType, FText Msg,
+	const FOnButtonClicked& OnClickedOKButtonEvent, const FOnButtonClicked& OnClickedCancelButtonEvent)
 {
 	if (PC)
 	{
-		if (auto widget = PC->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("Widget.Alert"),1,false))
+		if (auto widget = PC->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("Widget.OkCancel"),
+																	 1, false))
+		{
+			Cast<UOKCancelWidget>(widget)->SetAlertMsg(AlertMsgType, Msg, OnClickedOKButtonEvent,OnClickedCancelButtonEvent);
+		}
+		else
+		{
+			UKismetSystemLibrary::PrintString(PC,TEXT("위젯을 가져올 수 없습니다!!!"));
+		}
+	}
+}
+
+void UWidgetHelperLibrary::ShowAlertMsg(AUserController* PC, EAlertMsgType AlertMsgType, FText Msg,
+                                        const FOnButtonClicked& OnClickedOKButtonEvent)
+{
+	if (PC)
+	{
+		if (auto widget = PC->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("Widget.Alert"),
+		                                                             1, false))
 		{
 			Cast<UAlertWidget>(widget)->SetAlertMsg(AlertMsgType, Msg, OnClickedOKButtonEvent);
-		}else
+		}
+		else
 		{
 			UKismetSystemLibrary::PrintString(PC,TEXT("위젯을 가져올 수 없습니다!!!"));
 		}
@@ -47,12 +68,14 @@ void UWidgetHelperLibrary::OpenWidgetSetting(APlayerController* PC, UUserWidget*
 {
 	if (PC)
 	{
-		if(auto pawn = PC->GetPawn<ABaseCharacter>())
+		if (auto pawn = PC->GetPawn<ABaseCharacter>())
 		{
-			UE_LOGFMT(LogTemp,Warning,"{0}에 의한 위젯 열림 설정",OpenWidget->GetName());
-		
-			pawn->SetIgnoreLookInput(true,PC->GetPawn(),FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Widget"));
-			pawn->SetIgnoreMoveInput(true,PC->GetPawn(),FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Widget"));
+			UE_LOGFMT(LogTemp, Warning, "{0}에 의한 위젯 열림 설정", OpenWidget->GetName());
+
+			pawn->SetIgnoreLookInput(true, PC->GetPawn(),
+			                         FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Widget"));
+			pawn->SetIgnoreMoveInput(true, PC->GetPawn(),
+			                         FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Widget"));
 			PC->SetShowMouseCursor(true);
 			PC->GetLocalPlayer()->GetSubsystem<UWidgetInteractionSubsystem>()->OpenWidgetSetting(
 				PC, OpenWidget);
@@ -64,12 +87,14 @@ void UWidgetHelperLibrary::CloseWidgetSetting(APlayerController* PC, UUserWidget
 {
 	if (PC)
 	{
-		UE_LOGFMT(LogTemp,Log,"위젯 닫힘 설정");
-		if(auto pawn = PC->GetPawn<ABaseCharacter>())
+		UE_LOGFMT(LogTemp, Log, "위젯 닫힘 설정");
+		if (auto pawn = PC->GetPawn<ABaseCharacter>())
 		{
-			pawn->SetIgnoreLookInput(false,PC->GetPawn(),FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Widget"));
-			pawn->SetIgnoreMoveInput(false,PC->GetPawn(),FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Widget"));
-			PC->GetLocalPlayer()->GetSubsystem<UWidgetInteractionSubsystem>()->CloseWidgetSetting(PC,RemainMousePoint);
+			pawn->SetIgnoreLookInput(false, PC->GetPawn(),
+			                         FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Widget"));
+			pawn->SetIgnoreMoveInput(false, PC->GetPawn(),
+			                         FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Widget"));
+			PC->GetLocalPlayer()->GetSubsystem<UWidgetInteractionSubsystem>()->CloseWidgetSetting(PC, RemainMousePoint);
 		}
 	}
 }
@@ -82,11 +107,11 @@ void UWidgetHelperLibrary::SetToolTipWidget(UUserWidget* TargetWidget, const FTe
 
 		if (tooltipWidget == nullptr)
 		{
-			tooltipWidget = GetSimpleToolTipWidget(TargetWidget->GetOwningPlayer<APlayerController>(), FText::GetEmpty());
+			tooltipWidget = GetSimpleToolTipWidget(TargetWidget->GetOwningPlayer<APlayerController>(),
+			                                       FText::GetEmpty());
 			TargetWidget->SetToolTip(tooltipWidget);
 		}
 		tooltipWidget->SetDescriptionText(Msg);
-		
 	}
 }
 
@@ -120,7 +145,8 @@ void UWidgetHelperLibrary::ShowBossItemGetWidget(AUserController* PC, AItemActor
 {
 	if (PC)
 	{
-		if (auto widget = PC->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("widget.boss.item")))
+		if (auto widget = PC->GetWidgetManagerComponent()->AddWidget(
+			FGameplayTag::RequestGameplayTag("widget.boss.item")))
 		{
 			Cast<UBossItemGetWidget>(widget)->AddItemElement(Item);
 		}
@@ -131,23 +157,24 @@ void UWidgetHelperLibrary::ShowTutorialWidget(APlayerController* PC, FGameplayTa
 {
 	if (PC)
 	{
-		if(auto instance = Cast<USoulLikeInstance>(PC->GetGameInstance()))
+		if (auto instance = Cast<USoulLikeInstance>(PC->GetGameInstance()))
 		{
 			//세이브 기능을 이용하는 경우, 이미 보고 넘긴 세이브인지 확인합니다.
-			if(IsUseSaveGameMode(PC))
+			if (IsUseSaveGameMode(PC))
 			{
-				if(instance->IsSkippedTutorial(TutorialTag))
+				if (instance->IsSkippedTutorial(TutorialTag))
 				{
 					return;
 				}
 			}
-		
-			if (auto widget = Cast<AUserController>(PC)->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("widget.tutorial"),2,false))
-			{
-				UE_LOGFMT(LogTemp,Warning,"튜토리얼 위젯을 추가합니다.");
-				Cast<UTutorialWidget>(widget)->SetTutorial(TutorialTag,nullptr);
 
-				if(IsUseSaveGameMode(PC))
+			if (auto widget = Cast<AUserController>(PC)->GetWidgetManagerComponent()->AddWidget(
+				FGameplayTag::RequestGameplayTag("widget.tutorial"), 2, false))
+			{
+				UE_LOGFMT(LogTemp, Warning, "튜토리얼 위젯을 추가합니다.");
+				Cast<UTutorialWidget>(widget)->SetTutorial(TutorialTag, nullptr);
+
+				if (IsUseSaveGameMode(PC))
 				{
 					instance->SaveTutorial(TutorialTag);
 				}
@@ -158,21 +185,22 @@ void UWidgetHelperLibrary::ShowTutorialWidget(APlayerController* PC, FGameplayTa
 
 void UWidgetHelperLibrary::PopUpWidgetProcess(UUserWidget* Widget, bool bIsRemovable)
 {
-	if(auto pc = Cast<AUserController>(Widget->GetOwningPlayer()))
+	if (auto pc = Cast<AUserController>(Widget->GetOwningPlayer()))
 	{
-		if(Widget->IsVisible())
+		if (Widget->IsVisible())
 		{
 			pc->AddToPopUp(Widget);
-		}else
+		}
+		else
 		{
-			pc->RemoveFromPopUp(Widget,bIsRemovable);
+			pc->RemoveFromPopUp(Widget, bIsRemovable);
 		}
 	}
 }
 
 bool UWidgetHelperLibrary::IsUseSaveGameMode(UObject* WorldContext)
 {
-	if(auto world = WorldContext->GetWorld())
+	if (auto world = WorldContext->GetWorld())
 	{
 		return world->GetAuthGameMode()->IsA<ASoulLikeGameMode>();
 	}

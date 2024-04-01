@@ -14,6 +14,7 @@ UCLASS()
 class SOULLIKE_API UBossItemGetElementWidget : public UUserWidget
 {
 	GENERATED_BODY()
+
 protected:
 	UPROPERTY(meta=(BindWidget))
 	class UImage* Image_Item;
@@ -21,7 +22,7 @@ protected:
 	class UTextBlock* TextBlock_ItemName;
 	UPROPERTY(meta=(BindWidget))
 	class UTextBlock* TextBlock_ItemCount;
-public:
 
+public:
 	void SetItemInformation(const FItemInformation* ItemInformation, const int32& ItemCount);
 };

@@ -8,7 +8,6 @@
 #include "EquipWidget.generated.h"
 
 
-
 /**
  *
  */
@@ -17,6 +16,7 @@ class SOULLIKE_API UEquipWidget : public UPopUpBasedWidget
 {
 	GENERATED_BODY()
 	friend class UDEPRECATED_MainMenuWidget;
+
 protected:
 	UPROPERTY(meta=(BindWidget))
 	class UVerticalBox* VerticalBox;
@@ -25,7 +25,7 @@ protected:
 	class UEquipButtonWidget* UMG_EquipSpirit;
 	UPROPERTY(meta=(BindWidget))
 	class UEquipButtonWidget* UMG_EquipArmor;
-	
+
 	//기본적으로 열려있는 장신구 슬롯입니다.
 	UPROPERTY(meta=(BindWidget))
 	class UHorizontalBox* HorizontalBox_Ring1;
@@ -37,12 +37,12 @@ protected:
 	TArray<class UEquipButtonWidget*> AllEquipSlots;
 	UPROPERTY()
 	TArray<class UEquipButtonWidget*> RingSlots;
-	
+
 	UPROPERTY(meta=(BindWidget))
 	class UItemListWidget* UMG_ItemList;
 	UPROPERTY(meta=(BindWidget))
 	class UItemInfoWidget* UMG_ItemInfo;
-	
+
 	UPROPERTY(meta=(BindWidget))
 	class UUniformGridPanel* UniformGridPanel_Consume;
 	UPROPERTY(meta=(BindWidget))
@@ -51,20 +51,19 @@ protected:
 
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
-		
+
 
 	virtual void OnVisibilityChangedEvent(ESlateVisibility InVisibility) override;
 
 public:
-
 	UFUNCTION(BlueprintCallable)
 	void AddRingSlot();
 	UFUNCTION(BlueprintCallable)
 	void RemoveRingSlot();
-	
+
 	int32 FindIndexByID(FGuid UniqueID);
 	class UEquipButtonWidget* GetEquipButtonByIndex(int32 FindIndex);
-	
+
 	void ShowItemInformation(class UInventoryData* Data);
 
 	void ForceUpdateSpirit(const FInventoryItem& ItemData);
@@ -76,7 +75,6 @@ public:
 	void LoadAbilityQuickSlots(const TMap<int32, FGameplayTag>& AbilityQuick);
 
 protected:
-	
 	UFUNCTION(BlueprintCallable)
 	void OnRemoveAlreadyRegisteredSlotEvent(UInventoryData* Data);
 };

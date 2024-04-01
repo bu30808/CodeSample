@@ -15,6 +15,7 @@ class SOULLIKE_API UCharacterRenderWidget : public UUserWidget
 {
 	GENERATED_BODY()
 	friend class UCharacterTotalInfoWidget;
+
 protected:
 	UPROPERTY(meta=(BindWidget))
 	class UButton* Button_Reset;

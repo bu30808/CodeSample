@@ -315,9 +315,8 @@ void AMonsterAIController::Tick(float DeltaSeconds)
 				                FVector(0, 1, 0), FVector(1, 0, 0));
 			}
 		}
-
-#endif
 	}
+#endif
 }
 
 void AMonsterAIController::PostInitializeComponents()

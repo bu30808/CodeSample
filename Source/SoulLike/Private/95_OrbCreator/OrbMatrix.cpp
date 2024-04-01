@@ -3,6 +3,7 @@
 
 #include "95_OrbCreator/OrbMatrix.h"
 
+#include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/04_NPC/99_Component/OrbMatrixSlotOpenComponent.h"
 #include "93_SaveGame/SoulLikeSaveGame.h"
 #include "Logging/StructuredLog.h"
@@ -22,21 +23,25 @@ void UOrbMatrix::SaveInfo(const TArray<FMatrixArray>& Matrix, const TArray<FOrbM
 
 void UOrbMatrix::LoadMatrix(const FOrbMatrixSave& OrbMatrixSave, APlayerCharacter* Player)
 {
-	if(Player!=nullptr)
+	if (Player != nullptr)
 	{
 		OrbMatrix = OrbMatrixSave.WholeMatrix;
 		PhysicalLine = OrbMatrixSave.PhysicalLine;
 		DefenceLine = OrbMatrixSave.DefenceLine;
 		MagicalLine = OrbMatrixSave.MagicalLine;
 		FreeLine = OrbMatrixSave.FreeLine;
-	
+
 		//라인이 완성되어있는 상태라면, 완성 보너스를 줍니다.
-		if(const auto orbOpenComp =  NewObject<UOrbMatrixSlotOpenComponent>(this))
+		if (const auto orbOpenComp = NewObject<UOrbMatrixSlotOpenComponent>(this))
 		{
-			orbOpenComp->GiveLineCompleteReward(Cast<APlayerController>(Player->GetController()),this,EOrbMatrixSlotType::PHYSICAL,false);
-			orbOpenComp->GiveLineCompleteReward(Cast<APlayerController>(Player->GetController()),this,EOrbMatrixSlotType::MAGICAL,false);
-			orbOpenComp->GiveLineCompleteReward(Cast<APlayerController>(Player->GetController()),this,EOrbMatrixSlotType::DEFENCE,false);
-			orbOpenComp->GiveLineCompleteReward(Cast<APlayerController>(Player->GetController()),this,EOrbMatrixSlotType::FREE,false);
+			orbOpenComp->GiveLineCompleteReward(Cast<APlayerController>(Player->GetController()), this,
+			                                    EOrbMatrixSlotType::PHYSICAL, false);
+			orbOpenComp->GiveLineCompleteReward(Cast<APlayerController>(Player->GetController()), this,
+			                                    EOrbMatrixSlotType::MAGICAL, false);
+			orbOpenComp->GiveLineCompleteReward(Cast<APlayerController>(Player->GetController()), this,
+			                                    EOrbMatrixSlotType::DEFENCE, false);
+			orbOpenComp->GiveLineCompleteReward(Cast<APlayerController>(Player->GetController()), this,
+			                                    EOrbMatrixSlotType::FREE, false);
 
 			orbOpenComp->ConditionalBeginDestroy();
 		}
@@ -46,7 +51,7 @@ void UOrbMatrix::LoadMatrix(const FOrbMatrixSave& OrbMatrixSave, APlayerCharacte
 void UOrbMatrix::SetMatrix(const UOrbMatrix* const COD)
 {
 	AddToRoot();
-	
+
 	OrbMatrix = COD->OrbMatrix;
 	PhysicalLine = COD->PhysicalLine;
 	DefenceLine = COD->DefenceLine;
@@ -56,7 +61,7 @@ void UOrbMatrix::SetMatrix(const UOrbMatrix* const COD)
 
 void UOrbMatrix::BeginDestroy()
 {
-	if(IsRooted())
+	if (IsRooted())
 	{
 		RemoveFromRoot();
 	}

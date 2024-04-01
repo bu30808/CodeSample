@@ -43,7 +43,7 @@ int32 AConsumeItemActor::GetEffectValue()
 
 bool AConsumeItemActor::UseItem_Implementation(AActor* Target, const FGuid& ThisItemsUniqueID)
 {
-	if(Super::UseItem_Implementation(Target, ThisItemsUniqueID))
+	if (Super::UseItem_Implementation(Target, ThisItemsUniqueID))
 	{
 		GetOwner<ABaseCharacter>()->GetInventoryComponent()->DecreaseItemCount(ThisItemsUniqueID);
 		return true;
@@ -56,5 +56,4 @@ bool AConsumeItemActor::UseItem_Implementation(AActor* Target, const FGuid& This
 void AConsumeItemActor::OnEndAbilityEvent_Implementation()
 {
 	Super::OnEndAbilityEvent_Implementation();
-	
 }

@@ -13,6 +13,8 @@ UCLASS()
 class SOULLIKE_API UAnimNotify_EnableRootMotion : public UAnimNotify
 {
 	GENERATED_BODY()
+
 protected:
-	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
+	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+	                    const FAnimNotifyEventReference& EventReference) override;
 };

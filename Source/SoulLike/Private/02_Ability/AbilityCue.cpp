@@ -163,7 +163,8 @@ void AAbilityCue::PlayCue(const FAbilityCueInformation& CueInformation)
 		{
 			UE_LOGFMT(LogTemp, Log, "{0} {1}", __FUNCTION__, __LINE__);
 			AttachToActor(CueInformation.AttachTarget.Get(),
-			              FAttachmentTransformRules(EAttachmentRule::SnapToTarget,EAttachmentRule::KeepWorld,EAttachmentRule::KeepWorld, true));
+			              FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld,
+			                                        EAttachmentRule::KeepWorld, true));
 		}
 		else
 		{
@@ -174,9 +175,10 @@ void AAbilityCue::PlayCue(const FAbilityCueInformation& CueInformation)
 		if (CueInformation.AttachTarget.IsValid())
 		{
 			UE_LOGFMT(LogTemp, Log, "큐 붙임 : {0} {1}", __FUNCTION__, __LINE__);
-			AttachToComponent(Cast<ABaseCharacter>(CueInformation.AttachTarget.Get())->GetMesh(),   FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-												CueInformation.SocketName);
-		
+			AttachToComponent(Cast<ABaseCharacter>(CueInformation.AttachTarget.Get())->GetMesh(),
+			                  FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+			                  CueInformation.SocketName);
+
 			/*UE_LOGFMT(LogTemp, Log, "{0} {1}", __FUNCTION__, __LINE__);
 			NiagaraComponent->AttachToComponent(Cast<ABaseCharacter>(CueInformation.AttachTarget.Get())->GetMesh(),
 			                                    FAttachmentTransformRules::SnapToTargetNotIncludingScale,
@@ -234,7 +236,7 @@ void AAbilityCue::OnDestroyedEvent(AActor* DestroyedActor)
 void AAbilityCue::Destroyed()
 {
 	DeactivateCue();
-	
+
 	Super::Destroyed();
 }
 
@@ -242,12 +244,12 @@ void AAbilityCue_SourceActorBased::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if(auto pawn = Cast<ABaseCharacter>(GetOwner()))
+	if (auto pawn = Cast<ABaseCharacter>(GetOwner()))
 	{
-		NiagaraComponent->AttachToComponent(pawn->GetMesh(),FAttachmentTransformRules(EAttachmentRule::SnapToTarget,true));
+		NiagaraComponent->AttachToComponent(pawn->GetMesh(),
+		                                    FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true));
 		TArray<AActor*> target;
 		target.Add(pawn);
-		UNiagaraDIRigidMeshCollisionFunctionLibrary::SetSourceActors(NiagaraComponent,NAME_None,target);
+		UNiagaraDIRigidMeshCollisionFunctionLibrary::SetSourceActors(NiagaraComponent, NAME_None, target);
 	}
-	
 };

@@ -23,6 +23,10 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	class UButton* Button_Close;
 
+	//다음 경험치 누적량
+	UPROPERTY(Transient)
+	float NextExpAcc;
+
 protected:
 	UPROPERTY(meta=(BindWidget))
 	class ULevelUpPreviewWidget* UMG_LevelUpPreview;

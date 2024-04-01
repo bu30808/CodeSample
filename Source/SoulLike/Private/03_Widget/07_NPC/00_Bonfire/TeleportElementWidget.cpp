@@ -5,8 +5,10 @@
 
 #include "NiagaraValidationRule.h"
 #include "03_Widget/07_NPC/00_Bonfire/BonfireTeleportWidget.h"
+#include "Components/HorizontalBox.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
+#include "WorldPartition/DataLayer/DataLayerSubsystem.h"
 
 void UTeleportElementWidget::NativeConstruct()
 {
@@ -58,11 +60,11 @@ void UTeleportElementWidget::SetIsEnabled(bool bInIsEnabled)
 
 	if (bInIsEnabled == true)
 	{
-		TextBlock_NotFound->SetVisibility(ESlateVisibility::Collapsed);
+		HorizontalBox_NotFound->SetVisibility(ESlateVisibility::Collapsed);
 	}
 	else
 	{
-		TextBlock_NotFound->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		HorizontalBox_NotFound->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	}
 }
 

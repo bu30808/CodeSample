@@ -17,8 +17,7 @@ class SOULLIKE_API UCharacterTotalInfoWidget : public UPopUpBasedWidget
 	GENERATED_BODY()
 
 	friend class UMainWidget;
-	
-	
+
 protected:
 	UPROPERTY(meta=(BindWidget))
 	class UCharacterRenderWidget* UMG_CharacterRender;
@@ -31,7 +30,7 @@ protected:
 
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
-	
+
 	UFUNCTION()
 	void OnEquippedItemEvent(class ABaseCharacter* UsedBy, const FInventoryItem& ItemInfo);
 
@@ -39,7 +38,6 @@ protected:
 	void AddRingSlot();
 	UFUNCTION(BlueprintCallable)
 	void RemoveRingSlot();
-	
+
 	virtual void OnVisibilityChangedEvent(ESlateVisibility InVisibility) override;
-	
 };

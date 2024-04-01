@@ -15,7 +15,8 @@ UGameplayTask_LaunchEvent::UGameplayTask_LaunchEvent(const FObjectInitializer& O
 	bTickingTask = true;
 }
 
-UGameplayTask_LaunchEvent* UGameplayTask_LaunchEvent::LaunchEvent(AActor* TaskOwner, UObject* AdditionalObj,float TickRateValue)
+UGameplayTask_LaunchEvent* UGameplayTask_LaunchEvent::LaunchEvent(AActor* TaskOwner, UObject* AdditionalObj,
+                                                                  float TickRateValue)
 {
 	if (TaskOwner->IsValidLowLevel() == false)
 	{
@@ -44,7 +45,7 @@ UGameplayTask_LaunchEvent* UGameplayTask_LaunchEvent::LaunchEvent(AActor* TaskOw
 	UGameplayTask_LaunchEvent* newTask = NewTask<UGameplayTask_LaunchEvent>(taskComp);
 	newTask->TickRate = TickRateValue;
 	newTask->AdditionalObject = AdditionalObj;
-	
+
 	return newTask;
 }
 
@@ -69,14 +70,15 @@ void UGameplayTask_LaunchEvent::TickTask(float DeltaTime)
 
 	DT = DeltaTime;
 
-	if(TickRate == -1)
+	if (TickRate == -1)
 	{
 		OnTaskTick.Broadcast();
 		OnTaskTickWithDelta.Broadcast(DeltaTime);
-	}else
+	}
+	else
 	{
 		CurrentTime += DeltaTime;
-		
+
 		if (CurrentTime >= TickRate)
 		{
 			// 여기서 원하는 작업을 수행
@@ -128,7 +130,7 @@ UGameplayTask_AddImpulse* UGameplayTask_AddImpulse::Task_AddImpulse(ABaseCharact
 	newTask->ForcePower = Power;
 	newTask->CharacterMovementComponent = TaskOwner->GetCharacterMovement();
 	newTask->bVelocityChange = bChangeVelocity;
-	
+
 	return newTask;
 }
 

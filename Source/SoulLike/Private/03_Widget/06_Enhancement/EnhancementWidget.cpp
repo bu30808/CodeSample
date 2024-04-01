@@ -53,8 +53,8 @@ void UEnhancementWidget::NativeConstruct()
 		UMG_EnhancementButton->Clear();
 	}
 
-	Button_Close->OnClicked.AddUniqueDynamic(this,&UEnhancementWidget::OnClickedCloseButton);
-	
+	Button_Close->OnClicked.AddUniqueDynamic(this, &UEnhancementWidget::OnClickedCloseButton);
+
 	Button_Armor->OnClicked.AddUniqueDynamic(this, &UEnhancementWidget::OnClickedArmor);
 	Button_Spirit->OnClicked.AddUniqueDynamic(this, &UEnhancementWidget::OnClickedSpirit);
 	Button_Fragment->OnClicked.AddUniqueDynamic(this, &UEnhancementWidget::OnClickedFragment);
@@ -71,24 +71,22 @@ void UEnhancementWidget::NativeConstruct()
 	{
 		Border_UpgradeMax->SetVisibility(ESlateVisibility::Collapsed);
 	}
-	
+
 	if (WidgetSwitcher)
 	{
-		for(auto iter : WidgetSwitcher->GetAllChildren())
+		for (auto iter : WidgetSwitcher->GetAllChildren())
 		{
-
 			{
-				if(auto widget  = Cast<UOrbElementListWidget>(iter))
+				if (auto widget = Cast<UOrbElementListWidget>(iter))
 				{
 					widget->EnhancementSetting(this);
 					continue;
 				}
 			}
 			{
-				if(auto widget  = Cast<UItemListWidget>(iter))
+				if (auto widget = Cast<UItemListWidget>(iter))
 				{
 					widget->EnhancementSetting(this);
-					continue;
 				}
 			}
 		}
@@ -112,16 +110,15 @@ void UEnhancementWidget::NativeConstruct()
 		{
 			UMG_Inventory_Armor->CreateInventoryItemList();
 		}
-		
+
 		WidgetSwitcher->SetActiveWidgetIndex(0);
 	}
 
-	
 
 	UGameplayStatics::PlaySound2D(this, OpenSound);
-	UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),FGameplayTag::RequestGameplayTag("Tutorial.Enhancement"));
+	UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),
+	                                         FGameplayTag::RequestGameplayTag("Tutorial.Enhancement"));
 }
-
 
 void UEnhancementWidget::OnClickedArmor()
 {
@@ -129,11 +126,13 @@ void UEnhancementWidget::OnClickedArmor()
 	{
 		WidgetSwitcher->SetActiveWidgetIndex(3);
 
-		UMG_Inventory_Armor->OnAddListViewWidget.Unbind();
-		UMG_Inventory_Armor->OnAddListViewWidget.BindLambda([this](UUserWidget* Widget)
+		UMG_Inventory_Armor->OnAddListViewWidget.RemoveAll(this);
+		/*UMG_Inventory_Armor->OnAddListViewWidget.BindLambda([this](UUserWidget* Widget)
 		{
 			UMG_Inventory_Armor->HideWidgetIfNotArmor(Widget);
-		});
+		});*/
+		UMG_Inventory_Armor->OnAddListViewWidget.AddUniqueDynamic(UMG_Inventory_Armor,
+		                                                          &UItemListWidget::HideWidgetIfNotArmor);
 		UMG_Inventory_Armor->CreateItemList_Armor();
 	}
 }
@@ -143,12 +142,9 @@ void UEnhancementWidget::OnClickedSpirit()
 	if (WidgetSwitcher)
 	{
 		WidgetSwitcher->SetActiveWidgetIndex(2);
-
-		UMG_Inventory_Spirit->OnAddListViewWidget.Unbind();
-		UMG_Inventory_Spirit->OnAddListViewWidget.BindLambda([this](UUserWidget* Widget)
-		{
-			UMG_Inventory_Spirit->HideWidgetIfNotSpirit(Widget);
-		});
+		UMG_Inventory_Spirit->OnAddListViewWidget.RemoveAll(this);
+		UMG_Inventory_Spirit->OnAddListViewWidget.AddUniqueDynamic(UMG_Inventory_Spirit,
+		                                                           &UItemListWidget::HideWidgetIfNotSpirit);
 		UMG_Inventory_Spirit->CreateItemList_Sprite();
 	}
 }
@@ -189,7 +185,7 @@ void UEnhancementWidget::OnClickedUpgrade()
 			//이미 장착중인 아이템에 대한 강화 처리
 			auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent();
 			bool bReEquipAfterEnhance = false;
-			if (invenComp->IsEquipped(SetItem.UniqueID))
+			if (invenComp->IsEquippedEquipment(SetItem.UniqueID))
 			{
 				bReEquipAfterEnhance = true;
 				//강제 장착 해제
@@ -229,7 +225,7 @@ void UEnhancementWidget::OnClickedUpgrade()
 
 void UEnhancementWidget::OnClickedCloseButton()
 {
-	UWidgetHelperLibrary::CloseWidgetSetting(GetOwningPlayer(),this);
+	UWidgetHelperLibrary::CloseWidgetSetting(GetOwningPlayer(), this);
 }
 
 void UEnhancementWidget::CreateEnhancementAttributes(const FInventoryItem& Item)
@@ -292,13 +288,14 @@ void UEnhancementWidget::ForceUnCheckOthers(UEnhancementAttributeWidget* Checked
 void UEnhancementWidget::SetEnhancementComponent(UEnhancementComponent* E_Component)
 {
 	EnhancementComponent = E_Component;
-	EnhancementComponent->OnUpgradeEquipment.AddUniqueDynamic(this,&UEnhancementWidget::OnUpgradeEquipmentEvent);
+	EnhancementComponent->OnUpgradeEquipment.AddUniqueDynamic(this, &UEnhancementWidget::OnUpgradeEquipmentEvent);
 }
 
 void UEnhancementWidget::SetEnhancementInfo(const FInventoryItem& Item)
 {
 	if (EnhancementComponent.IsValid() && UItemHelperLibrary::IsEquipment(Item))
 	{
+		UMG_ItemInfo->SetInfo(Item);
 		const auto equip = static_cast<const FEquipmentInformation*>(Item.GetItemInformation());
 		const auto& enhancementInfo = Cast<AEquipmentItemActor>(Item.GetSpawndItemActor())->GetEnhancementInfo();
 		if (enhancementInfo.CanEnhance())
@@ -356,9 +353,9 @@ void UEnhancementWidget::SetEnhancementInfo(const FInventoryItem& Item)
 
 void UEnhancementWidget::ShowItemInformation(UInventoryData* Data)
 {
-	if(UMG_ItemInfo)
+	if (UMG_ItemInfo)
 	{
-		if(auto itemData = Cast<UItemData>(Data))
+		if (auto itemData = Cast<UItemData>(Data))
 		{
 			UMG_ItemInfo->SetInfo(itemData->InventoryItem);
 		}
@@ -367,7 +364,7 @@ void UEnhancementWidget::ShowItemInformation(UInventoryData* Data)
 
 void UEnhancementWidget::ShowItemInformation(UOrbData* Data)
 {
-	if(UMG_ItemInfo)
+	if (UMG_ItemInfo)
 	{
 		UMG_ItemInfo->SetInfo(Data->Data);
 	}
@@ -375,25 +372,26 @@ void UEnhancementWidget::ShowItemInformation(UOrbData* Data)
 
 void UEnhancementWidget::OnUpgradeEquipmentEvent(const FGuid& ID, AEquipmentItemActor* EquipmentItemActor)
 {
-	if(auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
+	if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
 	{
-		if(invenComp->K2_HasItemByID(ID))
+		if (invenComp->K2_HasItemByID(ID))
 		{
 			const auto& item = invenComp->GetInventoryItem(ID);
 
-			if(UItemHelperLibrary::IsOrbItem(item))
+			if (UItemHelperLibrary::IsOrbItem(item))
 			{
 				auto data = NewObject<UOrbData>();
 				data->Data = item;
-				data->bIsEquipped = invenComp->IsEquipped(ID);
+				data->bIsEquipped = invenComp->IsEquippedEquipment(ID);
 				ShowItemInformation(data);
 				return;
 			}
 
 			auto data = NewObject<UItemData>();
-			data-> InventoryItem= item;
+			data->InventoryItem = item;
 			ShowItemInformation(data);
-		}else
+		}
+		else
 		{
 			UKismetSystemLibrary::PrintString(this,TEXT("강화하려는 장비 아이템을 인벤토리에서 찾을 수 없습니다!!"));
 		}

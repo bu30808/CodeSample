@@ -69,7 +69,7 @@ protected:
 public:
 	//미리보는 스텟 포인트가 증가했을 떄 호출되는 이벤트입니다.
 	FOnAddAttributePreviewPoint OnAddAttributePreviewPoint;
-	
+
 	//레벨업이 가능할 때, 필요한 설정들을 합니다.
 	void ReadyToLevelUp() const;
 	void Reset();

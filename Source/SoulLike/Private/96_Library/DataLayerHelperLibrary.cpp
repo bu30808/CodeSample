@@ -28,7 +28,7 @@ bool UDataLayerHelperLibrary::IsInActivatedLayer(const UWorld* World, const FStr
 {
 	if (const UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(World))
 	{
-		if(const auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAssetName(FName(LayerPath)))
+		if (const auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAssetName(FName(LayerPath)))
 		{
 			if (dataLayerSubsystem->GetDataLayerRuntimeState(instance) != EDataLayerRuntimeState::Activated)
 			{
@@ -51,15 +51,33 @@ FString UDataLayerHelperLibrary::GetLayerFullPath(const UWorld* World, const UDa
 
 UDataLayerAsset* UDataLayerHelperLibrary::GetAlwaysActivatedDataLayerAsset(const UObject* WorldContext)
 {
-	if(WorldContext)
+	if (WorldContext)
 	{
-		if(auto instance = Cast<USoulLikeInstance>(WorldContext->GetWorld()->GetGameInstance()))
+		if (auto instance = Cast<USoulLikeInstance>(WorldContext->GetWorld()->GetGameInstance()))
 		{
 			return instance->GetAlwaysActivatedLayer();
-			
 		}
-		
 	}
 
+	return nullptr;
+}
+
+AWorldStreamingSourceActor* UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(APawn* Owner)
+{
+	if(Owner)
+	{
+		FActorSpawnParameters spawnParam;
+		spawnParam.Owner = Owner;
+		spawnParam.Instigator = Owner;
+
+
+		//일단 플레이어의 주변이 스트리밍이 끝난 후에, 로드에 필요한 행동을 합니다.
+		if (const auto streamingSource = Owner->GetWorld()->SpawnActor<AWorldStreamingSourceActor>(AWorldStreamingSourceActor::StaticClass(),spawnParam))
+		{
+			streamingSource->bShouldDestroy = true;
+			return streamingSource;
+		}
+	}
+	
 	return nullptr;
 }

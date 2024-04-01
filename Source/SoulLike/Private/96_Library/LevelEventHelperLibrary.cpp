@@ -13,10 +13,11 @@ void AMainLevelScriptActor::OnDeadBossEvent(AActor* Who, AActor* DeadBy)
 	ULevelEventHelperLibrary::ActiveBlockingActors(BlockingActors, false);
 }
 
-ABaseMonster* ULevelEventHelperLibrary::SpawnBoss(AMainLevelScriptActor* ScriptActor, AActor* Trigger, AActor* OverlapActor,
-                                         TArray<AActor*> BlockingActors,
-                                         AActor* TargetPoint, TSubclassOf<ABaseMonster> BossToSpawn,
-                                         USoundBase* MusicToPlay)
+ABaseMonster* ULevelEventHelperLibrary::SpawnBoss(AMainLevelScriptActor* ScriptActor, AActor* Trigger,
+                                                  AActor* OverlapActor,
+                                                  TArray<AActor*> BlockingActors,
+                                                  AActor* TargetPoint, TSubclassOf<ABaseMonster> BossToSpawn,
+                                                  USoundBase* MusicToPlay)
 {
 	//이미 처치한 우두머리면 아무것도 안 합니다.
 	if (USaveGameHelperLibrary::IsBossKilled(OverlapActor, BossToSpawn.GetDefaultObject()->GetMonsterTag()))

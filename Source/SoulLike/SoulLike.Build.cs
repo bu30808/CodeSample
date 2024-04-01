@@ -6,8 +6,8 @@ public class SoulLike : ModuleRules
 {
 	public SoulLike(ReadOnlyTargetRules Target) : base(Target)
 	{
-		PrivateDependencyModuleNames.AddRange(new string[] { "GFur", "MoviePlayer" });
-		
+		PrivateDependencyModuleNames.AddRange(new[] { "GFur", "MoviePlayer" });
+
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicDependencyModuleNames.AddRange(new[]

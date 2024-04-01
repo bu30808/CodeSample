@@ -8,7 +8,7 @@
 
 void UBossItemGetElementWidget::SetItemInformation(const FItemInformation* ItemInformation, const int32& ItemCount)
 {
-	if(ItemInformation)
+	if (ItemInformation)
 	{
 		Image_Item->SetBrushFromSoftTexture(ItemInformation->Item_Image);
 		TextBlock_ItemName->SetText(ItemInformation->Item_Name);

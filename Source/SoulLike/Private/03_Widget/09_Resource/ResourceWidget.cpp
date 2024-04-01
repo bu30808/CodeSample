@@ -17,14 +17,14 @@ void UResourceWidget::NativePreConstruct()
 
 void UResourceWidget::UpdateProgressLength(float MaxValue)
 {
-	if(Image_Progress)
+	if (Image_Progress)
 	{
-		if(auto slot = UWidgetLayoutLibrary::SlotAsCanvasSlot(Image_Progress))
+		if (auto slot = UWidgetLayoutLibrary::SlotAsCanvasSlot(Image_Progress))
 		{
 			auto y = slot->GetSize().Y;
-			auto len = FMath::Clamp(MaxValue * 3.f,0,1920);
-			UKismetSystemLibrary::PrintString(this,FString::SanitizeFloat(len));
-			slot->SetSize(FVector2D(len,y));
+			auto len = FMath::Clamp(MaxValue * 3.f, 0, 1920);
+			UKismetSystemLibrary::PrintString(this, FString::SanitizeFloat(len));
+			slot->SetSize(FVector2D(len, y));
 		}
 	}
 }

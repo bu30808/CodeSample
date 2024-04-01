@@ -15,6 +15,7 @@ UCLASS()
 class SOULLIKE_API UStatusEffect_Chill : public UAbilityEffect
 {
 	GENERATED_BODY()
+
 protected:
 	UStatusEffect_Chill();
 
@@ -26,27 +27,30 @@ protected:
 
 	virtual void OverrideAttributeEffects_Implementation(ABaseCharacter* Target, AActor* EffectBy) override;
 	virtual void RestoreAttribute_Implementation(ABaseCharacter* Target) override;
-	virtual bool ApplyInstantEffect_Implementation(ABaseCharacter* Target, UObject* AdditionalInfo, float DeltaTime) override;
+	virtual bool
+	ApplyInstantEffect_Implementation(ABaseCharacter* Target, UObject* AdditionalInfo, float DeltaTime) override;
 };
 
 UCLASS()
 class SOULLIKE_API UStatusEffect_ChillAcc : public UStatusEffect_AccBase
 {
 	GENERATED_BODY()
+
 protected:
 	UStatusEffect_ChillAcc();
 };
-
 
 
 UCLASS()
 class SOULLIKE_API UStatusEffect_Freeze : public UAbilityEffect
 {
 	GENERATED_BODY()
+
 protected:
 	UStatusEffect_Freeze();
-	
-	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData = nullptr) override;
+
+	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From,
+	                                          UObject* AdditionalData = nullptr) override;
 	virtual void EndEffect_Implementation(ABaseCharacter* Target) override;
 	virtual void OverrideTime_Implementation(ABaseCharacter* Target) override;
 

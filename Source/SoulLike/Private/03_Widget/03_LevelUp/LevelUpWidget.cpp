@@ -75,9 +75,10 @@ void ULevelUpWidget::SetUp()
 					iter.Value->Button_Add->OnClicked.AddUniqueDynamic(
 						this, &ULevelUpWidget::OnClickedAttributeAddButton);
 
-					iter.Value->OnAddAttributePreviewPoint.AddUObject(UMG_LevelUpPreview,&ULevelUpPreviewWidget::OnAddAttributePreviewPointEvent);
-					
-					
+					iter.Value->OnAddAttributePreviewPoint.AddUObject(UMG_LevelUpPreview,
+					                                                  &ULevelUpPreviewWidget::OnAddAttributePreviewPointEvent);
+
+
 					/*iter.Value->OnAddAttributePreviewPoint.AddUniqueDynamic(UMG_LevelUpPreview,
 					                                                        &ULevelUpPreviewWidget::
 					                                                        OnAddAttributePreviewPointEvent);*/
@@ -152,7 +153,7 @@ bool ULevelUpWidget::CanLevelUp() const
 void ULevelUpWidget::Init()
 {
 	UMG_LevelUpPreview->Init();
-
+	NextExpAcc = 0;
 	for (auto iter : AttributePreviewWidgets)
 	{
 		iter.Value->Init();
@@ -207,6 +208,7 @@ void ULevelUpWidget::OnClickedOKButton()
 				iter.Value->HorizontalBox_Next->SetVisibility(ESlateVisibility::Hidden);
 			}
 			UMG_LevelUpPreview->Init();
+			Init();
 		}
 	}
 
@@ -240,13 +242,18 @@ void ULevelUpWidget::OnClickedAttributeAddButton()
 			{
 				AttributePreviewWidgets[EAttributePointType::NEXT_EXP]->HorizontalBox_Next->SetVisibility(
 					ESlateVisibility::SelfHitTestInvisible);
+				NextExpAcc += LevelUpSubsystem->GetNextLevelUpExp(curLevel + Level_WantToUP);
+				/*AttributePreviewWidgets[EAttributePointType::NEXT_EXP]->TextBlock_Next->SetText(
+					FText::AsNumber(LevelUpSubsystem->GetNextLevelUpExp(curLevel + Level_WantToUP)));*/
+				AttributePreviewWidgets[EAttributePointType::NEXT_EXP]->TextBlock_Cur->SetText(FText::AsNumber(LevelUpSubsystem->GetNextLevelUpExp(curLevel + Level_WantToUP)));
 				AttributePreviewWidgets[EAttributePointType::NEXT_EXP]->TextBlock_Next->SetText(
-					FText::AsNumber(LevelUpSubsystem->GetNextLevelUpExp(curLevel + Level_WantToUP)));
+					FText::AsNumber(NextExpAcc));
 			}
 
 			//레벨을 더 올릴수 없으면, 레벨업 관련 부분을 숨깁니다.
 			if (LevelUpSubsystem->CanLevelUp(attComp, curLevel, curLevel + Level_WantToUP + 1) == false)
 			{
+				
 				HiddenAddButton();
 			}
 			else

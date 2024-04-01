@@ -9,6 +9,8 @@
 #include "UObject/Object.h"
 #include "SaveGameHelperLibrary.generated.h"
 
+
+
 /**
  * 
  */
@@ -16,28 +18,29 @@ UCLASS()
 class SOULLIKE_API USaveGameHelperLibrary : public UObject
 {
 	GENERATED_BODY()
+
 public:
-
-
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static bool IsSavableGameMode(class UObject* WorldContext);
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static class USoulLikeInstance* GetSoulLikeInstance(class UObject* WorldContext);
-	
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static bool IsActivatedBonfire(class ABonfire* Bonfire);
-	
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static bool IsAlreadyPickUppedItem(class AItemActor* Item);
 
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static bool IsAlreadyReadTutorial(class ATutorialActor* TutorialActor);
 
 	UFUNCTION(BlueprintCallable)
 	static void SaveKillBoss(class ABaseMonster* BossMonster);
-	
-	UFUNCTION(BlueprintCallable,BlueprintPure)
-	static bool IsBossKilled(class UObject* WorldContext,FGameplayTag BossMonsterTag);
 
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static bool IsBossKilled(class UObject* WorldContext, FGameplayTag BossMonsterTag);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static bool IsSameLevel(class UObject* CurLevelContext, const FString& CompareLevel);
 };

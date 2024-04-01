@@ -70,7 +70,6 @@ FString AEquipmentItemActor_OrbFragment::GetFormattedDescription_Implementation(
 }*/
 
 
-
 /*
 void AEquipmentItemActor_OrbFragment::CreateFragmentInfo()
 {

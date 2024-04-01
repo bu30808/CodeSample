@@ -14,6 +14,7 @@ UCLASS()
 class SOULLIKE_API UPopUpBasedWidget : public UUserWidget
 {
 	GENERATED_BODY()
+
 protected:
 	UPROPERTY(EditAnywhere)
 	bool bUseAsPopUp = false;
@@ -23,7 +24,7 @@ protected:
 	bool bRemovable = false;
 
 	virtual void NativeConstruct() override;
-	
+
 	UFUNCTION()
 	virtual void OnVisibilityChangedEvent(ESlateVisibility InVisibility);
 };

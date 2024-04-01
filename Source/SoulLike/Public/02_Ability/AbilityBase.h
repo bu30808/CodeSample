@@ -14,6 +14,7 @@
 DECLARE_LOG_CATEGORY_EXTERN(LogAbility, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEndAbility);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCommitFailed);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnOverrideSelfEffect, const TArray<class UAbilityEffect*>&, SelfEffect,
@@ -74,7 +75,6 @@ protected:
 
 	//이 오브젝트가 가진 이벤트에 일단 함수를 바인드 합니다.
 	virtual void SelfBind() PURE_VIRTUAL(UAbilityTalent::SelfBind);
-	
 
 public:
 	//생성한 이벤트는 전부 여기서 바인드 해야 합니다.
@@ -116,7 +116,6 @@ class SOULLIKE_API UAbilityDamageTalent : public UAbilityTalent
 	FOnIncreaseDamage OnSuccessDamageHitIncreaseMagicalDam;
 
 protected:
-
 	virtual void SelfBind() override;
 
 public:
@@ -221,7 +220,7 @@ protected:
 	//회피 SP 감소
 	UFUNCTION(BlueprintImplementableEvent)
 	float OnDecreaseDodgeSPEvent(float OriginalStamina);
-	
+
 	//회피거리 증가
 	UFUNCTION(BlueprintImplementableEvent)
 	float OnIncreaseDodgeDistanceEvent(float OriginalForce);
@@ -283,7 +282,6 @@ class SOULLIKE_API UAbilityFreeTalent : public UAbilityTalent
 	FOnDodgeMinimumSP OnDodgeMinimumSP;
 
 protected:
-
 	virtual void SelfBind() override;
 
 public:
@@ -308,7 +306,7 @@ public:
  *
  *	각 함수는 블루프린트에서 덮어 쓸 수 있습니다.
  */
-UCLASS(Blueprintable,DefaultToInstanced)
+UCLASS(Blueprintable, DefaultToInstanced)
 class SOULLIKE_API UAbilityBase : public UObject
 {
 	GENERATED_BODY()
@@ -353,7 +351,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FGameplayTag> ForceEndEffectTags;
 
-	
+
 	UPROPERTY(EditAnywhere)
 	bool bUseChainSystem = false;
 	//공격 배율을 사용하기 위한 태그입니다. 없으면 배율이 적용되지 않습니다.
@@ -362,10 +360,11 @@ protected:
 	//몽타주 번호에 따른 배율입니다.
 	UPROPERTY(EditAnywhere, meta=(EditCondition ="bUseChainSystem"))
 	TArray<float> ChainValue;
-public:
 
-	bool GetUseChainSystem() const {return bUseChainSystem;};
-	const FGameplayTag& GetChainTag() const {return ChainTag;};
+public:
+	bool GetUseChainSystem() const { return bUseChainSystem; };
+	const FGameplayTag& GetChainTag() const { return ChainTag; };
+
 protected:
 	//사용자 자신에게 적용할 이팩트 정보들
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = true), Category="Effect")
@@ -392,7 +391,7 @@ protected:
 	TArray<class UAbilityTalent*> AbilityTalentInstance;
 
 	//이 어빌리티가 적용한 큐
-	UPROPERTY(Transient )
+	UPROPERTY(Transient)
 	TArray<class AAbilityCue*> AppliedSelfCue;
 	UPROPERTY(Transient)
 	TArray<class AAbilityCue*> AppliedTargetCue;
@@ -401,13 +400,13 @@ protected:
 	//컴포넌트에서 강제로 이 어빌리티를 종료한 경우 참이 됩니다.
 	UPROPERTY(BlueprintReadWrite)
 	bool bAlreadyEndAbility;
-	
+
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	class UAnimMontage* GetNextMontage();
 	UFUNCTION(BlueprintCallable)
 	float PlayMontageWithCustomChain(ABaseCharacter* Target, class UAnimMontage* Montage, float CustomChainValue);
-	
+
 private:
 	//SetAbilityInformation함수로 저장되는 이 어빌리티의 기본정보입니다.
 	UPROPERTY(VisibleAnywhere)
@@ -419,15 +418,14 @@ public:
 
 	void OverrideTag(FGameplayTag GameplayTag) { AbilityTag = GameplayTag; }
 	void SetAlreadyEndByForceEndAbilityReq(bool bCond) { bAlreadyEndAbility = bCond; }
-	
 
 protected:
 	//이 어빌리티를 발동한 대상입니다.
-	UPROPERTY(BlueprintReadOnly,Transient )
+	UPROPERTY(BlueprintReadOnly, Transient)
 	TWeakObjectPtr<class ABaseCharacter> AbilityOwner;
 
 	//이 어빌리티의 효과를 적용할 대상입니다.
-	UPROPERTY(BlueprintReadOnly,Transient )
+	UPROPERTY(BlueprintReadOnly, Transient)
 	TWeakObjectPtr<AActor> AbilityTarget;
 
 	//적용된 이팩트를 수동으로 종료하려면 참을 주세요.
@@ -436,9 +434,9 @@ protected:
 	bool bEndAppliedEffectManually = false;
 
 	//이 어빌리티가 자신과 타겟에게 적용할 이팩트 인스턴스 리스트
-	UPROPERTY(BlueprintReadOnly,Transient)
+	UPROPERTY(BlueprintReadOnly, Transient)
 	TArray<class UAbilityEffect*> SelfEffectInstance;
-	UPROPERTY(BlueprintReadOnly,Transient)
+	UPROPERTY(BlueprintReadOnly, Transient)
 	TArray<class UAbilityEffect*> TargetEffectInstance;
 
 public:
@@ -476,21 +474,31 @@ public:
 	//쿨타임이 적용중이어서 실패하면 호출됩니다.
 	UPROPERTY(BlueprintAssignable)
 	FOnCommitFailed OnCommitFailedByCooldown;
-	
-protected:
 
+protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void OnCommitResultFailedEvent();
-	virtual void OnCommitResultFailedEvent_Implementation(){ }
+
+	virtual void OnCommitResultFailedEvent_Implementation()
+	{
+	}
+
 	UFUNCTION(BlueprintNativeEvent)
 	void OnCommitFailedByCostEvent();
-	virtual void OnCommitFailedByCostEvent_Implementation(){ }
+
+	virtual void OnCommitFailedByCostEvent_Implementation()
+	{
+	}
+
 	UFUNCTION(BlueprintNativeEvent)
 	void OnCommitFailedByCooldownEvent();
-	virtual void OnCommitFailedByCooldownEvent_Implementation(){ }
-	
+
+	virtual void OnCommitFailedByCooldownEvent_Implementation()
+	{
+	}
+
 	//데이터테이블에서 정보를 읽어와 설정합니다.
-	UFUNCTION(BlueprintCallable,CallInEditor)
+	UFUNCTION(BlueprintCallable, CallInEditor)
 	void SetAbilityInformation();
 
 
@@ -572,7 +580,7 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void EndAbility();
 	virtual void EndAbility_Implementation();
-	
+
 	UFUNCTION(BlueprintPure, BlueprintCallable)
 	class UAbilityComponent* GetAbilityComponent(class ABaseCharacter* Character);
 
@@ -640,13 +648,15 @@ protected:
 	void UnBindActionEvent() const;
 	//특성을 정의하는 어빌리티인 경우, 특성정보를 바인드 합니다. AbilityTalentComponet에 저장됩니다.
 	void BindTalent();
+
 public:
 	void UnBindTalent();
+
 protected:
 	//사망시 호출할 이벤트를 바인드할것인가?
 	UPROPERTY(EditAnywhere)
 	bool bShouldBindDeadEvent = false;
-	
+
 	void BindDeadEvent();
 	void UnBindDeadEvent();
 
@@ -656,7 +666,7 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void OnAbilityOwnerDeadEvent(AActor* Who, AActor* DeadBy);
 	virtual void OnAbilityOwnerDeadEvent_Implementation(AActor* Who, AActor* DeadBy);
-	
+
 	//몽타주에 필요한 설정을 합니다
 	//ex) 이벤트 바인딩
 	UFUNCTION(BlueprintCallable)
@@ -678,8 +688,6 @@ protected:
 	virtual void OnMontageEndedEvent_Implementation(UAnimMontage* Montage, bool bInterrupted)
 	{
 	}
-	
-	
 
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -705,8 +713,8 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void HandleOnTriggerHitAnimationNotEntered();
-	
-	UFUNCTION(BlueprintCallable,BlueprintPure)
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetOwnersActionSpeed();
 
 

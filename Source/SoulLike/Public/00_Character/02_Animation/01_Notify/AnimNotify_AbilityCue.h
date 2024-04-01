@@ -18,7 +18,8 @@ class SOULLIKE_API UAnimNotify_AbilityCue : public UAnimNotify
 protected:
 	UAnimNotify_AbilityCue();
 
-	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, const FAnimNotifyEventReference& EventReference) override;
+	virtual void Notify(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation,
+	                    const FAnimNotifyEventReference& EventReference) override;
 	//virtual void BranchingPointNotify(FBranchingPointNotifyPayload& BranchingPointPayload) override;
 
 	virtual FString GetEditorComment() override;

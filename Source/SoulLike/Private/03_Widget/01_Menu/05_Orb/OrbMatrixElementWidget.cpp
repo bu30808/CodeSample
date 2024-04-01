@@ -75,42 +75,50 @@ void UOrbMatrixElementWidget::OverrideMatrixSlot()
 			{
 				matrix->OrbMatrix[MatrixElementInfo.Row][MatrixElementInfo.Col] = MatrixElementInfo;
 #if WITH_EDITOR
-				UE_LOGFMT(LogTemp,Log,"----------------------------------------");
-				UE_LOGFMT(LogTemp,Log,"--------------메트릭스 슬롯 오버라이드-------------------");
+				UE_LOGFMT(LogTemp, Log, "----------------------------------------");
+				UE_LOGFMT(LogTemp, Log, "--------------메트릭스 슬롯 오버라이드-------------------");
 
-				FString msg="\n";
-				for(auto i =0;i<matrix->OrbMatrix.Num();i++)
+				FString msg = "\n";
+				for (auto i = 0; i < matrix->OrbMatrix.Num(); i++)
 				{
-					for(auto j = 0;j<matrix->OrbMatrix[i].Num();j++)
+					for (auto j = 0; j < matrix->OrbMatrix[i].Num(); j++)
 					{
-						
-						if(matrix->OrbMatrix[i][j].OrbMatrixSlotType == EOrbMatrixSlotType::LINE)
+						if (matrix->OrbMatrix[i][j].OrbMatrixSlotType == EOrbMatrixSlotType::LINE)
 						{
-							msg+=FString::Printf(TEXT("%s	"),*StaticEnum<EOrbMatrixSlotType>()->GetNameByValue(static_cast<int64>(matrix->OrbMatrix[i][j].OrbMatrixSlotType)).ToString());
+							msg += FString::Printf(
+								TEXT("%s	"),
+								*StaticEnum<EOrbMatrixSlotType>()->GetNameByValue(
+									static_cast<int64>(matrix->OrbMatrix[i][j].OrbMatrixSlotType)).ToString());
 							continue;
 						}
 
-						if(matrix->OrbMatrix[i][j].OrbMatrixSlotType == EOrbMatrixSlotType::NONE)
+						if (matrix->OrbMatrix[i][j].OrbMatrixSlotType == EOrbMatrixSlotType::NONE)
 						{
-							msg+=FString::Printf(TEXT("%s	"),*StaticEnum<EOrbMatrixSlotType>()->GetNameByValue(static_cast<int64>(matrix->OrbMatrix[i][j].OrbMatrixSlotType)).ToString());
+							msg += FString::Printf(
+								TEXT("%s	"),
+								*StaticEnum<EOrbMatrixSlotType>()->GetNameByValue(
+									static_cast<int64>(matrix->OrbMatrix[i][j].OrbMatrixSlotType)).ToString());
 							continue;
 						}
-						if(matrix->OrbMatrix[i][j].OrbMatrixSlotType == EOrbMatrixSlotType::CORE)
+						if (matrix->OrbMatrix[i][j].OrbMatrixSlotType == EOrbMatrixSlotType::CORE)
 						{
-							msg+=FString::Printf(TEXT("%s"),*StaticEnum<EOrbMatrixSlotType>()->GetNameByValue(static_cast<int64>(matrix->OrbMatrix[i][j].OrbMatrixSlotType)).ToString());
+							msg += FString::Printf(
+								TEXT("%s"), *StaticEnum<EOrbMatrixSlotType>()->GetNameByValue(
+									static_cast<int64>(matrix->OrbMatrix[i][j].OrbMatrixSlotType)).ToString());
 							continue;
 						}
-						
-							msg+=FString::Printf(TEXT("%s(%s)	"),*StaticEnum<EOrbMatrixSlotType>()->GetNameByValue(static_cast<int64>(matrix->OrbMatrix[i][j].OrbMatrixSlotType)).ToString(),matrix->OrbMatrix[i][j].bLock?TEXT("잠김"):TEXT("열림"));
-						
-						
+
+						msg += FString::Printf(
+							TEXT("%s(%s)	"),
+							*StaticEnum<EOrbMatrixSlotType>()->GetNameByValue(
+								static_cast<int64>(matrix->OrbMatrix[i][j].OrbMatrixSlotType)).ToString(),
+							matrix->OrbMatrix[i][j].bLock ? TEXT("잠김") : TEXT("열림"));
 					}
-					msg+="\n";
+					msg += "\n";
 				}
-				UE_LOGFMT(LogTemp,Log,"{0}",msg);
-				UE_LOGFMT(LogTemp,Log,"----------------------------------------");
+				UE_LOGFMT(LogTemp, Log, "{0}", msg);
+				UE_LOGFMT(LogTemp, Log, "----------------------------------------");
 #endif
-				
 			}
 		}
 	}
@@ -134,7 +142,7 @@ void UOrbMatrixElementWidget::EquipOrbFragment(const FInventoryItem& OrbFragment
 {
 	if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
 	{
-		if(!invenComp->IsEquipped(OrbFragmentItem.UniqueID))
+		if (!invenComp->IsEquippedEquipment(OrbFragmentItem.UniqueID))
 		{
 			invenComp->UseItem(OrbFragmentItem.UniqueID);
 		}
@@ -184,7 +192,9 @@ void UOrbMatrixElementWidget::OnClicked()
 	UKismetSystemLibrary::PrintString(this,TEXT("슬롯 개방용 클릭"));
 	OnClickedMatrixElement.Broadcast(MatrixElementInfo, this);
 }
+
 #define LOCTEXT_NAMESPACE "OrbMatrixElementWidget"
+
 void UOrbMatrixElementWidget::OnHoveredEvent()
 {
 	if (MatrixElementInfo.OrbMatrixSlotType != EOrbMatrixSlotType::LINE)
@@ -200,12 +210,13 @@ void UOrbMatrixElementWidget::OnHoveredEvent()
 	{
 		FString toolTipMsg;
 		toolTipMsg += "<orb.slot>" + OrbMatrixSlotTypeToText(MatrixElementInfo.OrbMatrixSlotType).ToString() + "</>";
-		toolTipMsg += "\n<orb.empty>" + OrbMatrixSlotContentToString(MatrixElementInfo.OrbMatrixSlotContent).ToString() + "</>";
+		toolTipMsg += "\n<orb.empty>" + OrbMatrixSlotContentToString(MatrixElementInfo.OrbMatrixSlotContent).ToString()
+			+ "</>";
 
 		if (MatrixElementInfo.bLock)
 		{
-			const FText lockedText= NSLOCTEXT("OrbMatrixElementWidget","LockedText","잠김");
-			toolTipMsg += "\n<orb.lock>"+lockedText.ToString()+"</>";
+			const FText lockedText = NSLOCTEXT("OrbMatrixElementWidget", "LockedText", "잠김");
+			toolTipMsg += "\n<orb.lock>" + lockedText.ToString() + "</>";
 		}
 
 		UWidgetHelperLibrary::SetToolTipWidget(this, FText::FromString(toolTipMsg));
@@ -297,7 +308,8 @@ bool UOrbMatrixElementWidget::NativeOnDrop(const FGeometry& InGeometry, const FD
 		//리스트에서 장착을 위해서 끌어왔을 때,
 		if (oper->DraggedWidget->IsA<UOrbListButtonWidget>())
 		{
-			if(auto button = Cast<UOrbListButtonWidget>(oper->DraggedWidget)){
+			if (auto button = Cast<UOrbListButtonWidget>(oper->DraggedWidget))
+			{
 				/*button->SetRenderOpacity(oper->OriginalOpacity);
 				button->SetVisibility(ESlateVisibility::Visible);*/
 				const auto& orbInfo = button->GetOrbItem();
@@ -360,7 +372,7 @@ bool UOrbMatrixElementWidget::NativeOnDrop(const FGeometry& InGeometry, const FD
 		//이미 장착된 파편을 교환하기 위해 끌어왔을 때,
 		if (oper->DraggedWidget->IsA<UOrbMatrixElementWidget>())
 		{
-			UE_LOGFMT(LogTemp,Log,"교환을 위한 드래그 감지");
+			UE_LOGFMT(LogTemp, Log, "교환을 위한 드래그 감지");
 			//드래그 한 위젯
 			if (auto draggedWidget = Cast<UOrbMatrixElementWidget>(oper->DraggedWidget))
 			{
@@ -377,7 +389,7 @@ bool UOrbMatrixElementWidget::NativeOnDrop(const FGeometry& InGeometry, const FD
 			}
 		}
 	}
-	
+
 	return false;
 }
 
@@ -410,7 +422,7 @@ FReply UOrbMatrixElementWidget::NativeOnMouseButtonDown(const FGeometry& InGeome
 			if (MatrixElementInfo.UniqueID != FGuid())
 			{
 				if (!UItemHelperLibrary::IsOrbCore(MatrixElementInfo.UniqueID,
-												   GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()))
+				                                   GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()))
 				{
 					UnEquipPreFragment(MatrixElementInfo.UniqueID);
 					return FReply::Handled();
@@ -418,28 +430,27 @@ FReply UOrbMatrixElementWidget::NativeOnMouseButtonDown(const FGeometry& InGeome
 			}
 		}
 
-		if(InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+		if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 		{
-		
-			if(ElementType == EOrbMatrixElementType::Normal)
+			if (ElementType == EOrbMatrixElementType::Normal)
 			{
-				
-				if(OrbWidget.IsValid())
+				if (OrbWidget.IsValid())
 				{
-			
 					OrbWidget->UMG_OrbElementListFragment->InitFilterFromElement();
-					if(MatrixElementInfo.OrbMatrixSlotType == EOrbMatrixSlotType::FREE)
+					if (MatrixElementInfo.OrbMatrixSlotType == EOrbMatrixSlotType::FREE)
 					{
 						OrbWidget->UMG_OrbElementListFragment->AddFilterFromElement(EOrbMatrixSlotType::FREE);
 						OrbWidget->UMG_OrbElementListFragment->AddFilterFromElement(EOrbMatrixSlotType::PHYSICAL);
 						OrbWidget->UMG_OrbElementListFragment->AddFilterFromElement(EOrbMatrixSlotType::MAGICAL);
 						OrbWidget->UMG_OrbElementListFragment->AddFilterFromElement(EOrbMatrixSlotType::DEFENCE);
-					}else
+					}
+					else
 					{
 						OrbWidget->UMG_OrbElementListFragment->AddFilterFromElement(EOrbMatrixSlotType::FREE);
-						OrbWidget->UMG_OrbElementListFragment->AddFilterFromElement(MatrixElementInfo.OrbMatrixSlotType);
+						OrbWidget->UMG_OrbElementListFragment->
+						           AddFilterFromElement(MatrixElementInfo.OrbMatrixSlotType);
 					}
-					
+
 					OrbWidget->UMG_OrbElementListFragment->OnUpdateFilterEvent();
 				}
 			}
@@ -455,7 +466,7 @@ FReply UOrbMatrixElementWidget::NativeOnMouseButtonDown(const FGeometry& InGeome
 		}
 	}
 
-	return Super::NativeOnMouseButtonDown(InGeometry,InMouseEvent);
+	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
 
 void UOrbMatrixElementWidget::ChangeElementImageStyle(UObject* NewTexture, float Alpha) const
@@ -485,9 +496,9 @@ void UOrbMatrixElementWidget::ChangeElementImageStyle(UObject* NewTexture, float
 const FOrbFragmentInformation* UOrbMatrixElementWidget::GetOrbFragmentInformation(
 	const FOrbMatrixElementInfo& Info)
 {
-	if(auto invenComp =  GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
+	if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
 	{
-		if(invenComp->IsFragmentContains(Info.UniqueID))
+		if (invenComp->IsFragmentContains(Info.UniqueID))
 		{
 			if (auto frag = invenComp->GetFragment(Info.UniqueID).GetItemInformation())
 			{
@@ -862,7 +873,7 @@ void UOrbMatrixElementWidget::UpdateToolTip(const FGuid& UniqueID)
 	}
 	else
 	{
-		UWidgetHelperLibrary::SetToolTipWidget(this,FText::FromString(TEXT("비어있음")));
+		UWidgetHelperLibrary::SetToolTipWidget(this, FText::FromString(TEXT("비어있음")));
 	}
 }
 
@@ -872,7 +883,7 @@ void UOrbMatrixElementWidget::UpdateToolTip(const FInventoryItem& OrbItem)
 	{
 		//UKismetSystemLibrary::PrintString(this,TEXT("코어"));
 		FString desc = "<orb.name>" + OrbItem.GetItemInformation()->Item_Name.ToString() + "</>";
-		
+
 		desc += "\n" + UItemHelperLibrary::GetItemDetailText(
 			OrbItem, GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()).ToString();
 
@@ -882,7 +893,7 @@ void UOrbMatrixElementWidget::UpdateToolTip(const FInventoryItem& OrbItem)
 
 	if (UItemHelperLibrary::IsOrbFragment(OrbItem))
 	{
-		UWidgetHelperLibrary::SetToolTipWidget(this,UItemHelperLibrary::GetFragmentToolTipText(OrbItem));		
+		UWidgetHelperLibrary::SetToolTipWidget(this, UItemHelperLibrary::GetFragmentToolTipText(OrbItem));
 		/*//UKismetSystemLibrary::PrintString(this,TEXT("파편"));
 		auto msg = "<orb.name>" + OrbItem.GetItemInformation()->Item_Name + "</>";
 

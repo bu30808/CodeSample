@@ -29,5 +29,4 @@ protected:
 	//이 값만큼 더 가까이 이동합니다.
 	UPROPERTY(EditAnywhere)
 	float ErrorMargin = 100.f;
-
 };

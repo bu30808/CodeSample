@@ -380,7 +380,8 @@ void UAbilityEffect_Linetrace::AddHitActors(TArray<FHitResult> HitArray, ABaseCh
 {
 	for (const auto& Hit : HitArray)
 	{
-		if (Hit.GetActor()->IsA<ABaseCharacter>())
+	
+		if (Hit.GetActor()!=nullptr && Hit.GetActor()->IsA<ABaseCharacter>())
 		{
 			if (!HitActors.ContainsByPredicate([&](const FHitResult& Inner)
 			{
@@ -732,30 +733,31 @@ bool UAbilityEffect_Linetrace::IsContainActor(AActor* Actor) const
 void UAbilityEffect_Linetrace::ActivateNiagaraSpawnTrace(AActor* Target)
 {
 	LastKnownNiagaraSpawnSocketLocation.Empty();
-	
+
 	for (auto Socket : Sockets)
 	{
 		LastKnownNiagaraSpawnSocketLocation.Emplace(Socket, MeshComponent->GetSocketLocation(Socket));
 	}
-	
-	if(!EffectSpawnTickTask.IsValid()){
-		EffectSpawnTickTask = UGameplayTask_LaunchEvent::LaunchEvent(Target,nullptr,NiagaraSpawnTraceTickRate);
+
+	if (!EffectSpawnTickTask.IsValid())
+	{
+		EffectSpawnTickTask = UGameplayTask_LaunchEvent::LaunchEvent(Target, nullptr, NiagaraSpawnTraceTickRate);
 	}
 
 	NiagaraSpawnTarget = Target;
 
-	EffectSpawnTickTask->OnTaskTick.AddUniqueDynamic(this,&UAbilityEffect_Linetrace::CreateSpawnNiagaraEffectTrace);
+	EffectSpawnTickTask->OnTaskTick.AddUniqueDynamic(this, &UAbilityEffect_Linetrace::CreateSpawnNiagaraEffectTrace);
 	EffectSpawnTickTask->Activate();
 }
 
 void UAbilityEffect_Linetrace::CreateSpawnNiagaraEffectTrace()
 {
 	const class UWorld* world = NiagaraSpawnTarget->GetWorld();
-	if(world == nullptr)
+	if (world == nullptr)
 	{
 		return;
 	}
-	
+
 	for (auto Socket1 : Sockets)
 	{
 		for (auto Socket2 : Sockets)
@@ -959,7 +961,7 @@ void UAbilityEffect_Linetrace::CreateSpawnNiagaraEffectTrace()
 
 void UAbilityEffect_Linetrace::SpawnNiagaraEffect(const TArray<FHitResult>& Hits) const
 {
-	for(const auto& iter : Hits)
+	for (const auto& iter : Hits)
 	{
 		SpawnNiagaraEffect(iter);
 	}
@@ -967,7 +969,7 @@ void UAbilityEffect_Linetrace::SpawnNiagaraEffect(const TArray<FHitResult>& Hits
 
 void UAbilityEffect_Linetrace::SpawnNiagaraEffect(const FHitResult& Hit) const
 {
-	UNiagaraFunctionLibrary::SpawnSystemAtLocation(NiagaraSpawnTarget->GetWorld(),NiagaraEmitter,Hit.Location);
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(NiagaraSpawnTarget->GetWorld(), NiagaraEmitter, Hit.Location);
 }
 
 void UAbilityEffect_Linetrace::UpdateLastNiagaraSpawnSocketLocation()
@@ -1008,11 +1010,11 @@ void UAbilityEffect_Linetrace::ProcessEffect_Implementation(ABaseCharacter* Targ
 	ChainSetting(Target);
 
 	RegisterEffectTag(Target);
-	if(bSpawnNiagaraWhenHitNonCharacter)
+	if (bSpawnNiagaraWhenHitNonCharacter)
 	{
 		ActivateNiagaraSpawnTrace(Target);
 	}
-	
+
 	ActivateTrace(true, Target);
 }
 
@@ -1056,7 +1058,7 @@ void UAbilityEffect_Linetrace::EndEffect_Implementation(ABaseCharacter* Target)
 
 	ActivateTrace(false, Target);
 
-	if(EffectSpawnTickTask.IsValid())
+	if (EffectSpawnTickTask.IsValid())
 	{
 		EffectSpawnTickTask->EndTask();
 		EffectSpawnTickTask.Reset();

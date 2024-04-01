@@ -13,6 +13,6 @@ UCLASS()
 class SOULLIKE_API UKeyGuideWidget : public UUserWidget
 {
 	GENERATED_BODY()
+
 protected:
-	
 };

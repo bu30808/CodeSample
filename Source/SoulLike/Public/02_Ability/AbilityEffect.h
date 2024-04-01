@@ -22,7 +22,7 @@ enum class EEffectApplicationDecision : uint8
 	// 새 이펙트를 건너뛰고, 기존 이팩트 오브젝트로 다시 적용합니다.
 	SkipButApply,
 	// 이팩트 존재 유무와 관계없이 항상 적용합니다.
-	AlwaysApply,		
+	AlwaysApply,
 	MAX
 };
 
@@ -97,7 +97,7 @@ enum class EAttributeType : uint8
 
 	//이동속도
 	MoveSpeed,
-	
+
 	MAX
 };
 
@@ -328,7 +328,7 @@ protected:
 	//이팩트가 종료될 때 적용할 큐가 있다면 사용하세요
 	UPROPERTY(EditAnywhere, Category="Cue")
 	TArray<FAbilityCueInformation> InstanceEndAbilityCues;
-	
+
 	//틱마다 사용되는 태스크 
 	UPROPERTY()
 	TWeakObjectPtr<class UGameplayTask_LaunchEvent> TickTask;
@@ -350,7 +350,7 @@ protected:
 	FGameplayTag SelfChainTag;
 	UPROPERTY(EditAnywhere)
 	float ChainValue = 0;
-	
+
 	//이 이팩트가 타격으로 피해를 주기 위한 이팩트일경우 설정하세요
 	//이 변수가 참인 경우에는, 무적 태그가 적용되어있는동안 이 이팩트가 적용되지 않는다는 뜻이기도 합니다.
 	UPROPERTY(EditAnywhere)
@@ -383,13 +383,12 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<class UAbilityBase> CauseFromThisAbility;
-	
-public:
 
+public:
 	//틱 이펙트인 경우, TickEffectDeltaTime에 저장된 값을 가져옵니다.
-	UFUNCTION(BlueprintCallable,BlueprintPure)
-	float GetDeltaTime(){return TickEffectDeltaTime;}
-	
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	float GetDeltaTime() { return TickEffectDeltaTime; }
+
 	const FGameplayTag& GetEffectTag() { return UniqueEffectTag; }
 	//지속시간을 리턴합니다.
 	const float& GetDurationTime() { return Time; }
@@ -414,7 +413,8 @@ protected:
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void ProcessEffect(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData = nullptr);
-	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData = nullptr);
+	virtual void ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From,
+	                                          UObject* AdditionalData = nullptr);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void EndEffect(ABaseCharacter* Target);
@@ -471,15 +471,16 @@ protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void RestoreAttribute(ABaseCharacter* Target);
 	virtual void RestoreAttribute_Implementation(ABaseCharacter* Target);
-	
+
 	//캐릭터 정보를 표시하는 위젯의 내용을 업데이트 합니다.
 	void UpdateCharacterInfoWidget(ABaseCharacter* Target);
 	//즉발성으로 효과를 줍니다.
 	//추가로 전달할 정보가 있다면 두번째 파라미터에 담아 전달하세요.
 	//성공적으로 적용되었으면, 참을 리턴합니다.
-	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool ApplyInstantEffect(ABaseCharacter* Target, UObject* AdditionalInfo = nullptr, float DeltaTime = 1);
-	virtual bool ApplyInstantEffect_Implementation(ABaseCharacter* Target, UObject* AdditionalInfo = nullptr, float DeltaTime = 1);
+	virtual bool ApplyInstantEffect_Implementation(ABaseCharacter* Target, UObject* AdditionalInfo = nullptr,
+	                                               float DeltaTime = 1);
 	//ApplyInstantEffect가 적용되고, 일정시간 후 종료됩니다.
 	void ApplyDurationEffect(ABaseCharacter* Target);
 	//일정 주기로 ApplyInstantEffect가 호출됩니다.
@@ -503,7 +504,7 @@ protected:
 
 	//대상에게 이팩트를 적용할수 있는지 확인합니다.
 	//적용 가능하다면 참입니다.
-	UFUNCTION(BlueprintNativeEvent,BlueprintCallable)
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	bool CanApplyEffect(ABaseCharacter* Target, bool bShowLog = true) const;
 	virtual bool CanApplyEffect_Implementation(ABaseCharacter* Target, bool bShowLog = true) const;
 
@@ -560,7 +561,7 @@ protected:
 	void ApplyCueInfinite(ABaseCharacter* Target);
 	UFUNCTION(BlueprintCallable)
 	void ApplyEndInstanceCue(ABaseCharacter* Target);
-	
+
 	void WhenProcessEffectFailed(ABaseCharacter* Target);
 
 	UFUNCTION(BlueprintNativeEvent)
@@ -580,7 +581,7 @@ protected:
 
 	UPROPERTY()
 	TObjectPtr<UWorld> World;
-	
+
 	virtual void BeginDestroy() override;
 	virtual UWorld* GetWorld() const override;
 };

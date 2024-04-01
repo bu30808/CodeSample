@@ -51,7 +51,7 @@ protected:
 
 	UPROPERTY()
 	TWeakObjectPtr<class UAbilityCueAdditionalInformation> CueAdditionalInformation;
-	
+
 	EProjectileDirection CurProjectileDirectionType;
 	EProjectileShootType CurProjectileShootType;
 
@@ -60,7 +60,7 @@ protected:
 	//EProjectileShootType이 DelayUntilRotation인 경우 사용될 보간 속도입니다.
 	UPROPERTY(EditAnywhere)
 	float InterpSpeed = 5.f;
-	
+
 	FRotator TargetRotation;
 	//BaesCharacter를 상속받지 않은 대상들과 충돌했을 때, 사용되는 큐입니다.
 	UPROPERTY(EditAnywhere)
@@ -82,20 +82,22 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void LaunchProjectile(const FVector& ForwardVector);
-	
+
 	void ShootSetting(EProjectileDirection ProjectileDirection);
-	
+
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void LaunchProjectileWithOption(EProjectileDirection P_Direction, EProjectileShootType P_ShootType);
-	virtual void LaunchProjectileWithOption_Implementation(EProjectileDirection P_Direction, EProjectileShootType P_ShootType);
+	virtual void LaunchProjectileWithOption_Implementation(EProjectileDirection P_Direction,
+	                                                       EProjectileShootType P_ShootType);
 
 	//타이머를 이용해서 n초이후에 발사하는 함수입니다.
 	UFUNCTION(BlueprintCallable)
-	void LaunchProjectileDelayWithOption(float Time ,EProjectileDirection P_Direction, EProjectileShootType P_ShootType);
-	
+	void LaunchProjectileDelayWithOption(float Time, EProjectileDirection P_Direction,
+	                                     EProjectileShootType P_ShootType);
+
 	UFUNCTION(BlueprintCallable)
 	void SetEffect(const TArray<TSubclassOf<UAbilityEffect>>& Effects);
-	
+
 	UFUNCTION(BlueprintCallable)
 	void ApplyEffects(class ABaseCharacter* HitTarget, FVector HitLocation);
 

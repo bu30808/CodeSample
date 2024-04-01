@@ -88,7 +88,7 @@ void ULockOnComponent::End()
 		HitActors.Empty();
 		PreLookTargetStack.Empty();
 		LookTarget = nullptr;
-		
+
 		Owner->bModifySkeletonTransform = false;
 		Owner->GetController()->SetIgnoreLookInput(false);
 		SpringArm->bEnableCameraLag = true;
@@ -101,6 +101,7 @@ void ULockOnComponent::End()
 		if (LockOnWidgetComponent.IsValid())
 		{
 			LockOnWidgetComponent->SetVisibility(false);
+			LockOnWidgetComponent->AttachToComponent(Owner->GetRootComponent(),FAttachmentTransformRules(EAttachmentRule::SnapToTarget,true));
 		}
 
 		UnBindChangeTargetEvent();
@@ -128,27 +129,27 @@ AActor* ULockOnComponent::GetNonCurrentTarget()
 {
 	AActor* target = nullptr;
 
-	if(HitActors.Num() > 0)
+	if (HitActors.Num() > 0)
 	{
-		if(!HitActors.IsValidIndex(CurIndex))
+		if (!HitActors.IsValidIndex(CurIndex))
 		{
 			CurIndex = 0;
 		}
-		
-		if(HitActors[CurIndex].GetActor() == LookTarget)
+
+		if (HitActors[CurIndex].GetActor() == LookTarget)
 		{
 			CurIndex++;
 		}
-		
-		if(!HitActors.IsValidIndex(CurIndex))
+
+		if (!HitActors.IsValidIndex(CurIndex))
 		{
 			CurIndex = 0;
 		}
-		
-		//UE_LOGFMT(LogLockOnComponent,Log,"{0}번 인덱스 대상을 가져옵니다 : {1}",CurIndex,HitActors[CurIndex].GetActor()->GetActorNameOrLabel());
-		target =  HitActors[CurIndex].GetActor();
 
-		if(target->GetDistanceTo(Owner.Get())>RemoveDistance)
+		//UE_LOGFMT(LogLockOnComponent,Log,"{0}번 인덱스 대상을 가져옵니다 : {1}",CurIndex,HitActors[CurIndex].GetActor()->GetActorNameOrLabel());
+		target = HitActors[CurIndex].GetActor();
+
+		if (target->GetDistanceTo(Owner.Get()) > RemoveDistance)
 		{
 			//UE_LOGFMT(LogLockOnComponent,Log,"너무 멀어서 제거하고 다른 대상을 가져옵니다 : {0}",target->GetActorNameOrLabel());
 			const auto index = HitActors.IndexOfByPredicate([target](const FHitResult& hit)
@@ -157,7 +158,7 @@ AActor* ULockOnComponent::GetNonCurrentTarget()
 			});
 
 			HitActors.RemoveAt(index);
-			
+
 			return GetNonCurrentTarget();
 		}
 	}
@@ -173,16 +174,16 @@ AActor* ULockOnComponent::GetNonCurrentTarget()
 AActor* ULockOnComponent::GetPreTargetNotOverRemoveDistance()
 {
 	AActor* target = nullptr;
-	
-	if(PreLookTargetStack.IsEmpty()==false)
+
+	if (PreLookTargetStack.IsEmpty() == false)
 	{
 		auto pop = PreLookTargetStack.Pop();
-		if(pop.IsValid())
+		if (pop.IsValid())
 		{
-			if(pop->GetDistanceTo(Owner.Get()) <= RemoveDistance)
+			if (pop->GetDistanceTo(Owner.Get()) <= RemoveDistance)
 			{
 				target = pop.Get();
-				PreLookTargetStack.Insert(target,0);
+				PreLookTargetStack.Insert(target, 0);
 				return target;
 			}
 
@@ -192,16 +193,17 @@ AActor* ULockOnComponent::GetPreTargetNotOverRemoveDistance()
 
 	return target;
 }
+
 // 4 3 2 1
 // 2 3 4
 void ULockOnComponent::OnChangedNextTargetEvent()
 {
 	RemoveCannotLockOnTargetOnList();
-	
-	if(HitActors.Num()>0)
+
+	if (HitActors.Num() > 0)
 	{
 		//처음 락온을 시작한 경우에는 가장 가까운 대상을 타겟으로 해줍니다.
-		if(LookTarget == nullptr)
+		if (LookTarget == nullptr)
 		{
 			//정렬
 			LookTarget = GetNearestTarget();
@@ -209,54 +211,54 @@ void ULockOnComponent::OnChangedNextTargetEvent()
 		}
 
 		//그 이외의 경우에는 정렬하지 않고 그냥 배열 순서대로 가져옵니다.
-		
+
 		//현재 락온중이지 않은 타겟을 가져옵니다.
-		if(auto target = GetNonCurrentTarget())
+		if (auto target = GetNonCurrentTarget())
 		{
 			//이전에 타겟중이던 대상이 있다면 저장합니다.
-			if(LookTarget!=nullptr)
+			if (LookTarget != nullptr)
 			{
-				if(!PreLookTargetStack.Contains(LookTarget))
+				if (!PreLookTargetStack.Contains(LookTarget))
 				{
-					UE_LOGFMT(LogLockOnComponent,Log,"이전 타겟을 스텍에 푸시합니다 : {0}",LookTarget->GetActorNameOrLabel());
+					UE_LOGFMT(LogLockOnComponent, Log, "이전 타겟을 스텍에 푸시합니다 : {0}", LookTarget->GetActorNameOrLabel());
 					PreLookTargetStack.Push(LookTarget);
 				}
 			}
 
 			LookTarget = target;
 		}
-	}else
+	}
+	else
 	{
 		End();
 	}
-
 }
 
 void ULockOnComponent::OnChangedPreTargetEvent()
 {
-	if(HitActors.Num()>0)
+	if (HitActors.Num() > 0)
 	{
 		//이전 타겟이 잡힌게 아무것도 없다면, 그냥 다음타겟을 잡습니다.
-		if(PreLookTargetStack.Num() <= 0)
+		if (PreLookTargetStack.Num() <= 0)
 		{
 			OnChangedNextTargetEvent();
 			return;
 		}
 
 		//이전 타겟을 가져오되, 거리를 벗어나지 않은 대상을 가져옵니다.
-		if(auto preTarget = GetPreTargetNotOverRemoveDistance())
+		if (auto preTarget = GetPreTargetNotOverRemoveDistance())
 		{
 			LookTarget = preTarget;
-		}else
+		}
+		else
 		{
 			OnChangedNextTargetEvent();
 		}
-		
-	}else
+	}
+	else
 	{
 		End();
 	}
-	
 }
 
 void ULockOnComponent::BindChangeTargetEvent()
@@ -450,6 +452,7 @@ void ULockOnComponent::LookAtTarget(float DeltaTime)
 		{
 			if (LockOnWidgetComponent.IsValid() && LockOnWidgetComponent->IsVisible() == false)
 			{
+				LockOnWidgetComponent->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld,true));
 				LockOnWidgetComponent->SetVisibility(true);
 			}
 
@@ -694,7 +697,7 @@ void ULockOnComponent::RemoveCannotLockOnTargetOnList()
 		bool bRemovedLockOnTarget = false;
 		for (auto i = HitActors.Num() - 1; i >= 0; i--)
 		{
-			if (UKismetSystemLibrary::DoesImplementInterface(HitActors[0].GetActor(),ULockOnInterface::StaticClass()))
+			if (UKismetSystemLibrary::DoesImplementInterface(HitActors[0].GetActor(), ULockOnInterface::StaticClass()))
 			{
 				if (ILockOnInterface::Execute_IsLockOnAble(HitActors[i].GetActor()) == false)
 				{

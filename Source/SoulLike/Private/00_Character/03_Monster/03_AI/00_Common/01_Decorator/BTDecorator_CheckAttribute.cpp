@@ -14,31 +14,29 @@ UBTDecorator_CheckAttribute::UBTDecorator_CheckAttribute()
 
 bool UBTDecorator_CheckAttribute::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) const
 {
-
-	if(auto pawn = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
+	if (auto pawn = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
 	{
-		if(auto attComp = pawn->GetAttributeComponent())
+		if (auto attComp = pawn->GetAttributeComponent())
 		{
-			if(const auto attribute = attComp->GetAttributeByType(AttributeType))
+			if (const auto attribute = attComp->GetAttributeByType(AttributeType))
 			{
-				if(AttributeCheckType == EAttributeCheckType::Absolute)
+				if (AttributeCheckType == EAttributeCheckType::Absolute)
 				{
 					return CheckAttributeOperationAbsolute(attribute);
-				}else
-				{
-					return CheckAttributeOperationPercent(attComp,attribute);
 				}
+				return CheckAttributeOperationPercent(attComp, attribute);
 			}
 		}
 	}
-	
+
 	return Super::CalculateRawConditionValue(OwnerComp, NodeMemory);
 }
 
 
 bool UBTDecorator_CheckAttribute::CheckAttributeOperationAbsolute(const FAttribute* const attribute) const
 {
-	switch (ArithmeticOperation) {
+	switch (ArithmeticOperation)
+	{
 	case EArithmeticKeyOperation::Equal:
 		return attribute->GetCurrent() == AbsoluteValue;
 	case EArithmeticKeyOperation::NotEqual:
@@ -48,7 +46,7 @@ bool UBTDecorator_CheckAttribute::CheckAttributeOperationAbsolute(const FAttribu
 	case EArithmeticKeyOperation::LessOrEqual:
 		return attribute->GetCurrent() <= AbsoluteValue;
 	case EArithmeticKeyOperation::Greater:
-		return  attribute->GetCurrent() > AbsoluteValue;
+		return attribute->GetCurrent() > AbsoluteValue;
 	case EArithmeticKeyOperation::GreaterOrEqual:
 		return attribute->GetCurrent() >= AbsoluteValue;
 	}
@@ -56,12 +54,13 @@ bool UBTDecorator_CheckAttribute::CheckAttributeOperationAbsolute(const FAttribu
 }
 
 
-bool UBTDecorator_CheckAttribute::CheckAttributeOperationPercent(UAttributeComponent* attComp, const FAttribute* const attribute) const
+bool UBTDecorator_CheckAttribute::CheckAttributeOperationPercent(UAttributeComponent* attComp,
+                                                                 const FAttribute* const attribute) const
 {
 	float currentAttribute = attribute->GetCurrent();
 	float maxAttribute = 0.0f;
 
-	switch (AttributeType) 
+	switch (AttributeType)
 	{
 	case EAttributeType::HP:
 		maxAttribute = attComp->GetMaxHP();
@@ -74,12 +73,12 @@ bool UBTDecorator_CheckAttribute::CheckAttributeOperationPercent(UAttributeCompo
 		break;
 	case EAttributeType::MAX:
 		// Handle default case if needed
-			break;
+		break;
 	}
 
 	float percent = currentAttribute / maxAttribute;
-	
-	switch (ArithmeticOperation) 
+
+	switch (ArithmeticOperation)
 	{
 	case EArithmeticKeyOperation::Equal:
 		return percent == PercentValue;

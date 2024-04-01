@@ -185,7 +185,8 @@ void ALichBoss::LaunchProjectileEvent()
 		if (auto projectile = SpawnSpells.Pop())
 		{
 			projectile->SetEffect(SpawnSpellEffects);
-			projectile->LaunchProjectileWithOption(EProjectileDirection::BlackboardTarget, EProjectileShootType::DelayUntilRotation);
+			projectile->LaunchProjectileWithOption(EProjectileDirection::BlackboardTarget,
+			                                       EProjectileShootType::DelayUntilRotation);
 		}
 	}
 	else

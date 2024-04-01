@@ -24,16 +24,17 @@ class SOULLIKE_API UGameplayTask_LaunchEvent : public UGameplayTask
 	float CurrentTime;
 
 	//추가 오브젝트를 전달해서 유지해야 할 경우 사용하세요.
-	UPROPERTY(BlueprintReadOnly,meta=(AllowPrivateAccess="true"))
+	UPROPERTY(BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	UObject* AdditionalObject = nullptr;
 
 public:
 	UFUNCTION(BlueprintCallable)
-	static UGameplayTask_LaunchEvent* LaunchEvent(AActor* TaskOwner,UObject* AdditionalObj = nullptr, float TickRateValue = -1);
+	static UGameplayTask_LaunchEvent* LaunchEvent(AActor* TaskOwner, UObject* AdditionalObj = nullptr,
+	                                              float TickRateValue = -1);
 
 	virtual void Activate() override;
 	virtual void TickTask(float DeltaTime) override;
-	void SetTickRate(float Rate){TickRate = Rate;}
+	void SetTickRate(float Rate) { TickRate = Rate; }
 
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTaskActivate);
@@ -42,6 +43,7 @@ public:
 	FOnTaskActivate OnTaskActivate;
 
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTaskTick);
+
 	DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnTaskTickWithDelta, float, DeltaTime);
 
 	UPROPERTY(BlueprintAssignable)
@@ -55,7 +57,7 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	float DT;
 
-	template<typename T>
+	template <typename T>
 	T* GetAdditionalObject();
 };
 

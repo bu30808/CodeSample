@@ -13,7 +13,7 @@ DEFINE_LOG_CATEGORY(LogAbilityComponent)
 
 void UAbilityCueAdditionalInformation::UpdateCueLocation(TArray<FAbilityCueInformation>& CueInfos) const
 {
-	for(auto &c : CueInfos)
+	for (auto& c : CueInfos)
 	{
 		c.SpawnLocation = HitLocation;
 	}
@@ -71,7 +71,6 @@ bool UAbilityComponent::GiveAbility(TSubclassOf<UAbilityBase> Ability)
 	const auto& abilityTag = Ability.GetDefaultObject()->GetAbilityTag();
 	if (abilityTag.IsValid() && !HasAbility(abilityTag))
 	{
-		
 		//CDO를 복제한 뒤, 부여합니다
 		if (auto copy = DuplicateObject(Ability.GetDefaultObject(), GetOwner()))
 		{
@@ -123,10 +122,7 @@ bool UAbilityComponent::ActivateAbility(FGameplayTag AbilityTag, AActor* Ability
 
 			return true;
 		}
-		else
-		{
-			UE_LOGFMT(LogTemp, Error, "사용하려는 어빌리티를 찾을 수 없습니다 : {0}", AbilityTag.GetTagName());
-		}
+		UE_LOGFMT(LogTemp, Error, "사용하려는 어빌리티를 찾을 수 없습니다 : {0}", AbilityTag.GetTagName());
 	}
 	else
 	{
@@ -222,7 +218,7 @@ void UAbilityComponent::UnRegisterEffectTags(const FGameplayTagContainer& Effect
 void UAbilityComponent::K2_ApplyEffect(TSubclassOf<UAbilityEffect> Effect, AActor* EffectBy,
                                        FOnEffectExpired OnEffectExpired, UObject* AdditionalData)
 {
-	if(auto instance = DuplicateObject(Effect.GetDefaultObject(),this))
+	if (auto instance = DuplicateObject(Effect.GetDefaultObject(), this))
 	{
 		ApplyEffect(instance, EffectBy, OnEffectExpired, nullptr, AdditionalData);
 	}
@@ -298,7 +294,6 @@ void UAbilityComponent::ApplyEffect(UAbilityEffect* Effect, AActor* EffectBy, FO
 			Effect->OnEffectExpired = OnEffectExpired;
 			Effect->ProcessEffect(GetOwner<ABaseCharacter>(), EffectBy, From, AdditionalData);
 		}
-		
 	}
 }
 
@@ -313,6 +308,35 @@ void UAbilityComponent::ApplyEffects(const TArray<UAbilityEffect*>& Effects, AAc
 }
 
 TArray<UAbilityEffect*> UAbilityComponent::K2_ApplyEffectsWithReturn(const TArray<TSubclassOf<UAbilityEffect>>& Effects,
+                                                                     AActor* EffectBy, UObject* AdditionalData)
+{
+	TArray<UAbilityEffect*> effectToApply;
+
+	UAbilityCueAdditionalInformation* cueAddInfo = nullptr;
+	if (AdditionalData != nullptr && AdditionalData->IsA<UAbilityCueAdditionalInformation>())
+	{
+		cueAddInfo = Cast<UAbilityCueAdditionalInformation>(AdditionalData);
+	}
+
+	for (auto e : Effects)
+	{
+		if (auto effect = DuplicateObject<UAbilityEffect>(e.GetDefaultObject(), GetOwner()))
+		{
+			effectToApply.Add(effect);
+			if (cueAddInfo != nullptr)
+			{
+				cueAddInfo->UpdateCueLocation(effect->InstanceAbilityCues);
+				cueAddInfo->UpdateCueLocation(effect->IntervalAbilityCues);
+			}
+			ApplyEffect(effect, EffectBy, FOnEffectExpired(), nullptr, AdditionalData);
+		}
+	}
+
+
+	return effectToApply;
+}
+
+TArray<UAbilityEffect*> UAbilityComponent::ApplyEffectsWithReturn(const TArray<UAbilityEffect*>& Effects,
                                                                   AActor* EffectBy, UObject* AdditionalData)
 {
 	TArray<UAbilityEffect*> effectToApply;
@@ -322,36 +346,7 @@ TArray<UAbilityEffect*> UAbilityComponent::K2_ApplyEffectsWithReturn(const TArra
 	{
 		cueAddInfo = Cast<UAbilityCueAdditionalInformation>(AdditionalData);
 	}
-	
-		for (auto e : Effects)
-		{
-			if (auto effect = DuplicateObject<UAbilityEffect>(e.GetDefaultObject(), GetOwner()))
-			{
-				effectToApply.Add(effect);
-				if (cueAddInfo != nullptr)
-				{
-					cueAddInfo->UpdateCueLocation(effect->InstanceAbilityCues);
-					cueAddInfo->UpdateCueLocation(effect->IntervalAbilityCues);
-				}
-				ApplyEffect(effect, EffectBy, FOnEffectExpired(), nullptr, AdditionalData);
-			}
-		}
-	
 
-	return effectToApply;
-}
-
-TArray<UAbilityEffect*> UAbilityComponent::ApplyEffectsWithReturn(const TArray<UAbilityEffect*>& Effects,
-	AActor* EffectBy, UObject* AdditionalData)
-{
-	TArray<UAbilityEffect*> effectToApply;
-
-	UAbilityCueAdditionalInformation* cueAddInfo = nullptr;
-	if (AdditionalData != nullptr && AdditionalData->IsA<UAbilityCueAdditionalInformation>())
-	{
-		cueAddInfo = Cast<UAbilityCueAdditionalInformation>(AdditionalData);
-	}
-	
 	for (auto e : Effects)
 	{
 		effectToApply.Add(e);
@@ -362,7 +357,7 @@ TArray<UAbilityEffect*> UAbilityComponent::ApplyEffectsWithReturn(const TArray<U
 		}
 		ApplyEffect(e, EffectBy, FOnEffectExpired(), nullptr, AdditionalData);
 	}
-	
+
 
 	return effectToApply;
 }
@@ -509,18 +504,19 @@ AAbilityCue* UAbilityComponent::ApplyCue(FAbilityCueInformation CueInformation)
 
 			return cueActor;
 		};
-		
+
 		//재 사용 가능한 큐인 경우.
 		if (CueInformation.bReusable == true)
 		{
 			if (ReusableCues.Contains(CueInformation.CueTag) == false)
 			{
 				cueActor = spawnCueFunction(CueInformation);
-				if(cueActor!=nullptr){				
-				UE_LOGFMT(LogAbilityComponent, Log, "재사용 가능한 큐 스폰 : {0}, {1}", cueActor->GetActorNameOrLabel(),
-				          CueInformation.CueTag.ToString());
-				ReusableCues.Add(CueInformation.CueTag, cueActor);
-				OnAddCue.Broadcast(CueInformation.CueTag);
+				if (cueActor != nullptr)
+				{
+					UE_LOGFMT(LogAbilityComponent, Log, "재사용 가능한 큐 스폰 : {0}, {1}", cueActor->GetActorNameOrLabel(),
+					          CueInformation.CueTag.ToString());
+					ReusableCues.Add(CueInformation.CueTag, cueActor);
+					OnAddCue.Broadcast(CueInformation.CueTag);
 				}
 			}
 			else
@@ -684,9 +680,9 @@ UAbilityEffect* UAbilityComponent::GetAppliedEffectByTag(FGameplayTag TagToFind)
 
 void UAbilityComponent::UnRootAppliedTalents()
 {
-	for(auto iter : AvailableAbilities)
+	for (auto iter : AvailableAbilities)
 	{
-		if(iter)
+		if (iter)
 		{
 			iter->UnBindTalent();
 		}
@@ -703,11 +699,11 @@ void UAbilityComponent::DestroyComponent(bool bPromoteChildren)
 
 void UAbilityComponent::UnRootAppliedEffects()
 {
-	for(auto iter : AppliedEffects)
+	for (auto iter : AppliedEffects)
 	{
-		if(iter)
+		if (iter)
 		{
-			if(iter->IsRooted())
+			if (iter->IsRooted())
 			{
 				iter->RemoveFromRoot();
 			}

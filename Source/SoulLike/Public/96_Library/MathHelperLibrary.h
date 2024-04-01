@@ -42,6 +42,6 @@ public:
 	 * @param B_ForwardVector 
 	 * @return 
 	 */
-	UFUNCTION(BlueprintCallable,BlueprintPure)
-	static bool SameDirection(FVector A_ForwardVector,FVector B_ForwardVector);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static bool SameDirection(FVector A_ForwardVector, FVector B_ForwardVector);
 };

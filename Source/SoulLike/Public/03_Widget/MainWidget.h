@@ -23,17 +23,19 @@ class SOULLIKE_API UMainWidget : public UDropTargetWidget
 	friend class USoulLikeSaveGame;
 	friend class UGameLoadHandler;
 	friend class UCharacterTotalInfoWidget;
+	friend class USoulLikeInstance;
+
 protected:
 	UPROPERTY(meta=(BindWidget))
 	class UCanvasPanel* CanvasPanel;
 
-	UPROPERTY(meta = (BindWidget),BlueprintReadOnly)
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	class UResourceWidget* UMG_HP;
-	UPROPERTY(meta = (BindWidget),BlueprintReadOnly)
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	class UResourceWidget* UMG_MP;
-	UPROPERTY(meta = (BindWidget),BlueprintReadOnly)
+	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	class UResourceWidget* UMG_SP;
-	
+
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	class UNavigationWidget* UMG_Navigation;
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
@@ -46,7 +48,7 @@ protected:
 	class UOrbWidget* UMG_Orb;
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	class UUserWidget* UMG_Option;
-	
+
 	/*UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	class UMainMenuWidget* UMG_MainMenu;*/
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
@@ -59,7 +61,7 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* VerticalBox_BossWidgets;
 	UPROPERTY()
-	TMap<FString,class UBossHealthBarWidget*> BossHealthBarWidgetMap;
+	TMap<FString, class UBossHealthBarWidget*> BossHealthBarWidgetMap;
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UBossHealthBarWidget> BossHealthBarWidgetObject;
 	/*UPROPERTY(meta = (BindWidget))
@@ -71,23 +73,23 @@ protected:
 
 	UPROPERTY(meta=(BindWidget))
 	class UButton* Button_NavigationOpen;
-	
-	UPROPERTY(meta=(BindWidgetAnim),Transient,BlueprintReadOnly)
+
+	UPROPERTY(meta=(BindWidgetAnim), Transient, BlueprintReadOnly)
 	class UWidgetAnimation* OpenMenuAnimation;
 	UPROPERTY()
 	bool bIsNavigationOpen = false;
-	
+
 	UPROPERTY(EditAnywhere)
 	class UInputMappingContext* NavigationMenuInputContext;
-	
+
 public:
 	UFUNCTION(BlueprintCallable)
 	void OpenNavigation(bool bForceClose = false);
-	
+
 
 	void ShowBossWidget(class ABaseMonster* Boss);
 	void RemoveBossWidget(ABaseMonster* Boss);
-	
+
 	void ForceUpdateSpirit(const FInventoryItem& InventoryItem);
 
 protected:
@@ -99,7 +101,7 @@ protected:
 
 	UFUNCTION()
 	void OnClickedOpenButton();
-	
+
 	void Init();
 
 private:
@@ -116,14 +118,14 @@ private:
 	void OnChangedMaxMPEvent(float MaxValue);
 	UFUNCTION()
 	void OnChangedMaxSPEvent(float MaxValue);
-	
+
 	virtual bool WidgetMoveToDraggedPoint(class UDragAndDropOperation* Oper,
 	                                      const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent) override;
 
 
 	void NavigationOpenInputSetting();
-public:
 
+public:
 	UFUNCTION()
 	void OpenCharacterInformation();
 	UFUNCTION()
@@ -134,6 +136,4 @@ public:
 	void OpenOrb();
 	UFUNCTION()
 	void OpenOption();
-
-	
 };

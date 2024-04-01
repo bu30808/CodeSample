@@ -22,8 +22,6 @@ protected:
 	TMap<FGameplayTag, float> AttackChainMap;
 
 public:
-
-	
 	//배율을 저장합니다.
 	//체인 태그로 저장합니다.
 	UFUNCTION(BlueprintCallable)

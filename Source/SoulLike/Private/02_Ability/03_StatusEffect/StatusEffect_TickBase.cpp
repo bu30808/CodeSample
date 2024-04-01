@@ -15,16 +15,17 @@ UStatusEffect_TickBase::UStatusEffect_TickBase()
 void UStatusEffect_TickBase::OverrideAttributeEffects_Implementation(ABaseCharacter* Target, AActor* EffectBy)
 {
 	ResultAmount = Amount;
-	if(UKismetSystemLibrary::DoesImplementInterface(Target,UBossMonsterInterface::StaticClass()))
+	if (UKismetSystemLibrary::DoesImplementInterface(Target, UBossMonsterInterface::StaticClass()))
 	{
-		ResultAmount/= 3.f;
+		ResultAmount /= 3.f;
 	}
 
-	
-	if(auto attComp = Target->GetAttributeComponent())
+
+	if (auto attComp = Target->GetAttributeComponent())
 	{
 		TArray<FAttributeEffect> newEffects;
-		newEffects.Add(FAttributeEffect(EAttributeType::HP,EAttributeApplyMethod::REMOVE,attComp->GetMaxHP() * ResultAmount));
+		newEffects.Add(FAttributeEffect(EAttributeType::HP, EAttributeApplyMethod::REMOVE,
+		                                attComp->GetMaxHP() * ResultAmount));
 
 		AttributeEffects = newEffects;
 	}
