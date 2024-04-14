@@ -12,6 +12,7 @@
 #include "Logging/StructuredLog.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/00_Player/01_Component/AbilityTalentComponent.h"
+#include "00_Character/01_Component/AnimationHelperComponent.h"
 #include "00_Character/01_Component/AttributeComponent.h"
 #include "99_Subsystem/AttackChainSubsystem.h"
 #include "Kismet/GameplayStatics.h"
@@ -1031,11 +1032,11 @@ void UAbilityBase::HandleOnTriggerHitAnimationNotEntered()
 {
 	if (AbilityOwner.IsValid())
 	{
-		if (AbilityOwner->GetIsTriggeredHitAnimationExitEvent() == false)
+		if (AbilityOwner->GetAnimationHelperComponent()->GetIsTriggeredHitAnimationExitEvent() == false)
 		{
 			UE_LOGFMT(LogAbility, Error, "{0} {1} : 히트 애니메이션 빠져나감 이벤트가 호출되지 않았기 때문에 강제로 호출합니다.", __FUNCTION__,
 			          __LINE__);
-			AbilityOwner->OnTriggerHitAnimationExit.Broadcast(nullptr, nullptr);
+			AbilityOwner->GetAnimationHelperComponent()->OnTriggerHitAnimationExit.Broadcast(nullptr, nullptr);
 		}
 	}
 }

@@ -9,7 +9,6 @@
 #include "00_Character/03_Monster/BaseMonster.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIPerceptionComponent.h"
 #include "01_GameMode/SoulLikeGameMode.h"
-#include "96_Library/AbilityHelperLibrary.h"
 #include "96_Library/AIConHelperLibrary.h"
 #include "97_Interface/BossMonsterInterface.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
@@ -80,13 +79,11 @@ bool AMonsterAIController::ShouldForceCombatState()
 
 void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAIStimulus Stimulus)
 {
-	UE_LOGFMT(LogAICon, Log, "{0} OnTargetPerceptionUpdatedEvent : {1}", GetNameSafe(GetPawn()), GetNameSafe(Target));
 	if (Target != nullptr && Target->IsA<APlayerCharacter>())
 	{
-		UE_LOGFMT(LogAICon, Log, "{0} OnTargetPerceptionUpdatedEvent2", GetNameSafe(GetPawn()));
 		if (GetPawn<ABaseMonster>()->IsDead())
 		{
-			UE_LOGFMT(LogAICon, Error, "{0} OnTargetPerceptionUpdatedEvent3", GetNameSafe(GetPawn()));
+			UE_LOGFMT(LogAICon, Error, "{0} 해당 몬스터는 이미 사망 상태입니다. 퍼셉션을 업데이트 할 필요가 없습니다.", GetNameSafe(GetPawn()));
 			return;
 		}
 
@@ -95,16 +92,21 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 			Cast<APlayerCharacter>(Target)->SetPlayerStateBy(EPlayerCharacterState::Combat, GetPawn());
 		}
 
-		if (GetBrainComponent() == nullptr)
+		if (!IsBehaviorTreeRunning())
 		{
+			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 비헤이비어 트리가 실행중이 아니므로, 실행합니다."),*GetNameSafe(GetPawn())));
 			StartBehavior();
+		}else
+		{
+			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 이미 비헤이비어 트리가 실행중입니다."),*GetNameSafe(GetPawn())));
 		}
 
 		if (auto bbComp = GetBlackboardComponent())
 		{
 			if (bbComp->GetValueAsObject("Target") == nullptr)
 			{
-				UE_LOGFMT(LogAICon, Log, "{0}이 타겟을 감지했습니다 : {1}", GetNameSafe(GetPawn()), Target->GetName());
+				/*UE_LOGFMT(LogAICon, Log, "{0}이 타겟을 감지했습니다 : {1}", GetNameSafe(GetPawn()), Target->GetName());*/
+				UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 타겟을 감지했습니다."),*GetNameSafe(GetPawn())));
 				bbComp->SetValueAsObject("Target", Target);
 				if (const auto sense = UAIPerceptionSystem::GetSenseClassForStimulus(this, Stimulus))
 				{
@@ -144,68 +146,83 @@ void AMonsterAIController::OnTargetPerceptionForgottenEvent(AActor* Target)
 
 void AMonsterAIController::OnDeadEvent(AActor* Who, AActor* DeadBy)
 {
-	if (!DeadBy->IsA<APlayerCharacter>())
-	{
-		DeadBy = UGameplayStatics::GetPlayerCharacter(this, 0);
-	}
-	UAIConHelperLibrary::ChangePlayerState(this, DeadBy, EPlayerCharacterState::Combat);
-
-
+	PerceptionComponent->ForgetAll();
+	
+	/*
+	UE_LOGFMT(LogMonster, Warning, "몬스터 사망 이벤트 호출 (컨트롤러): {0}", GetNameSafe(Who));
 	PerceptionComponent->SetComponentTickEnabled(false);
 	PerceptionComponent->SetSenseEnabled(UAISense_Sight::StaticClass(), false);
 	PerceptionComponent->ForgetAll();
-	PerceptionComponent->Deactivate();
+	PerceptionComponent->Deactivate();*/
 }
 
 void AMonsterAIController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	Cast<ABaseMonster>(InPawn)->OnDead.AddUniqueDynamic(this, &AMonsterAIController::OnDeadEvent);
+	/*Cast<ABaseMonster>(InPawn)->OnDead.AddUniqueDynamic(this, &AMonsterAIController::OnDeadEvent);*/
 }
 
 void AMonsterAIController::StartBehavior()
 {
-	UE_LOGFMT(LogAICon, Log, "{0} : 비헤이비어 트리 실행 0 ", GetNameSafe(GetPawn()));
 	if (const auto monster = Cast<ABaseMonster>(GetPawn()))
 	{
-		if (monster->IsDead())
+		UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 비해이비어 트리 실행"),*GetNameSafe(GetPawn())));
+		if (!RunBehaviorTree(monster->MonsterDataAsset->BehaviorTree))
 		{
+			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 비해이비어 트리 실행실패"),*GetNameSafe(GetPawn())));
+			UE_LOGFMT(LogAICon, Error, "{0} : 비헤이비어 트리 실행 실패!!", GetNameSafe(GetPawn()));
+			return;
+		}		
+		
+		if (auto bbComp = GetBlackboardComponent())
+		{
+			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 홈 로케이션 설정"),*GetNameSafe(GetPawn())));
+			bbComp->SetValueAsVector("HomeLocation", GetPawn()->GetActorLocation());
+			if (UKismetSystemLibrary::DoesImplementInterface(monster, UAIInterface::StaticClass()))
+			{
+				float range;
+				IAIInterface::Execute_GetAttackRange(monster, range);
+				range = monster->GetScaledAttackRange(range);
+				bbComp->SetValueAsFloat("AttackRange", range);
+			}
+		}else
+		{
+			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 블랙보드가 유효하지 않음"),*GetNameSafe(GetPawn())));
+			UE_LOGFMT(LogAICon, Error, "{0} : 블랙보드가 유효하지 않습니다.", GetNameSafe(this));
+		}
+
+		if (monster->GetCharacterState() != ECharacterState::NORMAL)
+		{
+			UE_LOGFMT(LogAICon, Log, "{0} : 노멀 상태가 아니라서 트리 실행이 불가능합니다. ", GetNameSafe(GetPawn()));
+			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 노멀 상태가 아니라서 트리 실행이 불가능합니다."),*GetNameSafe(GetPawn())));
+			GetBrainComponent()->StopLogic("Not Normal");
+			return;
+		}
+		
+		if(monster->GetAbilityComponent()->HasEffectTag(ExecuteEffectTag))
+		{
+			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 처형 태그가 있어서 실행이 불가능합니다."),*GetNameSafe(GetPawn())));
+			GetBrainComponent()->StopLogic("ExecuteTag");
 			return;
 		}
 
-		if (monster->IsDead() == false && !monster->GetAbilityComponent()->HasEffectTag(ExecuteEffectTag))
-		{
-			UE_LOGFMT(LogAICon, Log, "{0} : 비헤이비어 트리 실행 1 ", GetNameSafe(GetPawn()));
-			if (!RunBehaviorTree(monster->MonsterDataAsset->BehaviorTree))
-			{
-				UE_LOGFMT(LogAICon, Error, "{0} : 비헤이비어 트리 실행 실패!!", GetNameSafe(GetPawn()));
-				return;
-			}
-
-			if (auto bbComp = GetBlackboardComponent())
-			{
-				bbComp->SetValueAsVector("HomeLocation", GetPawn()->GetActorLocation());
-				if (UKismetSystemLibrary::DoesImplementInterface(monster, UAIInterface::StaticClass()))
-				{
-					float range;
-					IAIInterface::Execute_GetAttackRange(monster, range);
-					range = monster->GetScaledAttackRange(range);
-					bbComp->SetValueAsFloat("AttackRange", range);
-				}
-			}
-
-			if (!PerceptionComponent->IsActive())
-			{
-				UE_LOGFMT(LogAICon, Log, "{0} : 퍼셉션 틱 활성화", GetNameSafe(GetPawn()));
-				PerceptionComponent->SetComponentTickEnabled(true);
-				PerceptionComponent->SetSenseEnabled(UAISense_Sight::StaticClass(), true);
-				PerceptionComponent->Activate();
-			}
-		}
+		
 	}
 	else
 	{
+		UKismetSystemLibrary::PrintString(this,FString::Printf(TEXT("폰을 가져올 수 없어요!! : %s"),*GetNameSafe(this)));
 		UE_LOGFMT(LogAICon, Error, "{0} : 폰을 가져올 수 없어요!!", GetNameSafe(this));
+	}
+}
+
+void AMonsterAIController::ReStartBehavior()
+{
+	if(auto brainComp = GetBrainComponent())
+	{
+		brainComp->RestartLogic();
+	}else
+	{
+		StartBehavior();
 	}
 }
 
@@ -239,7 +256,8 @@ void AMonsterAIController::ResetBlackboard()
 {
 	if (auto bbComp = GetBlackboardComponent())
 	{
-		bbComp->ClearValue("Target");
+		UKismetSystemLibrary::PrintString(this,FString::Printf(TEXT("다음 몬스터의 블렉보드를 초기화 합니다. : %s"),*GetNameSafe(GetPawn())));
+		bbComp->SetValueAsObject("Target",nullptr);
 	}
 }
 
@@ -302,7 +320,7 @@ void AMonsterAIController::Tick(float DeltaSeconds)
 #if WITH_EDITOR
 	if (auto pawn = GetPawn<ABaseMonster>())
 	{
-		if (pawn->IsDead() == false && PerceptionComponent->IsComponentTickEnabled())
+		if (pawn->IsDead() == false /*&& PerceptionComponent->IsComponentTickEnabled()*/)
 		{
 			DrawSightDebugLine();
 

@@ -276,7 +276,7 @@ void UOrbMatrixSlotOpenComponent::GiveFreeLineCompleteReward(APlayerController* 
 			{
 				const FText alertText = FText::Format(
 					NSLOCTEXT("OrbMatrixSlotOpenComponent", "FreeLineCompleteRewardText",
-					          "방어 라인을 완성하여 다음 능력을 얻었습니다 : {0}"), FText::FromString(msg));
+					          "자유 라인을 완성하여 다음 능력을 얻었습니다 : {0}"), FText::FromString(msg));
 
 				UWidgetHelperLibrary::ShowAlertMsg(Cast<AUserController>(PlayerController), EAlertMsgType::NoUseDeco,
 				                                   alertText, FOnButtonClicked());

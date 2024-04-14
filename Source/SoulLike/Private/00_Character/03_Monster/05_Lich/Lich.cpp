@@ -9,14 +9,19 @@ ALich::ALich()
 {
 }
 
+void ALich::PlayIdleCue()
+{
+	AbilityComponent->ApplyCue(IdleCueInformation);
+	GetWorldTimerManager().SetTimer(IdleCueTimerHandle, this, &ALich::ApplyIdleCueEvent, 8.f, true);
+}
+
 void ALich::BeginPlay()
 {
 	Super::BeginPlay();
 
 	if (AbilityComponent)
 	{
-		AbilityComponent->ApplyCue(IdleCueInformation);
-		GetWorldTimerManager().SetTimer(IdleCueTimerHandle, this, &ALich::ApplyIdleCueEvent, 8.f, true);
+		PlayIdleCue();
 	}
 }
 
@@ -32,9 +37,26 @@ void ALich::ApplyIdleCueEvent()
 	}
 }
 
+void ALich::Activate()
+{
+	Super::Activate();
+	PlayIdleCue();
+}
+
+void ALich::Deactivate()
+{
+	Super::Deactivate();
+	GetWorldTimerManager().ClearTimer(IdleCueTimerHandle);
+}
+
+void ALich::RestoreComponentAttachment() const
+{
+	Super::RestoreComponentAttachment();
+}
+
 void ALich::OnDeadMontageEndedEvent(UAnimMontage* Montage, bool bInterrupted)
 {
 	Super::OnDeadMontageEndedEvent(Montage, bInterrupted);
-
+	
 	GetMesh()->SetVisibility(false);
 }

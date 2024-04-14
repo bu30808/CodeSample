@@ -156,7 +156,7 @@ AItemActor* UItemDropComponent::DropItem(ABaseCharacter* DropBy)
 			if (const auto item = GetWorld()->SpawnActor<AItemActor>(load, spawnParam))
 			{
 				item->GetSphereComponent()->SetSphereRadius(item->GetSphereComponent()->GetScaledSphereRadius() * 1.5f);
-				//item->AttachToActor(GetOwner(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),ItemAttachSocketName);
+				item->AttachToActor(GetOwner(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),ItemAttachSocketName);
 				item->AttachToComponent(GetOwner<ABaseCharacter>()->GetRootComponent(),
 				                        FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true),
 				                        ItemAttachSocketName);

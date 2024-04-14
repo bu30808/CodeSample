@@ -43,4 +43,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static bool IsSameLevel(class UObject* CurLevelContext, const FString& CompareLevel);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static bool IsUseSave(class UObject* Context);
+	
+	UFUNCTION(BlueprintCallable)
+	static void SaveAttributes(AActor* Player);
 };

@@ -155,3 +155,17 @@ TArray<FBonfireInformation*> ABonfire::GetTeleportList() const
 
 	return TArray<FBonfireInformation*>();
 }
+
+const FBonfireInformation& ABonfire::GetBonfireInformation()
+{
+	if (BonfireTable)
+	{
+		
+		if(auto info  = BonfireTable->FindRow<FBonfireInformation>(FName(GetNameSafe(this)),""))
+		{
+			BonfireInformation = *info;
+		}
+	}
+
+	return BonfireInformation;
+}

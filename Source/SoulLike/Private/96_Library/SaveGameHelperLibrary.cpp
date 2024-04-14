@@ -105,3 +105,21 @@ bool USaveGameHelperLibrary::IsSameLevel(UObject* CurLevelContext, const FString
 {
 	return UGameplayStatics::GetCurrentLevelName(CurLevelContext).Equals(CompareLevel);
 }
+
+bool USaveGameHelperLibrary::IsUseSave(UObject* Context)
+{
+	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(Context)))
+	{
+		return instance->IsUseGameSave();
+	}
+
+	return false;
+}
+
+void USaveGameHelperLibrary::SaveAttributes(AActor* Player)
+{
+	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(Player)))
+	{
+		instance->SaveAttribute(Cast<APlayerCharacter>(Player));
+	}
+}

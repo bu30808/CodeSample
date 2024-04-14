@@ -111,8 +111,17 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void DeactivateCue() const;
 
+protected:
+	
+	UFUNCTION()
+	virtual void ActivateCue();
+
+	//나이아가라 소스 액터가 필요하다면 호출해서 사용하세요.
+	UFUNCTION(BlueprintCallable)
+	void SetNiagaraSourceActor();
+	
 private:
-	void ActivateCue() const;
+	
 	UFUNCTION()
 	void OnDestroyedEvent(AActor* DestroyedActor);
 
@@ -127,4 +136,6 @@ class SOULLIKE_API AAbilityCue_SourceActorBased : public AAbilityCue
 
 public:
 	virtual void BeginPlay() override;
+	virtual void ActivateCue() override;
+	
 };

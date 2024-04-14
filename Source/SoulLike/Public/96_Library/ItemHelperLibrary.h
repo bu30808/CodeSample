@@ -35,6 +35,7 @@ public:
 	static bool IsArmor(const FInventoryItem& Item);
 	static bool IsRing(const FInventoryItem& Item);
 	static bool IsEnhancement(const FInventoryItem& Item);
+	static bool IsKey(const FInventoryItem& Item);
 	static bool IsHPPotion(const FInventoryItem& Item);
 	static bool IsMPPotion(const FInventoryItem& Item);
 	static FText ItemTypeToText(const FItemInformation* ItemInformation);

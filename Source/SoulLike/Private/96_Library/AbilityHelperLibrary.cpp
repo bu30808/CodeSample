@@ -211,3 +211,11 @@ void UAbilityHelperLibrary::PlaySound2D(UObject* WorldContext, USoundBase* Sound
 		UGameplayStatics::PlaySound2D(WorldContext, Sound);
 	}
 }
+
+void UAbilityHelperLibrary::DeactivateMightyAbility(ABaseCharacter* Character)
+{
+	if(Character)
+	{
+		Character->GetAbilityComponent()->ForceEndAbility(MIGHTY_TAG);
+	}
+}

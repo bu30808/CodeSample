@@ -193,6 +193,7 @@ protected:
 	class UDataTable* MerchandiseAbilityTable = nullptr;
 
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 public:
 	//플레이어에게 아이템을 구입 한 후 호출되는 델리게이트

@@ -385,6 +385,7 @@ public:
 	UAttributeComponent();
 
 protected:
+	
 	// Called when the game starts
 	virtual void BeginPlay() override;
 	virtual void PostInitProperties() override;
@@ -642,4 +643,8 @@ public:
 
 	UFUNCTION()
 	void OnUpdateStatusEffectEvent(EStatusEffect StatusEffect, float Value, float ResistValue);
+
+	//경험치 획득시 저장하기 위해 사용도비니다.
+	UFUNCTION()
+	void OnUpdateExpEvent(float AddExp);
 };

@@ -312,4 +312,8 @@ public:
 	//아이템 버튼이 아이템리스트에서 생성되면 호출됩니다.
 	UFUNCTION()
 	void OnItemButtonWidgetGeneratedEvent(UUserWidget* UserWidget);
+
+	//태그에 해당하는 열쇠를 가지고 있는가 확인합니다. hasitem함수와 같은 기능입니다.
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	bool HasKey(FGameplayTag KeyTag);
 };

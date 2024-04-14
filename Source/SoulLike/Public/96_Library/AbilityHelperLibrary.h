@@ -4,11 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
-#include "00_Character/01_Component/InventoryComponent.h"
-#include "BehaviorTree/BehaviorTreeTypes.h"
-#include "UObject/NoExportTypes.h"
 #include "AbilityHelperLibrary.generated.h"
 
+#define MIGHTY_TAG FGameplayTag::RequestGameplayTag("Common.Passive.Mighty")
+#define MIGHTY_EFFECT_TAG FGameplayTag::RequestGameplayTag("Common.Passive.Mighty.Effect")
 enum class EStatusEffect : uint8;
 /**
  * 
@@ -54,4 +53,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	static void PlaySound2D(UObject* WorldContext, class USoundBase* Sound);
+
+	UFUNCTION(BlueprintCallable)
+	static void DeactivateMightyAbility(class ABaseCharacter* Character);
 };

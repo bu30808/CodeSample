@@ -21,7 +21,6 @@ struct FLevelUpData : public FTableRowBase
 	int32 NextExp = 0;
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLevelUp);
 
 /**
  * 
@@ -37,11 +36,7 @@ private:
 
 public:
 	ULevelUpSubsystem();
-
-	//레벨이 올랐을 때 호출되는 이벤트
-	UPROPERTY(BlueprintAssignable)
-	FOnLevelUp OnLevelUp;
-
+	
 
 	//현재 레벨에서 타겟레벨까지 올립니다.
 	UFUNCTION(BlueprintCallable)

@@ -5,6 +5,7 @@
 
 #include "AIController.h"
 #include "00_Character/BaseCharacter.h"
+#include "00_Character/01_Component/AnimationHelperComponent.h"
 #include "00_Character/01_Component/AttributeComponent.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "Logging/StructuredLog.h"
@@ -27,11 +28,11 @@ EBTNodeResult::Type UBTTask_PlayAnimMontage::ExecuteTask(UBehaviorTreeComponent&
 
 		if (auto monster = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
 		{
-			if (!monster->GetIsTriggeredHitAnimationExitEvent())
+			if (!monster->GetAnimationHelperComponent()->GetIsTriggeredHitAnimationExitEvent())
 			{
 				UE_LOGFMT(LogAICon, Log, "{0} {1} : OnTriggerHitAnimationExit이벤트가 발동하지 않은 상태임으로 강제로 브로드케스트 합니다.",
 				          __FUNCTION__, __LINE__);
-				monster->OnTriggerHitAnimationExit.Broadcast(monster, nullptr);
+				monster->GetAnimationHelperComponent()->OnTriggerHitAnimationExit.Broadcast(monster, nullptr);
 			}
 
 			if (auto instance = monster->GetMesh()->GetAnimInstance())

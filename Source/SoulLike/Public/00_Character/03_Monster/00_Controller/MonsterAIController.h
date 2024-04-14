@@ -43,6 +43,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void StartBehavior();
+	void ReStartBehavior();
 
 	//팀 비교하는 함수
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
@@ -70,6 +71,7 @@ protected:
 	float SmoothFocusInterpSpeed = 30.0f;
 
 public:
+
 	UFUNCTION(BlueprintCallable)
 	void SetSmoothFocusInterpSpeed(float NewSpeed) { SmoothFocusInterpSpeed = NewSpeed; }
 };

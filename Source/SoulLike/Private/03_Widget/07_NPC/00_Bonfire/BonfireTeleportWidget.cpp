@@ -3,6 +3,7 @@
 
 #include "03_Widget/07_NPC/00_Bonfire/BonfireTeleportWidget.h"
 
+#include "00_Character/00_Player/01_Component/TeleportBonfireComponent.h"
 #include "00_Character/04_NPC/Bonfire.h"
 #include "00_Character/04_NPC/99_Component/BonfireComponent.h"
 #include "03_Widget/07_NPC/00_Bonfire/TeleportElementWidget.h"
@@ -36,8 +37,10 @@ void UBonfireTeleportWidget::OnClickedOKEvent()
 			//다시 로드할 때, 위 정보에 해당하는 위치로 이동하도록 합니다.
 			SetVisibility(ESlateVisibility::Collapsed);
 			instance->SaveTeleportBonfire(info);
-			GetOwningPlayerPawn<APlayerCharacter>()->TeleportToOtherBonfire(info);
-			//UGameplayStatics::OpenLevel(GetWorld(),FName(info.LevelName));
+			if(auto pawn = GetOwningPlayerPawn<APlayerCharacter>())
+			{
+				pawn->GetTeleportBonfireComponent()->TeleportToOtherBonfire(info);
+			}
 		}
 	}
 }

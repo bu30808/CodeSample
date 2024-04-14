@@ -6,6 +6,7 @@
 #include "96_Library/WidgetHelperLibrary.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
+#include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
 
 void UTutorialWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
@@ -14,6 +15,7 @@ void UTutorialWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 
 	if (!IsVisible())
 	{
+		UGameplayStatics::SetGamePaused(this,false);
 		if (TutorialObjectPtr != nullptr)
 		{
 			TutorialObjectPtr->Destroy();
@@ -28,6 +30,7 @@ void UTutorialWidget::NativeConstruct()
 
 	Super::NativeConstruct();
 	OnVisibilityChanged.AddUniqueDynamic(this, &UTutorialWidget::OnVisibilityChangedEvent);
+	UGameplayStatics::SetGamePaused(this,true);
 }
 
 /*

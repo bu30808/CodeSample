@@ -779,3 +779,8 @@ void UInventoryComponent::OnItemButtonWidgetGeneratedEvent(UUserWidget* UserWidg
 		}
 	}
 }
+
+bool UInventoryComponent::HasKey(const FGameplayTag KeyTag)
+{
+	return K2_HasItem(KeyTag);
+}

@@ -33,7 +33,7 @@ FText AEquipmentItemActor::GetEnhancedLevelDescription()
 	FText enhancedMaxLevel = NSLOCTEXT("Equipment", "EnhancedLevelText", "단계");
 
 	return FText::Format(
-		NSLOCTEXT("Equipment", "EnhancedLevelDescription", "<item.desc>{0} : {1}({2}{3}{4})</>"),
+		NSLOCTEXT("Equipment", "EnhancedLevelDescription", "<item.desc>{0} : {1}({2} {3}{4})</>"),
 		enhancedLevelDescription, FText::AsNumber(Enhancement.CurEnhancement), enhancedMaxLevelDescription,
 		FText::AsNumber(Enhancement.GetMaxEnhancement()), enhancedMaxLevel);
 	/*

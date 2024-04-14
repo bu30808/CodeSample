@@ -12,6 +12,8 @@
 #include "Logging/StructuredLog.h"
 #include "03_Widget/03_LevelUp/AttributePreviewWidget.h"
 #include "96_Library/AbilityHelperLibrary.h"
+#include "96_Library/SaveGameHelperLibrary.h"
+#include "98_GameInstance/SoulLikeInstance.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 UStatusEffectValueHandler::UStatusEffectValueHandler()
@@ -128,7 +130,7 @@ void UAttributeComponent::BeginPlay()
 	Super::BeginPlay();
 
 	OnUpdateStatusEffect.AddUniqueDynamic(this, &UAttributeComponent::OnUpdateStatusEffectEvent);
-
+	OnUpdateExp.AddUniqueDynamic(this, &UAttributeComponent::OnUpdateExpEvent);
 	if (GetOwner())
 	{
 		GetOwner<ACharacter>()->GetCharacterMovement()->MaxWalkSpeed = GetMoveSpeed();
@@ -222,6 +224,8 @@ void UAttributeComponent::LoadAttributeNotIncludeLevelUpPoint(const TMap<EAttrib
 	for (auto iter : SavedAttribute)
 	{
 		AttributesNotIncludeLevelUpPoint[iter.Key]->Load(iter.Value);
+
+		UE_LOGFMT(LogSave,Log,"어트리뷰트 로드 : {0}, {1}",StaticEnum<EAttributeType>()->GetValueAsString(iter.Key),AttributesNotIncludeLevelUpPoint[iter.Key]->GetCurrent());
 	}
 
 	if (bIsRespawn)
@@ -708,5 +712,13 @@ void UAttributeComponent::OnUpdateStatusEffectEvent(EStatusEffect StatusEffect, 
 				}
 			}
 		}
+	}
+}
+
+void UAttributeComponent::OnUpdateExpEvent(float AddExp)
+{
+	if(auto instance = USaveGameHelperLibrary::GetSoulLikeInstance(this))
+	{
+		instance->SaveAttributeExp(GetEXPAttribute());
 	}
 }

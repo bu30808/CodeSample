@@ -8,6 +8,7 @@
 #include "00_Character/01_Component/InventoryComponent.h"
 #include "04_Item/ItemActor.h"
 #include "04_Item/01_Equipment/EquipmentItemActor.h"
+#include "96_Library/SaveGameHelperLibrary.h"
 #include "Logging/StructuredLog.h"
 
 ULevelUpSubsystem::ULevelUpSubsystem()
@@ -34,7 +35,8 @@ void ULevelUpSubsystem::TryLevelUp(UAttributeComponent* AttributeComponent, int3
 				//경험치 차감
 				AttributeComponent->SetEXP(AttributeComponent->GetEXP() - needExp);
 				AddAttributePoint(AttributeComponent, AttributePoints);
-				OnLevelUp.Broadcast();
+
+				USaveGameHelperLibrary::SaveAttributes(AttributeComponent->GetOwner());
 			}
 		}
 	}

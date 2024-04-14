@@ -26,13 +26,6 @@ public:
 };
 
 
-UENUM(BlueprintType)
-enum class EDeadAnimationPlayMode : uint8
-{
-	Sequence,
-	Montage,
-	None
-};
 
 
 USTRUCT(BlueprintType)
@@ -119,9 +112,6 @@ struct FAttributeEffect;
 //캐릭터 사망 처리
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDead, class AActor*, Who, class AActor*, DeadBy);
 
-//트리거 애니메이션 이벤트
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnTriggerHitAnimation, class ABaseCharacter*, DamagedCharacter,
-                                             class AActor*, HitBy);
 
 //델리게이트 선언시 맵 타입을 전달하면 생기는 오류를 회피하는 방법입니다.
 using FIgnoreMoveInputMap = TMap<FIgnoreInputHandler, uint8>;
@@ -165,6 +155,11 @@ protected:
 	class UFootStepComponent* FootStepComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UInventoryComponent* InventoryComponent;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	class UAnimationHelperComponent* AnimationHelperComponent;
+	UPROPERTY(VisibleAnywhere, Category = "Timeline")
+	class UTimelineComponent* DeadDissolveTimeLineComponent;
+
 	/*UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UNavigationInvokerComponent* NavigationInvokerComponent;*/
 
@@ -173,7 +168,8 @@ public:
 	FORCEINLINE UAttributeComponent* GetAttributeComponent() const { return AttributeComponent; }
 	FORCEINLINE class UFootStepComponent* GetFootStepComponent() const { return FootStepComponent; }
 	FORCEINLINE class UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
-
+	FORCEINLINE class UAnimationHelperComponent* GetAnimationHelperComponent() const{ return AnimationHelperComponent; }
+	FORCEINLINE class UTimelineComponent* GetDeadDissolveTimeLineComponent() const{ return DeadDissolveTimeLineComponent; }
 	/**************************어빌리티*************************/
 protected:
 	/**
@@ -212,8 +208,8 @@ protected:
 	//속성을 깎는 이팩트에 추가적인 정보가 전달되었을 떄, 사용됩니다.
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void OnRemoveAttributeEffectAdditionalInformationEvent(const FAttributeEffect& Effect,
-	                                                       class UAbilityEffectAdditionalInformation*
-	                                                       AdditionalInformation, float DeltaTime = 1);
+														   class UAbilityEffectAdditionalInformation*
+														   AdditionalInformation, float DeltaTime = 1);
 	virtual void OnRemoveAttributeEffectAdditionalInformationEvent_Implementation(const FAttributeEffect& Effect,
 		class UAbilityEffectAdditionalInformation*
 		AdditionalInformation, float DeltaTime = 1);
@@ -246,22 +242,7 @@ protected:
 
 	/**************************애니메이션*************************/
 public:
-	UPROPERTY(BlueprintAssignable)
-	FOnTriggerHitAnimation OnTriggerHitAnimationEnter;
-	UPROPERTY(BlueprintAssignable)
-	FOnTriggerHitAnimation OnTriggerHitAnimationExit;
-
-	//이 값이 참이면 본 트렌스폼을 변경하는코드를 실행합니다.
-	UPROPERTY(Transient, BlueprintReadOnly)
-	bool bModifySkeletonTransform;
-
-	/**
-	 * OnTriggerHitAnimationExit델리게이트가 브로드케스트 되었는지 확인합니다.
-	 * @return 
-	 */
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool GetIsTriggeredHitAnimationExitEvent() { return bIsTriggeredHitAnimationExitEvent; }
-
+	
 protected:
 	UFUNCTION()
 	virtual void OnTriggerHitAnimationEnterEvent(class ABaseCharacter* DamagedCharacter, AActor* HitBy);
@@ -275,57 +256,16 @@ protected:
 	//이 값이 참인 경우, 피격애니메이션을 건너뜁니다.
 	bool ShouldSkipHitAnimation(float Damage, float SkipThreshold);
 
-	UPROPERTY(Transient, VisibleAnywhere)
-	bool bIsTriggeredHitAnimationExitEvent = false;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Transient, Category="AnimInstance")
-	float HitDegree = 0.f;
-
 public:
-	//캐릭터의 허리 회전을 조정하기 위한 변수입니다.
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Transient, Category="AnimInstance")
-	FRotator SpineRotation;
-	/**************************사망처리*************************/
-protected:
-	//사망시 플레이할 애니메이션들입니다.
-	//몽타주와 애니메이션애셋중 하나를 골라서 사용하도록 하세요.
-	UPROPERTY(EditAnywhere, Category=Default)
-	EDeadAnimationPlayMode DeadAnimationPlayMode = EDeadAnimationPlayMode::None;
-	UPROPERTY(EditAnywhere, Category=Default,
-		meta=(EditCondition="DeadAnimationPlayMode == EDeadAnimationPlayMode::Montage"))
-	TArray<class UAnimMontage*> DeadMontages;
-	UPROPERTY(EditAnywhere, Category=Default,
-		meta=(EditCondition="DeadAnimationPlayMode != EDeadAnimationPlayMode::Montage"))
-	TArray<class UAnimationAsset*> DeadAnimations;
-
-
-	virtual void PlayDeadAnimationSequence();
-	virtual void PlayDeadAnimationMontage();
-
-	//사망 몽타주를 사용했을 경우, 선택된 사망 몽타주가 저장되는 변수입니다.
-	UPROPERTY(Transient)
-	TObjectPtr<UAnimMontage> DeadMontage;
-
-	UPROPERTY(VisibleAnywhere, Category = "Timeline")
-	class UTimelineComponent* DeadDissolveTimeLineComponent;
-	UPROPERTY(EditAnywhere, Category = "Timeline")
-	class UCurveFloat* DissolveCurve;
-	//디졸브를 적용할 시간을 결정합니다.
-	UPROPERTY(EditAnywhere, Category = "Timeline")
-	float DissolveTime = 3.f;
-	UPROPERTY(EditAnywhere, Category = "Timeline")
-	UNiagaraSystem* DissolveParticle;
-	UPROPERTY(EditAnywhere, Category = "Timeline")
-	FLinearColor DissolveColor;
-
-	FOnTimelineFloat UpdateDissolve;
-	FOnTimelineEvent OnFinishDissolve;
-
 	UFUNCTION()
 	virtual void OnUpdateDeadDissolveTimeLine(float Value);
 	UFUNCTION()
 	virtual void OnFinishDissolveTimeLine();
-
+	
+protected:
+	virtual void PlayDeadAnimationSequence();
+	virtual void PlayDeadAnimationMontage(){ }
+	
 public:
 	//캐릭터가 사망했을 때 할 행동들을 바인드하세요.
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
@@ -367,7 +307,7 @@ protected:
 
 public:
 	ECharacterState GetCharacterState() const { return CharacterState; }
-	void SetCharacterState(ECharacterState NewState) { CharacterState = NewState; }
+	virtual void SetCharacterState(ECharacterState NewState);
 
 
 	/**************************무브먼트*************************/
@@ -437,16 +377,6 @@ public:
 	void ClearLookInputForGameplayTag(AActor* AccruedBy, FGameplayTag AccruedTag);
 
 protected:
-	/**************************넉다운*************************/
-	//넉다운시 사용되는 몽타주 정보
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="KnockDown")
-	UAnimMontage* KnockdownMontage;
-	//넉다운이 끝나고 일어났을 때 사용되는 몽타주 정보
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="KnockDown")
-	UAnimMontage* GetUpMontage;
-	//이 배열에 있는 어빌리티를 넉다운 적용 직전 전부 종료시킵니다.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="KnockDown")
-	TArray<FGameplayTag> KnockDownForceEndAbilityTags;
 
 	/**************************상태이상*************************/
 	UPROPERTY(EditAnywhere)
@@ -461,4 +391,7 @@ public:
 	//상태이상으로 변경된 머터리얼을 되돌립니다.
 	UFUNCTION(BlueprintCallable)
 	virtual void RestoreStatusEffectMaterial();
+	
+	UFUNCTION()
+	void DeactivateMightyAbility();
 };

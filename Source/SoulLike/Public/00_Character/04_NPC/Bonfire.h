@@ -70,5 +70,5 @@ public:
 
 	TArray<FBonfireInformation*> GetTeleportList() const;
 
-	const FBonfireInformation& GetBonfireInformation() { return BonfireInformation; }
+	const FBonfireInformation& GetBonfireInformation();
 };

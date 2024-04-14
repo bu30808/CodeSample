@@ -44,11 +44,14 @@ void AExpOrb::BeginPlay()
 void AExpOrb::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	Super::EndPlay(EndPlayReason);
-	//모종의 이유로 아직 흡수되지 못했지만, 레벨이 전환되거나 게임이 종료되는 경우, 플레이어 캐릭터를 찾아 경험치를 줍니다.
-	/*if (ProjectileMovementComponent->HomingTargetComponent != nullptr)
+	if (bFinished == false)
 	{
-		OnActorBeginOverlapEvent(this, ProjectileMovementComponent->HomingTargetComponent->GetOwner());
-	}*/
+		//모종의 이유로 아직 흡수되지 못했지만, 레벨이 전환되거나 게임이 종료되는 경우, 플레이어 캐릭터를 찾아 경험치를 줍니다.
+		if (ProjectileMovementComponent->HomingTargetComponent != nullptr)
+		{
+			OnActorBeginOverlapEvent(this, ProjectileMovementComponent->HomingTargetComponent->GetOwner());
+		}
+	}
 }
 
 void AExpOrb::PostInitializeComponents()
@@ -62,6 +65,7 @@ void AExpOrb::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* OtherAct
 {
 	if (OtherActor != nullptr && OtherActor->IsA<APlayerCharacter>())
 	{
+		bFinished = true;
 		SetActorEnableCollision(false);
 		OverlapExplosionCueInfo.AttachTarget = OtherActor;
 		Cast<APlayerCharacter>(OtherActor)->GetAbilityComponent()->ApplyCue(OverlapExplosionCueInfo);
@@ -69,6 +73,7 @@ void AExpOrb::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* OtherAct
 		auto attComp = Cast<APlayerCharacter>(OtherActor)->GetAttributeComponent();
 		attComp->SetEXP(attComp->GetEXP() + Exp);
 		attComp->OnUpdateExp.Broadcast(Exp);
+	
 		Destroy();
 	}
 }

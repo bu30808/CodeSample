@@ -116,8 +116,10 @@ protected:
 	void LoadStartLayer();
 	UFUNCTION(BlueprintCallable)
 	void LoadGame();
+public:
 	UFUNCTION()
 	void OnFinishLoadGame();
+protected:
 	UFUNCTION(BlueprintCallable)
 	void CreateSoulTomb();
 	UFUNCTION(BlueprintCallable)
@@ -175,6 +177,8 @@ protected:
 	class ULadderMovementComponent* LadderMovementComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UJumpMovementComponent* JumpMovementComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UTeleportBonfireComponent* TeleportBonfireComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UGFurComponent* FurComponent;
@@ -198,6 +202,7 @@ public:
 	}
 
 	FORCEINLINE class UAbilityTalentComponent* GetAbilityTalentComponent() const { return AbilityTalentComponent; }
+	FORCEINLINE class UTeleportBonfireComponent* GetTeleportBonfireComponent()const {return TeleportBonfireComponent;}
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	class UInputHandlerComponent* GetInputHandlerComponent();
 
@@ -277,11 +282,7 @@ protected:
 	void DoExecute(class ABaseMonster* ExecuteTarget);
 
 	void ClosePopUp();
-
-	/*void OpenCharacterInfo();
-	void OpenEquipment();
-	void OpenInventory();*/
-
+	
 	/**********************************************오버렙 처리*********************************************************/
 private:
 	UPROPERTY()
@@ -294,34 +295,6 @@ protected:
 	void OnActorEndOverlapEvent(AActor* OverlappedActor, AActor* OtherActor);
 
 
-	/**********************************************퀵슬롯 이벤트*********************************************************/
-public:
-	/*UPROPERTY()
-	FOnUseQuickSlot OnUseConsumeQuickSlot1;
-	UPROPERTY()
-	FOnUseQuickSlot OnUseConsumeQuickSlot2;
-	UPROPERTY()
-	FOnUseQuickSlot OnUseConsumeQuickSlot3;
-	UPROPERTY()
-	FOnUseQuickSlot OnUseConsumeQuickSlot4;
-	UPROPERTY()
-	FOnUseQuickSlot OnUseConsumeQuickSlot5;
-
-	TArray<FOnUseQuickSlot*> ConsumeQuickSlotEvents;
-
-
-	UPROPERTY()
-	FOnUseQuickSlot OnUseAbilityQuickSlot1;
-	UPROPERTY()
-	FOnUseQuickSlot OnUseAbilityQuickSlot2;
-	UPROPERTY()
-	FOnUseQuickSlot OnUseAbilityQuickSlot3;
-	UPROPERTY()
-	FOnUseQuickSlot OnUseAbilityQuickSlot4;
-	UPROPERTY()
-	FOnUseQuickSlot OnUseAbilityQuickSlot5;
-
-	TArray<FOnUseQuickSlot*> AbilityQuickSlotEvents;*/
 	/**********************************************장비*********************************************************/
 protected:
 	/*
@@ -358,21 +331,19 @@ protected:
 	UPROPERTY(EditAnywhere, Category=Default)
 	TSubclassOf<class UAnimInstance> DefaultAnimationInstance;
 
-	UPROPERTY(EditAnywhere, Category=Default)
-	class UAnimMontage* TeleportMontage;
-
-
-	virtual void OnUpdateDeadDissolveTimeLine(float Value) override;
-	virtual void OnFinishDissolveTimeLine() override;
-
 public:
 	TSubclassOf<class UAnimInstance> GetDefaultAnimInstance() const { return DefaultAnimationInstance; }
 
 protected:
 	virtual void OnTriggerHitAnimationEnterEvent(class ABaseCharacter* DamagedCharacter, AActor* HitBy) override;
 	virtual void OnTriggerHitAnimationExitEvent(class ABaseCharacter* DamagedCharacter, AActor* HitBy) override;
+	/**********************************************사망 처리*********************************************************/
+	
+	virtual void OnUpdateDeadDissolveTimeLine(float Value) override;
+	virtual void OnFinishDissolveTimeLine() override;
+	
 	/**********************************************어빌리티*********************************************************/
-protected:
+
 	/**
 	 * 기본 무기를 장착합니다
 	 */
@@ -404,11 +375,9 @@ public:
 protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UKeyWidget> KeyWidgetObject;
-
-	//아이템 획득 표시용 위젯 컴포넌트, 이 컴포넌트가 필요하다면 GetGetItemWidget 함수로 가져오세요. 
+	//인터렉션 표시용 위젯 컴포넌트, 필요에 의해서 동적으로 생성됩니다.
 	UPROPERTY()
 	class UWidgetComponent* InteractionWidgetComponent;
-
 	UPROPERTY()
 	TWeakObjectPtr<AActor> InteractableActor;
 
@@ -419,6 +388,7 @@ protected:
 	bool FindLadder();
 
 public:
+	class UWidgetComponent* GetInteractionWidgetComponent()const {return InteractionWidgetComponent;}
 	/**
 	 * 상호작용에 필요한 키와 액션을 표시해줍니다.
 	 * @param Target 상호작용할 대상
@@ -491,7 +461,7 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	float PeaceCheckTime = 5.f;
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
-	float CombatCheckTraceRadius = 1500.f;
+	float CombatCheckTraceRadius = 500.f;
 
 	UPROPERTY()
 	FTimerHandle PeaceTimerHandle;
@@ -509,7 +479,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetPlayerState(EPlayerCharacterState NewState);
 
-	UPROPERTY(Transient, VisibleAnywhere)
+	UPROPERTY(Transient, VisibleAnywhere,BlueprintReadOnly)
 	TSet<AActor*> ChangeCombatStateFrom;
 	UFUNCTION(BlueprintCallable)
 	void SetPlayerStateBy(EPlayerCharacterState NewState, AActor* By);
@@ -523,18 +493,7 @@ public:
 	void OnChangedMoveSpeedAttributeEvent();
 
 	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy) override;
-	void StartTeleportToOtherBonfire();
-
-private:
-	//이동할 다른 화톳불이 있는 레벨 이름입니다.
-	UPROPERTY()
-	FBonfireInformation TeleportOtherBonfireInformation;
-
-public:
-	//다른 화톳불로 이동하는 함수입니다.
-	void TeleportToOtherBonfire(const FBonfireInformation& TeleportBonfireInforation);
-	UFUNCTION()
-	void OnEndPlayTeleportMontage(UAnimMontage* Montage, bool bInterrupted);
+	
 
 
 	virtual void ChangeStatusEffectMaterial(EStatusEffect EffectType) override;

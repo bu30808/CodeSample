@@ -424,7 +424,7 @@ void UOrbElementListWidget::GetWidgetBySlotType(EOrbMatrixSlotType Type)
 
 void UOrbElementListWidget::RemoveFromParent()
 {
-	UE_LOGFMT(LogTemp, Warning, "파편 리스트 내부 버튼이 제거되려 합니다. :{0}", GetName());
+	//UE_LOGFMT(LogTemp, Warning, "파편 리스트 내부 버튼이 제거되려 합니다. :{0}", GetName());
 	Super::RemoveFromParent();
 }
 

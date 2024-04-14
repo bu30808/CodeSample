@@ -6,6 +6,7 @@
 #include "ComponentReregisterContext.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/01_Component/AbilityComponent.h"
+#include "00_Character/01_Component/AnimationHelperComponent.h"
 #include "00_Character/03_Monster/BaseMonster.h"
 #include "97_Interface/LockOnInterface.h"
 #include "Components/WidgetComponent.h"
@@ -67,7 +68,7 @@ void ULockOnComponent::Start()
 		CurIndex = 0;
 		HitActors.Empty();
 
-		Owner->bModifySkeletonTransform = true;
+		Owner->GetAnimationHelperComponent()->bModifySkeletonTransform = true;
 		Owner->GetController()->SetIgnoreLookInput(true);
 		SpringArm->bEnableCameraLag = false;
 		SpringArm->bEnableCameraRotationLag = false;
@@ -89,7 +90,7 @@ void ULockOnComponent::End()
 		PreLookTargetStack.Empty();
 		LookTarget = nullptr;
 
-		Owner->bModifySkeletonTransform = false;
+		Owner->GetAnimationHelperComponent()->bModifySkeletonTransform = false;
 		Owner->GetController()->SetIgnoreLookInput(false);
 		SpringArm->bEnableCameraLag = true;
 		SpringArm->bEnableCameraRotationLag = true;
@@ -98,10 +99,15 @@ void ULockOnComponent::End()
 		Camera->SetRelativeLocation(FVector::ZeroVector);
 		Camera->SetRelativeRotation(FRotator::ZeroRotator);
 
-		if (LockOnWidgetComponent.IsValid())
+		if (LockOnWidgetComponent!=nullptr)
 		{
 			LockOnWidgetComponent->SetVisibility(false);
+			LockOnWidgetComponent->SetWorldLocation(Owner->GetActorLocation());
 			LockOnWidgetComponent->AttachToComponent(Owner->GetRootComponent(),FAttachmentTransformRules(EAttachmentRule::SnapToTarget,true));
+			UE_LOGFMT(LogTemp,Log,"락온 위젯 안 보이게 설정됨.");
+		}else
+		{
+			UE_LOGFMT(LogTemp,Error,"락온 위젯이 널포인터라 안보이게 설정할 수 없음.");
 		}
 
 		UnBindChangeTargetEvent();
@@ -117,7 +123,7 @@ void ULockOnComponent::End()
 				abComp->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.Active.LockOn"));
 			}
 		}
-		Owner->SpineRotation = FRotator::ZeroRotator;
+		Owner->GetAnimationHelperComponent()->SpineRotation = FRotator::ZeroRotator;
 	}
 	else
 	{
@@ -450,10 +456,11 @@ void ULockOnComponent::LookAtTarget(float DeltaTime)
 
 
 		{
-			if (LockOnWidgetComponent.IsValid() && LockOnWidgetComponent->IsVisible() == false)
+			if (LockOnWidgetComponent!=nullptr && LockOnWidgetComponent->IsVisible() == false)
 			{
 				LockOnWidgetComponent->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld,true));
 				LockOnWidgetComponent->SetVisibility(true);
+				UE_LOGFMT(LogTemp,Log,"락온 위젯 보이게 설정됨.");
 			}
 
 			auto distanceToTarget = (LookTarget->GetActorLocation() - Owner->GetActorLocation()).Size();
@@ -477,7 +484,7 @@ void ULockOnComponent::LookAtTarget(float DeltaTime)
 				FRotator characterInterpRot = FMath::RInterpTo(characterRot, characterLookAtRot, DeltaTime,
 				                                               CharaterRotationLerpSpeed);
 				Owner->SetActorRotation(FRotator(0, characterInterpRot.Yaw, 0));
-				Owner->SpineRotation = (LookTarget->GetActorLocation() - Owner->GetActorLocation()).Rotation();
+				Owner->GetAnimationHelperComponent()->SpineRotation = (LookTarget->GetActorLocation() - Owner->GetActorLocation()).Rotation();
 			}
 
 			FRotator cameraLookAtRot = UKismetMathLibrary::FindLookAtRotation(Camera->GetComponentLocation(),
@@ -494,11 +501,11 @@ void ULockOnComponent::SetLockOnWidgetPosToLookTarget()
 {
 	if (LookTarget.IsValid())
 	{
-		if (LockOnWidgetComponent.IsValid() == false)
+		if (LockOnWidgetComponent == nullptr)
 		{
 			//UE_LOGFMT(LogTemp, Warning, "{0} {1}", __FUNCTION__, __LINE__);
 			if (UActorComponent* newComp = NewObject<
-				UActorComponent>(LookTarget.Get(), UWidgetComponent::StaticClass()))
+				UActorComponent>(Owner.Get(), UWidgetComponent::StaticClass()))
 			{
 				//UE_LOGFMT(LogTemp, Warning, "{0} {1}", __FUNCTION__, __LINE__);
 				newComp->RegisterComponent();

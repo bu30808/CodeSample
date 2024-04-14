@@ -86,6 +86,8 @@ protected:
 	UButton* Button_Enhancement;
 	UPROPERTY(meta=(BindWidget))
 	UButton* Button_Ability;
+	UPROPERTY(meta=(BindWidget))
+	class UButton* Button_Key;
 
 	UPROPERTY(meta=(BindWidget), BlueprintReadOnly)
 	class UListView* ListView_Item;
@@ -125,6 +127,8 @@ public:
 	void CreateItemList_Ability();
 	UFUNCTION()
 	void CreateItemList_Enhancement();
+	UFUNCTION()
+	void CreateItemList_Key();
 
 	//아이템 목록과 어빌리티 목록을 읽어와 리스트를 구성합니다.
 	void CreateInventoryItemList();
@@ -139,6 +143,8 @@ public:
 	//생성된 아이템 버튼이 호버되었을 때 호출됩니다.
 	UFUNCTION()
 	void OnItemButtonHovered(class UInventoryData* Data);
+	//특정 유니크 아이디를 가진 아이템을 표시하는 버튼을 찾아서 새로고칩니다.
+	void RefreshItemButton(const FGuid& ItemUniqueID);
 
 protected:
 	//어빌리티 종류를 정부 숨깁니다.

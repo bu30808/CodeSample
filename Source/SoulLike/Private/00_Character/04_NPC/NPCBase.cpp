@@ -25,7 +25,9 @@ ANPCBase::ANPCBase()
 {
 	GetCapsuleComponent()->SetCollisionProfileName("NPC");
 	GetMesh()->SetCollisionProfileName("NoCollision");
-
+#if WITH_EDITOR
+	RuntimeGrid = "NPCGrid";
+#endif
 	//MerchantComponent = CreateDefaultSubobject<UMerchantComponent>("MerchantComponent");
 }
 

@@ -7,6 +7,7 @@
 #include "NavigationSystem.h"
 #include "00_Character/02_Animation/00_NotifyState/AnimNotifyState_AddForce.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Logging/StructuredLog.h"
 #include "Navigation/PathFollowingComponent.h"
@@ -370,4 +371,39 @@ void UBTTask_JumpMove::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* 
 		AICon->GetPawn<ACharacter>()->StopJumping();
 	}
 	Super::OnTaskFinished(OwnerComp, NodeMemory, TaskResult);
+}
+
+UBTTask_MoveToWithBlackboardCheck::UBTTask_MoveToWithBlackboardCheck()
+{
+	bCreateNodeInstance = true;
+	bNotifyTick = true;
+	BlackboardKey.SelectedKeyName = "Target";
+	NodeName = TEXT("이동");
+}
+
+EBTNodeResult::Type UBTTask_MoveToWithBlackboardCheck::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	return Super::ExecuteTask(OwnerComp, NodeMemory);
+}
+
+void UBTTask_MoveToWithBlackboardCheck::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
+	float DeltaSeconds)
+{
+	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
+	if(auto character = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
+	{
+		if(OwnerComp.GetBlackboardComponent()->GetValueAsObject(GetSelectedBlackboardKey()) == nullptr)
+		{
+			UE_LOGFMT(LogAICon,Warning,"블랙보드 타겟이 비어있습니다. MoveTo를 종료합니다.");
+			OwnerComp.GetAIOwner()->StopMovement();
+			FinishLatentTask(OwnerComp,EBTNodeResult::Failed);
+		}
+
+		if(character->GetCharacterState() != ECharacterState::NORMAL)
+		{
+			UE_LOGFMT(LogAICon,Warning,"ECharacterState::NORMAL이 아닙니다. MoveTo를 종료합니다.");
+			OwnerComp.GetAIOwner()->StopMovement();
+			FinishLatentTask(OwnerComp,EBTNodeResult::Failed);
+		}
+	}
 }

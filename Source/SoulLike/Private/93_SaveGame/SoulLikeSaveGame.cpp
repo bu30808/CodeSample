@@ -17,7 +17,6 @@
 #include "04_Item/00_Consume/00_Potion/PotionItemActor.h"
 #include "04_Item/01_Equipment/03_Orb/EquipmentItemActor_OrbFragment.h"
 #include "91_Sky/DynamicSkyActor.h"
-#include "96_Library/DataLayerHelperLibrary.h"
 #include "96_Library/ItemHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "Kismet/GameplayStatics.h"
@@ -302,7 +301,7 @@ void UGameLoadHandler::RestoreQuickSlotState(APlayerCharacter* Player, const TMa
 
 
 void UGameLoadHandler::CreateSoulTomb(APlayerCharacter* Player, TSubclassOf<ASoulTomb> TombObject,
-                                      const FDeadState& DeadState)
+                                      const FSoulTombCreateContext& DeadState)
 {
 	if (!DeadState.bShouldCreateSoulTomb)
 	{
@@ -332,6 +331,42 @@ void UGameLoadHandler::RestoreBonfire(APlayerCharacter* Player, const TArray<FSt
 		{
 			Cast<ABonfire>(iter)->ActivateBonfire(Player);
 		}
+	}
+}
+
+void UGameLoadHandler::RestoreDataLayer(APlayerCharacter* Player,
+	const TMap<FName, EDataLayerRuntimeState>& LayerStateMap, UDataTable* LayerTable)
+{
+	if (LayerTable == nullptr)
+	{
+		return;
+	}
+	if (UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(Player->GetWorld()))
+	{
+		TArray<FDataLayerTable*> allLayers;
+		LayerTable->GetAllRows<FDataLayerTable>("",allLayers);
+		const auto& allRowNames = LayerTable->GetRowNames();
+		
+		
+		for(const auto& iter : LayerStateMap)
+		{
+			const auto& layerPath = iter.Key;
+			const auto& layerState = iter.Value;
+			if(allRowNames.Contains(layerPath))
+			{
+				const int32 index =  allRowNames.IndexOfByKey(layerPath);
+				if(index!=INDEX_NONE)
+				{
+					dataLayerSubsystem->SetDataLayerInstanceRuntimeState(allLayers[index]->DataLayerAsset,layerState);
+				}
+			}
+		}
+
+		
+	}
+	else
+	{
+		UE_LOGFMT(LogSave, Error, "데이터 레이어 서브시스템을 가져올 수 없습니다.");
 	}
 }
 
@@ -366,17 +401,7 @@ void UGameLoadHandler::RestoreDataLayer(APlayerCharacter* Player, const TSet<FNa
 				UKismetSystemLibrary::PrintString(
 					Player,TEXT("이 이름에 해당하는 레이어를 데이터테이블에서 찾을 수 없습니다 :") + iter.ToString());
 			}
-
-			/*if (auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAssetName(iter))
-			{
-				UE_LOGFMT(LogSave, Log, "레이어 복구 성공 : {0}", iter);
-				dataLayerSubsystem->SetDataLayerRuntimeState(instance, EDataLayerRuntimeState::Activated);
-			}
-			else
-			{
-				/*UE_LOGFMT(LogSave, Error, "이 이름에 해당하는 레이어를 찾을 수 없습니다 : {0}", iter);#1#
-				UKismetSystemLibrary::PrintString(Player,TEXT("이 이름에 해당하는 레이어를 찾을 수 없습니다 :") + iter.ToString());
-			}*/
+			
 		}
 	}
 	else
@@ -385,9 +410,16 @@ void UGameLoadHandler::RestoreDataLayer(APlayerCharacter* Player, const TSet<FNa
 	}
 }
 
+
 void UGameLoadHandler::RestoreDataLayer(APlayerCharacter* Player, const FName& LayerToLoadRowName,
                                         UDataTable* LayerTable)
 {
+	if (LayerTable == nullptr)
+	{
+		return;
+	}
+
+
 	if (UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(Player->GetWorld()))
 	{
 		if (auto find = LayerTable->FindRow<FDataLayerTable>(LayerToLoadRowName, ""))
@@ -405,39 +437,125 @@ void UGameLoadHandler::RestoreDataLayer(APlayerCharacter* Player, const FName& L
 	}
 }
 
-void UGameLoadHandler::RestoreDataLayer(APlayerCharacter* Player, const TArray<TSoftObjectPtr<UDataLayerAsset>>& Layers)
+void UGameLoadHandler::RestoreDataLayer(TObjectPtr<APlayerCharacter> Player,
+                                        const TArray<TSoftObjectPtr<UDataLayerAsset>>& NeedToUnloadLayer,
+                                        const TArray<TSoftObjectPtr<UDataLayerAsset>>& NeedToLoadLayer, const TArray<TSoftObjectPtr<UDataLayerAsset>>& NeedToActivateLayer, UDataTable* LayerTable)
 {
+	if (LayerTable == nullptr)
+	{
+		return;
+	}
+
 	if (UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(Player->GetWorld()))
 	{
-		UE_LOGFMT(LogSave, Log, "RestoreDataLayer");
-		for (auto iter : Layers)
+		/*TArray<FDataLayerTable*> allLayers;
+		LayerTable->GetAllRows<FDataLayerTable>("",allLayers);
+		for(auto iter : allLayers)
 		{
-			UE_LOGFMT(LogSave, Log, "레이어 복구 시도 : {0}", iter.ToSoftObjectPath().ToString());
-			if (auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAssetName(
-				FName(iter.ToSoftObjectPath().ToString())))
+			dataLayerSubsystem->SetDataLayerInstanceRuntimeState(iter->DataLayerAsset,EDataLayerRuntimeState::Unloaded);
+			UE_LOGFMT(LogSave,Log,"다음 레이어를 언로드 합니다 : {0}",iter->DataLayerAsset->GetPathName());
+		}*/
+
+		for(auto iter : NeedToUnloadLayer)
+		{
+			dataLayerSubsystem->SetDataLayerInstanceRuntimeState(iter.LoadSynchronous(),EDataLayerRuntimeState::Unloaded);
+			UE_LOGFMT(LogSave,Log,"다음 레이어를 언로드 합니다 : {0}",iter->GetPathName());
+		}
+
+		
+		
+		//TArray<FName> processedLayers;
+		for(auto iter : NeedToLoadLayer)
+		{
+			//processedLayers.Emplace(iter->GetPathName());
+			dataLayerSubsystem->SetDataLayerInstanceRuntimeState(iter.LoadSynchronous(),EDataLayerRuntimeState::Loaded);
+			UE_LOGFMT(LogSave,Log,"다음 레이어를 로드 합니다 : {0}",iter->GetPathName());
+		}
+		
+		for(auto iter : NeedToActivateLayer)
+		{
+			//processedLayers.Emplace(iter->GetPathName());
+			dataLayerSubsystem->SetDataLayerInstanceRuntimeState(iter.LoadSynchronous(),EDataLayerRuntimeState::Activated);
+			UE_LOGFMT(LogSave,Log,"다음 레이어를 활성화 합니다 : {0}",iter->GetPathName());
+		}
+
+		/*//나머지는 전부 언로드
+		TArray<FDataLayerTable*> allLayers;
+		LayerTable->GetAllRows<FDataLayerTable>("",allLayers);
+		auto rowNames = LayerTable->GetRowNames();
+		
+		//이미 위에서 로드하거나 활성화 한 레이어를 뺍니다.
+		for(int32 i = 0;i<processedLayers.Num();i++)
+		{
+			if(rowNames[i].IsEqual(processedLayers[i]))
 			{
-				dataLayerSubsystem->SetDataLayerRuntimeState(instance, EDataLayerRuntimeState::Activated);
+				UE_LOGFMT(LogSave,Warning,"다음 레이어를 리스트에서 제거 합니다 : {0}",rowNames[i]);
+				rowNames.RemoveAt(i);
+				allLayers.RemoveAt(i);
 			}
-			else
+		}
+
+		for(auto iter : allLayers)
+		{
+			dataLayerSubsystem->SetDataLayerInstanceRuntimeState(iter->DataLayerAsset,EDataLayerRuntimeState::Unloaded);
+			UE_LOGFMT(LogSave,Log,"다음 레이어를 언로드 합니다 : {0}",iter->DataLayerAsset->GetPathName());
+		}*/
+				
+	}
+}
+
+
+/*
+void UGameLoadHandler::RestoreDataLayer(APlayerCharacter* Player, const TArray<TSoftObjectPtr<UDataLayerAsset>>& Layers,
+                                        UDataTable* LayerTable)
+{
+	if (LayerTable == nullptr)
+	{
+		return;
+	}
+
+	for (auto iter : Layers)
+	{
+		UE_LOGFMT(LogSave, Log, "복구해야할 레이어 : {0}", iter.ToSoftObjectPath().ToString());
+	}
+
+
+	if (UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(Player->GetWorld()))
+	{
+		//모든 레이어 정보를 가져옵니다.
+		TArray<FDataLayerTable*> allLayers;
+		LayerTable->GetAllRows<FDataLayerTable>("", allLayers);
+
+		for (int32 i = 0; i < allLayers.Num(); i++)
+		{
+			if (auto partOfAllLayers = dataLayerSubsystem->GetDataLayerInstanceFromAsset(allLayers[i]->DataLayerAsset))
 			{
-				/*UE_LOGFMT(LogSave, Error, "이 이름에 해당하는 레이어를 찾을 수 없습니다 : {0}", iter);*/
-				UKismetSystemLibrary::PrintString(Player,TEXT("이 이름에 해당하는 레이어를 찾을 수 없습니다 :") + iter.ToString());
+				//만약에 복구해야할 레이어 정보에 없다면,
+				if (!Layers.ContainsByPredicate(
+					[dataLayerSubsystem, partOfAllLayers](const TSoftObjectPtr<UDataLayerAsset>& inner)
+					{
+						return partOfAllLayers == dataLayerSubsystem->GetDataLayerInstanceFromAssetName(
+							FName(inner.ToString()));
+					}))
+				{
+					UE_LOGFMT(LogSave, Log, "복구해야할 레이어 : 언로드 {0}", partOfAllLayers->GetDataLayerShortName());
+					//언로드 합니다.
+					dataLayerSubsystem->SetDataLayerRuntimeState(partOfAllLayers, EDataLayerRuntimeState::Unloaded);
+				}
+				else
+				{
+					UE_LOGFMT(LogSave, Log, "복구해야할 레이어 : 활성화 {0}", partOfAllLayers->GetDataLayerShortName());
+					//활성화 합니다.
+					dataLayerSubsystem->SetDataLayerRuntimeState(partOfAllLayers, EDataLayerRuntimeState::Activated);
+				}
 			}
-			/*if (auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAsset(iter))
-			{
-				dataLayerSubsystem->SetDataLayerRuntimeState(instance, EDataLayerRuntimeState::Activated);
-			}
-			else
-			{
-				UE_LOGFMT(LogSave, Error, "이 이름에 해당하는 레이어를 찾을 수 없습니다 : {0}", iter->GetName());
-			}*/
 		}
 	}
 	else
 	{
 		UE_LOGFMT(LogSave, Error, "데이터 레이어 서브시스템을 가져올 수 없습니다.");
 	}
-}
+}*/
 
 void UGameLoadHandler::RestoreSky(APlayerCharacter* Player, float CurrentSkyTime)
 {
@@ -540,8 +658,6 @@ void USoulLikeSaveGame::SaveAttribute(APlayerCharacter* Player)
 	if (auto attComp = Player->GetAttributeComponent())
 	{
 		AttributesNotIncludeLevelUpPoint.Empty();
-
-		UKismetSystemLibrary::PrintString(this,TEXT("어트리뷰트 상태 저장됨"));
 		{
 			const auto& att = attComp->GetAllAttributeNotIncludeLevelUpPoint();
 			for (auto iter : att)
@@ -555,6 +671,7 @@ void USoulLikeSaveGame::SaveAttribute(APlayerCharacter* Player)
 				          StaticEnum<EAttributeType>()->GetValueAsString(iter.Key), iter.Value.GetCurrent());
 			}
 		}
+
 		LevelUpPointAttributes.Empty();
 		{
 			const auto& att = attComp->GetAllLevelUpAttribute();
@@ -566,6 +683,16 @@ void USoulLikeSaveGame::SaveAttribute(APlayerCharacter* Player)
 	}
 
 	SaveLevelName(Player);
+}
+
+void USoulLikeSaveGame::SaveExp(const FAttribute& ExpAttribute)
+{
+	if (!AttributesNotIncludeLevelUpPoint.Contains(EAttributeType::EXP))
+	{
+		AttributesNotIncludeLevelUpPoint.Add(EAttributeType::EXP);
+	}
+
+	AttributesNotIncludeLevelUpPoint[EAttributeType::EXP] = ExpAttribute;
 }
 
 void USoulLikeSaveGame::SaveFragment(APlayerCharacter* Player)
@@ -796,6 +923,13 @@ void USoulLikeSaveGame::SaveLastSavePoint(const FString& LevelName, const FTrans
 	SavedLastSavePoint.LevelName = LevelName;
 	SavedLastSavePoint.SavedTransform = LastTransform;
 	SavedLastSavePoint.SavedBonfireName = GetNameSafe(BonfireComponent->GetOwner());
+	if (BonfireComponent != nullptr)
+	{
+		SavedLastSavePoint.SkyTime = BonfireComponent->GetOwner<ABonfire>()->GetBonfireInformation().SkyTime;
+
+		const auto& info = BonfireComponent->GetOwner<ABonfire>()->GetBonfireInformation();
+		UE_LOGFMT(LogSave,Log,"SaveLastSavePoint : {0} , {1}, {2}",info.LocationName.ToString(),info.OwnersSafeName,SavedLastSavePoint.SkyTime);
+	}
 	SavedLastSavePoint.ActivateLayersPath.Empty();
 
 	if (UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(GetWorld()))
@@ -1237,19 +1371,23 @@ void USoulLikeSaveGame::SaveInventory(APlayerCharacter* Player)
 	}
 }
 
-void USoulLikeSaveGame::SaveDataLayer(APlayerCharacter* Player)
+void USoulLikeSaveGame::SaveDataLayer(APlayerCharacter* Player, UDataTable* LayerTable)
 {
-	if (UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(Player->GetWorld()))
+	if (LayerTable)
 	{
-		auto activateLayers = dataLayerSubsystem->GetEffectiveActiveDataLayerNames();
-		for (auto iter : activateLayers)
+		TArray<FDataLayerTable*> layers;
+		LayerTable->GetAllRows<FDataLayerTable>("", layers);
+		const auto& rowNames = LayerTable->GetRowNames();
+
+		if (UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(Player->GetWorld()))
 		{
-			UE_LOGFMT(LogSave, Log, "레이어 정보를 저장합니다 : {0}", iter);
-			if (const auto instance = dataLayerSubsystem->GetDataLayerInstance<FName>(iter, Player->GetLevel()))
+			LayerState.Empty();
+			for (int32 i = 0; i < layers.Num(); i++)
 			{
-				UE_LOGFMT(LogSave, Log, "저장한 레이어 정보의 경로 이름 : {0}", instance->GetDataLayerFullName());
-				ActivateLayersPath.Emplace(instance->GetDataLayerFullName());
+				LayerState.Emplace(rowNames[i],
+				                   dataLayerSubsystem->GetDataLayerInstanceRuntimeState(layers[i]->DataLayerAsset));
 			}
+			
 		}
 	}
 }

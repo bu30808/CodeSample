@@ -6,9 +6,7 @@
 #include "00_Character/04_NPC/Bonfire.h"
 #include "03_Widget/01_Menu/00_Inventory/ItemListWidget.h"
 #include "92_Tools/TutorialActor.h"
-#include "92_Tools/WorldStreamingSourceActor.h"
 #include "Engine/GameInstance.h"
-#include "WorldPartition/DataLayer/DataLayerInstance.h"
 #include "SoulLikeInstance.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogInstance, Log, All);
@@ -40,11 +38,6 @@ public:
 	USoulLikeInstance();
 
 private:
-	//항상 로드되어있는 레이어 정보입니다.
-	//저장된 아이템 스폰이나 영혼무덤 생성에 사용합니다.
-	//절대 언로드되면 안 되는 대상들을 이 레이어에 추가하면 됩니다.
-	UPROPERTY()
-	class UDataLayerAsset* AlwaysActivatedLayer;
 
 	UPROPERTY()
 	TSubclassOf<class ASoulTomb> SoulTombClass;
@@ -53,13 +46,30 @@ private:
 	TSubclassOf<class AWorldStreamingSourceActor> WorldStreamingSourceActorClass;
 	UPROPERTY()
 	TObjectPtr<APlayerCharacter> CurrentPlayer;
+	
 	//dataLayerSubsystem->GetDataLayerInstanceFromAssetName가 패키징하면 레이어를 못 찾는 문제가 있어서, 데이터테이블에 우겨넣고 씁니다.
 	UPROPERTY()
 	class UDataTable* DataLayerTable;
+protected:
+	//볼륨조절을 위한 클래스 포인터
+	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	class USoundClass* BGMClass;
+	UPROPERTY(EditAnywhere,BlueprintReadOnly)
+	class USoundClass* SFXClass;
 
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	float GetBGMVolume();
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	float GetSFXVolume();
+
+	UFUNCTION(BlueprintCallable)
+	void SetBGMVolume(float vol);
+	UFUNCTION(BlueprintCallable)
+	void SetSFXVolume(float vol);
 public:
-	class UDataLayerAsset* GetAlwaysActivatedLayer() const { return AlwaysActivatedLayer; }
+
 	void SetPlayer(APlayerCharacter* PlayerCharacter){CurrentPlayer = PlayerCharacter;}
+
 
 	UPROPERTY()
 	int32 SaveIndex = 0;
@@ -92,7 +102,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void LoadGame();
-	
+
+	//필드 아이템 상황을 복구합니다.
+	UFUNCTION()
+	void RestoreFieldItemState();
 	//공통적으로 로드되는 부분
 	UFUNCTION()
 	void LoadCommon();
@@ -114,8 +127,7 @@ public:
 	void PotionReplenishment();
 
 	//화톳불이 속한 레이어를 복구합니다.
-	void LoadBonfireLayer(const TSet<FName>& Layers);
-	void LoadBonfireLayer(const TArray<TSoftObjectPtr<UDataLayerAsset>>& Layers);
+	void LoadBonfireLayer(const FBonfireInformation& BonfireInformation);
 
 	//레이어를 복구합니다.
 	void LoadLayer();
@@ -128,6 +140,8 @@ public:
 	//마지막 하늘 시간으로 되돌립니다.
 	UFUNCTION()
 	void LoadSky();
+	UFUNCTION()
+	void LoadSkyFromValue(float NewSkyTime);
 
 	/*void LoadPlayerLocation(class APlayerCharacter* Player, AWorldStreamingSourceActor* StreamingActor);*/
 
@@ -229,6 +243,8 @@ public:
 	UFUNCTION()
 	void SaveAttribute(APlayerCharacter* PlayerCharacter);
 
+	//경험치를 획득했을 때 저장하기 위해 호출됩니다.
+	void SaveAttributeExp(const FAttribute& ExpAttribute);
 
 	//클리어한 우두머리를 저장합니다. 
 	void SaveKilledBoss(ABaseMonster* BaseMonster);

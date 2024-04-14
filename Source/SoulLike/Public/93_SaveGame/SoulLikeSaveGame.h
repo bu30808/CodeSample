@@ -8,10 +8,12 @@
 #include "00_Character/01_Component/InventoryComponent.h"
 #include "04_Item/ItemActor.h"
 #include "95_OrbCreator/OrbMatrix.h"
+#include "Engine/DataTable.h"
 #include "GameFramework/SaveGame.h"
 #include "SoulLikeSaveGame.generated.h"
 
 
+enum class EDataLayerRuntimeState : uint8;
 DECLARE_LOG_CATEGORY_EXTERN(LogSave, Log, All);
 
 UENUM(BlueprintType)
@@ -179,6 +181,8 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	FString SavedBonfireName;
 	UPROPERTY(BlueprintReadOnly)
+	float SkyTime;
+	UPROPERTY(BlueprintReadOnly)
 	TSet<FName> ActivateLayersPath;
 };
 
@@ -201,14 +205,22 @@ public:
 	FString LevelName;
 	UPROPERTY(EditAnywhere)
 	float SkyTime = 0;
+	//특별히 활성화 해야 하는 레이어
+	UPROPERTY(EditAnywhere)
+	TArray<TSoftObjectPtr<UDataLayerAsset>> NeedToActivateLayer;
+	//특별히 로드만 해도 되는 레이어(화면에 보이지 않음)
 	UPROPERTY(EditAnywhere)
 	TArray<TSoftObjectPtr<UDataLayerAsset>> NeedToLoadLayer;
+	//특별히 언로드해야 할 레이어
+	UPROPERTY(EditAnywhere)
+	TArray<TSoftObjectPtr<UDataLayerAsset>> NeedToUnloadLayer;
+	
 };
 
 
 
 USTRUCT(BlueprintType)
-struct FDeadState
+struct FSoulTombCreateContext
 {
 	GENERATED_BODY()
 
@@ -253,11 +265,13 @@ public:
 	                           int32 SelectedAbilityQuickSlot, const TSet<FGuid>& EquippedQuickSlotConsumeItems,
 	                           const TSet<FGameplayTag>& EquippedQuickSlotAbilities);
 	void CreateSoulTomb(class APlayerCharacter* Player, TSubclassOf<class ASoulTomb> TombObject,
-	                    const FDeadState& DeadState);
+	                    const FSoulTombCreateContext& DeadState);
 	void RestoreBonfire(APlayerCharacter* Player, const TArray<FString>& SavedBonfire);
+	void RestoreDataLayer(APlayerCharacter* Player, const TMap<FName, EDataLayerRuntimeState>& LayerStateMap, UDataTable* LayerTable);
 	void RestoreDataLayer(APlayerCharacter* Player, const TSet<FName>& ActivateLayersPath, UDataTable* LayerTable);
 	void RestoreDataLayer(APlayerCharacter* Player, const FName& LayerToLoadRowName, UDataTable* LayerTable);
-	void RestoreDataLayer(APlayerCharacter* Player, const TArray<TSoftObjectPtr<UDataLayerAsset>>& Layers);
+	/*void RestoreDataLayer(APlayerCharacter* Player, const TArray<TSoftObjectPtr<UDataLayerAsset>>& Layers, UDataTable* LayerTable);*/
+	void RestoreDataLayer(TObjectPtr<APlayerCharacter> Player, const TArray<TSoftObjectPtr<UDataLayerAsset>>& NeedToUnloadLayer, const TArray<TSoftObjectPtr<UDataLayerAsset>>& NeedToLoadLayer, const TArray<TSoftObjectPtr<UDataLayerAsset>>& NeedToActivateLayer, UDataTable* LayerTable);
 	void RestoreSky(APlayerCharacter* Player, float CurrentSkyTime);
 };
 
@@ -346,7 +360,7 @@ public:
 
 	//사망 정보를 저장하는 구조체
 	UPROPERTY(BlueprintReadOnly)
-	FDeadState DeadState;
+	FSoulTombCreateContext DeadState;
 
 	//활성화된 화톳불을 저장하는 배열
 	//key - levelName
@@ -358,9 +372,14 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	FBonfireInformation TeleportBonfireInfo;
 
-	//지금 활성화된 월드 레이어 정보입니다.
+	/*//지금 활성화된 월드 레이어 정보입니다.
 	UPROPERTY(BlueprintReadOnly)
-	TSet<FName> ActivateLayersPath;
+	TSet<FName> ActivateLayersPath;*/
+	//현 레이어 상태 정보
+	//key - layer path : ex) /Game/Datalayer/MyLayer.MyLayer
+	//Value - 레이어 상태
+	UPROPERTY(BlueprintReadOnly)
+	TMap<FName,EDataLayerRuntimeState> LayerState;
 	//현재 하늘의 시간값
 	UPROPERTY(BlueprintReadOnly)
 	float CurrentSkyTime = 13;
@@ -375,7 +394,8 @@ public:
 	void SaveTransform(APlayerCharacter* Player);
 	//어트리뷰트를 저장합니다.
 	void SaveAttribute(APlayerCharacter* Player);
-
+	//경험치 정보만 저장합니다.
+	void SaveExp(const FAttribute& ExpAttribute);
 	//파편 정보를 저장합니다.
 	void SaveFragment(APlayerCharacter* Player);
 	//장비 정보를 저장합니다.
@@ -431,7 +451,7 @@ public:
 	//인벤토리 상태를 저장합니다.
 	void SaveInventory(APlayerCharacter* Player);
 	//월드의 레이어 상태를 저장합니다.
-	void SaveDataLayer(APlayerCharacter* Player);
+	void SaveDataLayer(APlayerCharacter* Player, UDataTable* LayerTable);
 	//현재 하늘의 시각을 저장합니다.
 	void SaveSkyTime(APlayerCharacter* Player);
 	//처치한 우두머리를 기록합니다.
@@ -439,6 +459,7 @@ public:
 
 	void SaveSelectedConsumeQuickSlotIndex(int32 SelectedIndex);
 	void SaveSelectedAbilityQuickSlotIndex(int32 SelectedIndex);
+	
 
 
 	UPROPERTY()

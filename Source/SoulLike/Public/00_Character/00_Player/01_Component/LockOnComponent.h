@@ -110,7 +110,7 @@ protected:
 	TArray<TWeakObjectPtr<AActor>> PreLookTargetStack;
 
 	UPROPERTY()
-	TWeakObjectPtr<class UWidgetComponent> LockOnWidgetComponent;
+	TObjectPtr<class UWidgetComponent> LockOnWidgetComponent;
 
 	/**
 	 * 스프림 암의 기본값을 저장할 변수입니다.

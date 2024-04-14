@@ -30,6 +30,7 @@ enum class EItemType : uint8
 	EQUIPMENT,
 	ABILITY,
 	ENHANCEMENT,
+	KEY,
 	ETC,
 };
 
@@ -383,7 +384,7 @@ public:
 		OrbType = EOrbType::CORE;
 		bStackable = false;
 
-		Item_Image = FSoftObjectPath("/Script/Engine.Texture2D'/Game/Asset/Icon/Orb/orbCore.orbCore'");
+		Item_Image = FSoftObjectPath("/Script/Engine.Texture2D'/Game/CommonResource/Icon/Orb/orbCore.orbCore'");
 	}
 
 	//class UOrbMatrix* GetLoadMatrix() const {return OrbMatrixObject;}
@@ -407,7 +408,7 @@ public:
 		OrbType = EOrbType::FRAGMENT;
 		bStackable = false;
 
-		Item_Image = FSoftObjectPath("/Script/Engine.Texture2D'/Game/Asset/Icon/Orb/orbFragment.orbFragment'");
+		Item_Image = FSoftObjectPath("/Script/Engine.Texture2D'/Game/CommonResource/Icon/Orb/orbFragment.orbFragment'");
 	}
 };
 

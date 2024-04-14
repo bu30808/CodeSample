@@ -85,19 +85,9 @@ void ASoulLikeGameMode::RespawnMonsters(class APlayerCharacter* Player)
 		{
 			if (savedData.ActorPointer->IsA<ABaseCharacter>())
 			{
-				if (Cast<ABaseCharacter>(savedData.ActorPointer)->IsDead())
-				{
-					UE_LOGFMT(LogMonster, Warning, "다음 몬스터를 리스폰 할 것입니다 : {0} {1}", savedData.ActorClass->GetName(),
-					          GetNameSafe(savedData.ActorPointer));
-					RemoveFromRespawnMonster(Cast<ABaseMonster>(savedData.ActorPointer));
-					Cast<ABaseMonster>(savedData.ActorPointer)->Activate();
-				}
-				//위치만 다른 친구들의 경우, 위치랑 어트리뷰트만 초기화 해 줍니다.
-				else
-				{
-					RemoveFromRespawnMonster(Cast<ABaseMonster>(savedData.ActorPointer));
-					Cast<ABaseMonster>(savedData.ActorPointer)->Activate();
-				}
+				UKismetSystemLibrary::PrintString(this,FString::Printf(TEXT("다음 몬스터를 복구합니다 : %s"),*GetNameSafe(savedData.ActorPointer)));
+				RemoveFromRespawnMonster(Cast<ABaseMonster>(savedData.ActorPointer));
+				Cast<ABaseMonster>(savedData.ActorPointer)->Activate();
 			}
 		}
 	}
@@ -113,6 +103,7 @@ void ASoulLikeGameMode::OnDeadMonsterEvent(AActor* Who, AActor* DeadBy)
 		{
 			if (auto character = Cast<ABaseCharacter>(Who))
 			{
+				UE_LOGFMT(LogSave, Error, "몬스터의 상태를 저장합니다 : {0}", safeName);
 				auto attComp = character->GetAttributeComponent();
 				TemporarySavedMonsterState.Add(safeName, FCharacterSave(Who, safeName, Who->GetClass(),
 				                                                        Who->GetActorTransform(),
@@ -147,6 +138,7 @@ void ASoulLikeGameMode::RestoreMonsterState(ABaseMonster* BaseMonster)
 			if (savedData.CharacterState == ECharacterState::DEAD)
 			{
 				UE_LOGFMT(LogMonster, Log, "사망 상태로 되돌립니다 : {0}", safeName);
+				BaseMonster->SetCharacterState(ECharacterState::DEAD);
 				BaseMonster->SetActorTransform(savedData.ActorTransform);
 				BaseMonster->StopAITree();
 				BaseMonster->EnableRagdoll();

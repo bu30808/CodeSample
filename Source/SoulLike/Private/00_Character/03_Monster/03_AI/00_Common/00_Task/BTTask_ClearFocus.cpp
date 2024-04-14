@@ -5,6 +5,7 @@
 
 #include "AIController.h"
 #include "00_Character/BaseCharacter.h"
+#include "00_Character/01_Component/AnimationHelperComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 UBTTask_ClearFocus::UBTTask_ClearFocus()
@@ -22,7 +23,7 @@ EBTNodeResult::Type UBTTask_ClearFocus::ExecuteTask(UBehaviorTreeComponent& Owne
 		{
 			pawn->bUseControllerRotationYaw = false;
 			pawn->GetCharacterMovement()->bOrientRotationToMovement = true;
-			pawn->bModifySkeletonTransform = false;
+			pawn->GetAnimationHelperComponent()->bModifySkeletonTransform = false;
 			aiCon->K2_ClearFocus();
 			return EBTNodeResult::Succeeded;
 		}

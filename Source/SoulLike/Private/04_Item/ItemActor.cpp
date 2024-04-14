@@ -39,10 +39,20 @@ AItemActor::AItemActor()
 	SphereComponent->SetCollisionProfileName("Item");
 	SphereComponent->SetCanEverAffectNavigation(false);
 	SphereComponent->CanCharacterStepUpOn = ECB_No;
+#if WITH_EDITOR
+	RuntimeGrid = "ItemGrid";
+#endif
+	
 }
 
 void AItemActor::DestroyIfPlayerAlreadyGetThisItemFromField()
 {
+	if(GetOwner()!=UGameplayStatics::GetPlayerCharacter(this,0))
+	{
+		return;
+	}
+
+	
 	if (USaveGameHelperLibrary::IsAlreadyPickUppedItem(this))
 	{
 		Destroy();

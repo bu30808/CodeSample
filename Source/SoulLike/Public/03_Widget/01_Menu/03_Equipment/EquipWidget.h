@@ -16,6 +16,7 @@ class SOULLIKE_API UEquipWidget : public UPopUpBasedWidget
 {
 	GENERATED_BODY()
 	friend class UDEPRECATED_MainMenuWidget;
+	friend class UEquipButtonWidget;
 
 protected:
 	UPROPERTY(meta=(BindWidget))

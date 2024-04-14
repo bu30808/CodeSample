@@ -102,11 +102,28 @@ void UMerchantComponent::BeginPlay()
 	{
 		OnBuyItemFromPlayer.AddUniqueDynamic(instance, &USoulLikeInstance::OnNPCBuyItemFromPlayerEvent);
 	}
+
+	
+}
+
+void UMerchantComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	Super::EndPlay(EndPlayReason);
+
+	for(const auto& iter : MerchandiseItem)
+	{
+		if(auto item = iter.Value.GetSpawndItemActor())
+		{
+			item->Destroy();
+		}
+	}
+
+	MerchandiseItem.Empty();
 }
 
 void UMerchantComponent::CreateSellItemList(UDataTable* ItemTable)
 {
-	UE_LOGFMT(LogTemp, Log, "상점에서 팔 아이템 리스트를 생성합니다.");
+	UE_LOGFMT(LogTemp, Log, "상점에서 팔 아이템 리스트를 생성합니다 : {0}",GetNameSafe(GetOwner()));
 	MerchandiseItemTable = ItemTable;
 	if (MerchandiseItemTable)
 	{

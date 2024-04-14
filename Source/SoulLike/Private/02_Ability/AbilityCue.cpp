@@ -216,13 +216,25 @@ void AAbilityCue::DeactivateCue() const
 	AudioComponent->Deactivate();
 }
 
-void AAbilityCue::ActivateCue() const
+void AAbilityCue::ActivateCue()
 {
 	ParticleSystemComponent->Activate(true);
 	NiagaraComponent->Activate(true);
 	AudioComponent->Activate(true);
 	AudioComponent->Play(0);
 }
+
+void AAbilityCue::SetNiagaraSourceActor()
+{
+	if(auto character = GetOwner<ABaseCharacter>())
+	{
+		NiagaraComponent->AttachToComponent(character->GetMesh(),FAttachmentTransformRules(EAttachmentRule::SnapToTarget,true));
+		TArray<AActor*> actors;
+		actors.Emplace(character);
+		UNiagaraDIRigidMeshCollisionFunctionLibrary::SetSourceActors(NiagaraComponent,NAME_None,actors);
+	}
+}
+
 
 void AAbilityCue::OnDestroyedEvent(AActor* DestroyedActor)
 {
@@ -243,13 +255,12 @@ void AAbilityCue::Destroyed()
 void AAbilityCue_SourceActorBased::BeginPlay()
 {
 	Super::BeginPlay();
+	
+}
 
-	if (auto pawn = Cast<ABaseCharacter>(GetOwner()))
-	{
-		NiagaraComponent->AttachToComponent(pawn->GetMesh(),
-		                                    FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true));
-		TArray<AActor*> target;
-		target.Add(pawn);
-		UNiagaraDIRigidMeshCollisionFunctionLibrary::SetSourceActors(NiagaraComponent, NAME_None, target);
-	}
+void AAbilityCue_SourceActorBased::ActivateCue()
+{
+	SetNiagaraSourceActor();
+	NiagaraComponent->ResetSystem();
+	Super::ActivateCue();
 };

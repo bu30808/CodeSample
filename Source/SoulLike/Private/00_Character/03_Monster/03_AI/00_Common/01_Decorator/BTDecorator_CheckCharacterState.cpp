@@ -5,23 +5,19 @@
 
 #include "AIController.h"
 #include "00_Character/BaseCharacter.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Logging/StructuredLog.h"
 
 UBTDecorator_CheckCharacterState::UBTDecorator_CheckCharacterState()
 {
-	BlackboardKey.SelectedKeyName = "SelfActor";
+	BlackboardKey.SelectedKeyName = "CharacterState";
 	NodeName = TEXT("캐릭터 상태 확인");
 }
 
 bool UBTDecorator_CheckCharacterState::CalculateRawConditionValue(UBehaviorTreeComponent& OwnerComp,
                                                                   uint8* NodeMemory) const
 {
-	if (const auto character = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
-	{
-		return CharacterState == character->GetCharacterState();
-	}
-
-	return false;
+		return CharacterState == static_cast<ECharacterState>(OwnerComp.GetBlackboardComponent()->GetValueAsEnum(BlackboardKey.SelectedKeyName));
 }
 
 FString UBTDecorator_CheckCharacterState::GetStaticDescription() const

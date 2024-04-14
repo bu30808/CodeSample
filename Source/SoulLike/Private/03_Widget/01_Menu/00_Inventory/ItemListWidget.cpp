@@ -49,6 +49,7 @@ void UItemListWidget::NativeConstruct()
 	Button_Ring->OnClicked.AddUniqueDynamic(this, &UItemListWidget::CreateItemList_Ring);
 	Button_Ability->OnClicked.AddUniqueDynamic(this, &UItemListWidget::CreateItemList_Ability);
 	Button_Enhancement->OnClicked.AddUniqueDynamic(this, &UItemListWidget::CreateItemList_Enhancement);
+	Button_Key->OnClicked.AddUniqueDynamic(this,&UItemListWidget::CreateItemList_Key);
 
 	OnVisibilityChanged.AddUniqueDynamic(this, &UItemListWidget::OnVisibilityChangedEvent);
 
@@ -195,6 +196,21 @@ void UItemListWidget::CreateItemList_Enhancement()
 	ListView_Item->ScrollToTop();
 }
 
+void UItemListWidget::CreateItemList_Key()
+{
+	ListView_Item->ClearListItems();
+	for (auto iter : ListViewItems)
+	{
+		if (UItemHelperLibrary::IsKey(iter.Value->InventoryItem))
+		{
+			ListView_Item->AddItem(iter.Value);
+		}
+	}
+
+	ListView_Item->SetScrollbarVisibility(ESlateVisibility::Visible);
+	ListView_Item->ScrollToTop();
+}
+
 void UItemListWidget::CreateInventoryItemList()
 {
 	ListView_Item->ClearListItems();
@@ -284,6 +300,19 @@ void UItemListWidget::OnItemButtonHovered(UInventoryData* Data)
 			Cast<UEnhancementWidget>(ParentsUMG)->ShowItemInformation(Data);
 			break;
 		}
+	}
+}
+
+void UItemListWidget::RefreshItemButton(const FGuid& ItemUniqueID)
+{
+	if(ListViewItems.Contains(ItemUniqueID))
+	{
+		const auto& data = ListViewItems[ItemUniqueID];
+		if(auto button = ListView_Item->GetEntryWidgetFromItem(data))
+		{
+			Cast<UItemButtonWidget>(button)->RefreshItemData(this);
+		}
+		
 	}
 }
 

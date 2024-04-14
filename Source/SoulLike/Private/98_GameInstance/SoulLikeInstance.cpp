@@ -17,7 +17,6 @@
 #include "00_Character/04_NPC/99_Component/BonfireComponent.h"
 
 #include "01_GameMode/SoulLikeGameMode.h"
-#include "02_Ability/01_Task/GameplayTask_LaunchEvent.h"
 #include "03_Widget/01_Menu/00_Inventory/InventoryWidget.h"
 
 #include "04_Item/ItemActor.h"
@@ -27,8 +26,7 @@
 #include "93_SaveGame/SoulLikeSaveGame.h"
 #include "96_Library/DataLayerHelperLibrary.h"
 #include "96_Library/ItemHelperLibrary.h"
-#include "WorldPartition/WorldPartitionRuntimeCell.h"
-#include "WorldPartition/WorldPartitionSubsystem.h"
+#include "Sound/SoundClass.h"
 
 class UDataLayerSubsystem;
 DEFINE_LOG_CATEGORY(LogInstance);
@@ -43,16 +41,7 @@ USoulLikeInstance::USoulLikeInstance()
 			LoadingWidgetClass = widget.Class;
 		}
 	}
-
-	{
-		static ConstructorHelpers::FObjectFinder<UDataLayerAsset> layer(TEXT(
-			"/Script/Engine.DataLayerAsset'/Game/DataLayer/Runtime/AlwaysLoadedLayer.AlwaysLoadedLayer'"));
-		if (layer.Succeeded())
-		{
-			AlwaysActivatedLayer = layer.Object;
-		}
-	}
-
+	
 	{
 		static ConstructorHelpers::FClassFinder<ASoulTomb> tomb(TEXT(
 			"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/06_SoulTomb/BP_SoulTomb.BP_SoulTomb_C'"));
@@ -79,6 +68,45 @@ USoulLikeInstance::USoulLikeInstance()
 			DataLayerTable = datalayer.Object;
 		}
 	}
+
+	/*
+	{
+		static ConstructorHelpers::FObjectFinder<USoundClass> fx(TEXT(
+			"/Script/Engine.SoundClass'/Engine/EngineSounds/SFX.SFX_C'"));
+		if (fx.Succeeded())
+		{
+			SFXClass = fx.Object;
+		}
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<USoundClass> bgm(TEXT(
+			"/Script/Engine.SoundClass'/Engine/EngineSounds/Music.Music_C'"));
+		if (bgm.Succeeded())
+		{
+			BGMClass = bgm.Object;
+		}
+	}*/
+}
+
+float USoulLikeInstance::GetBGMVolume()
+{
+	return BGMClass->Properties.Volume;
+}
+
+float USoulLikeInstance::GetSFXVolume()
+{
+	return SFXClass->Properties.Volume;
+}
+
+void USoulLikeInstance::SetBGMVolume(float vol)
+{
+	BGMClass->Properties.Volume = vol;
+}
+
+void USoulLikeInstance::SetSFXVolume(float vol)
+{
+	SFXClass->Properties.Volume = vol;
 }
 
 void USoulLikeInstance::Init()
@@ -161,13 +189,11 @@ void USoulLikeInstance::LoadGame()
 		{
 			return;
 		}
+		
 		if (const auto instance = GetSaveGameInstance())
 		{
 			bBlockSave = true;
-			/*
-			LoadLayer();
-			*/
-
+			UE_LOGFMT(LogSave,Warning,"세이브 불가능 상태로 전환합니다.");
 			switch (instance->GameLoadType)
 			{
 			case EGameLoadType::NORMAL:
@@ -185,8 +211,27 @@ void USoulLikeInstance::LoadGame()
 	}
 }
 
+void USoulLikeInstance::RestoreFieldItemState()
+{
+	UE_LOGFMT(LogSave,Log,"필드 아이템 복구를 시도합니다.");
+	if(CurrentPlayer!=nullptr){
+		TArray<AActor*> items;
+		UGameplayStatics::GetAllActorsOfClass(CurrentPlayer,AItemActor::StaticClass(),items);
+		for(auto iter : items)
+		{
+			if(IsAlreadyPickUppedItem(Cast<AItemActor>(iter)))
+			{
+				iter->Destroy();
+			}
+		}
+	}else{
+		UE_LOGFMT(LogSave,Error,"필드 아이템 복구를 시도합니다. 플레이어가 널포인터라 불가능합니다.");
+	}
+}
+
 void USoulLikeInstance::LoadCommon()
 {
+	RestoreFieldItemState();
 	LoadInventory();
 	LoadAttribute(IsRespawn());
 	LoadQuickSlotState();
@@ -206,7 +251,9 @@ void USoulLikeInstance::LoadLevel(const FString& LevelName)
 
 void USoulLikeInstance::NormalLoad()
 {
+	UKismetSystemLibrary::PrintString(this,TEXT("노말 로드"),true,true,FColor::Red);
 	LoadLevel(UGameplayStatics::GetCurrentLevelName(CurrentPlayer->GetWorld()));
+	LoadLayer();
 	LoadCommon();
 	MarkLoadFinish();
 }
@@ -223,15 +270,15 @@ void USoulLikeInstance::RespawnOrLastSavePointLoad()
 
 			if (instance->SavedLastSavePoint.SavedBonfireName.IsEmpty() == false)
 			{
-				UE_LOGFMT(LogSave, Log, "불러온 마지막 세이브 포인트 정보 : {0} {1} {2}", instance->SavedLastSavePoint.LevelName,
-				          instance->SavedLastSavePoint.SavedTransform.GetLocation().ToString(),
-				          instance->SavedLastSavePoint.SavedBonfireName);
-				CurrentPlayer->SetActorLocation(instance->SavedLastSavePoint.SavedTransform.GetLocation());
-				LoadLayer();
 				if (auto streamingActor = UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(CurrentPlayer))
 				{
-					streamingActor->OnStreamingComplete.AddUniqueDynamic(this, &USoulLikeInstance::LoadCommon);
-					streamingActor->OnStreamingComplete.AddUniqueDynamic(this, &USoulLikeInstance::LoadSky);
+					UE_LOGFMT(LogSave, Log, "불러온 마지막 세이브 포인트 정보 : {0} {1} {2}", instance->SavedLastSavePoint.LevelName,
+							  instance->SavedLastSavePoint.SavedTransform.GetLocation().ToString(),
+							  instance->SavedLastSavePoint.SavedBonfireName);
+					CurrentPlayer->SetActorLocation(instance->SavedLastSavePoint.SavedTransform.GetLocation());
+					LoadCommon();
+					LoadSkyFromValue(instance->SavedLastSavePoint.SkyTime);
+					LoadLayer();
 					streamingActor->OnAfterStreamingComplete.AddUniqueDynamic(this, &USoulLikeInstance::MarkLoadFinish);
 					streamingActor->OnAfterStreamingComplete.AddUniqueDynamic(this,&USoulLikeInstance::PotionReplenishment);
 					streamingActor->StreamingStart(CurrentPlayer->GetActorLocation());
@@ -268,9 +315,10 @@ void USoulLikeInstance::TeleportToOtherBonfireLoad()
 		LoadLevel(instance->TeleportBonfireInfo.LevelName);
 		if (auto streamingActor = UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(CurrentPlayer))
 		{
-			LoadBonfireLayer(instance->TeleportBonfireInfo.NeedToLoadLayer);
-			streamingActor->OnStreamingComplete.AddUniqueDynamic(this, &USoulLikeInstance::LoadCommon);
-			streamingActor->OnStreamingComplete.AddUniqueDynamic(this, &USoulLikeInstance::LoadSkyFromBonfire);
+			LoadBonfireLayer(instance->TeleportBonfireInfo);
+			LoadCommon();
+			LoadSkyFromBonfire();
+			
 			streamingActor->OnAfterStreamingComplete.AddUniqueDynamic(this, &USoulLikeInstance::MarkLoadFinish);
 
 			streamingActor->StreamingStart(instance->TeleportBonfireInfo.Location);
@@ -284,30 +332,13 @@ void USoulLikeInstance::PotionReplenishment()
 	UItemHelperLibrary::PotionReplenishment(CurrentPlayer);
 }
 
-void USoulLikeInstance::LoadBonfireLayer(const TSet<FName>& Layers)
-{
-	if (const auto gameLoadHandler = NewObject<UGameLoadHandler>(CurrentPlayer))
-	{
-		UE_LOGFMT(LogSave, Log, "화톳불 레이어 복구시도");
-		for(auto iter : Layers)
-		{
-			UE_LOGFMT(LogSave,Log,"저장된 화톳불 레이어 : {0}",iter.ToString());
-		}
-		gameLoadHandler->RestoreDataLayer(CurrentPlayer, Layers, DataLayerTable);
-		gameLoadHandler->MarkAsGarbage();
-	}
-}
 
-void USoulLikeInstance::LoadBonfireLayer(const TArray<TSoftObjectPtr<UDataLayerAsset>>& Layers)
+void USoulLikeInstance::LoadBonfireLayer(const FBonfireInformation& BonfireInformation)
 {
 	if (const auto gameLoadHandler = NewObject<UGameLoadHandler>(CurrentPlayer))
 	{
-		UE_LOGFMT(LogSave, Log, "화톳불 레이어 복구시도");
-		for(auto iter : Layers)
-		{
-			UE_LOGFMT(LogSave,Log,"저장된 화톳불 레이어 : {0}",iter.ToSoftObjectPath().ToString());
-		}
-		gameLoadHandler->RestoreDataLayer(CurrentPlayer, Layers);
+		UE_LOGFMT(LogSave,Log,"레이어 로드 111111111111111111111111");
+		gameLoadHandler->RestoreDataLayer(CurrentPlayer, BonfireInformation.NeedToUnloadLayer,BonfireInformation.NeedToLoadLayer,BonfireInformation.NeedToActivateLayer, DataLayerTable);
 		gameLoadHandler->MarkAsGarbage();
 	}
 }
@@ -316,9 +347,10 @@ void USoulLikeInstance::LoadLayer()
 {
 	if (const auto gameLoadHandler = NewObject<UGameLoadHandler>(CurrentPlayer))
 	{
+		UE_LOGFMT(LogSave,Log,"레이어 로드 2222222222222222222");
 		if (auto instance = GetSaveGameInstance())
 		{
-			gameLoadHandler->RestoreDataLayer(CurrentPlayer, instance->ActivateLayersPath, DataLayerTable);
+			gameLoadHandler->RestoreDataLayer(CurrentPlayer, instance->LayerState, DataLayerTable);
 		}
 		gameLoadHandler->MarkAsGarbage();
 	}
@@ -326,6 +358,7 @@ void USoulLikeInstance::LoadLayer()
 
 void USoulLikeInstance::LoadLayers(const TArray<FName>& LayerRowNames)
 {
+	UE_LOGFMT(LogSave,Log,"레이어 로드 33333333333333333333333");
 	for(const auto& iter : LayerRowNames)
 	{
 		LoadLayer(iter);
@@ -334,6 +367,7 @@ void USoulLikeInstance::LoadLayers(const TArray<FName>& LayerRowNames)
 
 void USoulLikeInstance::LoadLayer(const FName& LayerRowName)
 {
+	UE_LOGFMT(LogSave,Log,"레이어 로드 44444444444444444444444");
 	if (const auto gameLoadHandler = NewObject<UGameLoadHandler>(CurrentPlayer))
 	{
 		gameLoadHandler->RestoreDataLayer(CurrentPlayer, LayerRowName, DataLayerTable);
@@ -348,6 +382,19 @@ void USoulLikeInstance::LoadSky()
 		if (auto instance = GetSaveGameInstance())
 		{
 			gameLoadHandler->RestoreSky(CurrentPlayer, instance->CurrentSkyTime);
+		}
+		gameLoadHandler->MarkAsGarbage();
+	}
+}
+
+void USoulLikeInstance::LoadSkyFromValue(float NewSkyTime)
+{
+	if (const auto gameLoadHandler = NewObject<UGameLoadHandler>(CurrentPlayer))
+	{
+		if (auto instance = GetSaveGameInstance())
+		{
+			UE_LOGFMT(LogSave,Log,"LoadSkyFromValue : {0}",NewSkyTime);
+			gameLoadHandler->RestoreSky(CurrentPlayer, NewSkyTime);
 		}
 		gameLoadHandler->MarkAsGarbage();
 	}
@@ -385,24 +432,32 @@ void USoulLikeInstance::LoadInventory()
 		if (auto instance = GetSaveGameInstance())
 		{
 			auto invenComp = CurrentPlayer->GetInventoryComponent();
+			
 			//저장된 인벤토리를 복구합니다.
 			gameLoadHandler->LoadInventory(invenComp, instance->InventoryItem);
+			
 			//파편을 복구합니다.
 			gameLoadHandler->LoadFragment(invenComp, instance->Fragments);
+			
 			//코어를 찾아 장착합니다.
 			gameLoadHandler->LoadCore(invenComp, instance->CoreID);
+			
 			//메트릭스를 불러옵니다.
 			gameLoadHandler->LoadOrbMatrix(invenComp, instance->CoreID, instance->OrbMatrix);
+			
 			//장비 강화수치를 복구합니다.
 			gameLoadHandler->RestoreEquipmentEnhancement(invenComp, instance->EquipEnhancementMap);
+			
 			//물약 강화수치를 복구합니다.
 			gameLoadHandler->RestorePotionEnhancement(invenComp, instance->PotionEnhancementMap);
-
+			
 			//무기를 찾아 장착합니다.
 			gameLoadHandler->LoadWeapon(invenComp, instance->WeaponID);
+			
 			//장착중이던 다른 장비들을 장착합니다.
 			gameLoadHandler->LoadEquippedItem(invenComp, instance->EquippedItemID,
 			                                  instance->EquippedWidgetIndexMap);
+			
 		}
 		gameLoadHandler->MarkAsGarbage();
 	}
@@ -460,8 +515,8 @@ void USoulLikeInstance::CreateSoulTomb(APlayerCharacter* Player)
 
 void USoulLikeInstance::MarkLoadFinish()
 {
+	UE_LOGFMT(LogSave,Warning,"세이브 가능 상태로 전환합니다.");
 	bBlockSave = false;
-
 	OnFinishLoadGame.Broadcast();
 }
 
@@ -753,7 +808,7 @@ void USoulLikeInstance::SaveWithLastSavePoint(APlayerCharacter* Player, UBonfire
 	                            BonfireComponent);
 	instance->SaveInventory(Player);
 	instance->SaveAttribute(Player);
-	instance->SaveDataLayer(Player);
+	instance->SaveDataLayer(Player,DataLayerTable);
 	instance->SaveSkyTime(Player);
 
 	SaveGameInstanceToSlot(instance);
@@ -903,6 +958,20 @@ void USoulLikeInstance::SaveAttribute(APlayerCharacter* PlayerCharacter)
 	SaveGameInstanceToSlot(instance);
 }
 
+void USoulLikeInstance::SaveAttributeExp(const FAttribute& ExpAttribute)
+{
+	if (!IsUseGameSave())
+	{
+		return;
+	}
+
+	if (const auto instance = GetSaveGameInstance())
+	{
+		instance->SaveExp(ExpAttribute);
+		SaveGameInstanceToSlot(instance);
+	}
+}
+
 void USoulLikeInstance::SaveKilledBoss(ABaseMonster* BaseMonster)
 {
 	if (!IsUseGameSave())
@@ -945,7 +1014,7 @@ void USoulLikeInstance::SaveDataLayer(APlayerCharacter* Player)
 	
 	if (const auto instance = GetSaveGameInstance())
 	{
-		instance->SaveDataLayer(Player);
+		instance->SaveDataLayer(Player,DataLayerTable);
 		SaveGameInstanceToSlot(instance);
 	}
 }

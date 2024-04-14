@@ -345,6 +345,11 @@ bool UOrbMatrixElementWidget::NativeOnDrop(const FGeometry& InGeometry, const FD
 
 				if (UItemHelperLibrary::IsOrbFragment(orbInfo) && OrbWidget.IsValid())
 				{
+					//코어 슬롯에 파편을 끌어온 경우는 아무것도 안 합니다.
+					if(MatrixElementInfo.OrbMatrixSlotType == EOrbMatrixSlotType::CORE)
+					{
+						return false;
+					}
 					UE_LOGFMT(LogTemp, Log, "파편 장착 시도");
 					//다른 슬롯에 장착되어 있는 경우,
 					if (auto matrixElementWidget = OrbWidget->IsOrbEquipped(orbInfo.UniqueID))
@@ -545,6 +550,15 @@ bool UOrbMatrixElementWidget::ExchangeCheck(const FOrbMatrixElementInfo& A,
 
 bool UOrbMatrixElementWidget::CanExchange(const FOrbMatrixElementInfo& OtherMatrixElementInfo)
 {
+	//코어 슬롯에 파편을 끌어온 경우는 아무것도 안 합니다.
+	if(MatrixElementInfo.OrbMatrixSlotType == EOrbMatrixSlotType::CORE)
+	{
+		if(OtherMatrixElementInfo.OrbMatrixSlotType != EOrbMatrixSlotType::CORE)
+		{
+			return false;
+		}
+	}
+	
 	//다음과 같은 경우에만 교환 가능합니다.
 	//드롭 당한 슬롯 : A / 드래그한 슬롯 : B
 

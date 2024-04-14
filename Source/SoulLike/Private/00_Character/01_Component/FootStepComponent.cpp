@@ -134,6 +134,7 @@ void UFootStepComponent::MakeFootStep(FName SocketName)
 		FHitResult OutHit;
 		if (CreateFootStepTrace(SocketName, OutHit))
 		{
+			//UE_LOGFMT(LogFootStep,Log,"{0} {1}",GetOwner()->GetActorNameOrLabel(),OutHit.GetActor()->GetActorNameOrLabel());
 			if (OutHit.PhysMaterial != nullptr && OutHit.PhysMaterial->SurfaceType == WATER_TYPE)
 			{
 				//어느정도의 깊이인지 체크합니다.

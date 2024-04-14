@@ -18,9 +18,7 @@ public:
 	static bool IsInActivatedLayer(const UWorld* World,
 	                               const TArray<TObjectPtr<const UDataLayerAsset>>& DataLayerAssets);
 	static bool IsInActivatedLayer(const UWorld* World, const FString& LayerPath);
-	static FString GetLayerFullPath(const UWorld* World, const class UDataLayerAsset* LayerAsset);
-	static class UDataLayerAsset* GetAlwaysActivatedDataLayerAsset(const UObject* WorldContext);
-	
+	static FString GetLayerFullPath(const UWorld* World, const class UDataLayerAsset* LayerAsset);	
 	UFUNCTION(BlueprintCallable,BlueprintPure)
 	static class AWorldStreamingSourceActor* SpawnWorldStreamingSourceActor(APawn* Owner);
 };

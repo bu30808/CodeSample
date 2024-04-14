@@ -9,10 +9,12 @@
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/00_Player/00_Controller/00_Component/InputHandlerComponent.h"
 #include "00_Character/01_Component/AbilityComponent.h"
+#include "00_Character/01_Component/AnimationHelperComponent.h"
 #include "00_Character/01_Component/AttributeComponent.h"
 #include "00_Character/01_Component/FootStepComponent.h"
 #include "00_Character/01_Component/InventoryComponent.h"
 #include "02_Ability/AbilityEffect.h"
+#include "96_Library/AbilityHelperLibrary.h"
 #include "96_Library/MathHelperLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -31,6 +33,7 @@ ABaseCharacter::ABaseCharacter()
 	AbilityComponent = CreateDefaultSubobject<UAbilityComponent>(TEXT("AbilityComponent"));
 	FootStepComponent = CreateDefaultSubobject<UFootStepComponent>(TEXT("FootStepComponent"));
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+	AnimationHelperComponent= CreateDefaultSubobject<UAnimationHelperComponent>(TEXT("AnimationHelperComponent"));
 	/*NavigationInvokerComponent = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavigationInvokerComponent"));*/
 
 	DeadDissolveTimeLineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("DeadDissolveTimeLine"));
@@ -57,7 +60,7 @@ void ABaseCharacter::BeginPlay()
 
 	GiveDefaultAbility();
 	ActivateDefaultAbility();
-	DeadDissolveTimeLineComponent->SetTimelineLength(DissolveTime);
+	
 	if (!IsA<APlayerCharacter>())
 	{
 		GiveDefaultItem();
@@ -160,11 +163,9 @@ void ABaseCharacter::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	OnDead.AddUniqueDynamic(this, &ABaseCharacter::OnDeadEvent);
-	OnTriggerHitAnimationEnter.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationEnterEvent);
-	OnTriggerHitAnimationExit.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationExitEvent);
-
-	UpdateDissolve.BindDynamic(this, &ABaseCharacter::OnUpdateDeadDissolveTimeLine);
-	OnFinishDissolve.BindDynamic(this, &ABaseCharacter::OnFinishDissolveTimeLine);
+	AnimationHelperComponent->OnTriggerHitAnimationEnter.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationEnterEvent);
+	AnimationHelperComponent->OnTriggerHitAnimationExit.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationExitEvent);
+	
 
 	OriginalMaterials = GetMesh()->GetMaterials();
 }
@@ -217,7 +218,7 @@ void ABaseCharacter::OnRemoveAttributeEffectAdditionalInformationEvent_Implement
 		{
 			if (AdditionalInformation->HitBy != nullptr)
 			{
-				UE_LOGFMT(LogCharacter, Log, "{0}이(가) {1}에게 입은 피해량 : {2}", GetActorNameOrLabel(),
+				UE_LOGFMT(LogCharacter, Log, "ABaseCharacter {0}이(가) {1}에게 입은 피해량 : {2} 111111111111", GetActorNameOrLabel(),
 				          AdditionalInformation->HitBy->GetActorNameOrLabel(), Effect.ApplyValue * DeltaTime);
 			}
 
@@ -269,7 +270,12 @@ void ABaseCharacter::OnRemoveAttributeEffectAdditionalInformationEvent_Implement
 
 bool ABaseCharacter::IsMighty()
 {
-	return AbilityComponent->HasEffectTag(FGameplayTag::RequestGameplayTag("Common.Passive.Mighty.Effect"));
+	const bool& result = AbilityComponent->HasEffectTag(MIGHTY_EFFECT_TAG);
+	if(result)
+	{
+		UE_LOGFMT(LogCharacter,Warning,"이 캐릭터는 슈퍼아머 상태입니다 : {0}",GetNameSafe(this));
+	}
+	return result;
 }
 
 bool ABaseCharacter::ShouldSkipHitAnimation(float Damage, float SkipThreshold)
@@ -279,35 +285,24 @@ bool ABaseCharacter::ShouldSkipHitAnimation(float Damage, float SkipThreshold)
 	return AttributeComponent->GetEndurance() > Damage * SkipThreshold;
 }
 
-void ABaseCharacter::PlayDeadAnimationSequence()
-{
-	GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
-	auto randIndex = FMath::RandRange(0, DeadAnimations.Num() - 1);
-	if (DeadAnimations.IsValidIndex(randIndex))
-	{
-		GetMesh()->PlayAnimation(DeadAnimations[randIndex], false);
-	}
-}
-
-void ABaseCharacter::PlayDeadAnimationMontage()
-{
-	auto randIndex = FMath::RandRange(0, DeadMontages.Num() - 1);
-	if (DeadMontages.IsValidIndex(randIndex))
-	{
-		DeadMontage = DeadMontages[randIndex];
-	}
-}
-
-
 void ABaseCharacter::OnUpdateDeadDissolveTimeLine(float Value)
 {
-	FName param = "Percent";
-	GetMesh()->CreateDynamicMaterialInstance(0, GetMesh()->GetMaterial(0))->SetScalarParameterValue(param, Value);
+	if(auto mesh = GetMesh())
+	{
+		const FName& param = "Percent";
+		mesh->CreateDynamicMaterialInstance(0, mesh->GetMaterial(0))->SetScalarParameterValue(param, Value);
+	}
 }
 
 void ABaseCharacter::OnFinishDissolveTimeLine()
 {
 }
+
+void ABaseCharacter::PlayDeadAnimationSequence()
+{
+	AnimationHelperComponent->PlayDeadAnimationSequence();
+}
+
 
 void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 {
@@ -319,42 +314,24 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 		GetCapsuleComponent()->SetCollisionProfileName("Spectator");
 		GetMesh()->SetCollisionProfileName("Spectator");
 
-		switch (DeadAnimationPlayMode)
-		{
-		case EDeadAnimationPlayMode::Sequence:
-			PlayDeadAnimationSequence();
-			break;
-		case EDeadAnimationPlayMode::Montage:
-			PlayDeadAnimationMontage();
-			break;
-		case EDeadAnimationPlayMode::None:
-			break;
-		default: ;
-		}
+		AnimationHelperComponent->PlayDeadAnimationByMode();
+	
 
 		if (AbilityComponent)
 		{
 			AbilityComponent->ClearReusableCue();
 		}
 
-		//디졸브 타임라인
-		if (DissolveCurve)
-		{
-			if (DissolveParticle)
-			{
-				UE_LOGFMT(LogCharacter, Log, "사망 파티클 생성");
-				const auto comp = UNiagaraFunctionLibrary::SpawnSystemAttached(
-					DissolveParticle, RootComponent, NAME_None, FVector::ZeroVector, FRotator::ZeroRotator,
-					EAttachLocation::SnapToTargetIncludingScale, false);
-				comp->SetColorParameter("Color", DissolveColor);
-			}
+		AnimationHelperComponent->StartDeadDissolve();
 
-			DeadDissolveTimeLineComponent->AddInterpFloat(DissolveCurve, UpdateDissolve);
-			DeadDissolveTimeLineComponent->SetTimelineFinishedFunc(OnFinishDissolve);
-
-			DeadDissolveTimeLineComponent->PlayFromStart();
-		}
+	
 	}
+}
+
+void ABaseCharacter::SetCharacterState(ECharacterState NewState)
+{
+	CharacterState = NewState;
+	UE_LOGFMT(LogCharacter,Log,"{0}, 캐릭터 상태 업데이트 111111111111: {1}",GetNameSafe(this),StaticEnum<ECharacterState>()->GetValueAsString(NewState));
 }
 
 void ABaseCharacter::ChangeMovementState(EMovementState Type, float Multiplier)
@@ -408,7 +385,8 @@ void ABaseCharacter::ChangeBodyCollisionEnabled(ECollisionEnabled::Type NewColli
 
 void ABaseCharacter::OnTriggerHitAnimationEnterEvent(ABaseCharacter* DamagedCharacter, AActor* HitBy)
 {
-	bIsTriggeredHitAnimationExitEvent = false;
+	UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
+	AnimationHelperComponent->SetIsTriggeredHitAnimationExitEvent(false);
 	//재생중인 몽타주를 멈춥니다.
 	if (GetMesh()->GetAnimInstance() != nullptr && GetMesh()->GetAnimInstance()->IsAnyMontagePlaying())
 	{
@@ -420,7 +398,7 @@ void ABaseCharacter::OnTriggerHitAnimationExitEvent(ABaseCharacter* DamagedChara
 {
 	if (CharacterState != ECharacterState::DEAD)
 	{
-		bIsTriggeredHitAnimationExitEvent = true;
+		AnimationHelperComponent->SetIsTriggeredHitAnimationExitEvent(true);
 		SetCharacterState(ECharacterState::NORMAL);
 	}
 }
@@ -430,13 +408,15 @@ void ABaseCharacter::TriggerHitAnimation_Implementation(UAbilityEffectAdditional
 	//강인함 효과가 적용되어있는가 확인합니다.
 	if (IsMighty() == false)
 	{
+		UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
 		if (AdditionalInformation->bTriggerHitAnimation)
 		{
-			OnTriggerHitAnimationEnter.Broadcast(this, AdditionalInformation->HitBy.Get());
+			UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
+			AnimationHelperComponent->OnTriggerHitAnimationEnter.Broadcast(this, AdditionalInformation->HitBy.Get());
 			//피격 애니메이션 블랜드를 위한 각도를 저장합니다.
-			HitDegree = UMathHelperLibrary::CalculateDegree(this, AdditionalInformation->Hit.Location);
+			AnimationHelperComponent->HitDegree = UMathHelperLibrary::CalculateDegree(this, AdditionalInformation->Hit.Location);
 			//애니메이션 블루프린트 내부에서 false로 갱신됩니다.
-			CharacterState = ECharacterState::HIT;
+			SetCharacterState(ECharacterState::HIT);
 		}
 	}
 }
@@ -595,4 +575,9 @@ void ABaseCharacter::RestoreStatusEffectMaterial()
 	{
 		GetMesh()->SetMaterial(i, OriginalMaterials[i]);
 	}
+}
+
+void ABaseCharacter::DeactivateMightyAbility()
+{
+	UAbilityHelperLibrary::DeactivateMightyAbility(this);
 }

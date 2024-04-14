@@ -16,6 +16,7 @@ class SOULLIKE_API ALich : public ABaseMonster
 
 public:
 	ALich();
+	void PlayIdleCue();
 
 	virtual void BeginPlay() override;
 	UFUNCTION()
@@ -26,5 +27,9 @@ public:
 	UPROPERTY()
 	FTimerHandle IdleCueTimerHandle;
 
+	virtual void Activate() override;
+	virtual void Deactivate() override;
+	
+	virtual void RestoreComponentAttachment()const override;
 	virtual void OnDeadMontageEndedEvent(UAnimMontage* Montage, bool bInterrupted) override;
 };

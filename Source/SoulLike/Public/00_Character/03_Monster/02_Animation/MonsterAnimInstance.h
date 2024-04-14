@@ -41,6 +41,7 @@ protected:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 public:
+		
 	virtual void AnimNotify_OnHitEnter_Implementation() override;
 	virtual void AnimNotify_OnHitExit_Implementation() override;
 

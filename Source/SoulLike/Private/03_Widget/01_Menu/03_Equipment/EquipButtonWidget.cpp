@@ -59,11 +59,11 @@ void UEquipButtonWidget::SetButtonInfo(TWeakObjectPtr<UItemData> NewData)
 		ItemData = NewData;
 
 		auto itemName = info->Item_Name.ToString();
-		if (itemName.Len() > 10)
+		/*if (itemName.Len() > 10)
 		{
 			itemName = itemName.Left(10);
 			itemName += "...";
-		}
+		}*/
 		TextBlock_Name->SetText(FText::FromString(itemName));
 		Image->SetBrushFromSoftTexture(info->Item_Image);
 
@@ -103,6 +103,31 @@ bool UEquipButtonWidget::IsCorrectType(UInventoryData* InventoryData) const
 	return false;
 }
 
+bool UEquipButtonWidget::IsAlreadyEquipped() const
+{
+	return ItemData.IsValid();
+}
+
+bool UEquipButtonWidget::IsDroppedSameItem(UInventoryData* Data) const
+{
+	return ItemData->InventoryItem.UniqueID == Cast<UItemData>(Data)->InventoryItem.UniqueID;
+}
+
+UEquipButtonWidget* UEquipButtonWidget::IsEquippedOtherSlot(UInventoryData* Data) const
+{
+	if (ParentWidget.IsValid())
+	{
+		int32 outIndex;
+		if (const auto button = ParentWidget->GetRingSlotByUniqueID(
+			Cast<UItemData>(Data)->InventoryItem.UniqueID, outIndex))
+		{
+			return button;
+		}
+	}
+
+	return nullptr;
+}
+
 bool UEquipButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
                                       UDragDropOperation* InOperation)
 {
@@ -110,8 +135,7 @@ bool UEquipButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDr
 	{
 		return false;
 	}
-
-
+	
 	if (auto oper = Cast<UDragAndDropOperation>(InOperation))
 	{
 		//인벤토리 버튼이 드롭되었을때만 처리합니다.
@@ -125,52 +149,41 @@ bool UEquipButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDr
 				//이 버튼에 등록되어야 할 타입과 맞는지 확인합니다.
 				if (IsCorrectType(data))
 				{
-					//이전 장비를 해제합니다.
-					if (ItemData.IsValid())
+					//이 슬롯에 이미 설정된 장비가 있는지 확인합니다.
+					if(IsAlreadyEquipped())
 					{
-						//같은 장비가 드롭다운됐다면 아무것도 안 합니다.
-						auto preID = ItemData->InventoryItem.UniqueID;
-						if (preID == Cast<UItemData>(data)->InventoryItem.UniqueID)
+						UE_LOGFMT(LogTemp,Log,"{0} {1} 이미 이 버튼에 장착중인 아이템이 있습니다 : {2}",__FUNCTION__,__LINE__,ItemData->InventoryItem.GetItemInformation()->Item_Name.ToString());
+						if(IsDroppedSameItem(data))
 						{
+							UE_LOGFMT(LogTemp,Log,"{0} {1} 이 슬롯에 장착된 아이템과 같은 아이템을 드롭했습니다. 종료합니다. : {2}",__FUNCTION__,__LINE__,Cast<UItemData>(data)->InventoryItem.GetItemInformation()->Item_Name.ToString());
 							return false;
 						}
-
-						//이 부분에서 다시 장착 이미지가 설정되는 문제가 있습니다.
-						if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
-						{
-							invenComp->UnEquip(preID);
-						}
-
-						UE_LOGFMT(LogTemp, Error, "장비버튼 {0}이 드롭되었습니다.", inventoryButton->GetName());
-						//다른 장비 슬롯에 장착된 같은 아이디의 아이템이 있다면, 슬롯을 비웁니다.
-						if (ParentWidget.IsValid())
-						{
-							int32 outIndex;
-							if (auto button = ParentWidget->GetRingSlotByUniqueID(
-								Cast<UItemData>(data)->InventoryItem.UniqueID, outIndex))
-							{
-								UE_LOGFMT(LogTemp, Error, "장비버튼 {0}를 비웁니다.", button->GetName());
-								button->OnUnEquipped.Broadcast();
-								button->Clean();
-							}
-						}
+						
+						//똑같은 장비가 드롭된것이 아니라면, 장착 해제해줍니다
+						UnEquip();
 
 						//이전 아이템 버튼의 장착 표시를 끕니다.
-						if (ItemData->OwnItemButtonWidget.IsValid())
-						{
-							ItemData->OwnItemButtonWidget->SetEquipped(false);
-						}
+						ParentWidget->UMG_ItemList->RefreshItemButton(ItemData->InventoryItem.UniqueID);
 					}
 
+					//다른 장비 슬롯에 장착된 같은 아이디의 아이템이 있다면, 슬롯을 비웁니다.
+					if(const auto otherButton = IsEquippedOtherSlot(data))
+					{
+						UE_LOGFMT(LogTemp, Log, "{0} {1} 이미 다른 슬롯에 장착된 같은 아이템이 있습니다. 해당 슬롯을 비웁니다.", __FUNCTION__,__LINE__);
+						otherButton->OnUnEquipped.Broadcast();
+						otherButton->Clean();
+					}
+
+					UE_LOGFMT(LogTemp,Log,"{0} {1} 이 버튼의 정보를 설정합니다 : {2}",__FUNCTION__,__LINE__,Cast<UItemData>(data)->InventoryItem.GetItemInformation()->Item_Name.ToString());
+					
 					//이 버튼의 정보를 설정합니다.
 					SetButtonInfo(Cast<UItemData>(data));
 					UGameplayStatics::PlaySound2D(this, EquipSound);
 					//장비 아이템을 사용 합니다.
 					GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent()->UseItem(
 						Cast<UItemData>(data)->InventoryItem.UniqueID);
-
-					UE_LOGFMT(LogTemp, Error, "장비버튼 {0}에 장착 아이콘을 켭니다.", inventoryButton->GetName());
 					inventoryButton->SetEquipped(true);
+					
 
 					return true;
 				}
@@ -200,8 +213,6 @@ void UEquipButtonWidget::UnEquip()
 				{
 					GetOwningPlayerPawn<APlayerCharacter>()->GetInventoryComponent()->UnEquip(
 						data->InventoryItem.UniqueID);
-
-
 					Clean();
 				}
 				else
@@ -226,8 +237,12 @@ FReply UEquipButtonWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, 
 	if (InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
 	{
 		OnUnEquipped.Broadcast();
+		const auto& unEquipID = ItemData->InventoryItem.UniqueID;
 		//부여된 장비 해제
 		UnEquip();
+		//이전 아이템 버튼의 장착 표시를 끕니다.
+		ParentWidget->UMG_ItemList->RefreshItemButton(unEquipID);
+
 	}
 
 

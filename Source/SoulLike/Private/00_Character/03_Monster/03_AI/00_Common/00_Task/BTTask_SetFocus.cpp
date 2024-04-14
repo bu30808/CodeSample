@@ -5,6 +5,7 @@
 
 #include "AIController.h"
 #include "00_Character/BaseCharacter.h"
+#include "00_Character/01_Component/AnimationHelperComponent.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "00_Character/03_Monster/02_Animation/MonsterAnimInstance.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -44,7 +45,7 @@ EBTNodeResult::Type UBTTask_SetFocus::ExecuteTask(UBehaviorTreeComponent& OwnerC
 
 			if (bModifySkeletonTransform)
 			{
-				pawn->bModifySkeletonTransform = bModifySkeletonTransform;
+				pawn->GetAnimationHelperComponent()->bModifySkeletonTransform = bModifySkeletonTransform;
 			}
 
 			return EBTNodeResult::Succeeded;

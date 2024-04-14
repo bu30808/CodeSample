@@ -366,6 +366,16 @@ bool UItemHelperLibrary::IsEnhancement(const FInventoryItem& Item)
 	return false;
 }
 
+bool UItemHelperLibrary::IsKey(const FInventoryItem& Item)
+{
+	if (const auto itemInfo = Item.GetItemInformation())
+	{
+		return itemInfo->Item_Type == EItemType::KEY;
+	}
+
+	return false;
+}
+
 bool UItemHelperLibrary::IsHPPotion(const FInventoryItem& Item)
 {
 	return Item.GetItemInformation()->Item_Tag.MatchesTagExact(

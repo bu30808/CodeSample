@@ -6,6 +6,7 @@
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/00_Player/01_Component/LadderMovementComponent.h"
+#include "00_Character/01_Component/AnimationHelperComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 
 void UPlayerAnimInstance::NativeInitializeAnimation()
@@ -56,8 +57,10 @@ void UPlayerAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 void UPlayerAnimInstance::ChangeBoneTransform_Implementation(float DeltaTime)
 {
-	Super::ChangeBoneTransform_Implementation(DeltaTime);
-	SpineRotation = FMath::RInterpTo(SpineRotation, Character->SpineRotation, DeltaTime, BoneTransformLerpSpeed);
+	if(Character.IsValid()){
+		Super::ChangeBoneTransform_Implementation(DeltaTime);
+		SpineRotation = FMath::RInterpTo(SpineRotation, Character->GetAnimationHelperComponent()->SpineRotation, DeltaTime, BoneTransformLerpSpeed);
+	}
 }
 
 void UPlayerAnimInstance::CreateNewLadderLocation()

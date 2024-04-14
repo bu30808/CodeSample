@@ -3,6 +3,7 @@
 
 #include "96_Library/DataLayerHelperLibrary.h"
 
+#include "92_Tools/WorldStreamingSourceActor.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "WorldPartition/DataLayer/DataLayerSubsystem.h"
 
@@ -47,19 +48,6 @@ FString UDataLayerHelperLibrary::GetLayerFullPath(const UWorld* World, const UDa
 	}
 
 	return FString();
-}
-
-UDataLayerAsset* UDataLayerHelperLibrary::GetAlwaysActivatedDataLayerAsset(const UObject* WorldContext)
-{
-	if (WorldContext)
-	{
-		if (auto instance = Cast<USoulLikeInstance>(WorldContext->GetWorld()->GetGameInstance()))
-		{
-			return instance->GetAlwaysActivatedLayer();
-		}
-	}
-
-	return nullptr;
 }
 
 AWorldStreamingSourceActor* UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(APawn* Owner)

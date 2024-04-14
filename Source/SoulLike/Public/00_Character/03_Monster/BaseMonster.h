@@ -114,6 +114,7 @@ protected:
 	ABaseMonster();
 
 	virtual void BeginPlay() override;
+	virtual void PossessedBy(AController* NewController) override;
 	virtual void PostInitializeComponents() override;
 	void DetachDroppedItem();
 
@@ -135,6 +136,7 @@ protected:
 
 	UPROPERTY(Transient)
 	TObjectPtr<class AItemActor> DroppedItem;
+	
 
 public:
 	class UWidgetComponent* GetHealthBarWidgetComponent() const { return HealthBarWidgetComponent; }
@@ -154,18 +156,19 @@ protected:
 
 public:
 	void EnableRagdoll() const;
-	void StopAITree() const;
+	void StopAITree();
 	void RunDeactivateTimer();
 
-	void Activate();
-
-private:
+	virtual void Activate();
+	virtual void SetCharacterState(ECharacterState NewState) override;
+	
+protected:
 	//이 몬스터를 비활성화 합니다. AI를 멈추고, 콜리전 반응을 지우고, 숨깁니다.
-	void Deactivate();
-	void DeadPresetting() const;
+	virtual void Deactivate();
+	void DeadPresetting();
 	void RunAITree() const;
-
 	void RestoreFromRagdoll();
+	
 	//레그돌 활성화로 망가진 컴포넌트 상속관계와 위치를 되돌립니다. 필요하다면 덮어쓰세요.
 	virtual void RestoreComponentAttachment() const;
 	/**********************************************락온*********************************************************/
@@ -224,6 +227,8 @@ public:
 protected:
 	void IncreaseStunIntensity(const FAttributeEffect& Effect,
 	                           UAbilityEffectAdditionalInformation* AdditionalInformation);
+	UFUNCTION()
+	void OnStunMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	//몬스터 사망시 숨김처리되는 시간입니다.
 	UPROPERTY(EditAnywhere)
@@ -237,7 +242,7 @@ protected:
 	/**********************************************AI*********************************************************/
 protected:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool IsStartBehaviorTreeImmediately() { return MonsterDataAsset->bStartBehaviorTreeImmediately; }
+	bool IsStartBehaviorTreeImmediately() const { return MonsterDataAsset->bStartBehaviorTreeImmediately; }
 
 	/**********************************************기본정보*********************************************************/
 public:
@@ -246,11 +251,15 @@ public:
 
 	const FGameplayTag& GetMonsterTag() const { return MonsterDataAsset->MonsterTag; }
 	/**********************************************애니메이션*********************************************************/
-
-
-	/**********************************************사망처리*********************************************************/
-
+	
+	virtual void OnTriggerHitAnimationEnterEvent(ABaseCharacter* DamagedCharacter, AActor* HitBy) override;
+	
+	/**********************************************사망처리*********************************************************/	
 protected:
+
+	UPROPERTY()
+	class UAnimMontage* SelectedDeadMontageToPlay;
+	
 	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy) override;
 	UFUNCTION()
 	void OnDeadBossEvent(AActor* Who, AActor* DeadBy);
@@ -289,7 +298,5 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StopMusic(float AdjustVolumeDuration);
 
-
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	FString GetSafeName();
+	
 };

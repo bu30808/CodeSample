@@ -48,6 +48,10 @@ protected:
 	UPROPERTY(EditAnywhere)
 	FAbilityCueInformation OverlapExplosionCueInfo;
 
+	//이 값이 참이면, 경험치를 다 전달한 것으로 봅니다.
+	UPROPERTY(Transient)
+	bool bFinished;
+
 	virtual void PostInitializeComponents() override;
 
 	UFUNCTION()

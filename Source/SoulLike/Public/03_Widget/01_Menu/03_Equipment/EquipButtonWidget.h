@@ -79,7 +79,13 @@ protected:
 
 	//받아온 아이템 정보가 이 버튼과 일치하는지 확인합니다.
 	bool IsCorrectType(UInventoryData* InventoryData) const;
-
+	//이미 이 슬롯에 장착중인 아이템이 존재하나요?
+	bool IsAlreadyEquipped() const;
+	//이 슬롯에 저장된 아이템과 같은 아이템을 드롭했나요?
+	bool IsDroppedSameItem(class UInventoryData* Data) const;
+	//다른 장비 슬롯에 장착된 아이템인지 확인합니다
+	UEquipButtonWidget* IsEquippedOtherSlot(UInventoryData* Data) const;
+	
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	                          UDragDropOperation* InOperation) override;
 

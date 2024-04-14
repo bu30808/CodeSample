@@ -24,17 +24,19 @@ void UMonsterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 		if (auto monster = Cast<ABaseMonster>(Character))
 		{
 			bIsDead = monster->IsDead();
-
-			if (const auto aiCon = monster->GetController<AAIController>())
+			if (bIsDead == false)
 			{
-				bIsFocus = (aiCon->GetFocusActor() != nullptr);
-				if (aiCon->GetBlackboardComponent() != nullptr)
+				if (const auto aiCon = monster->GetController<AAIController>())
 				{
-					bIsFindTarget = aiCon->GetBlackboardComponent()->GetValueAsObject("Target") ? true : false;
+					bIsFocus = (aiCon->GetFocusActor() != nullptr);
+					if (aiCon->GetBlackboardComponent() != nullptr)
+					{
+						bIsFindTarget = aiCon->GetBlackboardComponent()->GetValueAsObject("Target") ? true : false;
+					}
 				}
-			}
 
-			MonsterState = monster->GetMonsterState();
+				MonsterState = monster->GetMonsterState();
+			}
 		}
 	}
 }
@@ -50,11 +52,15 @@ void UMonsterAnimInstance::AnimNotify_OnHitExit_Implementation()
 
 	if (auto monster = Cast<ABaseMonster>(Character))
 	{
-		if (const auto aiCon = monster->GetController<AMonsterAIController>())
+		if (bIsDead == false)
 		{
-			if (!aiCon->IsBehaviorTreeRunning())
+			if (const auto aiCon = monster->GetController<AMonsterAIController>())
 			{
-				aiCon->StartBehavior();
+				if (!aiCon->IsBehaviorTreeRunning())
+				{
+					UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 애님 인스턴스 비헤이비어 트리 실행"),*GetNameSafe(Character.Get())));
+					aiCon->StartBehavior();
+				}
 			}
 		}
 	}
@@ -64,7 +70,7 @@ void UMonsterAnimInstance::ChangeBoneTransform_Implementation(float DeltaTime)
 {
 	Super::ChangeBoneTransform_Implementation(DeltaTime);
 
-	if (Character.IsValid())
+	if (Character.IsValid() && bIsDead == false)
 	{
 		if (auto bbComp = UAIBlueprintHelperLibrary::GetBlackboard(Character.Get()))
 		{

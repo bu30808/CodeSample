@@ -7,6 +7,7 @@
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/01_Component/AbilityComponent.h"
+#include "00_Character/01_Component/AnimationHelperComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PawnMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -83,8 +84,8 @@ void UBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 		{
 			CharacterState = Character->GetCharacterState();
-			HitDegree = Character->HitDegree;
-			bModifyBoneTransform = Character->bModifySkeletonTransform;
+			HitDegree = Character->GetAnimationHelperComponent()->HitDegree;
+			bModifyBoneTransform = Character->GetAnimationHelperComponent()->bModifySkeletonTransform;
 
 			if (bModifyBoneTransform)
 			{
@@ -100,7 +101,7 @@ void UBaseAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 void UBaseAnimInstance::AnimNotify_OnHitEnter_Implementation()
 {
-	UE_LOGFMT(LogTemp, Log, "AnimNotify_OnHitEnter");
+	UE_LOGFMT(LogTemp, Log, "AnimNotify_OnHitEnter 111111111111");
 	if (Character.IsValid())
 	{
 		if (Character->IsA<APlayerCharacter>())
@@ -114,11 +115,11 @@ void UBaseAnimInstance::AnimNotify_OnHitExit_Implementation()
 {
 	if (Character.IsValid())
 	{
-		if (Character->GetIsTriggeredHitAnimationExitEvent() == false)
+		if (Character->GetAnimationHelperComponent()->GetIsTriggeredHitAnimationExitEvent() == false)
 		{
 			UE_LOGFMT(LogAbility, Error, "{0} {1} : 히트 애니메이션 빠져나감 이벤트가 호출되지 않았기 때문에 강제로 호출합니다.", __FUNCTION__,
 			          __LINE__);
-			Character->OnTriggerHitAnimationExit.Broadcast(Character.Get(), nullptr);
+			Character->GetAnimationHelperComponent()->OnTriggerHitAnimationExit.Broadcast(Character.Get(), nullptr);
 		}
 	}
 }

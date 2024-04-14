@@ -48,7 +48,9 @@
 #include "00_Character/00_Player/OrbBackgroundActor.h"
 #include "00_Character/00_Player/01_Component/JumpMovementComponent.h"
 #include "00_Character/00_Player/01_Component/LadderMovementComponent.h"
+#include "00_Character/00_Player/01_Component/TeleportBonfireComponent.h"
 #include "91_Sky/DynamicSkyActor.h"
+#include "92_Tools/WorldStreamingSourceActor.h"
 #include "93_SaveGame/SoulLikeSaveGame.h"
 #include "96_Library/DataLayerHelperLibrary.h"
 #include "96_Library/SaveGameHelperLibrary.h"
@@ -141,6 +143,7 @@ APlayerCharacter::APlayerCharacter()
 
 	LadderMovementComponent = CreateDefaultSubobject<ULadderMovementComponent>(TEXT("LadderMovementComponent"));
 	JumpMovementComponent = CreateDefaultSubobject<UJumpMovementComponent>(TEXT("JumpMovementComponent"));
+	TeleportBonfireComponent = CreateDefaultSubobject<UTeleportBonfireComponent>(TEXT("TeleportBonfireComponent"));
 }
 
 void APlayerCharacter::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* OtherActor)
@@ -241,7 +244,10 @@ void APlayerCharacter::CreateBodyMaterialInstance()
 
 void APlayerCharacter::KneelStart()
 {
-	PlayAnimMontage(StartKneelMontage);
+	if(USaveGameHelperLibrary::IsUseSave(this))
+	{
+		PlayAnimMontage(StartKneelMontage);
+	}
 }
 
 void APlayerCharacter::LoadStartLayer()
@@ -305,9 +311,10 @@ void APlayerCharacter::LoadGame()
 	{
 		//초기화가 끝날때까지 입력 막음
 		DisableInput(pc);
-
+		
 		if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 		{
+
 			instance->SetPlayer(this);
 			if (instance->IsUseGameSave())
 			{
@@ -319,6 +326,7 @@ void APlayerCharacter::LoadGame()
 				}
 				else
 				{
+			
 					instance->OnFinishLoadGame.AddUniqueDynamic(this, &APlayerCharacter::OnFinishLoadGame);
 					instance->LoadGame();
 				}
@@ -336,6 +344,7 @@ void APlayerCharacter::OnFinishLoadGame()
 {
 	if (auto pc = GetController<AUserController>())
 	{
+		UE_LOGFMT(LogCharacter,Log,"로드 완료");
 		GetCapsuleComponent()->SetEnableGravity(true);
 		UWidgetBlueprintLibrary::SetInputMode_GameOnly(pc);
 
@@ -412,7 +421,7 @@ void APlayerCharacter::BeginPlay()
 		MainWidget->SetVisibility(ESlateVisibility::Collapsed);
 
 		Super::BeginPlay();
-		LoadGame();
+		/*LoadGame();*/
 		
 		/*
 		//일단 플레이어의 주변이 스트리밍이 끝난 후에, 로드에 필요한 행동을 합니다.
@@ -1383,7 +1392,7 @@ void APlayerCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 		Super::OnDeadEvent(Who, DeadBy);
 
 		DisableInput(GetController<APlayerController>());
-
+		LockOnComponent->End();
 		//사망상태 저장
 		if (auto instance = GetGameInstance<USoulLikeInstance>())
 		{
@@ -1391,56 +1400,6 @@ void APlayerCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 			{
 				instance->OnDeadPlayer(this);
 			}
-		}
-	}
-}
-
-
-void APlayerCharacter::StartTeleportToOtherBonfire()
-{
-	if (auto instance = GetGameInstance<USoulLikeInstance>())
-	{
-		SetActorTickEnabled(false);
-		GetCapsuleComponent()->SetEnableGravity(false);
-		
-		MainWidget->SetVisibility(ESlateVisibility::Collapsed);
-		auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
-		cameraManager->StartCameraFade(0,1,2.f,FColor::Black,true,true);
-		instance->OnFinishLoadGame.AddUniqueDynamic(this, &APlayerCharacter::OnFinishLoadGame);
-		instance->TeleportToOtherBonfireLoad();
-	}
-}
-
-void APlayerCharacter::TeleportToOtherBonfire(const FBonfireInformation& TeleportBonfireInforation)
-{
-	if (InteractionWidgetComponent->IsValidLowLevel() && InteractionWidgetComponent->IsVisible())
-	{
-		InteractionWidgetComponent->SetVisibility(false);
-	}
-
-	DisableInput(Cast<APlayerController>(GetController()));
-	TeleportOtherBonfireInformation = TeleportBonfireInforation;
-
-	//이동할 레벨이 같은지 확인합니다.
-	if(USaveGameHelperLibrary::IsSameLevel(this,TeleportOtherBonfireInformation.LevelName))
-	{
-		//같다면 즉시 로드 시작합니다.
-		StartTeleportToOtherBonfire();
-	}
-	
-	//아니라면 몽타주가 끝나고 레벨을 오픈합니다.
-	GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(
-		this, &APlayerCharacter::OnEndPlayTeleportMontage);
-	GetMesh()->GetAnimInstance()->Montage_Play(TeleportMontage);
-}
-
-void APlayerCharacter::OnEndPlayTeleportMontage(UAnimMontage* Montage, bool bInterrupted)
-{
-	if (Montage == TeleportMontage)
-	{
-		if(USaveGameHelperLibrary::IsSameLevel(this,TeleportOtherBonfireInformation.LevelName) == false)
-		{
-			UGameplayStatics::OpenLevel(GetWorld(), FName(TeleportOtherBonfireInformation.LevelName));
 		}
 	}
 }
