@@ -439,6 +439,12 @@ void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy)
 {
 	Super::OnDeadEvent(Who, DeadBy);
 
+	if(auto aiCon = GetController<AMonsterAIController>())
+	{
+		aiCon->K2_ClearFocus();
+	}
+	
+
 	/*UE_LOGFMT(LogMonster, Warning, "몬스터 사망 이벤트 호출 : {0}", GetNameSafe(this));*/
 	UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 몬스터 사망"), *GetNameSafe(this)));
 	if (ItemDropComponent)
@@ -483,6 +489,15 @@ void ABaseMonster::OnDeadBossEvent(AActor* Who, AActor* DeadBy)
 		UAIConHelperLibrary::ChangePlayerState(Who, DeadBy, EPlayerCharacterState::Peaceful);
 		ItemDropComponent->BossDropItem(Cast<ABaseCharacter>(DeadBy));
 		USaveGameHelperLibrary::SaveKillBoss(this);
+
+		//5초있다 디졸브 실행함.
+		FTimerHandle dissolveTimerHandle;
+		FTimerDelegate dissolveTimerDel = FTimerDelegate::CreateLambda([this]()
+		{
+			AnimationHelperComponent->StartDeadDissolve();
+		});
+
+		GetWorldTimerManager().SetTimer(dissolveTimerHandle,dissolveTimerDel,5.f,false);
 	}
 }
 

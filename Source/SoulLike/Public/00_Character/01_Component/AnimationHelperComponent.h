@@ -148,7 +148,7 @@ public:
 		meta=(EditCondition="DeadAnimationPlayMode == EDeadAnimationPlayMode::Montage"))
 	TArray<class UAnimMontage*> DeadMontages;
 	UPROPERTY(EditAnywhere, Category=Default,
-		meta=(EditCondition="DeadAnimationPlayMode != EDeadAnimationPlayMode::Sequence"))
+		meta=(EditCondition="DeadAnimationPlayMode == EDeadAnimationPlayMode::Sequence"))
 	TArray<class UAnimationAsset*> DeadAnimations;
 
 	//플레이 모드에 따라 사망 애니메이션을 재생합니다.

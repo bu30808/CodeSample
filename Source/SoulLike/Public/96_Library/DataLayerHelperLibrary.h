@@ -19,6 +19,9 @@ public:
 	                               const TArray<TObjectPtr<const UDataLayerAsset>>& DataLayerAssets);
 	static bool IsInActivatedLayer(const UWorld* World, const FString& LayerPath);
 	static FString GetLayerFullPath(const UWorld* World, const class UDataLayerAsset* LayerAsset);	
+
 	UFUNCTION(BlueprintCallable,BlueprintPure)
 	static class AWorldStreamingSourceActor* SpawnWorldStreamingSourceActor(APawn* Owner);
+
+	static class UDataLayerSubsystem* GetDataLayerSubsystem(const UObject* Context);
 };

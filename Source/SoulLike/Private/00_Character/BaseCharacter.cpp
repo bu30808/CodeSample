@@ -287,10 +287,10 @@ bool ABaseCharacter::ShouldSkipHitAnimation(float Damage, float SkipThreshold)
 
 void ABaseCharacter::OnUpdateDeadDissolveTimeLine(float Value)
 {
-	if(auto mesh = GetMesh())
+	const FName& param = "Percent";
+	for(auto iter : BodyMaterialInstance)
 	{
-		const FName& param = "Percent";
-		mesh->CreateDynamicMaterialInstance(0, mesh->GetMaterial(0))->SetScalarParameterValue(param, Value);
+		iter->SetScalarParameterValue(param, Value);
 	}
 }
 
@@ -310,7 +310,7 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 	if (CharacterState != ECharacterState::DEAD)
 	{
 		UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 / 정보 설정", GetActorNameOrLabel());
-		CharacterState = ECharacterState::DEAD;
+		SetCharacterState(ECharacterState::DEAD);
 		GetCapsuleComponent()->SetCollisionProfileName("Spectator");
 		GetMesh()->SetCollisionProfileName("Spectator");
 
@@ -331,7 +331,7 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 void ABaseCharacter::SetCharacterState(ECharacterState NewState)
 {
 	CharacterState = NewState;
-	UE_LOGFMT(LogCharacter,Log,"{0}, 캐릭터 상태 업데이트 111111111111: {1}",GetNameSafe(this),StaticEnum<ECharacterState>()->GetValueAsString(NewState));
+	//UE_LOGFMT(LogCharacter,Log,"{0}, 캐릭터 상태 업데이트 111111111111: {1}",GetNameSafe(this),StaticEnum<ECharacterState>()->GetValueAsString(NewState));
 }
 
 void ABaseCharacter::ChangeMovementState(EMovementState Type, float Multiplier)
@@ -581,3 +581,13 @@ void ABaseCharacter::DeactivateMightyAbility()
 {
 	UAbilityHelperLibrary::DeactivateMightyAbility(this);
 }
+
+void ABaseCharacter::CreateBodyMaterialInstance()
+{
+	const auto& index = GetMesh()->GetMaterials().Num();
+	for (int32 i = 0; i < 4; i++)
+	{
+		BodyMaterialInstance.Add(GetMesh()->CreateDynamicMaterialInstance(i));
+	}
+}
+

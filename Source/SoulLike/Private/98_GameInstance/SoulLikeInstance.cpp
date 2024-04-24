@@ -801,6 +801,8 @@ void USoulLikeInstance::SaveWithLastSavePoint(APlayerCharacter* Player, UBonfire
 		return;
 	}
 
+	UE_LOGFMT(LogSave,Log,"SaveWithLastSavePoint");
+	
 	auto instance = GetSaveGameInstance();
 	instance->GameLoadType = EGameLoadType::TELEPORT_TO_LAST_SAVEPOINT;
 

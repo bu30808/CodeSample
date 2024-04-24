@@ -35,7 +35,8 @@ private:
 	class UDataTable* EnhancementItemTable;
 	UPROPERTY(EditAnywhere)
 	class UDataTable* PotionItemTable;
-
+	UPROPERTY(EditAnywhere)
+	class UDataTable* KeyItemTable;
 public:
 	UItemManagerSubsystem();
 
@@ -48,5 +49,6 @@ public:
 	const FItemInformation* GetOrbCoreItemInformation(FGameplayTag ItemTag) const;
 	const FItemInformation* GetOrbFragmentItemInformation(FGameplayTag ItemTag) const;
 	const FItemInformation* GetEnhancementItemInformation(FGameplayTag ItemTag) const;
-	const FItemInformation* GetPotionItemInformation(FGameplayTag ItemTag);
+	const FItemInformation* GetPotionItemInformation(FGameplayTag ItemTag) const;
+	const FItemInformation* GetKeyItemInformation(FGameplayTag ItemTag) const;
 };

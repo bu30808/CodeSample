@@ -100,14 +100,12 @@ public:
 protected:
 	virtual void PostInitializeComponents() override;
 	virtual void PossessedBy(AController* NewController) override;
-
-	UPROPERTY(Transient)
-	TArray<class UMaterialInstanceDynamic*> BodyMaterialInstance;
+	
 	//세이브 파일 없이 첫 시작시 불러올 테이블에 저장된 레이어 행 이름입니다.
 	UPROPERTY(EditAnywhere)
 	TArray<FName> StartLayerRowNames = {"/Game/DataLayer/Runtime/WaterFallLayer.WaterFallLayer","/Game/DataLayer/Runtime/WaterFall_NS_Layer.WaterFall_NS_Layer"};
 
-	void CreateBodyMaterialInstance();
+	virtual void CreateBodyMaterialInstance() override;
 
 	UPROPERTY(EditAnywhere)
 	class UAnimMontage* StartKneelMontage;
@@ -498,4 +496,31 @@ public:
 
 	virtual void ChangeStatusEffectMaterial(EStatusEffect EffectType) override;
 	virtual void RestoreStatusEffectMaterial() override;
+	/**********************************************콘솔 명령*********************************************************/
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UAbilityEffect> InvincibleEffectObject;
+
+#if WITH_EDITOR
+private:
+
+	
+	float OriginalPhysicPower = 0;
+	float OriginalMagicPower = 0;
+	float OriginalSP = 0;
+	
+	UFUNCTION(Exec)
+	void CheatPower(bool bActive);
+
+	UFUNCTION(Exec)
+	void CheatMoney();
+
+	UFUNCTION(Exec)
+	void CheatInvincible(bool bActive);
+
+	UFUNCTION(Exec)
+	void CheatSP(bool bActive);
+
+	UFUNCTION(Exec)
+	void CheatWalkSpeed(float NewSpeed);
+#endif
 };

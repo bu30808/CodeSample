@@ -276,6 +276,12 @@ protected:
 	UFUNCTION()
 	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy);
 
+	//사망시 디졸브를 위한 인스턴스
+	UPROPERTY(Transient)
+	TArray<class UMaterialInstanceDynamic*> BodyMaterialInstance;
+
+	virtual void CreateBodyMaterialInstance();
+	
 public:
 	//이 캐릭터가 사망상태인지 확인합니다.
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -394,4 +400,5 @@ public:
 	
 	UFUNCTION()
 	void DeactivateMightyAbility();
+
 };

@@ -66,6 +66,8 @@ class UWidgetInteractionSubsystem;
 
 #define LOCTEXT_NAMESPACE "PlayerCharacter"
 
+#define INVINCIBILITY_TAG FGameplayTag::RequestGameplayTag("Common.Passive.Invincibility.Effect")
+
 // Sets default values
 APlayerCharacter::APlayerCharacter()
 {
@@ -1421,6 +1423,7 @@ void APlayerCharacter::RestoreStatusEffectMaterial()
 	FurComponent->SetMaterial(0, OriginalFurMaterial);
 }
 
+
 void APlayerCharacter::ForceEndDodge()
 {
 	const auto& dodgeTag = UAbilityHelperLibrary::GetDodgeTag(InventoryComponent);
@@ -1591,4 +1594,65 @@ void APlayerCharacter::OnLevelUpEvent()
 {
 	AbilityComponent->ApplyCue(LevelUpCueInfo);
 }
+
+#if WITH_EDITOR
+void APlayerCharacter::CheatPower(bool bActive)
+{
+	if(bActive)
+	{
+		OriginalPhysicPower = AttributeComponent->GetPhysicalAttack();
+		OriginalMagicPower = AttributeComponent->GetMagicalAttack();
+		
+		AttributeComponent->SetPhysicalAttack(static_cast<float>(INT_MAX));
+		AttributeComponent->SetMagicalAttack(static_cast<float>(INT_MAX));
+	}else
+	{
+		AttributeComponent->SetPhysicalAttack(OriginalPhysicPower);
+		AttributeComponent->SetMagicalAttack(OriginalMagicPower);
+	}
+	
+	AttributeComponent->OnCharacterInformationUpdate.Broadcast();
+}
+
+void APlayerCharacter::CheatMoney()
+{
+	AttributeComponent->SetEXP(static_cast<float>(INT_MAX));
+	AttributeComponent->OnCharacterInformationUpdate.Broadcast();
+}
+
+void APlayerCharacter::CheatInvincible(bool bActive)
+{
+	if(bActive)
+	{
+		AbilityComponent->K2_ApplyEffect(InvincibleEffectObject,this,FOnEffectExpired(),nullptr);
+	}else
+	{
+		AbilityComponent->EndEffectByTag(INVINCIBILITY_TAG);
+	}
+}
+
+void APlayerCharacter::CheatSP(bool bActive)
+{
+	if(bActive)
+	{
+		OriginalSP = AttributeComponent->GetMaxSP();
+	
+		AttributeComponent->SetMaxSP(static_cast<float>(INT_MAX));
+		AttributeComponent->SetSP(static_cast<float>(INT_MAX));
+
+		UE_LOGFMT(LogCharacter,Log,"플레이어의 SP 치트 설정됨 : {0}",AttributeComponent->GetMaxSP());
+	}else
+	{
+		AttributeComponent->SetMaxSP(OriginalSP);
+		AttributeComponent->SetSP(AttributeComponent->GetMaxSP());
+	}
+	AttributeComponent->OnCharacterInformationUpdate.Broadcast();
+}
+
+void APlayerCharacter::CheatWalkSpeed(float NewSpeed)
+{
+	GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
+}
+#endif
+
 #undef LOCTEXT_NAMESPACE

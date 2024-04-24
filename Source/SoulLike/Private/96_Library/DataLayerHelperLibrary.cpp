@@ -52,7 +52,7 @@ FString UDataLayerHelperLibrary::GetLayerFullPath(const UWorld* World, const UDa
 
 AWorldStreamingSourceActor* UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(APawn* Owner)
 {
-	if(Owner)
+	if (Owner)
 	{
 		FActorSpawnParameters spawnParam;
 		spawnParam.Owner = Owner;
@@ -60,12 +60,23 @@ AWorldStreamingSourceActor* UDataLayerHelperLibrary::SpawnWorldStreamingSourceAc
 
 
 		//일단 플레이어의 주변이 스트리밍이 끝난 후에, 로드에 필요한 행동을 합니다.
-		if (const auto streamingSource = Owner->GetWorld()->SpawnActor<AWorldStreamingSourceActor>(AWorldStreamingSourceActor::StaticClass(),spawnParam))
+		if (const auto streamingSource = Owner->GetWorld()->SpawnActor<AWorldStreamingSourceActor>(
+			AWorldStreamingSourceActor::StaticClass(), spawnParam))
 		{
 			streamingSource->bShouldDestroy = true;
 			return streamingSource;
 		}
 	}
-	
+
+	return nullptr;
+}
+
+UDataLayerSubsystem* UDataLayerHelperLibrary::GetDataLayerSubsystem(const UObject* Context)
+{
+	if (UWorld* world = Context->GetWorld())
+	{
+		return UWorld::GetSubsystem<UDataLayerSubsystem>(world);
+	}
+
 	return nullptr;
 }

@@ -62,6 +62,13 @@ UItemManagerSubsystem::UItemManagerSubsystem()
 	{
 		OrbFragmentItemTable = orbFragmentItemTable.Object;
 	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> keyItemTable(TEXT(
+	"/Script/Engine.DataTable'/Game/Blueprints/04_Item/Key/DT_Key.DT_Key'"));
+	if (keyItemTable.Succeeded())
+	{
+		KeyItemTable = keyItemTable.Object;
+	}
 }
 
 
@@ -159,11 +166,24 @@ const FItemInformation* UItemManagerSubsystem::GetEnhancementItemInformation(FGa
 	return nullptr;
 }
 
-const FItemInformation* UItemManagerSubsystem::GetPotionItemInformation(FGameplayTag ItemTag)
+const FItemInformation* UItemManagerSubsystem::GetPotionItemInformation(FGameplayTag ItemTag) const
 {
 	if (PotionItemTable)
 	{
 		if (const auto info = PotionItemTable->FindRow<FItemInformation>(ItemTag.GetTagName(), ""))
+		{
+			return info;
+		}
+	}
+
+	return nullptr;
+}
+
+const FItemInformation* UItemManagerSubsystem::GetKeyItemInformation(FGameplayTag ItemTag) const
+{
+	if (KeyItemTable)
+	{
+		if (const auto info = KeyItemTable->FindRow<FItemInformation>(ItemTag.GetTagName(), ""))
 		{
 			return info;
 		}
