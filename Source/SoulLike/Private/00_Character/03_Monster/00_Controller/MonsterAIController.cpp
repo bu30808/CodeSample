@@ -79,49 +79,52 @@ bool AMonsterAIController::ShouldForceCombatState()
 
 void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAIStimulus Stimulus)
 {
-	if (Target != nullptr && Target->IsA<APlayerCharacter>())
+	if (Stimulus.WasSuccessfullySensed())
 	{
-		if (GetPawn<ABaseMonster>()->IsDead())
+		if (Target != nullptr && Target->IsA<APlayerCharacter>())
 		{
-			UE_LOGFMT(LogAICon, Error, "{0} 해당 몬스터는 이미 사망 상태입니다. 퍼셉션을 업데이트 할 필요가 없습니다.", GetNameSafe(GetPawn()));
-			return;
-		}
-
-		if (ShouldForceCombatState())
-		{
-			Cast<APlayerCharacter>(Target)->SetPlayerStateBy(EPlayerCharacterState::Combat, GetPawn());
-		}
-
-		if (!IsBehaviorTreeRunning())
-		{
-			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 비헤이비어 트리가 실행중이 아니므로, 실행합니다."),*GetNameSafe(GetPawn())));
-			StartBehavior();
-		}else
-		{
-			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 이미 비헤이비어 트리가 실행중입니다."),*GetNameSafe(GetPawn())));
-		}
-
-		if (auto bbComp = GetBlackboardComponent())
-		{
-			if (bbComp->GetValueAsObject("Target") == nullptr)
+			if (GetPawn<ABaseMonster>()->IsDead())
 			{
-				/*UE_LOGFMT(LogAICon, Log, "{0}이 타겟을 감지했습니다 : {1}", GetNameSafe(GetPawn()), Target->GetName());*/
-				UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 타겟을 감지했습니다."),*GetNameSafe(GetPawn())));
-				bbComp->SetValueAsObject("Target", Target);
-				if (const auto sense = UAIPerceptionSystem::GetSenseClassForStimulus(this, Stimulus))
-				{
-					if (sense.GetDefaultObject()->IsA<UAISense_Damage>())
-					{
-						GetPawn<ABaseMonster>()->SetMonsterState(EMonsterState::Aggressive);
-					}
-					else
-					{
-						GetPawn<ABaseMonster>()->SetMonsterState(EMonsterState::Beware);
-					}
+				UE_LOGFMT(LogAICon, Error, "{0} 해당 몬스터는 이미 사망 상태입니다. 퍼셉션을 업데이트 할 필요가 없습니다.", GetNameSafe(GetPawn()));
+				return;
+			}
 
-					if (UKismetSystemLibrary::DoesImplementInterface(GetPawn(), UBossMonsterInterface::StaticClass()))
+			if (ShouldForceCombatState())
+			{
+				Cast<APlayerCharacter>(Target)->SetPlayerStateBy(EPlayerCharacterState::Combat, GetPawn());
+			}
+
+			if (!IsBehaviorTreeRunning())
+			{
+				UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 비헤이비어 트리가 실행중이 아니므로, 실행합니다."),*GetNameSafe(GetPawn())));
+				StartBehavior();
+			}else
+			{
+				UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 이미 비헤이비어 트리가 실행중입니다."),*GetNameSafe(GetPawn())));
+			}
+
+			if (auto bbComp = GetBlackboardComponent())
+			{
+				if (bbComp->GetValueAsObject("Target") == nullptr)
+				{
+					/*UE_LOGFMT(LogAICon, Log, "{0}이 타겟을 감지했습니다 : {1}", GetNameSafe(GetPawn()), Target->GetName());*/
+					UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 타겟을 감지했습니다."),*GetNameSafe(GetPawn())));
+					bbComp->SetValueAsObject("Target", Target);
+					if (const auto sense = UAIPerceptionSystem::GetSenseClassForStimulus(this, Stimulus))
 					{
-						IBossMonsterInterface::Execute_ShowBossWidget(GetPawn(), GetPawn<ABaseMonster>(), Target);
+						if (sense.GetDefaultObject()->IsA<UAISense_Damage>())
+						{
+							GetPawn<ABaseMonster>()->SetMonsterState(EMonsterState::Aggressive);
+						}
+						else
+						{
+							GetPawn<ABaseMonster>()->SetMonsterState(EMonsterState::Beware);
+						}
+
+						if (UKismetSystemLibrary::DoesImplementInterface(GetPawn(), UBossMonsterInterface::StaticClass()))
+						{
+							IBossMonsterInterface::Execute_ShowBossWidget(GetPawn(), GetPawn<ABaseMonster>(), Target);
+						}
 					}
 				}
 			}
@@ -185,6 +188,17 @@ void AMonsterAIController::StartBehavior()
 				range = monster->GetScaledAttackRange(range);
 				bbComp->SetValueAsFloat("AttackRange", range);
 			}
+
+			if(monster->UseLeader())
+			{
+				if(auto leader = monster->GetLeader()){
+					bbComp->SetValueAsObject("Leader", leader);
+					FRotator leaderRot = leader->GetActorRotation();
+					
+					bbComp->SetValueAsVector("RelativePositionWithLeader", leaderRot.UnrotateVector(GetPawn()->GetActorLocation() - leader->GetActorLocation()));
+				}
+			}
+			
 		}else
 		{
 			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 블랙보드가 유효하지 않음"),*GetNameSafe(GetPawn())));
@@ -194,7 +208,7 @@ void AMonsterAIController::StartBehavior()
 		if (monster->GetCharacterState() != ECharacterState::NORMAL)
 		{
 			UE_LOGFMT(LogAICon, Log, "{0} : 노멀 상태가 아니라서 트리 실행이 불가능합니다. ", GetNameSafe(GetPawn()));
-			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 노멀 상태가 아니라서 트리 실행이 불가능합니다."),*GetNameSafe(GetPawn())));
+			UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 노멀 상태가 아니라서 트리 실행이 불가능합니다. 현재 상태 : %s"),*GetNameSafe(GetPawn()),*StaticEnum<ECharacterState>()->GetValueAsString(monster->GetCharacterState())));
 			GetBrainComponent()->StopLogic("Not Normal");
 			return;
 		}
@@ -217,11 +231,14 @@ void AMonsterAIController::StartBehavior()
 
 void AMonsterAIController::ReStartBehavior()
 {
+	UE_LOGFMT(LogAICon, Log, "{0} : 비헤이비어트리 재시작 시도", GetNameSafe(GetPawn()));
 	if(auto brainComp = GetBrainComponent())
 	{
+		UE_LOGFMT(LogAICon, Log, "{0} : 비헤이비어트리 재시작 ", GetNameSafe(GetPawn()));
 		brainComp->RestartLogic();
 	}else
 	{
+		UE_LOGFMT(LogAICon, Log, "{0} : 비헤이비어트리 새로시작 ", GetNameSafe(GetPawn()));
 		StartBehavior();
 	}
 }
@@ -275,6 +292,15 @@ void AMonsterAIController::StartImmediatelyBehavior()
 				}
 			}
 		}
+#if WITH_EDITOR
+		else
+		{
+			if (pawn->IsStartBehaviorTreeImmediately())
+			{
+				StartBehavior();
+			}
+		}
+#endif
 	}
 }
 

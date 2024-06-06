@@ -7,6 +7,7 @@
 #include "00_Character/01_Component/AbilityComponent.h"
 #include "00_Character/02_Animation/00_NotifyState/AnimNotifyState_SpawnProjectile.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
+#include "96_Library/AbilityHelperLibrary.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -27,6 +28,7 @@ AProjectileActor::AProjectileActor()
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComponent"));
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->ProjectileGravityScale = 0.f;
+	ProjectileMovementComponent->HomingAccelerationMagnitude = 5000.f;
 	ProjectileMovementComponent->SetAutoActivate(false);
 }
 
@@ -34,6 +36,7 @@ AProjectileActor::AProjectileActor()
 void AProjectileActor::BeginPlay()
 {
 	Super::BeginPlay();
+	SphereComponent->IgnoreActorWhenMoving(GetOwner(),true);	
 }
 
 void AProjectileActor::PostInitializeComponents()
@@ -41,36 +44,126 @@ void AProjectileActor::PostInitializeComponents()
 	Super::PostInitializeComponents();
 }
 
+void AProjectileActor::DetachifAttached()
+{
+	if(IsAttachedTo(GetOwner()))
+	{
+		DetachFromActor(FDetachmentTransformRules(EDetachmentRule::KeepWorld,true));
+	}
+}
+
 // Called every frame
 void AProjectileActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
-	if (CurProjectileShootType == EProjectileShootType::DelayUntilRotation)
+	if(CurHomingProjectileType == EHomingProjectileType::HomingButStopTooClosed || CurHomingProjectileType == EHomingProjectileType::HomingWhenClosedButStopTooClosed)
 	{
-		if (bRotationComplete == false)
+		if (ProjectileMovementComponent->HomingTargetComponent!=nullptr)
 		{
-			SetActorRotation(
-				FMath::RInterpTo(GetActorRotation(),
-				                 TargetRotation,
-				                 DeltaTime,
-				                 InterpSpeed
-				));
-
-			if (GetActorRotation().Equals(TargetRotation, 1.f))
+			float DistanceToTarget = FVector::Dist(GetActorLocation(), ProjectileMovementComponent->HomingTargetComponent->GetComponentLocation());
+			if (DistanceToTarget < TargetMinimumHomingDistance)
 			{
-				ShootSetting(CurProjectileDirectionType);
-				bRotationComplete = true;
-				ProjectileMovementComponent->SetActive(true);
+				ProjectileMovementComponent->HomingAccelerationMagnitude = 0.f;  // 최소 거리 내에서는 호밍 비활성화
 			}
 		}
 	}
+
+
+	switch (CurProjectileShootType) {
+	case EProjectileShootType::DelayUntilRotation:
+	case EProjectileShootType::DelayUntilRotationWithTimeLimit:		
+		if (bRotationComplete == false)
+		{
+			FHitResult Hit;
+
+			TArray<TEnumAsByte<EObjectTypeQuery>> objTypes;
+			objTypes.Emplace(UEngineTypes::ConvertToObjectType(ECC_Player));
+			
+			if(UKismetSystemLibrary::LineTraceSingleForObjects(this,GetActorLocation(),(GetActorForwardVector() * 10000.f) + GetActorLocation(),objTypes,false,TArray<AActor*>(),EDrawDebugTrace::ForOneFrame,Hit,true))
+			{
+				DetachifAttached();
+				bRotationComplete = true;
+				ProjectileMovementComponent->Velocity = GetActorForwardVector() * ProjectileSpeed;
+				ProjectileMovementComponent->SetActive(true);
+				SetActorTickEnabled(false);
+				return;
+			}
+			
+			SetActorRotation(
+				FMath::RInterpTo(GetActorRotation(),
+								 TargetRotation,
+								 DeltaTime,
+								 InterpSpeed
+				));
+			
+		}
+		break;
+	}
+	
+		
+	
 }
+
+/*
+void AProjectileActor::LaunchProjectile(const FVector& ForwardVector, EProjectileType ProjectileType, AActor* HomingTarget, float MinimumHomingDistance)
+{
+	CurProjectileType = ProjectileType;
+	TargetMinimumHomingDistance = MinimumHomingDistance;
+	
+	DetachifAttached();
+	ProjectileMovementComponent->Velocity = ForwardVector * ProjectileSpeed;
+	switch (ProjectileType)
+	{
+	case EProjectileType::Normal:
+		break;
+	case EProjectileType::Homing:
+	case EProjectileType::HomingButStopTooClosed:
+		if(HomingTarget!=nullptr)
+		{
+			ProjectileMovementComponent->HomingTargetComponent = HomingTarget->GetRootComponent();
+			ProjectileMovementComponent->bIsHomingProjectile = true;
+		}
+		break;
+	default: ;
+	}
+	ProjectileMovementComponent->SetActive(true);
+	SetActorTickEnabled(true);
+}
+*/
 
 void AProjectileActor::LaunchProjectile(const FVector& ForwardVector)
 {
+	DetachifAttached();
 	ProjectileMovementComponent->Velocity = ForwardVector * ProjectileSpeed;
+	ProjectileMovementComponent->SetActive(true);
+	SetActorTickEnabled(true);
+}
+
+void AProjectileActor::LaunchHomingProjectile_Implementation(const FVector& ForwardVector, EHomingProjectileType HomingProjectileType,
+	AActor* HomingTarget, float MinimumHomingDistance)
+{
+	CurHomingProjectileType = HomingProjectileType;
+	TargetMinimumHomingDistance = MinimumHomingDistance;
+	
+	DetachifAttached();
+	ProjectileMovementComponent->Velocity = ForwardVector * ProjectileSpeed;
+	switch (HomingProjectileType)
+	{
+	case EHomingProjectileType::Homing:
+	case EHomingProjectileType::HomingButStopTooClosed:
+		if(HomingTarget != nullptr)
+		{
+			ProjectileMovementComponent->HomingTargetComponent = HomingTarget->GetRootComponent();
+			ProjectileMovementComponent->bIsHomingProjectile = true;
+		}
+		break;
+	case EHomingProjectileType::HomingWhenClosed:
+		break;
+	case EHomingProjectileType::HomingWhenClosedButStopTooClosed:
+		break;
+	default: ;
+	}
 	ProjectileMovementComponent->SetActive(true);
 	SetActorTickEnabled(true);
 }
@@ -105,7 +198,7 @@ void AProjectileActor::ShootSetting(EProjectileDirection ProjectileDirection)
 }
 
 void AProjectileActor::LaunchProjectileWithOption_Implementation(
-	EProjectileDirection P_Direction, EProjectileShootType P_ShootType)
+	EProjectileDirection P_Direction, EProjectileShootType P_ShootType,float LimitTime)
 {
 	CurProjectileDirectionType = P_Direction;
 	CurProjectileShootType = P_ShootType;
@@ -120,6 +213,9 @@ void AProjectileActor::LaunchProjectileWithOption_Implementation(
 			break;
 		case EProjectileShootType::DelayUntilRotation:
 			break;
+		case EProjectileShootType::DelayUntilRotationWithTimeLimit:
+			break;
+		default: ;
 		}
 
 
@@ -136,6 +232,7 @@ void AProjectileActor::LaunchProjectileWithOption_Implementation(
 			ProjectileMovementComponent->SetActive(true);
 			break;
 		case EProjectileShootType::DelayUntilRotation:
+		case EProjectileShootType::DelayUntilRotationWithTimeLimit:
 			ProjectileMovementComponent->bRotationFollowsVelocity = true;
 			if (CurProjectileDirectionType == EProjectileDirection::Forward)
 			{
@@ -156,6 +253,12 @@ void AProjectileActor::LaunchProjectileWithOption_Implementation(
 					}
 				}
 			}
+
+			if(P_ShootType == EProjectileShootType::DelayUntilRotationWithTimeLimit)
+			{
+				GetWorldTimerManager().SetTimer(ForceShootTimerHandle,this,&AProjectileActor::ForceShoot,LimitTime,false);
+			}
+			
 			SetActorTickEnabled(true);
 			break;
 		default: ;
@@ -163,14 +266,34 @@ void AProjectileActor::LaunchProjectileWithOption_Implementation(
 	}
 }
 
-void AProjectileActor::LaunchProjectileDelayWithOption(float Time, EProjectileDirection P_Direction,
-                                                       EProjectileShootType P_ShootType)
+void AProjectileActor::ForceShoot()
 {
+	switch (CurProjectileShootType)
+	{
+	case EProjectileShootType::DelayUntilRotation:
+	case EProjectileShootType::DelayUntilRotationWithTimeLimit:
+		UE_LOGFMT(LogTemp,Log,"SHOOOOT!!");
+		SetActorTickEnabled(false);
+		ProjectileMovementComponent->Velocity = GetActorForwardVector() * ProjectileSpeed;
+		ProjectileMovementComponent->SetActive(true);
+		break;
+	}
+}
+
+void AProjectileActor::LaunchProjectileDelayWithOption(float DelayTime, EProjectileDirection P_Direction,
+                                                       EProjectileShootType P_ShootType, float LimitTime)
+{
+	if(DelayTime<=0)
+	{
+		LaunchProjectileWithOption(P_Direction,P_ShootType,LimitTime);
+		return;
+	}
+	
 	if (!GetWorldTimerManager().TimerExists(DelayLaunchTimerHandle))
 	{
 		FTimerDelegate timerDel = FTimerDelegate::CreateUObject(this, &AProjectileActor::LaunchProjectileWithOption,
-		                                                        P_Direction, P_ShootType);
-		GetWorldTimerManager().SetTimer(DelayLaunchTimerHandle, timerDel, Time, false);
+		                                                        P_Direction, P_ShootType,LimitTime);
+		GetWorldTimerManager().SetTimer(DelayLaunchTimerHandle, timerDel, DelayTime, false);
 	}
 }
 
@@ -180,7 +303,7 @@ void AProjectileActor::SetEffect(const TArray<TSubclassOf<UAbilityEffect>>& Effe
 }
 
 
-void AProjectileActor::ApplyEffects(ABaseCharacter* HitTarget, FVector HitLocation)
+void AProjectileActor::ApplyEffects(ABaseCharacter* HitTarget, FVector HitLocation, FVector ImpactNormal)
 {
 	if (HitTarget && GetOwner() != nullptr)
 	{
@@ -188,6 +311,7 @@ void AProjectileActor::ApplyEffects(ABaseCharacter* HitTarget, FVector HitLocati
 		{
 			auto addInfo = NewObject<UAbilityCueAdditionalInformation>(this);
 			addInfo->HitLocation = HitLocation;
+			addInfo->ImpactNormal = ImpactNormal;
 
 			abComp->K2_ApplyEffectsWithReturn(ProjectileEffects, GetOwner(), addInfo);
 		}
@@ -196,13 +320,13 @@ void AProjectileActor::ApplyEffects(ABaseCharacter* HitTarget, FVector HitLocati
 
 void AProjectileActor::ProcessHit(const TArray<FHitResult>& Hits, bool bManualDestroy)
 {
-	for (auto iter : Hits)
+	for (const auto &iter : Hits)
 	{
 		if (iter.GetActor() != GetOwner())
 		{
 			if (iter.GetActor()->IsA<ABaseCharacter>())
 			{
-				ApplyEffects(Cast<ABaseCharacter>(iter.GetActor()), iter.Location);
+				ApplyEffects(Cast<ABaseCharacter>(iter.GetActor()), iter.Location, iter.ImpactNormal);
 			}
 			else
 			{
@@ -223,4 +347,14 @@ void AProjectileActor::ProcessHit(const TArray<FHitResult>& Hits, bool bManualDe
 			}
 		}
 	}
+}
+
+UAbilityComponent* AProjectileActor::GetOwnersAbilityComponent()
+{
+	return GetOwner<ABaseCharacter>()->GetAbilityComponent();
+}
+
+void AProjectileActor::ApplyCue(const FAbilityCueInformation& CueInformation)
+{
+	GetOwnersAbilityComponent()->ApplyCue(CueInformation);
 }

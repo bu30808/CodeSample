@@ -102,10 +102,9 @@ void UAbilityEffect_Linetrace::OnHitActorEvent_Implementation(const FHitResult& 
 
 					//피해를 입은 대상에게 그 외 다른 큐가 필요하다면 적용합니다.
 					UpdateCueLocation(Hit.Location);
-					ApplyCueInstance(character);
+					ApplyCueInstance(character, nullptr);
 				}
 
-				Target->OnLineTraceEffectHitActor.Broadcast(Hit, Target);
 			}
 		}
 		else
@@ -987,7 +986,7 @@ void UAbilityEffect_Linetrace::ProcessEffect_Implementation(ABaseCharacter* Targ
 	{
 		if (bUseOtherMeshComponent)
 		{
-			InitWithSockets(Target->GetPrimitiveComponentForLineTrace());
+			InitWithSockets(ILinetraceAbilityEffectInterface::Execute_GetPrimitiveComponentForLineTrace(Target));
 		}
 		else
 		{
@@ -998,7 +997,7 @@ void UAbilityEffect_Linetrace::ProcessEffect_Implementation(ABaseCharacter* Targ
 	{
 		if (bUseOtherMeshComponent)
 		{
-			Init(Target->GetPrimitiveComponentForLineTrace());
+			Init(ILinetraceAbilityEffectInterface::Execute_GetPrimitiveComponentForLineTrace(Target));
 		}
 		else
 		{

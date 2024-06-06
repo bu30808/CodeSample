@@ -11,6 +11,13 @@
 
 DECLARE_DELEGATE(FMontageBlendOut);
 
+UENUM(BlueprintType)
+enum class EMontageEndType : uint8
+{
+	BLEND_OUT,
+	ENDED
+};
+
 /**
  * 
  */
@@ -27,20 +34,23 @@ class SOULLIKE_API UBTTask_PlayAnimMontage : public UBTTask_BlackboardBase
 	*/
 	UPROPERTY()
 	TObjectPtr<AAIController> AIController;
+	UPROPERTY(Transient)
+	bool bOriginalMirror;
 
 	UBTTask_PlayAnimMontage();
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 	virtual void OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
 	                            EBTNodeResult::Type TaskResult) override;
-	//virtual void TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds) override;
 
 	UFUNCTION()
-	void OnMontageBlendingOutEvent(UAnimMontage* Montage, bool bInterrupted);
+	void OnMontageEndEvent(UAnimMontage* Montage, bool bInterrupted);
 
 public:
 	UPROPERTY(EditAnywhere)
 	class UAnimMontage* MontageToPlay;
-
+	//이 값에 따라서 테스크를 종료하는 시점이 조금씩 달라집니다.
+	UPROPERTY(EditAnywhere)
+	EMontageEndType MontageFinishType;
 	//이 값이 거짓일 경우, 몬스터 속성값중 ActionSpeed값을 재생속도로 사용합니다.
 	UPROPERTY(EditAnywhere)
 	bool bUseCustomPlayRate;
@@ -54,4 +64,7 @@ public:
 	//이 값이 참이면, 히트상태가 되면 몽타주가 중지됩니다.
 	UPROPERTY(EditAnywhere)
 	bool bCanHitCancel;
+	//이 값이 참이면 애니메이션을 좌우반전합니다.
+	UPROPERTY(EditAnywhere)
+	bool bMirrorAnimation = false;
 };

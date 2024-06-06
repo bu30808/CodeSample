@@ -214,30 +214,36 @@ FGuid UInventoryComponent::AddItem(AItemActor* ItemActor, bool bShowPickUpWidget
 			FGuid guid;
 			const int32& itemCount = ItemActor->GetItemCount();
 
-			if (info->Item_Type == EItemType::EQUIPMENT)
+			switch (info->Item_Type)
 			{
+			case EItemType::NONE:
+				break;
+			case EItemType::EQUIPMENT:
 				guid = AddNewItemToInventory(info, ItemActor, itemCount);
-			}
-			else if (info->Item_Type == EItemType::CONSUME || info->Item_Type == EItemType::ENHANCEMENT)
-			{
-				if (info->bStackable)
+				break;
+			case EItemType::ABILITY:
+				break;
+			case EItemType::CONSUME:
+			case EItemType::ENHANCEMENT:
+			case EItemType::KEY:
+			case EItemType::ETC:
 				{
-					const auto existItem = HasItem(info->Item_Tag);
-					if (existItem && existItem->CanStack(itemCount))
+					if (info->bStackable)
 					{
-						existItem->ItemCount += itemCount;
-						guid = existItem->UniqueID;
-					}
-					else
-					{
-						//TODO 보관함을 구현하려면 이 부분을 보관함으로 아이템을 전송하는 코드로 바꾸면 됩니다.
-						guid = AddNewItemToInventory(info, ItemActor, itemCount);
+						const auto existItem = HasItem(info->Item_Tag);
+						if (existItem && existItem->CanStack(itemCount))
+						{
+							existItem->ItemCount += itemCount;
+							guid = existItem->UniqueID;
+						}
+						else
+						{
+							//TODO 보관함을 구현하려면 이 부분을 보관함으로 아이템을 전송하는 코드로 바꾸면 됩니다.
+							guid = AddNewItemToInventory(info, ItemActor, itemCount);
+						}
 					}
 				}
-				else
-				{
-					guid = AddNewItemToInventory(info, ItemActor, itemCount);
-				}
+				break;
 			}
 
 			if (Inventory.Contains(guid))

@@ -99,7 +99,6 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 				{
 					if (bShouldManualFinish == false)
 					{
-						UE_LOGFMT(LogTemp, Warning, "11111111111111111111111");
 						FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
 					}
 				}
@@ -137,7 +136,7 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 						endLoc = startLoc + aiPawn->GetActorForwardVector() * 20000.f;
 					}
 					break;
-				case EStopTraceType::MeshForward:
+				case EStopTraceType::PawnMeshForward:
 					{
 						startLoc = aiPawn->GetMesh()->GetSocketLocation(SocketName);
 						auto rot = aiPawn->GetMesh()->GetSocketRotation(SocketName);
@@ -146,12 +145,26 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 						endLoc = startLoc + UKismetMathLibrary::GetForwardVector(rot) * 20000.f;
 					}
 					break;
+				case EStopTraceType::UseOtherMeshComponentForward:
+					{
+						if(auto meshComp = ILinetraceAbilityEffectInterface::Execute_GetPrimitiveComponentForAITurnTrace(aiPawn))
+						{
+							startLoc = meshComp->GetSocketLocation(SocketName);
+							auto rot = meshComp->GetSocketRotation(SocketName);
+							rot.Pitch = 0;
+							rot.Roll = 0;
+							endLoc = startLoc + UKismetMathLibrary::GetForwardVector(rot) * 20000.f;
+						}else
+						{
+							UE_LOGFMT(LogAICon,Error,"다른 메시 컴포넌트를 회전 정지를 위해 사용한다고 설정했지만, 인터페이스 함수에서 해당 메시 컴포넌트를 가져올 수 없습니다.");
+						}
+					}
+					break;
 				default: ;
 				}
 
 
-				TArray<AActor*> ignoreActors;
-				ignoreActors.Emplace(Cast<AActor>(ABaseMonster::StaticClass()));
+
 
 				{
 					FHitResult hit;
@@ -162,15 +175,16 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 					                                                           FVector(10, 10, 500),
 					                                                           FRotator::ZeroRotator,
 					                                                           objectTypes, false,
-					                                                           ignoreActors,
+					                                                           TArray<AActor*>(),
 					                                                           EDrawDebugTrace::ForOneFrame, hit,
 					                                                           true);
 					if (bHit)
 					{
 						if (hit.GetActor() == target)
 						{
-							UE_LOGFMT(LogTemp, Warning, "222222222222222222222");
-							FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+							if(!bShouldManualFinish){
+								FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+							}
 						}
 					}
 				}

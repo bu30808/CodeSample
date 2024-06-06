@@ -10,23 +10,18 @@
 UBTTask_UseAbility::UBTTask_UseAbility()
 {
 	bNotifyTick = false;
+	bCreateNodeInstance = true;
 	NodeName = TEXT("어빌리티 사용");
 }
 
 EBTNodeResult::Type UBTTask_UseAbility::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
+	AICon = OwnerComp.GetAIOwner();
+	
 	if (auto character = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
 	{
 		if (auto abComp = character->GetAbilityComponent())
 		{
-			if (OnFinishTask.IsBound() == false)
-			{
-				OnFinishTask.BindLambda([&]()
-				{
-					FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
-				});
-			}
-
 			if (AdditionalInfo.IsValid() == false)
 			{
 				AdditionalInfo = NewObject<UAbilityAdditionalInformation>(character);
@@ -56,5 +51,32 @@ FString UBTTask_UseAbility::GetStaticDescription() const
 
 void UBTTask_UseAbility::OnEndAbilityEvent()
 {
-	OnFinishTask.ExecuteIfBound();
+	if(AICon.IsValid())
+	{
+		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->BrainComponent),EBTNodeResult::Succeeded);
+	}
+}
+
+UBTTask_ForceEndAbility::UBTTask_ForceEndAbility()
+{
+	bNotifyTick = false;
+	NodeName = TEXT("어빌리티 종료");
+}
+
+EBTNodeResult::Type UBTTask_ForceEndAbility::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	if (auto character = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
+	{
+		if (auto abComp = character->GetAbilityComponent())
+		{
+			abComp->ForceEndAbility(AbilityTag);
+			return EBTNodeResult::Succeeded;
+		}
+	}
+	return EBTNodeResult::Failed;
+}
+
+FString UBTTask_ForceEndAbility::GetStaticDescription() const
+{
+	return TEXT("지정한 태그에 해당하는 어빌리티를 강제종료합니다.");
 }

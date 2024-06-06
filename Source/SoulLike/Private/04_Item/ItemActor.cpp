@@ -47,7 +47,7 @@ AItemActor::AItemActor()
 
 void AItemActor::DestroyIfPlayerAlreadyGetThisItemFromField()
 {
-	if(GetOwner()!=UGameplayStatics::GetPlayerCharacter(this,0))
+	if(GetOwner() == UGameplayStatics::GetPlayerCharacter(this,0))
 	{
 		return;
 	}
@@ -55,6 +55,7 @@ void AItemActor::DestroyIfPlayerAlreadyGetThisItemFromField()
 	
 	if (USaveGameHelperLibrary::IsAlreadyPickUppedItem(this))
 	{
+		UE_LOGFMT(LogTemp, Warning, "이미 획득된 적 있는 아이템입니다. : {0}", GetNameSafe(this));
 		Destroy();
 	}
 	else

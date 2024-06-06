@@ -62,4 +62,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	static bool IsUseSaveGameMode(UObject* WorldContext);
+
+	UFUNCTION(BlueprintCallable)
+	static void StopLoadingScreen();
 };

@@ -60,7 +60,15 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bShouldMove;
 
+	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
+	bool bMirrorAnimation = false;
+
 public:
+	bool IsMirrorAnimation() const {return bMirrorAnimation;}
+	UFUNCTION(BlueprintCallable)
+	void SetMirrorAnimation(bool bValue){bMirrorAnimation = bValue;}
+
+	
 	UFUNCTION(BlueprintNativeEvent)
 	void AnimNotify_OnHitEnter();
 	virtual void AnimNotify_OnHitEnter_Implementation();

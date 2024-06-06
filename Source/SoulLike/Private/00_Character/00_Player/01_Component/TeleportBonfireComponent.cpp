@@ -30,30 +30,28 @@ void UTeleportBonfireComponent::BeginPlay()
 
 	// ...
 	ComponentOwnerCharacter = GetOwner<APlayerCharacter>();
-	
 }
 
 void UTeleportBonfireComponent::PlayTeleportEndMontage()
 {
-	if(ComponentOwnerCharacter){
+	if (ComponentOwnerCharacter)
+	{
 		ComponentOwnerCharacter->PlayAnimMontage(TeleportEndMontage);
 	}
 }
 
 void UTeleportBonfireComponent::StartTeleportToOtherBonfire()
 {
-	if(ComponentOwnerCharacter)
+	if (ComponentOwnerCharacter)
 	{
 		if (auto instance = GetWorld()->GetGameInstance<USoulLikeInstance>())
 		{
 			ComponentOwnerCharacter->SetActorTickEnabled(false);
-			ComponentOwnerCharacter->GetCapsuleComponent()->SetEnableGravity(false);
-		
+			ComponentOwnerCharacter->SetGravityAroundPlayer(false);
 			ComponentOwnerCharacter->GetMainWidget()->SetVisibility(ESlateVisibility::Collapsed);
-			/*auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
-			cameraManager->StartCameraFade(0,1,2.f,FColor::Black,true,true);*/
+		
 			instance->OnFinishLoadGame.AddUniqueDynamic(ComponentOwnerCharacter, &APlayerCharacter::OnFinishLoadGame);
-			instance->OnFinishLoadGame.AddUniqueDynamic(this,&UTeleportBonfireComponent::PlayTeleportEndMontage);
+			instance->OnFinishLoadGame.AddUniqueDynamic(this, &UTeleportBonfireComponent::PlayTeleportEndMontage);
 			instance->TeleportToOtherBonfireLoad();
 		}
 	}
@@ -61,40 +59,39 @@ void UTeleportBonfireComponent::StartTeleportToOtherBonfire()
 
 void UTeleportBonfireComponent::TeleportToOtherBonfire(const FBonfireInformation& TeleportBonfireInforation)
 {
-	if(ComponentOwnerCharacter)
+	if (ComponentOwnerCharacter)
 	{
-		if(auto interactionComp = ComponentOwnerCharacter->GetInteractionWidgetComponent()){
+		ComponentOwnerCharacter->SetBlockedShowInteraction(true);
+
+		if (auto interactionComp = ComponentOwnerCharacter->GetInteractionWidgetComponent())
+		{
 			if (interactionComp->IsValidLowLevel() && interactionComp->IsVisible())
 			{
 				interactionComp->SetVisibility(false);
 			}
-
-			ComponentOwnerCharacter->DisableInput(Cast<APlayerController>(ComponentOwnerCharacter->GetController()));
-			TeleportOtherBonfireInformation = TeleportBonfireInforation;
-			auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
-			cameraManager->StartCameraFade(0,1,2.f,FColor::Black,true,true);
-	
-			//아니라면 몽타주가 끝나고 레벨을 오픈합니다.
-			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(
-				this, &UTeleportBonfireComponent::OnEndPlayTeleportMontage);
-			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(TeleportMontage);
 		}
+
+		ComponentOwnerCharacter->DisableInput(Cast<APlayerController>(ComponentOwnerCharacter->GetController()));
+		TeleportOtherBonfireInformation = TeleportBonfireInforation;
+		
+		ComponentOwnerCharacter->StartLoadingCameraFade(false,2.f);
+		ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(
+			this, &UTeleportBonfireComponent::OnPlayTeleportMontage);
+		ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(TeleportMontage);
 	}
 }
 
-void UTeleportBonfireComponent::OnEndPlayTeleportMontage(UAnimMontage* Montage, bool bInterrupted)
+void UTeleportBonfireComponent::OnPlayTeleportMontage(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage == TeleportMontage)
 	{
-		if(USaveGameHelperLibrary::IsSameLevel(this,TeleportOtherBonfireInformation.LevelName) == false)
+		if (USaveGameHelperLibrary::IsSameLevel(this, TeleportOtherBonfireInformation.LevelName) == false)
 		{
 			UGameplayStatics::OpenLevel(GetWorld(), FName(TeleportOtherBonfireInformation.LevelName));
-		}else
+		}
+		else
 		{
 			StartTeleportToOtherBonfire();
 		}
-		
 	}
 }
-
-

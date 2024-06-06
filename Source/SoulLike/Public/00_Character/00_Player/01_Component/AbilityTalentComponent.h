@@ -51,7 +51,7 @@ DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseDodgeInvincibilityTim
 DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseGetExp, const float, Original);
 
 //피격시 호출되는 이벤트, 피격당한 플레이어/타격한 대상/피해량
-DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnGotHit, APlayerCharacter*, DamagedCharacer, ABaseCharacter*, DamagedBy,
+DECLARE_DYNAMIC_DELEGATE_ThreeParams(FOnGotHit, ABaseCharacter*, DamagedCharacer, ABaseCharacter*, DamagedBy,
                                      const float, Damage);
 
 //피격시 호출되는 이벤트, 리턴이 필요할때 사용하세요.
@@ -59,7 +59,7 @@ DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnGotHitWithReturn, const fl
                                             DamagedBy, ABaseCharacter*, DamagedCharacer);
 
 //회피에 성공하면 실행될 이벤트
-DECLARE_DYNAMIC_DELEGATE_OneParam(FOnSuccessDodge, APlayerCharacter*, Player);
+DECLARE_DYNAMIC_DELEGATE_OneParam(FOnSuccessDodge, ABaseCharacter*, Player);
 
 //회피에 성공하면 다음 피해량이 증가
 DECLARE_DYNAMIC_DELEGATE_RetVal_TwoParams(float, FOnIncreaseDamWhenSuccDodge, APlayerCharacter*, Player, const float,
@@ -77,7 +77,7 @@ DECLARE_DYNAMIC_DELEGATE_RetVal_TwoParams(float, FOnChangeHealAmount, float, Ori
 ;
 
 //플레이어가 몬스터를 잡았을 떄 호출됩니다.
-DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnKillMonster, APlayerCharacter*, Player, ABaseMonster*, KilledMonster);
+DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnKillMonster, ABaseCharacter*, Player, ABaseMonster*, KilledMonster);
 
 //회피 최소 SP요구량 설정 이벤트.
 DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnDodgeMinimumSP, const float, Original);
@@ -137,6 +137,10 @@ public:
 	                                              EAttackType AttackType, const float& ResultDamage);
 
 
+	//방어 특성으로 감소할 수치를 계산해 리턴합니다.
+	UFUNCTION(BlueprintCallable)
+	float CommonDecreaseDamageTraits(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy, float Damage);
+	
 	/**
 	 * 방어력 특성으로 감소할 수치를 계산해 리턴합니다.
 	 * @param DamagedCharacter 플레이어
@@ -196,13 +200,13 @@ public:
 	float CalculateModifiedDefenceByMonsterTypeWithTraits(float Defence, ABaseCharacter* DamagedBy);
 
 	UFUNCTION(BlueprintCallable)
-	void BroadcastOnSuccessDodge(APlayerCharacter* Player);
+	void BroadcastOnSuccessDodge(ABaseCharacter* Character);
 
 	UFUNCTION(BlueprintCallable)
 	void BroadcastOnSuccessHit(ABaseCharacter* DamagedBy, ABaseCharacter* DamagedCharacter);
 
 	UFUNCTION(BlueprintCallable)
-	void BroadcastOnGotHit(APlayerCharacter* DamagedPlayer, ABaseCharacter* DamagedBy, float OriginalDamage);
+	void BroadcastOnGotHit(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy, float OriginalDamage);
 
 	UFUNCTION(BlueprintCallable)
 	float BroadcastChangeHealAmount(ABaseCharacter* HealedCharacter, float RecoverAmount);
@@ -284,6 +288,9 @@ private:
 	UPROPERTY()
 	TMap<class UAbilityTalent*, FOnGotHit> OnGotHit;
 
+	//받는 피해량이 감소하는 이벤트
+	UPROPERTY()
+	TMap<class UAbilityTalent*, FOnDecreaseGotHitDamage> OnDecreaseGotHitDamage;
 	//받는 물리 피해량이 감소하는 이벤트.
 	UPROPERTY()
 	TMap<class UAbilityTalent*, FOnDecreaseGotHitDamage> OnDecreasePhysicalGotHitDamage;
@@ -318,4 +325,5 @@ private:
 	//회피 최소 SP요구량 설정
 	UPROPERTY()
 	FOnDodgeMinimumSP OnDodgeMinimumSP;
+	
 };

@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "00_Character/04_NPC/Bonfire.h"
+#include "00_Character/04_NPC/Chest.h"
 #include "03_Widget/01_Menu/00_Inventory/ItemListWidget.h"
 #include "92_Tools/TutorialActor.h"
 #include "Engine/GameInstance.h"
@@ -69,6 +70,7 @@ protected:
 public:
 
 	void SetPlayer(APlayerCharacter* PlayerCharacter){CurrentPlayer = PlayerCharacter;}
+	
 
 
 	UPROPERTY()
@@ -82,9 +84,13 @@ public:
 	//이 값이 참인동안에는 저장이 되지 않습니다. 로드중에 참이 됩니다.
 	UPROPERTY(Transient)
 	bool bBlockSave = false;
-	UPROPERTY()
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UUserWidget> LoadingWidgetClass;
 
+	//지금 세이브 파일을 로드중인 상태인지 확인합니다.
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	bool IsNowLoading(){return bBlockSave;}
+	
 	virtual void Init() override;
 	//로딩스크린 생성
 	void PreLoadMapEvent(const FString& LevelName);
@@ -153,9 +159,12 @@ public:
 	void LoadQuickSlotState();
 	void CreateSoulTomb(class APlayerCharacter* Player);
 
+	UPROPERTY()
+	FTimerHandle LoadFinishTimerHandle;
 	UFUNCTION()
-	void MarkLoadFinish();
-
+	void TryLoadFinish();
+	UFUNCTION()
+	void LoadFinish();
 
 	//퀵슬롯에 선택된 인덱스 번호를 저장하기 위한 이벤트입니다.
 	UFUNCTION()
@@ -252,6 +261,13 @@ public:
 	//하늘 상태를 저장합니다.
 	void SaveSky(APlayerCharacter* Player);
 	void SaveDataLayer(APlayerCharacter* Player);
+	
+	/**
+	 * 상자를 열거나 상자 아이템을 획득하면 호출됩니다.
+	 * @param Chest 열거나 아이템을 획득한 상자
+	 * @param bEaredChestItem 상자 내부 아이템을 획득하면 참을 주세요.
+	 */
+	void SaveChest(AChest* Chest, bool bEaredChestItem);
 
 	friend class USaveGameHelperLibrary;
 
@@ -264,4 +280,8 @@ protected:
 	bool IsAlreadyReadTutorial(const ATutorialActor* TutorialActor);
 	//해당 태그를 가진 우두머리가 처치된적이 있는지 확인합니다.
 	bool IsBossKilled(const FGameplayTag& BossMonsterTag);
+	//이미 열린 상자인지 확인합니다. 헬퍼 라이브러리를 통해서 호출하세요.
+	bool IsOpenedChest(const class AChest* Chest);
+	//이미 이 상자의 아이템을 획득했는지 확인합니다.
+	bool IsAlreadyGetChestItem(class AChest* Chest);
 };

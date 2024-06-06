@@ -3,10 +3,13 @@
 
 #include "02_Ability/00_AttributeProcessor/AttributeProcessor.h"
 
+#include "00_Character/BaseCharacter.h"
 #include "00_Character/01_Component/AttributeComponent.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Logging/StructuredLog.h"
+
+
 
 
 void UAttributeProcessor::UpdateCharacterInfoToWidget(const FAttributeEffect& Effect,
@@ -219,7 +222,7 @@ float UAttributeProcessor_Remove::ProcessAttributeEffect(UAttributeComponent* At
                                                          UObject* AdditionalInformation)
 {
 	Super::ProcessAttributeEffect(AttributeComponent, Effect, DeltaTime, AdditionalInformation);
-
+	
 	float setValue = 0;
 	if (AttributeComponent)
 	{

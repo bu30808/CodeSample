@@ -8,6 +8,8 @@
 #include "00_Character/02_Animation/00_NotifyState/AnimNotifyState_AddForce.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
+#include "Components/SplineComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Logging/StructuredLog.h"
 #include "Navigation/PathFollowingComponent.h"
@@ -22,7 +24,8 @@ UBTTask_MoveRandomPoint::UBTTask_MoveRandomPoint()
 
 void UBTTask_MoveRandomPoint::OnMoveCompleteEvent(FAIRequestID RequestID, EPathFollowingResult::Type Result)
 {
-	switch (Result)
+	OnAIMoveComplete.ExecuteIfBound();
+	/*switch (Result)
 	{
 	case EPathFollowingResult::Success:
 		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()), EBTNodeResult::Succeeded);
@@ -34,34 +37,65 @@ void UBTTask_MoveRandomPoint::OnMoveCompleteEvent(FAIRequestID RequestID, EPathF
 	case EPathFollowingResult::Invalid:
 		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()), EBTNodeResult::Failed);
 		break;
-	}
+	}*/
 }
+
+FVector UBTTask_MoveRandomPoint::GetRandomMoveDirection(APawn* Pawn)
+{
+	switch (FMath::RandRange(1, 4))
+	{
+	case 1:
+		return Pawn->GetActorForwardVector();
+	case 2:
+		return Pawn->GetActorForwardVector() * -1;
+	case 3:
+		return Pawn->GetActorRightVector();
+	case 4:
+		return Pawn->GetActorRightVector() * -1;
+	}
+
+	return Pawn->GetActorForwardVector();
+}
+
 
 EBTNodeResult::Type UBTTask_MoveRandomPoint::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	if (auto character = OwnerComp.GetAIOwner()->GetPawn())
 	{
-		AICon = OwnerComp.GetAIOwner();
-		if (UNavigationSystemV1* NavSystem = FNavigationSystem::GetCurrent<UNavigationSystemV1>(AICon->GetWorld()))
+		auto aiCon = OwnerComp.GetAIOwner();
+		UNavigationSystemV1* NavSystem = UNavigationSystemV1::GetCurrent(GetWorld());
+		if (NavSystem)
 		{
+			FVector MoveDirection = GetRandomMoveDirection(character) * Distance;
+
 			FNavLocation result;
-			if (NavSystem->GetRandomReachablePointInRadius(character->GetActorLocation(), Radius, result))
+			if (NavSystem->GetRandomPointInNavigableRadius(character->GetActorLocation() + MoveDirection, 50.f, result))
 			{
 				DrawDebugPoint(character->GetWorld(), result.Location, 100.f, FColor::Blue);
-				OwnerComp.GetAIOwner()->ReceiveMoveCompleted.AddUniqueDynamic(
-					this, &UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
+
+				OnAIMoveComplete.BindLambda([&OwnerComp, this,aiCon]()
+				{
+					aiCon->ReceiveMoveCompleted.RemoveDynamic(this, &UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
+					FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+				});
+
+				UE_LOGFMT(LogAICon, Log, "UBTTask_MoveRandomPoint 생성된 좌표 : {0}", result.Location.ToString());
 				// 이동 명령을 내립니다.
-				OwnerComp.GetAIOwner()->MoveToLocation(result.Location, 50.f);
+				aiCon->MoveToLocation(result.Location);
 				return EBTNodeResult::InProgress;
+			}
+			else
+			{
+				UE_LOGFMT(LogAICon, Error, "UBTTask_MoveRandomPoint 좌표를 가져올 수 없습니다.");
 			}
 		}
 		else
 		{
-			UE_LOGFMT(LogAICon, Error, "{0} 네비게이션을 가져올 수 없습니다.", GetNameSafe(AICon->GetPawn()));
+			UE_LOGFMT(LogAICon, Error, "UBTTask_MoveRandomPoint 네비 시스템을 가져올 수 없습니다.");
 		}
 	}
 
-	UE_LOGFMT(LogAICon, Error, "{0} 랜덤 좌표 생성에 실패했습니다.", GetNameSafe(AICon->GetPawn()));
+	UE_LOGFMT(LogAICon, Error, "UBTTask_MoveRandomPoint 랜덤 좌표 생성에 실패했습니다.");
 	return EBTNodeResult::Failed;
 }
 
@@ -71,24 +105,13 @@ EBTNodeResult::Type UBTTask_MoveRandomPoint::AbortTask(UBehaviorTreeComponent& O
 	UE_LOGFMT(LogTemp, Warning, "랜덤 포인트 이동 중지당함.");
 	if (AAIController* AIController = OwnerComp.GetAIOwner())
 	{
+		AIController->ReceiveMoveCompleted.RemoveDynamic(this, &UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
 		AIController->StopMovement();
 	}
 
 	return Super::AbortTask(OwnerComp, NodeMemory);
 }
 
-void UBTTask_MoveRandomPoint::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
-                                             EBTNodeResult::Type TaskResult)
-{
-	Super::OnTaskFinished(OwnerComp, NodeMemory, TaskResult);
-
-	AICon->ReceiveMoveCompleted.RemoveDynamic(this, &UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
-}
-
-FString UBTTask_MoveRandomPoint::GetStaticDescription() const
-{
-	return TEXT("반지름 ") + FString::FormatAsNumber(Radius) + TEXT("안의 랜덤한 이동가능한 좌표를 가져옵니다.");
-}
 
 UBTTask_MoveToDirection::UBTTask_MoveToDirection()
 {
@@ -387,23 +410,295 @@ EBTNodeResult::Type UBTTask_MoveToWithBlackboardCheck::ExecuteTask(UBehaviorTree
 }
 
 void UBTTask_MoveToWithBlackboardCheck::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
-	float DeltaSeconds)
+                                                 float DeltaSeconds)
 {
 	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
-	if(auto character = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
+	if (auto character = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
 	{
-		if(OwnerComp.GetBlackboardComponent()->GetValueAsObject(GetSelectedBlackboardKey()) == nullptr)
+		if (OwnerComp.GetBlackboardComponent()->GetValueAsObject(GetSelectedBlackboardKey()) == nullptr)
 		{
-			UE_LOGFMT(LogAICon,Warning,"블랙보드 타겟이 비어있습니다. MoveTo를 종료합니다.");
+			UE_LOGFMT(LogAICon, Warning, "블랙보드 타겟이 비어있습니다. MoveTo를 종료합니다.");
 			OwnerComp.GetAIOwner()->StopMovement();
-			FinishLatentTask(OwnerComp,EBTNodeResult::Failed);
+			FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 		}
 
-		if(character->GetCharacterState() != ECharacterState::NORMAL)
+		if (character->GetCharacterState() != ECharacterState::NORMAL)
 		{
-			UE_LOGFMT(LogAICon,Warning,"ECharacterState::NORMAL이 아닙니다. MoveTo를 종료합니다.");
+			UE_LOGFMT(LogAICon, Warning, "ECharacterState::NORMAL이 아닙니다. MoveTo를 종료합니다.");
 			OwnerComp.GetAIOwner()->StopMovement();
-			FinishLatentTask(OwnerComp,EBTNodeResult::Failed);
+			FinishLatentTask(OwnerComp, EBTNodeResult::Failed);
 		}
 	}
+}
+
+
+
+
+
+
+UBTTask_MoveAlongSpline::UBTTask_MoveAlongSpline()
+{
+	bCreateNodeInstance = true;
+	bNotifyTick = false;
+	NodeName = TEXT("스플라인 경로 이동");
+}
+
+void UBTTask_MoveAlongSpline::SaveOriginalValues(ACharacter* character)
+{
+	OriginalRotationRate = character->GetCharacterMovement()->RotationRate;
+	OriginalSmoothFocusInterpSpeed = Cast<AMonsterAIController>(AICon)->GetSmoothFocusInterpSpeed();
+	bOriginalOrientRotationToMovement = character->GetCharacterMovement()->bOrientRotationToMovement;
+	bOriginalUseControllerDesiredRotation = character->GetCharacterMovement()->bUseControllerDesiredRotation;
+	bOriginalUseControllerRotationYaw = character->bUseControllerRotationYaw;
+	
+}
+
+void UBTTask_MoveAlongSpline::ApplyFocusSetting(ACharacter* character)
+{
+	if(bUseSmoothFocus)
+	{
+		Cast<AMonsterAIController>(AICon)->SetSmoothFocusInterpSpeed(SmoothFocusInterpSpeed);
+		character->GetCharacterMovement()->RotationRate = RotationRate;
+		character->bUseControllerRotationYaw = true;
+		character->GetCharacterMovement()->bOrientRotationToMovement = false;
+		character->GetCharacterMovement()->bUseControllerDesiredRotation = true;
+		
+	}
+			
+}
+
+void UBTTask_MoveAlongSpline::RestoreOriginalValues(ACharacter* character)
+{
+	if(bUseSmoothFocus)
+	{
+		AICon->K2_ClearFocus();
+	}
+	
+	Cast<AMonsterAIController>(AICon)->SetSmoothFocusInterpSpeed(OriginalSmoothFocusInterpSpeed);
+	character->bUseControllerRotationYaw = bOriginalUseControllerRotationYaw;
+	character->GetCharacterMovement()->bOrientRotationToMovement = bOriginalOrientRotationToMovement;
+}
+
+EBTNodeResult::Type UBTTask_MoveAlongSpline::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	AICon = OwnerComp.GetAIOwner();
+	CurMoveSplinePoint = 0;
+	
+
+	if (auto character = Cast<ACharacter>(OwnerComp.GetAIOwner()->GetPawn()))
+	{
+		if (auto comp = character->GetComponentByClass(USplineComponent::StaticClass()))
+		{
+			//기존 설정값을 저장합니다.
+			SaveOriginalValues(character);
+			ApplyFocusSetting(character);
+			
+
+			SplineComp = Cast<USplineComponent>(comp);
+			SplineComp->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld,false));
+			
+			if (SplineComp.IsValid())
+			{
+				if (bReverse)
+				{
+					CurMoveSplinePoint = SplineComp->GetNumberOfSplinePoints() - 1;
+				}
+				AICon->ReceiveMoveCompleted.AddUniqueDynamic(this, &UBTTask_MoveAlongSpline::OnAIMoveCompleted);
+				MoveToNextPoint();
+				return EBTNodeResult::InProgress;
+			}
+		}
+	}
+
+	return EBTNodeResult::Failed;
+}
+
+EBTNodeResult::Type UBTTask_MoveAlongSpline::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	if(AICon.IsValid())
+	{
+		AICon->StopMovement();
+		RestoreOriginalValues(Cast<ACharacter>(AICon->GetPawn()));
+		AICon->ReceiveMoveCompleted.RemoveDynamic(this, &UBTTask_MoveAlongSpline::OnAIMoveCompleted);
+	}
+	return Super::AbortTask(OwnerComp, NodeMemory);
+}
+
+void UBTTask_MoveAlongSpline::MoveFinish()
+{
+	RestoreOriginalValues(Cast<ACharacter>(AICon->GetPawn()));
+	AICon->ReceiveMoveCompleted.RemoveDynamic(this, &UBTTask_MoveAlongSpline::OnAIMoveCompleted);
+	FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()), EBTNodeResult::Succeeded);
+}
+
+void UBTTask_MoveAlongSpline::Move(const FVector& nextPoint)
+{
+	if(bUseSmoothFocus)
+	{
+		AICon->SetFocalPoint(nextPoint);
+	}
+	
+	AICon->MoveToLocation(nextPoint);
+}
+
+void UBTTask_MoveAlongSpline::MoveToNextPoint()
+{
+	if (AICon.IsValid())
+	{
+		int32 totalPoint = SplineComp->GetNumberOfSplinePoints();
+		if (bReverse)
+		{
+			if (CurMoveSplinePoint < 0)
+			{
+				MoveFinish();
+				return;
+			}
+			const FVector& nextPoint = SplineComp->GetLocationAtSplinePoint(
+				CurMoveSplinePoint, ESplineCoordinateSpace::World);
+			CurMoveSplinePoint--;
+			Move(nextPoint);
+		}
+		else
+		{
+			if (CurMoveSplinePoint > totalPoint)
+			{
+				MoveFinish();
+				return;
+			}
+			const FVector& nextPoint = SplineComp->GetLocationAtSplinePoint(
+				CurMoveSplinePoint, ESplineCoordinateSpace::World);
+			CurMoveSplinePoint++;
+			Move(nextPoint);
+		}
+	}
+}
+
+void UBTTask_MoveAlongSpline::OnAIMoveCompleted(FAIRequestID RequestID, EPathFollowingResult::Type Result)
+{
+	MoveToNextPoint();
+}
+
+
+
+
+
+
+
+
+
+UBTTask_MoveWithLeader::UBTTask_MoveWithLeader()
+{
+	bCreateNodeInstance = true;
+	bNotifyTick = true;
+	NodeName = TEXT("리더와 이동");
+	BlackboardKey.SelectedKeyName = TEXT("Leader");
+	bNotifyTaskFinished = true;
+}
+
+void UBTTask_MoveWithLeader::MoveToLeader()
+{
+	if(AICon.IsValid())
+	{
+		if(const auto leader = Cast<AActor>( AICon->GetBlackboardComponent()->GetValueAsObject(GetSelectedBlackboardKey())))
+		{
+			FVector leaderLoc = leader->GetActorLocation();
+			FRotator leaderRot = leader->GetActorRotation();
+			FVector relativePos = AICon->GetBlackboardComponent()->GetValueAsVector("RelativePositionWithLeader");
+
+			//relativePos를 leaderRot각만큼 회전시킵니다.
+			//이 과정으로 리더에 대한 상대 위치를 계속 유지할 수 있습니다.
+			FVector targetLoc = leaderLoc + leaderRot.RotateVector(relativePos);
+			AICon->MoveToLocation(targetLoc);
+		}else
+		{
+			FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Failed);
+		}
+	}
+}
+
+void UBTTask_MoveWithLeader::OverrideMoveSpeed()
+{
+	if(bOverrideToLeaderMoveSpeed)
+	{
+		if(AICon.IsValid())
+		{
+			if(const auto leader =Cast<ACharacter>( AICon->GetBlackboardComponent()->GetValueAsObject(GetSelectedBlackboardKey())))
+			{
+				if (auto character = Cast<ACharacter>(AICon->GetPawn()))
+				{
+					character->GetCharacterMovement()->MaxWalkSpeed = leader->GetCharacterMovement()->MaxWalkSpeed * SpeedMultiplier;
+				}
+			}
+		}
+	}
+}
+
+void UBTTask_MoveWithLeader::SaveOriginalValues()
+{
+	if(AICon.IsValid())
+	{
+		if (auto character = Cast<ACharacter>(AICon->GetPawn()))
+		{
+			OriginalMoveSpeed = character->GetCharacterMovement()->MaxWalkSpeed;
+		}
+	}
+}
+
+void UBTTask_MoveWithLeader::RestoreOriginalValues()
+{
+	if(AICon.IsValid())
+	{
+		if (auto character = Cast<ACharacter>(AICon->GetPawn()))
+		{
+			character->GetCharacterMovement()->MaxWalkSpeed = OriginalMoveSpeed;
+		}
+	}
+}
+
+EBTNodeResult::Type UBTTask_MoveWithLeader::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	AICon = OwnerComp.GetAIOwner();
+	TimeSinceLastUpdate = 0.0f;
+	
+	if(AICon.IsValid())
+	{
+		AICon->ReceiveMoveCompleted.AddUniqueDynamic(this,&UBTTask_MoveWithLeader::OnMoveFinish);
+		SaveOriginalValues();
+		OverrideMoveSpeed();
+		/*MoveToLeader();*/
+		return EBTNodeResult::InProgress;
+	}
+	
+	return EBTNodeResult::Failed;
+}
+
+void UBTTask_MoveWithLeader::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory, float DeltaSeconds)
+{
+	Super::TickTask(OwnerComp, NodeMemory, DeltaSeconds);
+
+	TimeSinceLastUpdate += DeltaSeconds;
+	//UpdateInterval마다 실행하도록 합니다.
+	if (TimeSinceLastUpdate >= UpdateInterval)
+	{
+		TimeSinceLastUpdate = 0.0f;
+		
+		if(AICon.IsValid())
+		{
+			MoveToLeader();
+		}
+		
+	}
+}
+
+void UBTTask_MoveWithLeader::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory,
+                                            EBTNodeResult::Type TaskResult)
+{
+	Super::OnTaskFinished(OwnerComp, NodeMemory, TaskResult);
+	RestoreOriginalValues();
+	OwnerComp.GetAIOwner()->ReceiveMoveCompleted.RemoveDynamic(this,&UBTTask_MoveWithLeader::OnMoveFinish);
+}
+
+void UBTTask_MoveWithLeader::OnMoveFinish(FAIRequestID RequestID, EPathFollowingResult::Type Result)
+{
+	FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Succeeded);
 }

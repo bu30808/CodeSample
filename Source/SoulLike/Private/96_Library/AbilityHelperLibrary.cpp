@@ -219,3 +219,32 @@ void UAbilityHelperLibrary::DeactivateMightyAbility(ABaseCharacter* Character)
 		Character->GetAbilityComponent()->ForceEndAbility(MIGHTY_TAG);
 	}
 }
+
+UAttributeComponent* UAbilityHelperLibrary::GetAttributeComponent(ABaseCharacter* Target)
+{
+	if(Target)
+	{
+		return Target->GetAttributeComponent();
+	}
+
+	return nullptr;
+}
+
+bool UAbilityHelperLibrary::IsInvincible(AActor* CheckTarget)
+{
+	if(CheckTarget->IsA<ABaseCharacter>())
+	{
+		return Cast<ABaseCharacter>(CheckTarget)->GetAbilityComponent()->IsInvincible();
+	}
+
+		return false;
+}
+
+UAbilityComponent* UAbilityHelperLibrary::GetAbilityComponent(AActor* CheckTarget)
+{
+	if(CheckTarget->IsA<ABaseCharacter>())
+	{
+		return Cast<ABaseCharacter>(CheckTarget)->GetAbilityComponent();
+	}
+	return nullptr;
+}

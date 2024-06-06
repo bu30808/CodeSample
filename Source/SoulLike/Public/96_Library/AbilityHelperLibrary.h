@@ -56,4 +56,14 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	static void DeactivateMightyAbility(class ABaseCharacter* Character);
+
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	static class UAttributeComponent* GetAttributeComponent(class ABaseCharacter* Target);
+
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static bool IsInvincible(class AActor* CheckTarget);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static class UAbilityComponent* GetAbilityComponent(class AActor* CheckTarget);
 };

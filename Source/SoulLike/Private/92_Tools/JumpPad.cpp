@@ -69,7 +69,7 @@ void AJumpPad::PostInitializeComponents()
 		BottomBoxComponent->OnComponentEndOverlap.AddUniqueDynamic(this, &AJumpPad::OnBoxComponentEndOverlapEvent);
 	}
 
-	if (BottomBoxComponent)
+	if (TopBoxComponent)
 	{
 		TopBoxComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &AJumpPad::OnBoxComponentBeginOverlapEvent);
 		TopBoxComponent->OnComponentEndOverlap.AddUniqueDynamic(this, &AJumpPad::OnBoxComponentEndOverlapEvent);
@@ -403,9 +403,10 @@ void AJumpPad::OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedCo
 
 		if (OverlappedComponent == TopBoxComponent)
 		{
-			if (UMathHelperLibrary::SameDirection(OverlappedPlayer->GetActorForwardVector(),
-			                                      TopBoxComponent->GetForwardVector()))
+			if (!UMathHelperLibrary::SameDirection(OverlappedPlayer->GetActorForwardVector(),
+			                                       TopBoxComponent->GetForwardVector()))
 			{
+				UKismetSystemLibrary::PrintString(this,TEXT("다른 방향"));
 				if (!bIsActivated)
 				{
 					//이 위치가 활성화 스테틱 매시 근처인지 확인합니다.
@@ -426,6 +427,7 @@ void AJumpPad::OnBoxComponentBeginOverlapEvent(UPrimitiveComponent* OverlappedCo
 			if (!UMathHelperLibrary::SameDirection(OverlappedPlayer->GetActorForwardVector(),
 			                                       BottomBoxComponent->GetForwardVector()))
 			{
+				UKismetSystemLibrary::PrintString(this,TEXT("다른 방향"));
 				if (!bIsActivated)
 				{
 					//이 위치가 활성화 스테틱 매시 근처인지 확인합니다.

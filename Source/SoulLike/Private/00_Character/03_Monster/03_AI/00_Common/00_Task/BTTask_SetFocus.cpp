@@ -27,6 +27,7 @@ EBTNodeResult::Type UBTTask_SetFocus::ExecuteTask(UBehaviorTreeComponent& OwnerC
 		{
 			Cast<AMonsterAIController>(aiCon)->SetSmoothFocusInterpSpeed(SmoothFocusInterpSpeed);
 			pawn->bUseControllerRotationYaw = bUseControllerRotationYaw;
+			pawn->GetCharacterMovement()->bUseControllerDesiredRotation = bUseControllerRotationYaw;
 			pawn->GetCharacterMovement()->bOrientRotationToMovement = !bUseControllerRotationYaw;
 
 			switch (AIFocusType)

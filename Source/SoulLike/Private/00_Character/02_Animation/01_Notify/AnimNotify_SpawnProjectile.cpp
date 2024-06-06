@@ -61,7 +61,7 @@ void UAnimNotify_SpawnProjectile::BranchingPointNotify(FBranchingPointNotifyPayl
 								{
 									if (bUseBlackboard)
 									{
-										p->LaunchProjectileWithOption(ProjectileDirection, ProjectileShootType);
+										p->LaunchProjectileWithOption(ProjectileDirection, ProjectileShootType, TimeLimit);
 									}
 									else
 									{

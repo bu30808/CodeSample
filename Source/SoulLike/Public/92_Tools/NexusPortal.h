@@ -8,7 +8,9 @@
 #include "NexusPortal.generated.h"
 
 DECLARE_DELEGATE_TwoParams(FOnLayerActivated,const UDataLayerInstance* DataLayer, EDataLayerRuntimeState State);
-
+/*
+ *	BIC버전에선 비활성화
+ */
 UCLASS()
 class SOULLIKE_API ANexusPortal : public AActor
 {
@@ -17,18 +19,31 @@ class SOULLIKE_API ANexusPortal : public AActor
 
 protected:
 	UPROPERTY(VisibleAnywhere)
+	class USceneComponent* DefaultSceneRoot;
+	UPROPERTY(VisibleAnywhere)
+	class UStaticMeshComponent* PortalMeshComponent;
+	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* BoxComponent;
+	
 	UPROPERTY(VisibleAnywhere)
 	class UNiagaraComponent* NiagaraComponent;
 
-	//활성화 상태로 돌릴 레이어
 	UPROPERTY(EditAnywhere)
-	TArray<UDataLayerAsset*> LayerToActive;
-	//로드됨 상태로 돌릴 레이어
+	class UMaterialInterface* PortalMaterial;
 	UPROPERTY(EditAnywhere)
-	TArray<UDataLayerAsset*> LayerToLoaded;
-	
-	FOnLayerActivated OnNexusLayerActivated;
+	class UTexture* LocationRenderTargetImage;
+
+
+	UPROPERTY(EditAnywhere,Category="Teleport")
+	class APlayerStart* TeleportLocation;
+	UPROPERTY(EditAnywhere,Category="Teleport")
+	TArray<class UDataLayerAsset*> LayerToActivate;
+	UPROPERTY(EditAnywhere,Category="Teleport")
+	const UDataLayerAsset* NexusLayerAsset;
+
+
+	UPROPERTY()
+	TWeakObjectPtr<class APlayerCharacter> Player;
 
 public:
 	// Sets default values for this actor's properties
@@ -39,16 +54,14 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	virtual void PostInitializeComponents() override;
-
-	UFUNCTION(BlueprintNativeEvent)
-	void OnChangedLayerState(const UDataLayerInstance* DataLayer, EDataLayerRuntimeState State);
-
-	void LayerActivePresetting(AActor* OtherActor);
-	void EndLayerActivate(AActor* OtherActor);
+	
+	UFUNCTION(BlueprintCallable)
+	void SetPortalMaterial();
 	UFUNCTION()
 	void OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* OtherActor);
 	UFUNCTION()
-	void OnActorEndOverlapEvent(AActor* OverlappedActor, AActor* OtherActor);
+	void OnStreamingCompleteEvent();
+	UFUNCTION()
+	void OnAfterStreamingCompleteEvent();
 	
-	bool IsAlreadySet(AActor* OtherActor);
 };

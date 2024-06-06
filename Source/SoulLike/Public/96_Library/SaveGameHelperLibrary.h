@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "00_Character/03_Monster/BaseMonster.h"
 #include "00_Character/04_NPC/Bonfire.h"
+#include "00_Character/04_NPC/Chest.h"
 #include "92_Tools/TutorialActor.h"
 #include "UObject/Object.h"
 #include "SaveGameHelperLibrary.generated.h"
@@ -49,4 +50,13 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	static void SaveAttributes(AActor* Player);
+
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static bool IsAlreadyOpenChest(class AChest* Chest);
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	static bool IsAlreadyGetChestItem(AChest* Chest);
+	UFUNCTION(BlueprintCallable)
+	static void SaveChestOpen(AChest* Chest);
+	UFUNCTION(BlueprintCallable)
+	static void SaveEarnedChestItem(AChest* Chest);
 };

@@ -123,3 +123,66 @@ void USaveGameHelperLibrary::SaveAttributes(AActor* Player)
 		instance->SaveAttribute(Cast<APlayerCharacter>(Player));
 	}
 }
+
+bool USaveGameHelperLibrary::IsAlreadyOpenChest(AChest* Chest)
+{
+
+	if(Chest)
+	{
+		if(IsSavableGameMode(Chest))
+		{
+			if (const auto instance = GetSoulLikeInstance(Chest))
+			{
+				return instance->IsOpenedChest(Chest);
+			}
+		}
+	}
+	
+	return false;
+}
+
+bool USaveGameHelperLibrary::IsAlreadyGetChestItem(AChest* Chest)
+{
+	if(Chest)
+	{
+		if(IsSavableGameMode(Chest))
+		{
+			if (const auto instance = GetSoulLikeInstance(Chest))
+			{
+				return instance->IsAlreadyGetChestItem(Chest);
+			}
+		}
+	}
+	
+	return false;
+}
+
+void USaveGameHelperLibrary::SaveChestOpen(AChest* Chest)
+{
+	if(Chest)
+	{
+		if(IsSavableGameMode(Chest))
+		{
+			if (const auto instance = GetSoulLikeInstance(Chest))
+			{
+				instance->SaveChest(Chest,false);
+			}
+		}
+	}
+	
+}
+
+void USaveGameHelperLibrary::SaveEarnedChestItem(AChest* Chest)
+{
+	if(Chest)
+	{
+		if(IsSavableGameMode(Chest))
+		{
+			if (const auto instance = GetSoulLikeInstance(Chest))
+			{
+				instance->SaveChest(Chest,true);
+			}
+		}
+	}
+	
+}

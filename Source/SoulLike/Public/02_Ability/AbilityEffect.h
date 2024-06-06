@@ -10,6 +10,7 @@
 #include "AbilityEffect.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogEffect, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogTalent, Log, All);
 
 DECLARE_DYNAMIC_DELEGATE(FOnEffectExpired);
 
@@ -444,11 +445,11 @@ protected:
 
 	/**
 	 * 플레이어 캐릭터가 피해를 받는 경우, 특성을 적용합니다.
-	 * @param DamagedPlayer 피해를 받은 플레이어
+	 * @param DamagedCharacter 피해를 받은 플레이어
 	 * @param OriginalDamage 피해량
 	 * @param AdditionalInfo 누가 피해를 줬는지에 대한 정보가 들어있는 오브젝트
 	 */
-	void ApplyGotHitTalent(ABaseCharacter* DamagedPlayer, float OriginalDamage, UObject* AdditionalInfo);
+	void ApplyGotHitTalent(ABaseCharacter* DamagedCharacter, float OriginalDamage, UObject* AdditionalInfo);
 
 
 	/**
@@ -552,15 +553,16 @@ protected:
 	UFUNCTION(BlueprintNativeEvent)
 	void OnTaskTickEvent(float DeltaTime);
 	virtual void OnTaskTickEvent_Implementation(float DeltaTime);
+	void UpdateCueDataFromAdditionalData(UObject* AdditionalData, TArray<FAbilityCueInformation>& CueInfos);
 
 	UFUNCTION(BlueprintCallable)
-	void ApplyCueInstance(class ABaseCharacter* Target);
+	void ApplyCueInstance(class ABaseCharacter* Target, UObject* AdditionalData);
 	UFUNCTION(BlueprintCallable)
-	void ApplyCueInterval(class ABaseCharacter* Target);
+	void ApplyCueInterval(class ABaseCharacter* Target, UObject* AdditionalData);
 	UFUNCTION(BlueprintCallable)
-	void ApplyCueInfinite(ABaseCharacter* Target);
+	void ApplyCueInfinite(ABaseCharacter* Target, UObject* AdditionalData);
 	UFUNCTION(BlueprintCallable)
-	void ApplyEndInstanceCue(ABaseCharacter* Target);
+	void ApplyEndInstanceCue(ABaseCharacter* Target, UObject* AdditionalData);
 
 	void WhenProcessEffectFailed(ABaseCharacter* Target);
 

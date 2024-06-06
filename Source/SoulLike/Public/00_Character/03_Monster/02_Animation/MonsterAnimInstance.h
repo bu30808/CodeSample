@@ -5,7 +5,6 @@
 #include "CoreMinimal.h"
 #include "00_Character/02_Animation/BaseAnimInstance.h"
 #include "00_Character/03_Monster/BaseMonster.h"
-#include "00_Character/03_Monster/03_AI/00_Common/00_Task/BTTask_SetFocus.h"
 #include "MonsterAnimInstance.generated.h"
 
 /**

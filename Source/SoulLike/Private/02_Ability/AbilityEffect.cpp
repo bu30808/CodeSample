@@ -16,6 +16,7 @@
 #include "Logging/StructuredLog.h"
 
 DEFINE_LOG_CATEGORY(LogEffect)
+DEFINE_LOG_CATEGORY(LogTalent)
 
 #if WITH_EDITOR
 void UAbilityEffect::CopyValues(UAbilityEffect* Effect)
@@ -142,10 +143,6 @@ void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor
 	}
 	else
 	{
-		/*UE_LOGFMT(LogTemp, Log, "추가생성 정보 : 태그 : {0}, 타겟 : {1}, 누구로부터? : {2}",
-		          UniqueEffectTag.ToString(), Target->GetActorNameOrLabel(), EffectBy->GetActorNameOrLabel());*/
-
-
 		additionalInfo = CreateAdditionalInfo();
 		additionalInfo->HitBy = EffectBy;
 		additionalInfo->bTriggerHitAnimation = bTriggerHitAnimation;
@@ -164,7 +161,7 @@ void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor
 
 	if (EffectApplyType == EEffectApplyType::DurationWithInterval)
 	{
-		ApplyCueInfinite(Target);
+		ApplyCueInfinite(Target, AdditionalData);
 		ApplyDurationEffect(Target);
 		ApplyIntervalEffect(Target);
 		return;
@@ -172,7 +169,7 @@ void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor
 
 	if (EffectApplyType == EEffectApplyType::DurationWithTick)
 	{
-		ApplyCueInfinite(Target);
+		ApplyCueInfinite(Target, AdditionalData);
 		ApplyDurationEffect(Target);
 		ApplyTickEffect(Target);
 		return;
@@ -180,14 +177,14 @@ void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor
 
 	if (EffectApplyType == EEffectApplyType::InfiniteWithInterval)
 	{
-		ApplyCueInfinite(Target);
+		ApplyCueInfinite(Target, AdditionalData);
 		ApplyIntervalEffect(Target);
 		return;
 	}
 
 	if (EffectApplyType == EEffectApplyType::InfiniteWithTick)
 	{
-		ApplyCueInfinite(Target);
+		ApplyCueInfinite(Target, AdditionalData);
 		ApplyTickEffect(Target);
 		return;
 	}
@@ -202,17 +199,17 @@ void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor
 		switch (EffectApplyType)
 		{
 		case EEffectApplyType::Instant:
-			ApplyCueInstance(Target);
+			ApplyCueInstance(Target,AdditionalData);
 			ApplyInstantEffect(Target, additionalInfo);
 			EndEffect(Target);
 			break;
 		case EEffectApplyType::Duration:
-			ApplyCueInfinite(Target);
+			ApplyCueInfinite(Target,AdditionalData);
 			ApplyInstantEffect(Target, additionalInfo);
 			ApplyDurationEffect(Target);
 			break;
 		case EEffectApplyType::Infinite:
-			ApplyCueInfinite(Target);
+			ApplyCueInfinite(Target,AdditionalData);
 			ApplyInfiniteEffect(Target);
 			break;
 		case EEffectApplyType::Stack:
@@ -258,7 +255,7 @@ void UAbilityEffect::EndEffect_Implementation(ABaseCharacter* Target)
 		}
 		else
 		{
-			ApplyEndInstanceCue(Target);
+			ApplyEndInstanceCue(Target, nullptr);
 
 			if (bRestoreAttributeOnEnd)
 			{
@@ -328,9 +325,11 @@ void UAbilityEffect::RemoveEffectFromAbilityComponent(ABaseCharacter* Target)
 
 void UAbilityEffect::ApplyAbilityDamageTalent(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy)
 {
-	if (DamagedBy->IsA<APlayerCharacter>())
+	if (DamagedBy->IsA<ABaseCharacter>())
 	{
-		if (const auto atComp = Cast<APlayerCharacter>(DamagedBy)->GetAbilityTalentComponent())
+		UE_LOGFMT(LogTalent,Log,"{0} : 공격력 특성 적용",DamagedBy->GetActorNameOrLabel());
+		
+		if (const auto atComp = Cast<ABaseCharacter>(DamagedBy)->GetAbilityTalentComponent())
 		{
 			UE_LOGFMT(LogTemp, Warning, "{0}가 {1}에 대해 피해특성을 적용합니다", DamagedBy->GetActorNameOrLabel(),
 			          DamagedCharacter->GetActorNameOrLabel());
@@ -380,32 +379,35 @@ void UAbilityEffect::ApplyAbilityDamageTalent(ABaseCharacter* DamagedCharacter, 
 
 void UAbilityEffect::ApplyAbilityDecreaseDamageTalent(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy)
 {
-	if (DamagedCharacter->IsA<APlayerCharacter>())
+	
+	if (DamagedCharacter->IsA<ABaseCharacter>())
 	{
+		UE_LOGFMT(LogTalent,Log,"{0} : 방어력 특성 적용, {1}에게 피해를 입음",DamagedCharacter->GetActorNameOrLabel(),DamagedBy->GetActorNameOrLabel());
+		
 		//방어력 특성 적용
-		if (const auto atComp = Cast<APlayerCharacter>(DamagedCharacter)->GetAbilityTalentComponent())
+		if (const auto atComp = Cast<ABaseCharacter>(DamagedCharacter)->GetAbilityTalentComponent())
 		{
 			for (auto& effect : UpdatedAttributeEffectsAffectedByOwnersAttribute)
 			{
 				UE_LOGFMT(LogTemp, Warning, "------------------------");
-				UE_LOGFMT(LogTemp, Warning, "기본 피해량 : {0}", effect.ApplyValue);
+				UE_LOGFMT(LogTemp, Warning, "{0} : 기본 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), effect.ApplyValue);
 				{
 					const auto& sum = atComp->CalculateModifiedDecreaseDamageWithTraits(
 						DamagedCharacter, DamagedBy, AttackType, effect.ApplyValue);
-					UE_LOGFMT(LogTemp, Warning, "방어 특성으로 감소할 예정인 피해량 : {0}", sum);
+					UE_LOGFMT(LogTemp, Warning, "{0} : 방어 특성으로 감소할 예정인 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), sum);
 					effect.ApplyValue -= sum;
 
 					const auto& increaseDamage = atComp->CalculateModifiedIncreaseGotHitDamageWithTraits(
 						DamagedCharacter, DamagedBy, AttackType, effect.ApplyValue);
-					UE_LOGFMT(LogTemp, Warning, "입는 피해량 증가 특성으로 증가할 피해량 : {0}", increaseDamage);
+					UE_LOGFMT(LogTemp, Warning, "{0} : 입는 피해량 증가 특성으로 증가할 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), increaseDamage);
 					effect.ApplyValue += increaseDamage;
 				}
 
 
-				UE_LOGFMT(LogTemp, Warning, "모든 특성이 적용된 피해량 : {0}", effect.ApplyValue);
+				UE_LOGFMT(LogTemp, Warning, "{0} : 모든 특성이 적용된 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), effect.ApplyValue);
 			}
 
-			if (auto attComp = Cast<APlayerCharacter>(DamagedCharacter)->GetAttributeComponent())
+			if (auto attComp = Cast<ABaseCharacter>(DamagedCharacter)->GetAttributeComponent())
 			{
 				//MP로 받을 피해량이 저장될 구조체
 				FAttributeEffect mpEffect;
@@ -449,20 +451,21 @@ void UAbilityEffect::ApplyAbilityDecreaseDamageTalent(ABaseCharacter* DamagedCha
 	}
 }
 
-void UAbilityEffect::ApplyGotHitTalent(ABaseCharacter* DamagedPlayer, float OriginalDamage, UObject* AdditionalInfo)
+void UAbilityEffect::ApplyGotHitTalent(ABaseCharacter* DamagedCharacter, float OriginalDamage, UObject* AdditionalInfo)
 {
 	if (bIsHitDamageEffect)
 	{
-		if (DamagedPlayer->IsA<APlayerCharacter>() && AdditionalInfo != nullptr)
+		UE_LOGFMT(LogTalent,Log,"{0} : 피해 입었을 때, 특성 적용",DamagedCharacter->GetActorNameOrLabel());
+		if (DamagedCharacter->IsA<ABaseCharacter>() && AdditionalInfo != nullptr)
 		{
 			if (const UAbilityEffectAdditionalInformation* addInfo = Cast<UAbilityEffectAdditionalInformation>(
 				AdditionalInfo))
 			{
 				const auto damagedBy = Cast<ABaseCharacter>(addInfo->HitBy.Get());
 				//피격 특성 호출
-				if (const auto atComp = Cast<APlayerCharacter>(DamagedPlayer)->GetAbilityTalentComponent())
+				if (const auto atComp = Cast<ABaseCharacter>(DamagedCharacter)->GetAbilityTalentComponent())
 				{
-					atComp->BroadcastOnGotHit(Cast<APlayerCharacter>(DamagedPlayer), damagedBy, OriginalDamage);
+					atComp->BroadcastOnGotHit(Cast<ABaseCharacter>(DamagedCharacter), damagedBy, OriginalDamage);
 				}
 			}
 		}
@@ -476,9 +479,10 @@ float UAbilityEffect::ApplyChangeHealAmountTalent(ABaseCharacter* Target, FAttri
 		return AttributeEffect.ApplyValue;
 	}
 
-	if (Target->IsA<APlayerCharacter>())
+	if (Target->IsA<ABaseCharacter>())
 	{
-		if (auto atComp = Cast<APlayerCharacter>(Target)->GetAbilityTalentComponent())
+		UE_LOGFMT(LogTalent,Log,"{0} : 힐량 특성 적용",Target->GetActorNameOrLabel());
+		if (auto atComp = Cast<ABaseCharacter>(Target)->GetAbilityTalentComponent())
 		{
 			if (AttributeEffect.Attribute == EAttributeType::HP)
 			{
@@ -552,13 +556,13 @@ bool UAbilityEffect::ApplyInstantEffect_Implementation(ABaseCharacter* Target, U
 				if (Target->GetAbilityComponent()->IsInvincible())
 				{
 					UE_LOGFMT(LogEffect, Error, "{0}는 무적 상태입니다.", Target->GetActorNameOrLabel());
-					if (auto player = Cast<APlayerCharacter>(Target))
+					if (auto character = Cast<ABaseCharacter>(Target))
 					{
 						//무적이고, 회피태그가 있을 경우에
-						const auto& dodgeTag = UAbilityHelperLibrary::GetDodgeTag(player->GetInventoryComponent());
+						const auto& dodgeTag = UAbilityHelperLibrary::GetDodgeTag(character->GetInventoryComponent());
 						if (Target->GetAbilityComponent()->HasAllActivateAbilityTags(FGameplayTagContainer(dodgeTag)))
 						{
-							player->GetAbilityTalentComponent()->BroadcastOnSuccessDodge(player);
+							character->GetAbilityTalentComponent()->BroadcastOnSuccessDodge(character);
 						}
 					}
 
@@ -568,28 +572,24 @@ bool UAbilityEffect::ApplyInstantEffect_Implementation(ABaseCharacter* Target, U
 				if (UAbilityEffectAdditionalInformation* addInfo = Cast<UAbilityEffectAdditionalInformation>(
 					AdditionalInfo))
 				{
-					if (Target->IsA<APlayerCharacter>())
+					//피격 대상의 피해감소 특성을 적용합니다.
+					ApplyAbilityDecreaseDamageTalent(Target, Cast<ABaseCharacter>(addInfo->HitBy.Get()));
+					
+					
+					if (addInfo->HitBy != nullptr)
 					{
-						//피격 대상의 피해감소 특성을 적용합니다.
-						ApplyAbilityDecreaseDamageTalent(Target, Cast<ABaseCharacter>(addInfo->HitBy.Get()));
+						UE_LOGFMT(LogEffect, Warning, "누구에 의해 피해를 입었나요? : {0}",
+								  addInfo->HitBy->GetActorNameOrLabel());
+						//피해를 받는 경우, 공격 특성을 적용합니다.
+						ApplyAbilityDamageTalent(Target, Cast<ABaseCharacter>(addInfo->HitBy.Get()));
 					}
-
-					if (Target->IsA<ABaseMonster>())
+					else
 					{
-						if (addInfo->HitBy != nullptr)
-						{
-							UE_LOGFMT(LogEffect, Warning, "누구에 의해 피해를 입었나요? : {0}",
-							          addInfo->HitBy->GetActorNameOrLabel());
-							//피해를 받는 경우, 공격 특성을 적용합니다.
-							ApplyAbilityDamageTalent(Target, Cast<ABaseCharacter>(addInfo->HitBy.Get()));
-						}
-						else
-						{
-							UE_LOGFMT(LogTemp, Error, "태그 : {0}, 타겟 : {1} 누구에게 피격당했는지 정보가 없습니다.",
-							          UniqueEffectTag.ToString(), Target->GetActorNameOrLabel());
-						}
+						UE_LOGFMT(LogTemp, Error, "태그 : {0}, 타겟 : {1} 누구에게 피격당했는지 정보가 없습니다.",
+								  UniqueEffectTag.ToString(), Target->GetActorNameOrLabel());
 					}
 				}
+				
 			}
 
 			for (auto attributeEffect : AttributeEffects)
@@ -604,7 +604,8 @@ bool UAbilityEffect::ApplyInstantEffect_Implementation(ABaseCharacter* Target, U
 
 						ApplyGotHitTalent(Target, attributeEffect.ApplyValue, AdditionalInfo);
 					}
-
+					
+					
 					const auto applyValue = processor->ProcessAttributeEffect(
 						atComp, attributeEffect, DeltaTime, AdditionalInfo);
 
@@ -630,6 +631,7 @@ bool UAbilityEffect::ApplyInstantEffect_Implementation(ABaseCharacter* Target, U
 
 						ApplyGotHitTalent(Target, attributeEffect.ApplyValue, AdditionalInfo);
 					}
+				
 					const auto applyValue = processor->ProcessAttributeEffect(
 						atComp, attributeEffect, DeltaTime, AdditionalInfo);
 
@@ -699,8 +701,8 @@ void UAbilityEffect::ApplyIntervalEffect(ABaseCharacter* Target)
 	});
 	timerManager.SetTimer(IntervalTimerHandle, intervalTimerDel, IntervalTime, true, 0);
 
-	const FTimerDelegate intervalCueTimerDel = FTimerDelegate::CreateUObject(
-		this, &UAbilityEffect::ApplyCueInterval, Target);
+	FTimerDelegate intervalCueTimerDel;
+	intervalCueTimerDel.BindUFunction(this, FName("ApplyCueInterval"), Target, nullptr);
 	timerManager.SetTimer(IntervalCueTimerHandle, intervalCueTimerDel, IntervalTime, true, 0);
 }
 
@@ -795,11 +797,11 @@ float UAbilityEffect::ApplyDefence(ABaseCharacter* DamagedCharacter, UObject* Ad
 	}
 
 
-	if (DamagedCharacter->IsA<APlayerCharacter>() && AdditionalInfo != nullptr)
+	if (DamagedCharacter->IsA<ABaseCharacter>() && AdditionalInfo != nullptr)
 	{
 		if (auto addInfo = Cast<UAbilityEffectAdditionalInformation>(AdditionalInfo))
 		{
-			if (auto atComp = Cast<APlayerCharacter>(DamagedCharacter)->GetAbilityTalentComponent())
+			if (auto atComp = Cast<ABaseCharacter>(DamagedCharacter)->GetAbilityTalentComponent())
 			{
 				float def = 0;
 				switch (AttackType)
@@ -1022,25 +1024,39 @@ void UAbilityEffect::OnTaskTickEvent_Implementation(float DeltaTime)
 	}
 }
 
-void UAbilityEffect::ApplyCueInstance(ABaseCharacter* Target)
+void UAbilityEffect::UpdateCueDataFromAdditionalData(UObject* AdditionalData, TArray<FAbilityCueInformation>& CueInfos)
+{
+	if(auto cueInfo = Cast<UAbilityCueAdditionalInformation>(AdditionalData))
+	{
+		for(auto &iter : CueInfos)
+		{
+			iter.ImpactNormal = cueInfo->ImpactNormal;
+			iter.SpawnLocation = cueInfo->HitLocation;
+		}
+	}
+}
+
+void UAbilityEffect::ApplyCueInstance(ABaseCharacter* Target, UObject* AdditionalData)
 {
 	ensure(Target);
 	if (auto abComp = Target->GetAbilityComponent())
 	{
+		UpdateCueDataFromAdditionalData(AdditionalData, InstanceAbilityCues);
 		AppliedCues = abComp->ApplyCues(InstanceAbilityCues);
 	}
 }
 
-void UAbilityEffect::ApplyCueInterval(ABaseCharacter* Target)
+void UAbilityEffect::ApplyCueInterval(ABaseCharacter* Target, UObject* AdditionalData)
 {
 	ensure(Target);
 	if (auto abComp = Target->GetAbilityComponent())
 	{
+		UpdateCueDataFromAdditionalData(AdditionalData, IntervalAbilityCues);
 		abComp->ApplyCues(IntervalAbilityCues);
 	}
 }
 
-void UAbilityEffect::ApplyCueInfinite(ABaseCharacter* Target)
+void UAbilityEffect::ApplyCueInfinite(ABaseCharacter* Target, UObject* AdditionalData)
 {
 	ensure(Target);
 	if (auto abComp = Target->GetAbilityComponent())
@@ -1049,16 +1065,17 @@ void UAbilityEffect::ApplyCueInfinite(ABaseCharacter* Target)
 		{
 			iter.bIsNotInstanceCue = true;
 		}
-
+		UpdateCueDataFromAdditionalData(AdditionalData, InfiniteAbilityCues);
 		abComp->ApplyCues(InfiniteAbilityCues);
 	}
 }
 
-void UAbilityEffect::ApplyEndInstanceCue(ABaseCharacter* Target)
+void UAbilityEffect::ApplyEndInstanceCue(ABaseCharacter* Target, UObject* AdditionalData)
 {
 	ensure(Target);
 	if (auto abComp = Target->GetAbilityComponent())
 	{
+		UpdateCueDataFromAdditionalData(AdditionalData, InstanceEndAbilityCues);
 		abComp->ApplyCues(InstanceEndAbilityCues);
 	}
 }

@@ -12,6 +12,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogAICon, Log, All);
 
 //AI 테스크를 끝내기 위한 이벤트입니다.
 DECLARE_DELEGATE(FOnFinishTask);
+//AI의 커스텀 MoveTo가 끝나면 사용됩니다.
+DECLARE_DELEGATE(FOnAIMoveComplete);
 
 /**
  * 몬스터가 사용할 AI컨트롤러입니다.
@@ -43,6 +45,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void StartBehavior();
+	UFUNCTION(BlueprintCallable)
 	void ReStartBehavior();
 
 	//팀 비교하는 함수
@@ -71,6 +74,7 @@ protected:
 	float SmoothFocusInterpSpeed = 30.0f;
 
 public:
+	const float& GetSmoothFocusInterpSpeed()const{return SmoothFocusInterpSpeed;}
 
 	UFUNCTION(BlueprintCallable)
 	void SetSmoothFocusInterpSpeed(float NewSpeed) { SmoothFocusInterpSpeed = NewSpeed; }

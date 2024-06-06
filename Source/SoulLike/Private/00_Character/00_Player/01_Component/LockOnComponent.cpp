@@ -421,6 +421,13 @@ void ULockOnComponent::AddTraceHitActors(const TArray<FHitResult>& Hits)
 
 void ULockOnComponent::LookAtTarget(float DeltaTime)
 {
+
+	if(!Owner.IsValid())
+	{
+		return;
+	}
+
+	
 	if (HitActors.Num() > 0)
 	{
 		if (LookTarget.IsValid() == false)
@@ -482,9 +489,11 @@ void ULockOnComponent::LookAtTarget(float DeltaTime)
 
 				FRotator characterRot = Owner->GetActorRotation();
 				FRotator characterInterpRot = FMath::RInterpTo(characterRot, characterLookAtRot, DeltaTime,
-				                                               CharaterRotationLerpSpeed);
+															   CharaterRotationLerpSpeed);
 				Owner->SetActorRotation(FRotator(0, characterInterpRot.Yaw, 0));
-				Owner->GetAnimationHelperComponent()->SpineRotation = (LookTarget->GetActorLocation() - Owner->GetActorLocation()).Rotation();
+				if(auto helperComp = Owner->GetAnimationHelperComponent()){
+					helperComp->SpineRotation = (LookTarget->GetActorLocation() - Owner->GetActorLocation()).Rotation();
+				}
 			}
 
 			FRotator cameraLookAtRot = UKismetMathLibrary::FindLookAtRotation(Camera->GetComponentLocation(),

@@ -6,6 +6,7 @@
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/01_Component/AttributeComponent.h"
 #include "00_Character/01_Component/InventoryComponent.h"
+#include "00_Character/04_NPC/Chest.h"
 #include "04_Item/ItemActor.h"
 #include "95_OrbCreator/OrbMatrix.h"
 #include "Engine/DataTable.h"
@@ -166,26 +167,6 @@ struct FFieldItem
 	void Add(const FString& LayerAssetFullPath, const FString& SafeName);
 };
 
-USTRUCT(BlueprintType)
-struct FLastSavePoint
-{
-	GENERATED_BODY()
-
-public:
-	//이 포인트가 있던 레벨 이름
-	UPROPERTY(BlueprintReadOnly)
-	FString LevelName;
-	//마지막 위치정보
-	UPROPERTY(BlueprintReadOnly)
-	FTransform SavedTransform;
-	UPROPERTY(BlueprintReadOnly)
-	FString SavedBonfireName;
-	UPROPERTY(BlueprintReadOnly)
-	float SkyTime;
-	UPROPERTY(BlueprintReadOnly)
-	TSet<FName> ActivateLayersPath;
-};
-
 
 USTRUCT()
 struct FBonfireInformation : public FTableRowBase
@@ -206,16 +187,48 @@ public:
 	UPROPERTY(EditAnywhere)
 	float SkyTime = 0;
 	//특별히 활성화 해야 하는 레이어
+	//key - 레이어 , value - 재귀 여부
 	UPROPERTY(EditAnywhere)
-	TArray<TSoftObjectPtr<UDataLayerAsset>> NeedToActivateLayer;
+	TMap<TSoftObjectPtr<UDataLayerAsset>,bool> NeedToActivateLayer;
 	//특별히 로드만 해도 되는 레이어(화면에 보이지 않음)
 	UPROPERTY(EditAnywhere)
-	TArray<TSoftObjectPtr<UDataLayerAsset>> NeedToLoadLayer;
-	//특별히 언로드해야 할 레이어
+	TMap<TSoftObjectPtr<UDataLayerAsset>,bool> NeedToLoadLayer;
+	//이 값이 참이어야 레이어 언로드 기능을 사용합니다.
 	UPROPERTY(EditAnywhere)
-	TArray<TSoftObjectPtr<UDataLayerAsset>> NeedToUnloadLayer;
+	bool bUseLayerUnload = false;
+	//이 값이 참이면 언로드할 레이어를 직접 선택합니다. 거짓이면 "활성화, 로드됨" 상태 이외의 모든 레이어를 언로드합니다.
+	UPROPERTY(EditAnywhere,meta=(EditCondition = "bUseLayerUnload"))
+	bool bUnloadLayerManually = false;
+	UPROPERTY(EditAnywhere,meta=(EditCondition = "bUnloadLayerManually"))
+	bool bUnloadRecursive = false;
+	//특별히 언로드해야 할 레이어
+	UPROPERTY(EditAnywhere,meta=(EditCondition = "bUseLayerUnload && bUnloadLayerManually"))
+	TMap<TSoftObjectPtr<UDataLayerAsset>,bool> NeedToUnloadLayer;
 	
 };
+
+
+USTRUCT(BlueprintType)
+struct FLastSavePoint
+{
+	GENERATED_BODY()
+
+public:
+	//이 포인트가 있던 레벨 이름
+	UPROPERTY(BlueprintReadOnly)
+	FString LevelName;
+	//마지막 위치정보
+	UPROPERTY(BlueprintReadOnly)
+	FVector SavedLocation;
+	UPROPERTY(BlueprintReadOnly)
+	FString SavedBonfireSafeName;
+	UPROPERTY(BlueprintReadOnly)
+	float SkyTime;
+	
+	//화톳불 이동 후, 이동한 화톳불에 대한 정보
+	FLastSavePoint& operator=(const FBonfireInformation& TeleportedBonfire);
+};
+
 
 
 
@@ -268,10 +281,9 @@ public:
 	                    const FSoulTombCreateContext& DeadState);
 	void RestoreBonfire(APlayerCharacter* Player, const TArray<FString>& SavedBonfire);
 	void RestoreDataLayer(APlayerCharacter* Player, const TMap<FName, EDataLayerRuntimeState>& LayerStateMap, UDataTable* LayerTable);
-	void RestoreDataLayer(APlayerCharacter* Player, const TSet<FName>& ActivateLayersPath, UDataTable* LayerTable);
 	void RestoreDataLayer(APlayerCharacter* Player, const FName& LayerToLoadRowName, UDataTable* LayerTable);
 	/*void RestoreDataLayer(APlayerCharacter* Player, const TArray<TSoftObjectPtr<UDataLayerAsset>>& Layers, UDataTable* LayerTable);*/
-	void RestoreDataLayer(TObjectPtr<APlayerCharacter> Player, const TArray<TSoftObjectPtr<UDataLayerAsset>>& NeedToUnloadLayer, const TArray<TSoftObjectPtr<UDataLayerAsset>>& NeedToLoadLayer, const TArray<TSoftObjectPtr<UDataLayerAsset>>& NeedToActivateLayer, UDataTable* LayerTable);
+	void RestoreDataLayer(TObjectPtr<APlayerCharacter> Player, const FBonfireInformation& BonfireInformation, UDataTable* LayerTable);
 	void RestoreSky(APlayerCharacter* Player, float CurrentSkyTime);
 };
 
@@ -368,18 +380,27 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TMap<FString, FSavedActorInfo> ActivateBonfire;
 
+	//이미 열린 상자를 저장하는 맵
+	//key - level Name
+	//value - 해당 레벨에 저장된 상자 목록
+	UPROPERTY(BlueprintReadOnly)
+	TMap<FString,FSavedActorInfo> OpenedChests;
+	
+	//이미 열린 상자에서 획득된 아이템 
+	//key - level Name
+	//value - 해당 레벨에 저장된 상자 목록
+	UPROPERTY(BlueprintReadOnly)
+	TMap<FString,FSavedActorInfo> EarnedChestItems;
+	
 	//다음 로드시 이동해야할 화톳불 정보
 	UPROPERTY(VisibleAnywhere)
 	FBonfireInformation TeleportBonfireInfo;
-
-	/*//지금 활성화된 월드 레이어 정보입니다.
-	UPROPERTY(BlueprintReadOnly)
-	TSet<FName> ActivateLayersPath;*/
+	
 	//현 레이어 상태 정보
 	//key - layer path : ex) /Game/Datalayer/MyLayer.MyLayer
 	//Value - 레이어 상태
 	UPROPERTY(BlueprintReadOnly)
-	TMap<FName,EDataLayerRuntimeState> LayerState;
+	TMap<FName,EDataLayerRuntimeState> LastSavedLayerState;
 	//현재 하늘의 시간값
 	UPROPERTY(BlueprintReadOnly)
 	float CurrentSkyTime = 13;
@@ -412,8 +433,8 @@ public:
 	//저장된 사망 몬스터 목록을 날립니다.
 	void ClearDeadMonster();*/
 	//마지막 건드린 세이브 포인트 지점을 저장합니다.
-	void SaveLastSavePoint(const FString& LevelName, const FTransform& LastTransform,
-	                      class UBonfireComponent* BonfireComponent);
+	void SaveLastSavePoint(const FString& LevelName, const FVector& LastLocation,
+	                       class UBonfireComponent* BonfireComponent);
 
 
 	//레벨에 배치된 아이템 중, 플레이어가 획득한 아이템임을 저장하기 위해 사용됩니다.
@@ -459,7 +480,9 @@ public:
 
 	void SaveSelectedConsumeQuickSlotIndex(int32 SelectedIndex);
 	void SaveSelectedAbilityQuickSlotIndex(int32 SelectedIndex);
-	
+
+	//상자의 열림 상태 및 내부 아이템 획득 상황을 저장합니다.
+	void SaveChest(class AChest* Chest, bool bEaredChestItem);
 
 
 	UPROPERTY()

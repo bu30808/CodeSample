@@ -469,3 +469,13 @@ FLinearColor UItemHelperLibrary::GetFragmentColorByType(const FInventoryItem& Fr
 	}
 	return FLinearColor::White;
 }
+
+bool UItemHelperLibrary::HasItem(AActor* Character, FGameplayTag ItemTagToCheck)
+{
+	if(auto player = Cast<ABaseCharacter>(Character))
+	{
+		return player->GetInventoryComponent()->K2_HasItem(ItemTagToCheck);
+	}
+	
+	return false;
+}

@@ -6,9 +6,13 @@
 #include "GameplayTagContainer.h"
 #include "02_Ability/AbilityCue.h"
 #include "02_Ability/AbilityEffect_Linetrace.h"
+#include "97_Interface/LinetraceAbilityEffectInterface.h"
 #include "Components/TimelineComponent.h"
 #include "GameFramework/Character.h"
 #include "BaseCharacter.generated.h"
+
+#define ECC_Player ECC_GameTraceChannel5
+#define ECC_Monster ECC_GameTraceChannel1
 
 enum class EStatusEffect : uint8;
 DECLARE_LOG_CATEGORY_EXTERN(LogCharacter, Log, All);
@@ -100,14 +104,14 @@ enum class ECharacterState : uint8
 	DEAD,
 	//스턴
 	STUN,
+	//뒤잡기 당하는 중
+	EXCUTE,
 	MAX,
 };
 
 /*
  * 모든 캐릭터의 기본이 되는 클래스입니다.
  */
-
-struct FAttributeEffect;
 
 //캐릭터 사망 처리
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDead, class AActor*, Who, class AActor*, DeadBy);
@@ -116,10 +120,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDead, class AActor*, Who, class 
 //델리게이트 선언시 맵 타입을 전달하면 생기는 오류를 회피하는 방법입니다.
 using FIgnoreMoveInputMap = TMap<FIgnoreInputHandler, uint8>;
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnTriggerIgnoreMoveInput, const FIgnoreMoveInputMap&);
-
+/*DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDamagedEvent, const FAttributeEffect& ,Effect, class UAbilityEffectAdditionalInformation* ,AdditionalInformation);*/
 
 UCLASS()
-class SOULLIKE_API ABaseCharacter : public ACharacter
+class SOULLIKE_API ABaseCharacter : public ACharacter, public ILinetraceAbilityEffectInterface
 {
 	GENERATED_BODY()
 
@@ -159,6 +163,9 @@ protected:
 	class UAnimationHelperComponent* AnimationHelperComponent;
 	UPROPERTY(VisibleAnywhere, Category = "Timeline")
 	class UTimelineComponent* DeadDissolveTimeLineComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UAbilityTalentComponent* AbilityTalentComponent;
+
 
 	/*UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UNavigationInvokerComponent* NavigationInvokerComponent;*/
@@ -170,6 +177,7 @@ public:
 	FORCEINLINE class UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 	FORCEINLINE class UAnimationHelperComponent* GetAnimationHelperComponent() const{ return AnimationHelperComponent; }
 	FORCEINLINE class UTimelineComponent* GetDeadDissolveTimeLineComponent() const{ return DeadDissolveTimeLineComponent; }
+	FORCEINLINE class UAbilityTalentComponent* GetAbilityTalentComponent() const { return AbilityTalentComponent; }
 	/**************************어빌리티*************************/
 protected:
 	/**
@@ -217,18 +225,7 @@ protected:
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsMighty();
-
-
-	/**************************라인트레이스*************************/
-public:
-	//라인트레이스 이팩트를 사용할 때, 기본 MeshComponent 이외의 MeshComponent를 사용할 때, 덮어쓰세요.
-	UFUNCTION(BlueprintNativeEvent)
-	UPrimitiveComponent* GetPrimitiveComponentForLineTrace();
-	virtual UPrimitiveComponent* GetPrimitiveComponentForLineTrace_Implementation() { return nullptr; }
-
-	//라인트레이스 이팩트에서 히트가 발생했을 경우 호출됩니다.
-	UPROPERTY(BlueprintAssignable)
-	FOnHitActor OnLineTraceEffectHitActor;
+	
 
 	/**************************아이템*************************/
 protected:
@@ -401,4 +398,7 @@ public:
 	UFUNCTION()
 	void DeactivateMightyAbility();
 
+	//모든 대상이 사망처리되었을때, 딱한번 재생되는 사운드 큐
+	UPROPERTY(EditAnywhere)
+	class USoundBase* DeadCue;
 };

@@ -18,4 +18,13 @@ class SOULLIKE_API UAIConHelperLibrary : public UObject
 public:
 	UFUNCTION(BlueprintCallable)
 	static void ChangePlayerState(AActor* AIConOrMonster, AActor* Player, EPlayerCharacterState NewState);
+
+	
+	/**
+	 * 블랙보드에 "Target"값에 저장되어있는 대상을 가져옵니다.
+	 * @param BlackboardOwner 
+	 * @return 
+	 */
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	static AActor* GetBlackboardValueNamedTarget(AActor* BlackboardOwner);
 };

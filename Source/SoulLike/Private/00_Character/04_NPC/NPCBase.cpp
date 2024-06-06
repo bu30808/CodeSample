@@ -5,6 +5,7 @@
 
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/04_NPC/99_Component/BonfireComponent.h"
+#include "00_Character/04_NPC/99_Component/ChestComponent.h"
 #include "00_Character/04_NPC/99_Component/EnhancementComponent.h"
 #include "00_Character/04_NPC/99_Component/LevelUpComponent.h"
 #include "00_Character/04_NPC/99_Component/MerchantComponent.h"
@@ -25,6 +26,8 @@ ANPCBase::ANPCBase()
 {
 	GetCapsuleComponent()->SetCollisionProfileName("NPC");
 	GetMesh()->SetCollisionProfileName("NoCollision");
+
+	bEnableAutoLODGeneration = false;
 #if WITH_EDITOR
 	RuntimeGrid = "NPCGrid";
 #endif
@@ -111,6 +114,9 @@ void ANPCBase::PostInitializeComponents()
 					this, TEXT("BonfireComponent"));
 			}
 			break;
+		case ENPCActionType::Chest:
+			//상자 액터 내부에서 생성됨.
+			break;
 		default: ;
 		}
 	}
@@ -145,6 +151,10 @@ void ANPCBase::Interaction_Implementation(ABaseCharacter* Start)
 			break;
 		case ENPCActionType::TeleportBonfire:
 			BonfireComponent->CreateTeleportListWidget(Cast<APlayerCharacter>(InteractionActor.Get()));
+			break;
+		case ENPCActionType::Chest:
+			//상자액터 내부에서 구현되어 있습니다.
+			//ChestComponent->OpenChest(Cast<APlayerCharacter>(InteractionActor.Get()));
 			break;
 		default: ;
 		}
@@ -384,4 +394,10 @@ void ANPCBase::OnLoadedAbilityList(UObject* AbilityTable)
 	{
 		MerchantComponent->CreateSellAbilityList(Cast<UDataTable>(AbilityTable));
 	}
+}
+
+void ANPCBase::OnRemoveAttributeEffectAdditionalInformationEvent_Implementation(const FAttributeEffect& Effect,
+	UAbilityEffectAdditionalInformation* AdditionalInformation, float DeltaTime)
+{
+	//아무것도안함.
 }

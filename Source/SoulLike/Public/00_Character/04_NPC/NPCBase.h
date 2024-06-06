@@ -19,7 +19,8 @@ enum class ENPCActionType : uint8
 	Enhancement,
 	PotionEnhancement,
 	OrbMatrixSlotOpen,
-	TeleportBonfire
+	TeleportBonfire,
+	Chest
 };
 
 /**
@@ -125,4 +126,6 @@ private:
 	void OnLoadedItemList(UObject* ItemTable);
 	UFUNCTION()
 	void OnLoadedAbilityList(UObject* AbilityTable);
+
+	virtual void OnRemoveAttributeEffectAdditionalInformationEvent_Implementation(const FAttributeEffect& Effect, UAbilityEffectAdditionalInformation* AdditionalInformation, float DeltaTime) override;
 };

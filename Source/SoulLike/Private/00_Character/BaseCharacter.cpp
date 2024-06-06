@@ -18,6 +18,7 @@
 #include "96_Library/MathHelperLibrary.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
 #include "PhysicsEngine/BodySetup.h"
 #include "PhysicsEngine/PhysicsAsset.h"
@@ -37,12 +38,24 @@ ABaseCharacter::ABaseCharacter()
 	/*NavigationInvokerComponent = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavigationInvokerComponent"));*/
 
 	DeadDissolveTimeLineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("DeadDissolveTimeLine"));
+	AbilityTalentComponent = CreateDefaultSubobject<UAbilityTalentComponent>(TEXT("AbilityTalentComponent"));
 
-	static ConstructorHelpers::FClassFinder<UAbilityEffect> fallDamageClass(TEXT(
-		"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/AE_FallDamage.AE_FallDamage_C'"));
-	if (fallDamageClass.Succeeded())
 	{
-		FallDamageEffectObject = fallDamageClass.Class;
+		static ConstructorHelpers::FClassFinder<UAbilityEffect> fallDamageClass(TEXT(
+			"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/AE_FallDamage.AE_FallDamage_C'"));
+		if (fallDamageClass.Succeeded())
+		{
+			FallDamageEffectObject = fallDamageClass.Class;
+		}
+	}
+
+	{
+		static ConstructorHelpers::FObjectFinder<USoundBase> deadCue(TEXT(
+		"/Script/Engine.SoundCue'/Game/CommonResource/Sound/ondead_cue.ondead_cue'"));
+		if (deadCue.Succeeded())
+		{
+			DeadCue = deadCue.Object;
+		}
 	}
 }
 
@@ -91,6 +104,8 @@ void ABaseCharacter::CheckFallDeath()
 		}
 		else
 		{
+			UE_LOGFMT(LogCharacter,Log,"발 아래 : {0}",hit.GetActor()->GetActorNameOrLabel());
+			
 			if (bStartFallDamageProcess == false)
 			{
 				bStartFallDamageProcess = true;
@@ -215,7 +230,7 @@ void ABaseCharacter::OnRemoveAttributeEffectAdditionalInformationEvent_Implement
 	if (AdditionalInformation != nullptr && IsValidLowLevel())
 	{
 		if (Effect.Attribute == EAttributeType::HP)
-		{
+		{		
 			if (AdditionalInformation->HitBy != nullptr)
 			{
 				UE_LOGFMT(LogCharacter, Log, "ABaseCharacter {0}이(가) {1}에게 입은 피해량 : {2} 111111111111", GetActorNameOrLabel(),
@@ -309,6 +324,8 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 	UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 호출", GetActorNameOrLabel());
 	if (CharacterState != ECharacterState::DEAD)
 	{
+
+		UGameplayStatics::PlaySound2D(this,DeadCue);
 		UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 / 정보 설정", GetActorNameOrLabel());
 		SetCharacterState(ECharacterState::DEAD);
 		GetCapsuleComponent()->SetCollisionProfileName("Spectator");
@@ -405,7 +422,6 @@ void ABaseCharacter::OnTriggerHitAnimationExitEvent(ABaseCharacter* DamagedChara
 
 void ABaseCharacter::TriggerHitAnimation_Implementation(UAbilityEffectAdditionalInformation* AdditionalInformation)
 {
-	//강인함 효과가 적용되어있는가 확인합니다.
 	if (IsMighty() == false)
 	{
 		UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
@@ -415,13 +431,13 @@ void ABaseCharacter::TriggerHitAnimation_Implementation(UAbilityEffectAdditional
 			AnimationHelperComponent->OnTriggerHitAnimationEnter.Broadcast(this, AdditionalInformation->HitBy.Get());
 			//피격 애니메이션 블랜드를 위한 각도를 저장합니다.
 			AnimationHelperComponent->HitDegree = UMathHelperLibrary::CalculateDegree(this, AdditionalInformation->Hit.Location);
-			//애니메이션 블루프린트 내부에서 false로 갱신됩니다.
 			SetCharacterState(ECharacterState::HIT);
 		}
 	}
 }
 
 void ABaseCharacter::SetIgnoreMoveInput(bool bIgnore, AActor* AccruedBy, FGameplayTag AccruedTag)
+	//강인함 효과가 적용되어있는가 확인합니다.
 {
 	if (GetController() == nullptr)
 	{

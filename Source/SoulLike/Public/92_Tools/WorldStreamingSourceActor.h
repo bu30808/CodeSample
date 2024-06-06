@@ -8,6 +8,11 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnStreamingComplete);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAfterStreamingComplete);
+
+DECLARE_DYNAMIC_DELEGATE(FOnStreamingCompleteK2);
+DECLARE_DYNAMIC_DELEGATE(FOnAfterStreamingCompleteK2);
+
+
 UCLASS(Blueprintable)
 class SOULLIKE_API AWorldStreamingSourceActor : public AActor
 {
@@ -35,13 +40,20 @@ protected:
 	class UWorldPartitionStreamingSourceComponent* WorldPartitionStreamingSource;
 
 public:
-	UPROPERTY(BlueprintCallable)
+	UPROPERTY()
 	FOnStreamingComplete OnStreamingComplete;
 	//스트리밍 완료 이벤트 호출 후 다음으로 이어서 호출됩니다.
-	UPROPERTY(BlueprintCallable)
+	UPROPERTY()
 	FOnAfterStreamingComplete OnAfterStreamingComplete;
+	
+	UPROPERTY()
+	FOnStreamingCompleteK2 K2_OnStreamingComplete;
+	UPROPERTY()
+	FOnAfterStreamingCompleteK2 K2_OnAfterStreamingComplete;
+	
 	UPROPERTY(Transient)
 	bool bShouldDestroy = false;
+
 
 protected:
 	FTimerHandle DisableTimerHandle;
@@ -50,4 +62,8 @@ protected:
 public:
 	UFUNCTION(BlueprintCallable)
 	void StreamingStart(FVector StreamingLocation);
+
+	//블루프린트 내부에서만 호출하는것을 권장합니다.
+	UFUNCTION(BlueprintCallable)
+	void StreamingStartWithDelegate(FVector StreamingLocation,const FOnStreamingCompleteK2& K2_OnStreamingCompleteEvent,const FOnAfterStreamingCompleteK2& K2_OnAfterStreamingCompleteEvent);
 };

@@ -60,22 +60,24 @@ void UBonfireTeleportWidget::CreateList(UBonfireComponent* BonfireComponent)
 		const auto& list = owner->GetTeleportList();
 		for (auto iter : list)
 		{
-			
-			if (auto element = CreateWidget<UTeleportElementWidget>(GetOwningPlayer(), TeleportElementWidgetObject))
+			if(bool bIsActivated = IsActivated(UGameplayStatics::GetCurrentLevelName(BonfireComponent),
+			                                   iter->OwnersSafeName))
 			{
-				element->SetInfo(*iter, this);
-
-				//UKismetSystemLibrary::PrintString(this, iter->LocationName + "/" + owner->GetBonfireInformation().LocationName);
-				ScrollBox_TeleportList->AddChild(element);
-
-				if (iter->LocationName.EqualTo(owner->GetBonfireInformation().LocationName))
+				if (auto element = CreateWidget<UTeleportElementWidget>(GetOwningPlayer(), TeleportElementWidgetObject))
 				{
-					SetPreviewImage(iter->LocationImage);
-					element->ShowCurLocation();
-				}
+					element->SetInfo(*iter, this);
 
-				element->SetIsEnabled(IsActivated(UGameplayStatics::GetCurrentLevelName(BonfireComponent),
-				                                  iter->OwnersSafeName));
+					//UKismetSystemLibrary::PrintString(this, iter->LocationName + "/" + owner->GetBonfireInformation().LocationName);
+					ScrollBox_TeleportList->AddChild(element);
+
+					if (iter->LocationName.EqualTo(owner->GetBonfireInformation().LocationName))
+					{
+						SetPreviewImage(iter->LocationImage);
+						element->ShowCurLocation();
+					}
+
+					element->SetIsEnabled(bIsActivated);
+				}
 			}
 		}
 	}

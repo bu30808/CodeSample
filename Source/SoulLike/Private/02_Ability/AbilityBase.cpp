@@ -134,6 +134,11 @@ void UAbilityDefenceTalent::SelfBind()
 		OnKillMonster.BindDynamic(this, &UAbilityTalent::OnKillMonsterEvent);
 	}
 
+	if(OnDecreaseGotHitDamage.IsBound() == false)
+	{
+		OnDecreaseGotHitDamage.BindDynamic(this,&UAbilityDefenceTalent::OnDecreaseGotHitDamageEvent);
+	}
+
 	if (OnDecreasePhysicalGotHitDamage.IsBound() == false)
 	{
 		OnDecreasePhysicalGotHitDamage.BindDynamic(
@@ -218,7 +223,10 @@ void UAbilityDefenceTalent::Bind(UAbilityTalentComponent* ATComp)
 {
 	if (ATComp)
 	{
+		UE_LOGFMT(LogTalent,Warning,"{0} 방어 특성 바인드",ATComp->GetOwner()->GetActorNameOrLabel());
 		SelfBind();
+		
+		ATComp->OnDecreaseGotHitDamage.Emplace(this, OnDecreaseGotHitDamage);
 
 		ATComp->OnDecreasePhysicalGotHitDamage.Emplace(this, OnDecreasePhysicalGotHitDamage);
 		ATComp->OnDecreaseMagicalGotHitDamage.Emplace(this, OnDecreaseMagicalGotHitDamage);
@@ -266,6 +274,11 @@ void UAbilityDefenceTalent::UnBind(UAbilityTalentComponent* ATComp)
 	if (ATComp)
 	{
 		UE_LOGFMT(LogTemp, Warning, "특성 바인드 해제");
+		if (ATComp->OnDecreaseGotHitDamage.Contains(this))
+		{
+			ATComp->OnDecreaseGotHitDamage[this].Unbind();
+		}
+		
 		if (ATComp->OnDecreasePhysicalGotHitDamage.Contains(this))
 		{
 			ATComp->OnDecreasePhysicalGotHitDamage[this].Unbind();
@@ -436,6 +449,16 @@ UAnimMontage* UAbilityBase::GetNextMontage()
 	MontageIndex = 0;
 
 	return GetNextMontage();
+}
+
+UAnimMontage* UAbilityBase::GetRandomMontage()
+{
+	if (Montages.Num() > 0)
+	{
+		return Montages[FMath::RandRange(0, Montages.Num() - 1)];
+	}
+
+	return nullptr;
 }
 
 float UAbilityBase::PlayMontageWithCustomChain(ABaseCharacter* Target, UAnimMontage* Montage, float CustomChainValue)
@@ -868,9 +891,9 @@ void UAbilityBase::UnBindActionEvent() const
 
 void UAbilityBase::BindTalent()
 {
-	if (AbilityTarget.IsValid() && AbilityTarget->IsA<APlayerCharacter>())
+	if (AbilityTarget.IsValid() && AbilityTarget->IsA<ABaseCharacter>())
 	{
-		if (const auto atComp = Cast<APlayerCharacter>(AbilityTarget)->GetAbilityTalentComponent())
+		if (const auto atComp = Cast<ABaseCharacter>(AbilityTarget)->GetAbilityTalentComponent())
 		{
 			for (auto t : AbilityTalent)
 			{
@@ -879,7 +902,6 @@ void UAbilityBase::BindTalent()
 					AbilityTalentInstance.Emplace(copy);
 					copy->Bind(atComp);
 				}
-				//t.GetDefaultObject()->Bind(atComp);
 			}
 		}
 	}
@@ -887,9 +909,9 @@ void UAbilityBase::BindTalent()
 
 void UAbilityBase::UnBindTalent()
 {
-	if (AbilityTarget.IsValid() && AbilityTarget->IsA<APlayerCharacter>())
+	if (AbilityTarget.IsValid() && AbilityTarget->IsA<ABaseCharacter>())
 	{
-		if (const auto atComp = Cast<APlayerCharacter>(AbilityTarget)->GetAbilityTalentComponent())
+		if (const auto atComp = Cast<ABaseCharacter>(AbilityTarget)->GetAbilityTalentComponent())
 		{
 			for (auto t : AbilityTalentInstance)
 			{
@@ -970,8 +992,12 @@ bool UAbilityBase::IsCostEnough()
 {
 	if (AbilityInformation.AbilityRequirement->IsValidLowLevel())
 	{
-		return AbilityInformation.AbilityRequirement->GetDefaultObject<UAbilityRequirement>()->IsCostEnough(
-			AbilityOwner.Get());
+		if(!AbilityInformation.AbilityRequirement->GetDefaultObject<UAbilityRequirement>()->IsCostEnough(
+			AbilityOwner.Get()))
+		{
+			OnCommitFailedByCost.Broadcast();
+			return false;
+		}
 	}
 
 	return true;

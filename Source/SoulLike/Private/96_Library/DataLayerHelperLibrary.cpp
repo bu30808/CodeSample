@@ -4,51 +4,11 @@
 #include "96_Library/DataLayerHelperLibrary.h"
 
 #include "92_Tools/WorldStreamingSourceActor.h"
-#include "98_GameInstance/SoulLikeInstance.h"
-#include "WorldPartition/DataLayer/DataLayerSubsystem.h"
+#include "WorldPartition/WorldPartitionBlueprintLibrary.h"
+#include "WorldPartition/DataLayer/DataLayerManager.h"
 
-bool UDataLayerHelperLibrary::IsInActivatedLayer(const UWorld* World,
-                                                 const TArray<TObjectPtr<const UDataLayerAsset>>& DataLayerAssets)
-{
-	if (const UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(World))
-	{
-		for (auto iter : DataLayerAssets)
-		{
-			if (dataLayerSubsystem->GetDataLayerInstanceRuntimeState(iter) != EDataLayerRuntimeState::Activated)
-			{
-				return false;
-			}
-		}
-		return true;
-	}
 
-	return false;
-}
 
-bool UDataLayerHelperLibrary::IsInActivatedLayer(const UWorld* World, const FString& LayerPath)
-{
-	if (const UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(World))
-	{
-		if (const auto instance = dataLayerSubsystem->GetDataLayerInstanceFromAssetName(FName(LayerPath)))
-		{
-			if (dataLayerSubsystem->GetDataLayerRuntimeState(instance) != EDataLayerRuntimeState::Activated)
-			{
-				return false;
-			}
-		}
-	}
-	return false;
-}
-
-FString UDataLayerHelperLibrary::GetLayerFullPath(const UWorld* World, const UDataLayerAsset* LayerAsset)
-{
-	if (const UDataLayerSubsystem* dataLayerSubsystem = UWorld::GetSubsystem<UDataLayerSubsystem>(World))
-	{
-		return dataLayerSubsystem->GetDataLayerInstanceFromAsset(LayerAsset)->GetDataLayerFullName();
-	}
-
-	return FString();
-}
 
 AWorldStreamingSourceActor* UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(APawn* Owner)
 {
@@ -71,12 +31,11 @@ AWorldStreamingSourceActor* UDataLayerHelperLibrary::SpawnWorldStreamingSourceAc
 	return nullptr;
 }
 
-UDataLayerSubsystem* UDataLayerHelperLibrary::GetDataLayerSubsystem(const UObject* Context)
+void UDataLayerHelperLibrary::SetDataLayerRuntimeInstanceState(UObject* Context, UDataLayerAsset* Asset, EDataLayerRuntimeState NewState)
 {
-	if (UWorld* world = Context->GetWorld())
+	if(auto subsystem = UDataLayerManager::GetDataLayerManager(Context))
 	{
-		return UWorld::GetSubsystem<UDataLayerSubsystem>(world);
+		auto instance = subsystem->GetDataLayerInstanceFromAsset(Asset);
+		subsystem->SetDataLayerInstanceRuntimeState(instance,NewState);
 	}
-
-	return nullptr;
 }

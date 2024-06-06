@@ -44,21 +44,17 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "FurComponent.h"
-#include "MoviePlayer.h"
 #include "00_Character/00_Player/OrbBackgroundActor.h"
 #include "00_Character/00_Player/01_Component/JumpMovementComponent.h"
 #include "00_Character/00_Player/01_Component/LadderMovementComponent.h"
 #include "00_Character/00_Player/01_Component/TeleportBonfireComponent.h"
 #include "91_Sky/DynamicSkyActor.h"
 #include "92_Tools/WorldStreamingSourceActor.h"
-#include "93_SaveGame/SoulLikeSaveGame.h"
 #include "96_Library/DataLayerHelperLibrary.h"
 #include "96_Library/SaveGameHelperLibrary.h"
 #include "99_Subsystem/WidgetInteractionSubsystem.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Engine/TextureRenderTarget2D.h"
-
-
 
 class UWidgetInteractionSubsystem;
 
@@ -67,6 +63,8 @@ class UWidgetInteractionSubsystem;
 #define LOCTEXT_NAMESPACE "PlayerCharacter"
 
 #define INVINCIBILITY_TAG FGameplayTag::RequestGameplayTag("Common.Passive.Invincibility.Effect")
+#define DEFAULT_GRAVITY -980.0
+
 
 // Sets default values
 APlayerCharacter::APlayerCharacter()
@@ -141,7 +139,7 @@ APlayerCharacter::APlayerCharacter()
 
 
 	LockOnComponent = CreateDefaultSubobject<ULockOnComponent>(TEXT("LockOnComponent"));
-	AbilityTalentComponent = CreateDefaultSubobject<UAbilityTalentComponent>(TEXT("AbilityTalentComponent"));
+	
 
 	LadderMovementComponent = CreateDefaultSubobject<ULadderMovementComponent>(TEXT("LadderMovementComponent"));
 	JumpMovementComponent = CreateDefaultSubobject<UJumpMovementComponent>(TEXT("JumpMovementComponent"));
@@ -236,7 +234,12 @@ void APlayerCharacter::PossessedBy(AController* NewController)
 
 void APlayerCharacter::CreateBodyMaterialInstance()
 {
-	BodyMaterialInstance.Add(FurComponent->CreateDynamicMaterialInstance(0));
+	BodyMaterialInstance.Empty();
+
+	if(!FurComponent->GetMaterial(0)->IsA<UMaterialInstanceDynamic>())
+	{
+		BodyMaterialInstance.Add(FurComponent->CreateDynamicMaterialInstance(0));
+	}
 	const auto& index = GetMesh()->GetMaterials().Num();
 	for (int32 i = 0; i < 4; i++)
 	{
@@ -311,12 +314,11 @@ void APlayerCharacter::LoadGame()
 {
 	if (auto pc = GetController<AUserController>())
 	{
-		//초기화가 끝날때까지 입력 막음
-		DisableInput(pc);
-		
 		if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 		{
 
+
+			SetGravityAroundPlayer(false);
 			instance->SetPlayer(this);
 			if (instance->IsUseGameSave())
 			{
@@ -328,7 +330,6 @@ void APlayerCharacter::LoadGame()
 				}
 				else
 				{
-			
 					instance->OnFinishLoadGame.AddUniqueDynamic(this, &APlayerCharacter::OnFinishLoadGame);
 					instance->LoadGame();
 				}
@@ -342,21 +343,35 @@ void APlayerCharacter::LoadGame()
 	}
 }
 
+void APlayerCharacter::SetGravityAroundPlayer(bool bActivate)
+{
+	
+	const auto worldSetting = GetWorldSettings();
+	if(worldSetting)
+	{
+		GetCapsuleComponent()->SetEnableGravity(!bActivate);
+		if(!bActivate)
+		{
+			UE_LOGFMT(LogCharacter,Log,"중력 0으로 설정함.");
+			//worldSetting->GlobalGravityZ = 0;
+			worldSetting->bGlobalGravitySet = true;
+		}else
+		{
+			UE_LOGFMT(LogCharacter,Log,"중력 기본값으로 설정함.");
+			//worldSetting->GlobalGravityZ = DEFAULT_GRAVITY;
+			worldSetting->bGlobalGravitySet = false;
+		}
+	}
+}
+
 void APlayerCharacter::OnFinishLoadGame()
 {
 	if (auto pc = GetController<AUserController>())
-	{
+	{		
 		UE_LOGFMT(LogCharacter,Log,"로드 완료");
-		GetCapsuleComponent()->SetEnableGravity(true);
-		UWidgetBlueprintLibrary::SetInputMode_GameOnly(pc);
-
-		//초기화가 끝날때까지 입력 막음
-		EnableInput(pc);
+	
 		CameraBoom->bEnableCameraLag = true;
 		CameraBoom->bEnableCameraRotationLag = true;
-
-		auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
-		cameraManager->StartCameraFade(1,0,3.f,FColor::Black,true);
 
 		MainWidget->SetVisibility(ESlateVisibility::Visible);
 		SetActorTickEnabled(true);
@@ -382,13 +397,48 @@ void APlayerCharacter::OnFinishLoadGame()
 			GetWorldTimerManager().SetTimer(GroundLocationSaveTimerHandle, this,
 											&APlayerCharacter::SaveLastGroundedLocation, 1.f, true);
 		}
-		pc->GetWidgetManagerComponent()->RemoveWidget(FGameplayTag::RequestGameplayTag("Widget.Loading"));
-		GetMoviePlayer()->StopMovie();
-
+		SetGravityAroundPlayer(true);
+		ShowLoadingScreen(false);
+		
+		
 		//딜레이를 안 주면 중간에 사라지기 때문에 어쩔수 없다.
 		FTimerHandle tombTimerHandle;
 		GetWorldTimerManager().SetTimer(tombTimerHandle,this,&APlayerCharacter::CreateSoulTomb,3.f,false);
 	}
+}
+
+void APlayerCharacter::StartLoadingCameraFade(bool bManual, float FadeTime)
+{
+	UE_LOGFMT(LogCharacter,Log,"StartLoadingCameraFade");
+#if WITH_EDITOR
+	
+#else
+	auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
+	if(!bManual){
+		cameraManager->StartCameraFade(0,1,FadeTime,FColor::Black,true,true);
+	}else
+	{
+		cameraManager->SetManualCameraFade(1,FLinearColor::Black,true);
+	}
+#endif
+	
+}
+
+void APlayerCharacter::EndLoadingCameraFade()
+{
+	UE_LOGFMT(LogCharacter,Log,"EndLoadingCameraFade");
+	auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
+	cameraManager->StartCameraFade(1,0,2.f,FColor::Black,true);
+}
+
+void APlayerCharacter::PauseFindInteractionTarget()
+{
+	bTryFindInteractionActor= false;
+}
+
+void APlayerCharacter::ResumeFindInteractionTarget()
+{
+	bTryFindInteractionActor = true;
 }
 
 void APlayerCharacter::SaveLastGroundedLocation()
@@ -402,17 +452,57 @@ void APlayerCharacter::SaveLastGroundedLocation()
 	}
 }
 
+
+
+void APlayerCharacter::ShowLoadingScreen(bool bShow)
+{
+	UE_LOGFMT(LogCharacter,Warning,"로딩 스크린 생성");
+	if (auto pc = GetController<AUserController>())
+	{
+		if(bShow){
+			pc->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("Widget.Loading"));
+			//초기화가 끝날때까지 입력 막음
+			DisableInput(pc);
+		
+
+			if(MainWidget!=nullptr)
+			{
+				MainWidget->SetVisibility(ESlateVisibility::Collapsed);
+			}
+
+			StartLoadingCameraFade(true);
+
+		}else
+		{
+			EndLoadingCameraFade();
+			
+			pc->GetWidgetManagerComponent()->RemoveWidget(FGameplayTag::RequestGameplayTag("Widget.Loading"));
+			
+			UWidgetBlueprintLibrary::SetInputMode_GameOnly(pc);
+
+			//초기화가 끝날때까지 입력 막음
+			EnableInput(pc);
+		
+			SetBlockedShowInteraction(false);
+
+			if(MainWidget!=nullptr)
+			{
+				MainWidget->SetVisibility(ESlateVisibility::Visible);
+			}
+
+		}
+
+		SetActorTickEnabled(!bShow);
+	}
+}
+
 // Called when the game starts or when spawned
 void APlayerCharacter::BeginPlay()
 {
 	if (auto pc = GetController<AUserController>())
 	{
-		GetCapsuleComponent()->SetEnableGravity(false);
-		pc->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("Widget.Loading"));
-		
-		auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
-		cameraManager->SetManualCameraFade(1, FColor::Black, true);
 
+		
 		DynamicSkyActor = Cast<ADynamicSkyActor>(
 			UGameplayStatics::GetActorOfClass(this, ADynamicSkyActor::StaticClass()));
 
@@ -420,7 +510,8 @@ void APlayerCharacter::BeginPlay()
 		pc->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("widget.main"));
 		//메인메뉴 포인터 저장
 		SetMainWidget();
-		MainWidget->SetVisibility(ESlateVisibility::Collapsed);
+		
+		ShowLoadingScreen(true);
 
 		Super::BeginPlay();
 		/*LoadGame();*/
@@ -845,11 +936,16 @@ void APlayerCharacter::SetMainWidget()
 
 void APlayerCharacter::FindInteractActor()
 {
-	//평화상태가 아니면 찾을 필요가 없습니다.
-	if (IsPeaceState() == false)
+	if(bTryFindInteractionActor==false)
 	{
 		return;
 	}
+	
+	/*//평화상태가 아니면 찾을 필요가 없습니다.
+	if (IsPeaceState() == false)
+	{
+		return;
+	}*/
 
 	const float& halfHeight = GetCapsuleComponent()->GetScaledCapsuleHalfHeight();
 	const float& radius = GetCapsuleComponent()->GetScaledCapsuleRadius();
@@ -884,6 +980,7 @@ void APlayerCharacter::FindInteractActor()
 	}
 	else
 	{
+
 		//찾은게 없다면 발 아래 사다리가 있는지 찾습니다.
 		if (!FindLadder())
 		{
@@ -929,6 +1026,14 @@ bool APlayerCharacter::FindLadder()
 UWidgetComponent* APlayerCharacter::ShowInteractionWidget(const AActor* Target, const UInputAction* Action,
                                                           const FText& ActionName)
 {
+
+	if(bBlockedShowInteraction)
+	{
+		return nullptr;
+	}
+
+	//UE_LOGFMT(LogCharacter,Log,"{0}를 대상으로 인터렉션 위젯을 보여줍니다",Target->GetName());
+	
 	if (ActionName.IsEmpty())
 	{
 		UE_LOGFMT(LogTemp, Error, "인터렉션 위젯의 액션이름이 비었습니다.");
@@ -990,6 +1095,7 @@ UWidgetComponent* APlayerCharacter::GetInteractionWidget(const AActor* Target, c
 
 void APlayerCharacter::HideInteractionWidget()
 {
+	UE_LOGFMT(LogCharacter,Log,"인터렉션 위젯 숨김 처리");
 	if (auto widget = GetPressKeyWidget("", FText::GetEmpty()))
 	{
 		widget->SetVisibility(false);
@@ -1259,6 +1365,9 @@ void APlayerCharacter::CheckAroundExistMonster()
 		UE_LOGFMT(LogCharacter, Log, "평화상태로 강제전환을 시도합니다.");
 		ChangeCombatStateFrom.Empty();
 		SetPlayerState(EPlayerCharacterState::Peaceful);
+	}else
+	{
+		UE_LOGFMT(LogCharacter, Log, "CheckAroundExistMonster : {0}",GetNameSafe(hit.GetActor()));
 	}
 }
 

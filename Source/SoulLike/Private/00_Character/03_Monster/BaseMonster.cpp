@@ -5,16 +5,17 @@
 
 #include "AIController.h"
 #include "BrainComponent.h"
+#include "NavigationInvokerComponent.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/01_Component/AbilityComponent.h"
 #include "00_Character/01_Component/AnimationHelperComponent.h"
 #include "00_Character/01_Component/AttributeComponent.h"
+#include "00_Character/01_Component/UROComponent.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "00_Character/03_Monster/01_Component/ItemDropComponent.h"
 #include "01_GameMode/SoulLikeGameMode.h"
 #include "02_Ability/AbilityEffect.h"
 #include "03_Widget/02_Monster/HealthBarWidget.h"
-#include "96_Library/AbilityHelperLibrary.h"
 #include "96_Library/AIConHelperLibrary.h"
 #include "96_Library/SaveGameHelperLibrary.h"
 #include "97_Interface/BossMonsterInterface.h"
@@ -37,6 +38,9 @@ DEFINE_LOG_CATEGORY(LogMonster)
 
 ABaseMonster::ABaseMonster()
 {
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+	
 	GetCapsuleComponent()->SetCollisionProfileName("Pawn");
 	GetMesh()->SetCollisionProfileName("MonsterMesh");
 	GetMesh()->SetBodyNotifyRigidBodyCollision(true);
@@ -49,6 +53,12 @@ ABaseMonster::ABaseMonster()
 	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
 	HealthBarWidgetComponent->SetDrawSize(FVector2D(125, 5));
 
+	NavigationInvokerComponent = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavInvoker"));
+	NavigationInvokerComponent->SetGenerationRadii(5000.f,7000.f);
+
+	UROComponent = CreateDefaultSubobject<UUROComponent>(TEXT("UROComponent"));
+	
+	
 	static ConstructorHelpers::FClassFinder<UUserWidget> widget(TEXT(
 		"/Script/UMGEditor.WidgetBlueprint'/Game/Blueprints/02_Widget/UMG_HealthBar.UMG_HealthBar_C'"));
 	if (widget.Succeeded())
@@ -62,9 +72,13 @@ ABaseMonster::ABaseMonster()
 	//이 두개의 옵션으로 AI가 MoveTo 함수 등으로 네비메시에서 이동할 때, 보간없이 휙휙 도는 현상이 제거됩니다.
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bUseControllerDesiredRotation = false;
+	GetCharacterMovement()->bUseRVOAvoidance = true;
 
 	AIControllerClass = AMonsterAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	/*bEnableAutoLODGeneration = false;*/
 #if WITH_EDITOR
 	RuntimeGrid = "MonsterGrid";
 #endif
@@ -123,6 +137,7 @@ void ABaseMonster::BeginPlay()
 {
 	Super::BeginPlay();
 
+
 	//휴식시 되살리기 위해 저장합니다.
 	if (MonsterDataAsset->bRespawnWhenPlayerRest)
 	{
@@ -140,7 +155,6 @@ void ABaseMonster::BeginPlay()
 	if (!IsDead())
 	{
 		SetCharacterState(ECharacterState::NORMAL);
-
 		if (IsStartBehaviorTreeImmediately())
 		{
 			GetController<AMonsterAIController>()->StartImmediatelyBehavior();
@@ -415,6 +429,16 @@ void ABaseMonster::Deactivate()
 	SetActorEnableCollision(false);
 }
 
+const FGameplayTag& ABaseMonster::GetMonsterTag() const
+{
+	if(MonsterDataAsset)
+	{
+		return MonsterDataAsset->MonsterTag;
+	}
+
+	return FGameplayTag::EmptyTag;
+}
+
 void ABaseMonster::OnTriggerHitAnimationEnterEvent(ABaseCharacter* DamagedCharacter, AActor* HitBy)
 {
 
@@ -431,9 +455,6 @@ void ABaseMonster::OnTriggerHitAnimationEnterEvent(ABaseCharacter* DamagedCharac
 		Super::OnTriggerHitAnimationEnterEvent(DamagedCharacter, HitBy);
 	}
 }
-
-
-
 
 void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy)
 {
@@ -575,10 +596,12 @@ void ABaseMonster::IncreaseStunIntensity(const FAttributeEffect& Effect,
 			StunIntensity = 0;
 			if (auto aiCon = GetController<AMonsterAIController>())
 			{
-				UE_LOGFMT(LogAICon, Warning, "{0}가 스턴됨!!!", GetActorNameOrLabel());
-				SetCharacterState(ECharacterState::STUN);
-				GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(this,&ABaseMonster::OnStunMontageEnded);
-				GetMesh()->GetAnimInstance()->Montage_Play(MonsterDataAsset->StunMontage);
+				if(!AbilityComponent->HasEffectTag(ExecuteEffectTag)){
+					UE_LOGFMT(LogAICon, Warning, "{0}가 스턴됨!!!", GetActorNameOrLabel());
+					SetCharacterState(ECharacterState::STUN);
+					GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(this,&ABaseMonster::OnStunMontageEnded);
+					GetMesh()->GetAnimInstance()->Montage_Play(MonsterDataAsset->StunMontage);
+				}
 			}
 		}
 	}
@@ -592,6 +615,16 @@ void ABaseMonster::OnStunMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 	}
 }
 
+bool ABaseMonster::IsStartBehaviorTreeImmediately() const
+{
+	if(bOverrideStartBehaviorTreeImmediately)
+	{
+		return bStartBehaviorTreeImmediately;
+	}
+	
+	return MonsterDataAsset->bStartBehaviorTreeImmediately; 
+}
+
 
 void ABaseMonster::OnRemoveAttributeEffectAdditionalInformationEvent_Implementation(const FAttributeEffect& Effect,
                                                                                     UAbilityEffectAdditionalInformation*
@@ -599,11 +632,12 @@ void ABaseMonster::OnRemoveAttributeEffectAdditionalInformationEvent_Implementat
 {
 	if (AdditionalInformation != nullptr)
 	{
-		UE_LOGFMT(LogMonster, Log, "ABaseMonster {0}이(가) {1}에게 입은 피해량 : {2} 111111111111", GetActorNameOrLabel(),
-		          AdditionalInformation->HitBy->GetActorNameOrLabel(), Effect.ApplyValue * DeltaTime);
-
+		
 		if (Effect.Attribute == EAttributeType::HP)
 		{
+		UE_LOGFMT(LogMonster, Log, "ABaseMonster {0}이(가) {1}에게 입은 피해량 : {2}", GetActorNameOrLabel(),
+		          AdditionalInformation->HitBy->GetActorNameOrLabel(), Effect.ApplyValue * DeltaTime);
+			
 			UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
 			//사망에 이르렀니?
 			if (AttributeComponent->GetHP() <= 0)
@@ -640,22 +674,28 @@ void ABaseMonster::TriggerHitAnimation_Implementation(UAbilityEffectAdditionalIn
 	{
 		if(AnimationHelperComponent->HitAnimationType != EHitAnimationType::NoHitAnimation)
 		{
-			if (auto aiCon = Cast<AMonsterAIController>(GetController()))
+			//상태만 바꾸면 되는게 아닐까요
+			/*if (auto aiCon = Cast<AMonsterAIController>(GetController()))
 			{
 				if (aiCon->IsBehaviorTreeRunning())
 				{
 					Cast<UBehaviorTreeComponent>(aiCon->GetBrainComponent())->StopTree(EBTStopMode::Forced);
 				}
-			}
+			}*/
 		}
 		
-		AnimationHelperComponent->PlayHitMontage();
+		if(MonsterState == EMonsterState::Guard)
+		{
+			AnimationHelperComponent->PlayGuardHitMontage();
+		}else{
+			AnimationHelperComponent->PlayHitMontage();
+		}
 	}
 
 	Super::TriggerHitAnimation_Implementation(AdditionalInformation);
 }
 
-void ABaseMonster::PlayMusic(USoundBase* Music)
+void ABaseMonster::PlayMusic()
 {
 	if (UKismetSystemLibrary::DoesImplementInterface(this, UBossMonsterInterface::StaticClass()))
 	{
@@ -664,7 +704,7 @@ void ABaseMonster::PlayMusic(USoundBase* Music)
 			MusicComponent = NewObject<UAudioComponent>(this);
 			MusicComponent->RegisterComponent();
 			MusicComponent->SetUISound(true);
-			MusicComponent->SetSound(Music);
+			MusicComponent->SetSound(IBossMonsterInterface::Execute_GetBossMusic(this));
 			MusicComponent->Play();
 		}
 	}

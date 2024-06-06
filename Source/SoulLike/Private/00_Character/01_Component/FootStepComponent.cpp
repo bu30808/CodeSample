@@ -11,6 +11,7 @@
 DEFINE_LOG_CATEGORY(LogFootStep)
 
 #define WATER_TYPE EPhysicalSurface::SurfaceType10
+#define WATER_CHANNEL ECC_GameTraceChannel8
 
 // Sets default values for this component's properties
 UFootStepComponent::UFootStepComponent()
@@ -42,7 +43,7 @@ void UFootStepComponent::BeginPlay()
 }
 
 
-bool UFootStepComponent::CreateFootStepTrace(FName SocketName, FHitResult& OutHit)
+bool UFootStepComponent::CreateFootStepTrace(FName SocketName, FHitResult& OutHit,bool& bFindWater)
 {
 	if (FootStepDataAsset == nullptr)
 	{
@@ -58,6 +59,19 @@ bool UFootStepComponent::CreateFootStepTrace(FName SocketName, FHitResult& OutHi
 		TArray<AActor*> actorsToIgnore;
 		actorsToIgnore.Add(Owner.Get());
 
+		TArray<TEnumAsByte<EObjectTypeQuery>> objectTypes;
+		objectTypes.Emplace(UEngineTypes::ConvertToObjectType(WATER_CHANNEL));
+		//물 확인
+		if(UKismetSystemLibrary::SphereTraceSingleForObjects(this, startLocation, endLocation, 10.f,objectTypes, false,
+													   actorsToIgnore, EDrawDebugTrace::ForOneFrame, OutHit, true,
+													   FColor::Cyan, FColor::Silver, 0.3f))
+		{
+
+			bFindWater = true;
+			return true;
+		}
+
+		bFindWater = false;
 		return UKismetSystemLibrary::SphereTraceSingle(this, startLocation, endLocation, 10.f,
 		                                               UEngineTypes::ConvertToTraceType(ECC_Visibility), false,
 		                                               actorsToIgnore, EDrawDebugTrace::ForOneFrame, OutHit, true,
@@ -74,13 +88,13 @@ void UFootStepComponent::SpawnSoundAndEffect(const FHitResult& OutHit)
 		if (auto sound = UGameplayStatics::SpawnSoundAtLocation(
 			GetWorld(), FootStepDataAsset->FootStepSound, OutHit.Location))
 		{
-			sound->SetIntParameter("floor", OutHit.PhysMaterial->SurfaceType);
+			sound->SetIntParameter("floor", UPhysicalMaterial::DetermineSurfaceType(OutHit.PhysMaterial.Get()));
 		}
 
-		if (FootStepDataAsset->FootStepNiagara.Contains(OutHit.PhysMaterial->SurfaceType))
+		if (FootStepDataAsset->FootStepNiagara.Contains(UPhysicalMaterial::DetermineSurfaceType(OutHit.PhysMaterial.Get())))
 		{
 			UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-				GetWorld(), FootStepDataAsset->FootStepNiagara[OutHit.PhysMaterial->SurfaceType],
+				GetWorld(), FootStepDataAsset->FootStepNiagara[UPhysicalMaterial::DetermineSurfaceType(OutHit.PhysMaterial.Get())],
 				OutHit.Location);
 		}
 	}
@@ -91,14 +105,14 @@ void UFootStepComponent::SpawnWaterSoundAndEffect(const FHitResult& OutHit, cons
 	if (auto sound = UGameplayStatics::SpawnSoundAtLocation(
 		GetWorld(), FootStepDataAsset->FootStepSound, OutHit.Location))
 	{
-		sound->SetIntParameter("floor", OutHit.PhysMaterial->SurfaceType);
+		sound->SetIntParameter("floor", UPhysicalMaterial::DetermineSurfaceType(OutHit.PhysMaterial.Get()));
 		sound->SetIntParameter("waterDeep", Deep);
 	}
 
-	if (FootStepDataAsset->FootStepNiagara.Contains(OutHit.PhysMaterial->SurfaceType))
+	if (FootStepDataAsset->FootStepNiagara.Contains(UPhysicalMaterial::DetermineSurfaceType(OutHit.PhysMaterial.Get())))
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(
-			GetWorld(), FootStepDataAsset->FootStepNiagara[OutHit.PhysMaterial->SurfaceType],
+			GetWorld(), FootStepDataAsset->FootStepNiagara[UPhysicalMaterial::DetermineSurfaceType(OutHit.PhysMaterial.Get())],
 			OutHit.Location);
 	}
 }
@@ -132,42 +146,46 @@ void UFootStepComponent::MakeFootStep(FName SocketName)
 	if (Owner.IsValid())
 	{
 		FHitResult OutHit;
-		if (CreateFootStepTrace(SocketName, OutHit))
+		bool bInWater =false;
+		if (CreateFootStepTrace(SocketName, OutHit,bInWater))
 		{
-			//UE_LOGFMT(LogFootStep,Log,"{0} {1}",GetOwner()->GetActorNameOrLabel(),OutHit.GetActor()->GetActorNameOrLabel());
-			if (OutHit.PhysMaterial != nullptr && OutHit.PhysMaterial->SurfaceType == WATER_TYPE)
+			if(bInWater)
 			{
-				//어느정도의 깊이인지 체크합니다.
-				FHitResult WaterHit;
-				if (CheckWaterDeep(WaterHit))
-				{
-					//발이 닿은 지점과, 물이 닿은 지점의 거리를 계산합니다.
-					float distance =
-						FMath::Abs(Owner->GetMesh()->GetSocketLocation(SocketName).Z - WaterHit.Location.Z);
-					//거리가 크면, 깊다는 뜻입니다.
-					//UE_LOGFMT(LogFootStep,Log,"거리 : {0}",distance);
-					//얕음
-					if (distance < 10.f)
+	
+					//어느정도의 깊이인지 체크합니다.
+					FHitResult WaterHit;
+					if (CheckWaterDeep(WaterHit))
 					{
-						//일반적인 적용
-						SpawnSoundAndEffect(OutHit);
-						return;
-					}
+						//발이 닿은 지점과, 물이 닿은 지점의 거리를 계산합니다.
+						float distance =
+							FMath::Abs(Owner->GetMesh()->GetSocketLocation(SocketName).Z - WaterHit.Location.Z);
+						//거리가 크면, 깊다는 뜻입니다.
+						//UE_LOGFMT(LogFootStep,Log,"거리 : {0}",distance);
+						//얕음
+						if (distance < 10.f)
+						{
+							//일반적인 적용
+							SpawnSoundAndEffect(OutHit);
+							return;
+						}
 
-					//중간
-					if (distance < 50.f)
-					{
-						SpawnWaterSoundAndEffect(OutHit, 1);
-						return;
-					}
+						//중간
+						if (distance < 50.f)
+						{
+							SpawnWaterSoundAndEffect(OutHit, 1);
+							return;
+						}
 
-					//깊음
-					SpawnWaterSoundAndEffect(OutHit, 2);
-				}
-			}
-			else
-			{
-				SpawnSoundAndEffect(OutHit);
+						//깊음
+						SpawnWaterSoundAndEffect(OutHit, 2);
+					}
+				
+			
+			}else{			
+				//UE_LOGFMT(LogFootStep,Log,"{0} {1}",GetOwner()->GetActorNameOrLabel(),OutHit.GetActor()->GetActorNameOrLabel());
+				
+					SpawnSoundAndEffect(OutHit);
+				
 			}
 		}
 	}

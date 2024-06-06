@@ -326,8 +326,8 @@ TArray<UAbilityEffect*> UAbilityComponent::K2_ApplyEffectsWithReturn(const TArra
 			if (cueAddInfo != nullptr)
 			{
 				cueAddInfo->UpdateCueLocation(effect->InstanceAbilityCues);
-				cueAddInfo->UpdateCueLocation(effect->IntervalAbilityCues);
 			}
+			
 			ApplyEffect(effect, EffectBy, FOnEffectExpired(), nullptr, AdditionalData);
 		}
 	}

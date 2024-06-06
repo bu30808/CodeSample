@@ -47,7 +47,7 @@ protected:
 	UPROPERTY()
 	TWeakObjectPtr<class ABaseCharacter> Owner;
 
-	bool CreateFootStepTrace(FName SocketName, FHitResult& OutHit);
+	bool CreateFootStepTrace(FName SocketName, FHitResult& OutHit,bool& bFindWater);
 	void SpawnSoundAndEffect(const FHitResult& OutHit);
 	//Deep은 물의 깊이이며, 숫자가 클 수록 깊습니다. 0~2의 값을 가질수 있습니다.
 	void SpawnWaterSoundAndEffect(const FHitResult& OutHit, const int32& Deep);

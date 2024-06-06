@@ -84,7 +84,7 @@ public:
 
 	//피격당하면 호출됩니다.
 	UFUNCTION(BlueprintImplementableEvent)
-	void OnGotHitEvent(APlayerCharacter* PlayerCharacter, ABaseCharacter* DamagedBy, float OriginalDamage);
+	void OnGotHitEvent(ABaseCharacter* GotHitCharacter, ABaseCharacter* DamagedBy, float OriginalDamage);
 
 	//체력을 회복하면 호출됩니다.
 	UFUNCTION(BlueprintImplementableEvent)
@@ -92,7 +92,7 @@ public:
 
 	//몬스터를 처치하면 호출됩니다.
 	UFUNCTION(BlueprintImplementableEvent)
-	void OnKillMonsterEvent(APlayerCharacter* Player, class ABaseMonster* KilledMonster);
+	void OnKillMonsterEvent(ABaseCharacter* Killer, class ABaseMonster* KilledMonster);
 
 	UFUNCTION(BlueprintImplementableEvent)
 	float OnDecreaseRunSPEvent(float OriginalStamina);
@@ -156,6 +156,8 @@ class SOULLIKE_API UAbilityDefenceTalent : public UAbilityTalent
 	GENERATED_BODY()
 
 	//입는 피해량 감소
+	FOnDecreaseGotHitDamage OnDecreaseGotHitDamage;
+	
 	FOnDecreaseGotHitDamage OnDecreasePhysicalGotHitDamage;
 	FOnDecreaseGotHitDamage OnDecreaseMagicalGotHitDamage;
 
@@ -202,6 +204,8 @@ public:
 protected:
 	//입는 피해량 감소
 	UFUNCTION(BlueprintImplementableEvent)
+	float OnDecreaseGotHitDamageEvent(float Damage, ABaseCharacter* DamageBy, ABaseCharacter* DamagedCharacer);
+	UFUNCTION(BlueprintImplementableEvent)
 	float OnDecreasePhysicalGotHitDamageEvent(float Damage, class ABaseCharacter* DamagedBy,
 	                                          ABaseCharacter* DamagedCharacter);
 	UFUNCTION(BlueprintImplementableEvent)
@@ -241,7 +245,7 @@ protected:
 
 	//회피 성공시 호출될 이벤트
 	UFUNCTION(BlueprintImplementableEvent)
-	void OnSuccessDodgeEvent(APlayerCharacter* Player);
+	void OnSuccessDodgeEvent(ABaseCharacter* Character);
 
 	//회피 성공시 다음 피해량 증가
 	UFUNCTION(BlueprintImplementableEvent)
@@ -404,6 +408,8 @@ protected:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	class UAnimMontage* GetNextMontage();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	class UAnimMontage* GetRandomMontage();
 	UFUNCTION(BlueprintCallable)
 	float PlayMontageWithCustomChain(ABaseCharacter* Target, class UAnimMontage* Montage, float CustomChainValue);
 

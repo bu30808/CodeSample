@@ -39,7 +39,9 @@ enum class EStopTraceType :uint8
 	//캐릭터 전방
 	PawnForward,
 	//메시 전방
-	MeshForward
+	PawnMeshForward,
+	//다른 메시의 전방
+	UseOtherMeshComponentForward
 };
 
 UCLASS()
@@ -75,11 +77,13 @@ protected:
 	//이 값이 참이면 전방으로 라인트레이스를 그리고, 라인트레이스에 타겟이 걸리면 완료한것으로 처리합니다.
 	UPROPERTY(EditAnywhere, Category="Option")
 	bool bUseStopTrace = false;
+	
 	//이 값이 참이면 컨트롤러 회전의 전방으로 트레이스를 그립니다.
+	//또한 UseOtherMeshComponentForward를 사용하는 경우, 해당 대상이 LinetraceAbilityEffectInterface를 상속받고 있어야 합니다.
 	UPROPERTY(EditAnywhere, meta=(EditCondition="bUseStopTrace"), Category="Option")
 	EStopTraceType StopTraceType;
 	//메시 전방을 사용하려면 소켓의 이름이 필요합니다. 머리나 눈같은 소켓이름을 주세요.
-	UPROPERTY(EditAnywhere, meta=(EditCondition="bUseStopTrace && StopTraceType == EStopTraceType::MeshForward"),
+	UPROPERTY(EditAnywhere, meta=(EditCondition="bUseStopTrace && StopTraceType == EStopTraceType::PawnMeshForward || StopTraceType == EStopTraceType::UseOtherMeshComponentForward"),
 		Category="Option")
 	FName SocketName = "head";
 

@@ -176,7 +176,7 @@ float UAbilityTalentComponent::CalculateModifiedDamageWithTraits(class ABaseChar
                                                                  ABaseCharacter* DamagedBy,
                                                                  EAttackType AttackType, const float& Damage)
 {
-	if (DamagedBy && DamagedBy->IsA<APlayerCharacter>())
+	if (DamagedBy && DamagedBy->IsA<ABaseCharacter>())
 	{
 		float sum = 0;
 		switch (AttackType)
@@ -219,7 +219,7 @@ float UAbilityTalentComponent::CalculateModifiedResultDamageWithTraits(ABaseChar
                                                                        EAttackType AttackType,
                                                                        const float& ResultDamage)
 {
-	if (DamagedBy && DamagedBy->IsA<APlayerCharacter>())
+	if (DamagedBy && DamagedBy->IsA<ABaseCharacter>())
 	{
 		float sum = 0;
 		for (auto iter : OnIncreaseResultDamage)
@@ -236,14 +236,30 @@ float UAbilityTalentComponent::CalculateModifiedResultDamageWithTraits(ABaseChar
 	return 0;
 }
 
+float UAbilityTalentComponent::CommonDecreaseDamageTraits(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy,
+	float Damage)
+{
+	float sum = 0;
+	for (auto iter : OnDecreaseGotHitDamage)
+	{
+		if (iter.Value.IsBound())
+		{
+			sum += iter.Value.Execute(Damage, DamagedBy, DamagedCharacter);
+		}
+	}
+	return FMath::Clamp(sum, 0, Damage);
+}
+
 float UAbilityTalentComponent::CalculateModifiedDecreaseDamageWithTraits(ABaseCharacter* DamagedCharacter,
                                                                          ABaseCharacter* DamagedBy,
                                                                          EAttackType AttackType, float Damage)
 {
-	if (DamagedCharacter && DamagedCharacter->IsA<APlayerCharacter>())
+	if (DamagedCharacter && DamagedCharacter->IsA<ABaseCharacter>())
 	{
 		float sum = 0;
 
+		sum+=CommonDecreaseDamageTraits(DamagedCharacter, DamagedBy, Damage);
+		
 		switch (AttackType)
 		{
 		case EAttackType::Physical:
@@ -264,7 +280,7 @@ float UAbilityTalentComponent::CalculateModifiedIncreaseGotHitDamageWithTraits(A
                                                                                ABaseCharacter* DamagedBy,
                                                                                EAttackType AttackType, float Damage)
 {
-	if (DamagedCharacter && DamagedCharacter->IsA<APlayerCharacter>())
+	if (DamagedCharacter && DamagedCharacter->IsA<ABaseCharacter>())
 	{
 		float sum = 0;
 
@@ -458,13 +474,13 @@ float UAbilityTalentComponent::CalculateModifiedDefenceByMonsterTypeWithTraits(f
 }
 
 
-void UAbilityTalentComponent::BroadcastOnSuccessDodge(APlayerCharacter* Player)
+void UAbilityTalentComponent::BroadcastOnSuccessDodge(ABaseCharacter* Character)
 {
 	for (auto iter : OnSuccessDodge)
 	{
 		if (iter.Value.IsBound())
 		{
-			iter.Value.Execute(Player);
+			iter.Value.Execute(Character);
 		}
 	}
 }
@@ -482,14 +498,14 @@ void UAbilityTalentComponent::BroadcastOnSuccessHit(ABaseCharacter* DamagedBy, A
 	}
 }
 
-void UAbilityTalentComponent::BroadcastOnGotHit(APlayerCharacter* DamagedPlayer, ABaseCharacter* DamagedBy,
+void UAbilityTalentComponent::BroadcastOnGotHit(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy,
                                                 float OriginalDamage)
 {
 	for (auto iter : OnGotHit)
 	{
 		if (iter.Value.IsBound())
 		{
-			iter.Value.Execute(DamagedPlayer, DamagedBy, OriginalDamage);
+			iter.Value.Execute(DamagedCharacter, DamagedBy, OriginalDamage);
 		}
 	}
 }

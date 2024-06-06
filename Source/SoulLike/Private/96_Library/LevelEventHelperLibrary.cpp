@@ -12,7 +12,7 @@
 #include "WorldPartition/DataLayer/DataLayerAsset.h"
 #include "WorldPartition/DataLayer/DataLayerSubsystem.h"
 
-void AMainLevelScriptActor::OnDeadBossEvent(AActor* Who, AActor* DeadBy)
+void AMainLevelScriptActor::OnDeadBossEvent_Implementation(AActor* Who, AActor* DeadBy)
 {
 	Cast<ABaseMonster>(Who)->OnDead.RemoveAll(this);
 	Cast<ABaseMonster>(Who)->StopMusic(3.f);
@@ -22,22 +22,28 @@ void AMainLevelScriptActor::OnDeadBossEvent(AActor* Who, AActor* DeadBy)
 bool AMainLevelScriptActor::IsAlreadySet(AActor* Player, const TArray<UDataLayerAsset*>& LayerToActive,
 	const TArray<UDataLayerAsset*>& LayerToLoaded)
 {
-	if (UDataLayerSubsystem* dataLayerSubsystem = UDataLayerHelperLibrary::GetDataLayerSubsystem(Player))
+	if (auto manager = UDataLayerManager::GetDataLayerManager(Player))
 	{
 		//해당 레이어가 전부 활성화 상태인가요?
 		for(auto iter : LayerToActive)
 		{
-			if(dataLayerSubsystem->GetDataLayerInstanceRuntimeState(iter) != EDataLayerRuntimeState::Activated)
+			if(iter!=nullptr)
 			{
-				return false;	
+				if(manager->GetDataLayerInstanceRuntimeState(manager->GetDataLayerInstanceFromAsset(iter)) != EDataLayerRuntimeState::Activated)
+				{
+					return false;	
+				}
 			}
 		}
 		//해당 레이어가 전부 로드됨 상태인가요?
 		for(auto iter : LayerToLoaded)
 		{
-			if(dataLayerSubsystem->GetDataLayerInstanceRuntimeState(iter) != EDataLayerRuntimeState::Loaded)
+			if(iter!=nullptr)
 			{
-				return false;	
+				if(manager->GetDataLayerInstanceRuntimeState(manager->GetDataLayerInstanceFromAsset(iter)) != EDataLayerRuntimeState::Loaded)
+				{
+					return false;	
+				}
 			}
 		}
 
@@ -46,7 +52,7 @@ bool AMainLevelScriptActor::IsAlreadySet(AActor* Player, const TArray<UDataLayer
 }
 
 void AMainLevelScriptActor::ActiveLayerSetting(AActor* Player, TArray<UDataLayerAsset*> LayerToActive,
-                                               TArray<UDataLayerAsset*> LayerToLoaded)
+                                               TArray<UDataLayerAsset*> LayerToLoaded, const FK2OnLayerActivated& K2_OnLayerActivated)
 {
 	if (Player)
 	{
@@ -56,13 +62,15 @@ void AMainLevelScriptActor::ActiveLayerSetting(AActor* Player, TArray<UDataLayer
 		
 		UE_LOGFMT(LogTemp, Log, "AMainLevelScriptActor : 레이어 설정을 시작합니다.");
 		
-		if (UDataLayerSubsystem* dataLayerSubsystem = UDataLayerHelperLibrary::GetDataLayerSubsystem(Player))
+		if (auto manager = UDataLayerManager::GetDataLayerManager(Player))
 		{
 			if (auto player = Cast<APlayerCharacter>(Player))
 			{
-				OnNexusLayerActivated.BindLambda(
-					[LayerToActive, Player, this](const UDataLayerInstance* DataLayer, EDataLayerRuntimeState State)
+				OnLayerActivated.BindLambda(
+					[LayerToActive, Player, this, K2_OnLayerActivated](const UDataLayerInstance* DataLayer, EDataLayerRuntimeState State)
 					{
+						UE_LOGFMT(LogTemp,Warning,"OnLayerActivated");
+						
 						if (State == EDataLayerRuntimeState::Activated)
 						{
 							for (auto iter : LayerToActive)
@@ -70,30 +78,34 @@ void AMainLevelScriptActor::ActiveLayerSetting(AActor* Player, TArray<UDataLayer
 								if (DataLayer->GetDataLayerFullName().Equals(iter->GetPathName()))
 								{
 									EndActiveLayerSetting(Player);
+									K2_OnLayerActivated.ExecuteIfBound();
 									break;
 								}
 							}
 						}
 					});
 
-				dataLayerSubsystem->OnDataLayerRuntimeStateChanged.AddUniqueDynamic(
-					this, &AMainLevelScriptActor::OnChangedLayerStateForEnterNexus);
+				manager->OnDataLayerInstanceRuntimeStateChanged.AddUniqueDynamic(
+					this, &AMainLevelScriptActor::OnActivateLayerEvent);
 
-				player->DisableInput(Cast<APlayerController>(player->GetController()));
-				player->GetCapsuleComponent()->SetEnableGravity(false);
-
-				auto manager = UGameplayStatics::GetPlayerCameraManager(Player, 0);
-				manager->StartCameraFade(0, 1.f, 1.f, FColor::Black, true, true);
+				player->ShowLoadingScreen(true);
 
 				for (const auto iter : LayerToActive)
 				{
-					//UE_LOGFMT(LogTemp, Log, "활성화할 레이어의 경로입니다 : {0}", iter->GetPathName());
-					dataLayerSubsystem->SetDataLayerInstanceRuntimeState(iter, EDataLayerRuntimeState::Activated);
+					if(iter!=nullptr)
+					{
+						UE_LOGFMT(LogTemp, Log, "다음 레이어를 활성화 합니다. : {0}", iter->GetPathName());
+						manager->SetDataLayerInstanceRuntimeState(manager->GetDataLayerInstanceFromAsset(iter), EDataLayerRuntimeState::Activated);
+					}
 				}
 
 				for (const auto iter : LayerToLoaded)
 				{
-					dataLayerSubsystem->SetDataLayerInstanceRuntimeState(iter, EDataLayerRuntimeState::Loaded);
+					if(iter!=nullptr)
+					{
+						UE_LOGFMT(LogTemp, Log, "다음 레이어를 활성화 합니다. : {0}", iter->GetPathName());
+						manager->SetDataLayerInstanceRuntimeState(manager->GetDataLayerInstanceFromAsset(iter), EDataLayerRuntimeState::Loaded);
+					}
 				}
 			}
 		}
@@ -104,39 +116,32 @@ void AMainLevelScriptActor::EndActiveLayerSetting(AActor* Player)
 {
 	if (auto player = Cast<APlayerCharacter>(Player))
 	{
-		auto manager = UGameplayStatics::GetPlayerCameraManager(Player, 0);
-		manager->StopCameraFade();
-		player->GetCapsuleComponent()->SetEnableGravity(true);
-		player->EnableInput(Cast<APlayerController>(player->GetController()));
-
+		/*player->ShowLoadingScreen(false);*/
+		
 		UE_LOGFMT(LogTemp, Log, "AMainLevelScriptActor : 레이어 설정이 끝났습니다.");
 
-		if (auto subsystem = UDataLayerHelperLibrary::GetDataLayerSubsystem(this))
+		if (auto manager = UDataLayerManager::GetDataLayerManager(Player))
 		{
-			subsystem->OnDataLayerRuntimeStateChanged.RemoveDynamic(
-				this, &AMainLevelScriptActor::OnChangedLayerStateForEnterNexus);
+			manager->OnDataLayerInstanceRuntimeStateChanged.RemoveDynamic(
+				this, &AMainLevelScriptActor::OnActivateLayerEvent);
 		}
 		
-		OnNexusLayerActivated.Unbind();
+		OnLayerActivated.Unbind();
 	}
 }
 
-void AMainLevelScriptActor::OnChangedLayerStateForEnterNexus(const UDataLayerInstance* DataLayer,
+void AMainLevelScriptActor::OnActivateLayerEvent(const UDataLayerInstance* DataLayer,
                                                              EDataLayerRuntimeState State)
 {
-	//UE_LOGFMT(LogTemp, Log, "변경된 레이어의 경로입니다 : {0}", DataLayer->GetDataLayerFullName());
-	if(!OnNexusLayerActivated.ExecuteIfBound(DataLayer, State))
-	{
-		UE_LOGFMT(LogTemp, Error, "AMainLevelScriptActor : 레이어 설정 델리게이트 호출에 실패했습니다.");
-	}
+	UE_LOGFMT(LogTemp,Warning,"OnActivateLayerEvent_Implementation");
+	OnLayerActivated.ExecuteIfBound(DataLayer, State);
 }
 
 
 ABaseMonster* ULevelEventHelperLibrary::SpawnBoss(AMainLevelScriptActor* ScriptActor, AActor* Trigger,
                                                   AActor* OverlapActor,
                                                   TArray<AActor*> BlockingActors,
-                                                  AActor* TargetPoint, TSubclassOf<ABaseMonster> BossToSpawn,
-                                                  USoundBase* MusicToPlay)
+                                                  AActor* TargetPoint, TSubclassOf<ABaseMonster> BossToSpawn)
 {
 	//이미 처치한 우두머리면 아무것도 안 합니다.
 	if (USaveGameHelperLibrary::IsBossKilled(OverlapActor, BossToSpawn.GetDefaultObject()->GetMonsterTag()))
@@ -160,7 +165,7 @@ ABaseMonster* ULevelEventHelperLibrary::SpawnBoss(AMainLevelScriptActor* ScriptA
 	auto boss = Trigger->GetWorld()->SpawnActor<ABaseMonster>(BossToSpawn, TargetPoint->GetActorLocation(),
 	                                                          TargetPoint->GetActorRotation(), spawnParams);
 	boss->OnDead.AddUniqueDynamic(ScriptActor, &AMainLevelScriptActor::OnDeadBossEvent);
-	boss->PlayMusic(MusicToPlay);
+	boss->PlayMusic();
 
 	return boss;
 }

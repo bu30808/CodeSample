@@ -122,6 +122,19 @@ UAttributeComponent::UAttributeComponent()
 			StatusEffectData = asset.Object;
 		}
 	}
+
+	{
+
+		if(GetOwner() && GetOwner()->IsA<ABaseMonster>())
+		{
+			static ConstructorHelpers::FObjectFinder<UDataTable> table(TEXT(
+			"/Script/Engine.DataTable'/Game/Blueprints/03_Monster/DT_MonsterAttributeInit.DT_MonsterAttributeInit'"));
+			if (table.Succeeded())
+			{
+				AttributeInitTable = table.Object;
+			}
+		}
+	}
 }
 
 // Called when the game starts
@@ -206,6 +219,8 @@ void UAttributeComponent::PostEditChangeProperty(FPropertyChangedEvent& Property
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
 	InitAttributes();
+
+	
 }
 #endif
 
@@ -382,19 +397,27 @@ void UAttributeComponent::InitAttributePerPoint()
 
 void UAttributeComponent::InitDefaultAttribute()
 {
-	if (AttributeInitTable)
+	if (AttributeInitTable && GetOwner())
 	{
 		FString contextString;
 
 		const FAttributeInit* init = nullptr;
+		
 		if (GetOwner()->IsA<APlayerCharacter>())
 		{
 			init = AttributeInitTable->FindRow<FAttributeInit>("1", contextString);
 		}
 		else if (GetOwner()->IsA<ABaseMonster>())
 		{
-			init = AttributeInitTable->FindRow<FAttributeInit>(
-				GetOwner<ABaseMonster>()->GetMonsterTag().GetTagName(), contextString);
+			if(auto monster = GetOwner<ABaseMonster>()){
+				if(!monster->GetMonsterTag().IsValid())
+				{
+					UE_LOGFMT(LogActorComponent, Error, "{0} {1}: 몬스터에 할당된 태그가 유효하지 않습니다.", __FUNCTION__,GetOwner()->GetActorNameOrLabel());
+					return;
+				}
+				init = AttributeInitTable->FindRow<FAttributeInit>(
+					monster->GetMonsterTag().GetTagName(), contextString);
+			}
 		}
 
 		if (init == nullptr)

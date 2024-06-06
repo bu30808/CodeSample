@@ -43,5 +43,5 @@ public:
 	//다른 화톳불로 이동하는 함수입니다.
 	void TeleportToOtherBonfire(const FBonfireInformation& TeleportBonfireInforation);
 	UFUNCTION()
-	void OnEndPlayTeleportMontage(UAnimMontage* Montage, bool bInterrupted);
+	void OnPlayTeleportMontage(UAnimMontage* Montage, bool bInterrupted);
 };

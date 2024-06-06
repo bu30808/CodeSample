@@ -10,7 +10,7 @@
 
 
 UENUM(BlueprintType)
-enum class EQuickSlotType
+enum class EQuickSlotType : uint8
 {
 	CONSUME,
 	ABILITY

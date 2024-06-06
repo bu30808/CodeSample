@@ -9,6 +9,7 @@
 #include "00_Character/01_Component/AbilityComponent.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "96_Library/AbilityHelperLibrary.h"
+#include "96_Library/MathHelperLibrary.h"
 #include "Logging/StructuredLog.h"
 
 // Sets default values for this component's properties
@@ -97,57 +98,103 @@ void UAnimationHelperComponent::PlayHitMontageByDirection()
 			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(HitMontage);
 			return;
 		}
-	
+
+		const auto& dir = UMathHelperLibrary::DegreeToDirection(HitDegree);
+		if(HitMontageByDirection.Contains(dir))
+		{
+			ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[dir]);
+		}else
+		{
+			switch (dir) {
+			case EDirection::FrontRight:
+			case EDirection::FrontLeft:
+				ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::Front]);
+				return;
+			case EDirection::BackRight:
+			case EDirection::BackLeft:
+				ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::Back]);
+				return;
+			}
+		}
+
+		UE_LOGFMT(LogAnimation,Error,"이 방향에 대한 피격 애니메이션을 찾을 수 없습니다 : {0}",StaticEnum<EDirection>()->GetValueAsString(dir));
+		
+		/*
 		//전
 		{
-
-			if(HitMontages.Contains(EDirection::Front))
+			
+			if(HitMontageByDirection.Contains(EDirection::Front))
 			{
-				ComponentOwnerCharacter->PlayAnimMontage(HitMontages[EDirection::Front]);
+				ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::Front]);
 				return;
 			}
 		
 			//전 우
 			if (0 < HitDegree && HitDegree <= 45)
 			{
-				ComponentOwnerCharacter->PlayAnimMontage(HitMontages[EDirection::FrontRight]);
+				ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::FrontRight]);
 			}
 			//전 좌
 			if (-45 < HitDegree && HitDegree <= 0)
 			{
-				ComponentOwnerCharacter->PlayAnimMontage(HitMontages[EDirection::FrontLeft]);
+				ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::FrontLeft]);
 			}
 		}
 		//좌
 		if (-135 < HitDegree && HitDegree <= -45)
 		{
-			ComponentOwnerCharacter->PlayAnimMontage(HitMontages[EDirection::Left]);
+			ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::Left]);
 		}
 		//우
 		if (45 < HitDegree && HitDegree <= 135)
 		{
-			ComponentOwnerCharacter->PlayAnimMontage(HitMontages[EDirection::Right]);
+			ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::Right]);
 		}
 
 		//뒤
 		{
-
-			if(HitMontages.Contains(EDirection::Back))
+			if(HitMontageByDirection.Contains(EDirection::Back))
 			{
-				ComponentOwnerCharacter->PlayAnimMontage(HitMontages[EDirection::Back]);
+				ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::Back]);
 				return;
 			}
+			
 		
 			//좌
 			if (-180 < HitDegree && HitDegree <= -135)
 			{
-				ComponentOwnerCharacter->PlayAnimMontage(HitMontages[EDirection::BackLeft]);
+				ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::BackLeft]);
 			}
 			//우
 			if (135 < HitDegree && HitDegree <= 180)
 			{
-				ComponentOwnerCharacter->PlayAnimMontage(HitMontages[EDirection::BackRight]);
+				ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::BackRight]);
 			}
+		}*/
+	}
+}
+
+void UAnimationHelperComponent::PlayGuardHitMontage()
+{
+	if(ComponentOwnerCharacter)
+	{
+		if(HitAnimationType == EHitAnimationType::AnimMontage)
+		{
+			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(this,&UAnimationHelperComponent::OnHitMontageEnded);
+			if(bUseHitMighty)
+			{
+				ActivateHitMightyAbility(HitMightyTime);
+			}
+
+		
+			if(bResetHitMontageWhenHit)
+			{
+				if(IsPlayGuardHitMontage())
+				{
+					ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Stop(0);
+				}
+			}
+			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(GuardHitMontage);
 		}
 	}
 }
@@ -163,7 +210,7 @@ bool UAnimationHelperComponent::IsPlayHitMontage()
 
 		if(bUseDirection)
 		{
-			for (const auto& iter : HitMontages)
+			for (const auto& iter : HitMontageByDirection)
 			{
 				if (ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_IsPlaying(iter.Value))
 				{
@@ -178,6 +225,21 @@ bool UAnimationHelperComponent::IsPlayHitMontage()
 	return false;
 }
 
+bool UAnimationHelperComponent::IsPlayGuardHitMontage() const
+{
+	if(ComponentOwnerCharacter)
+	{
+		if(HitAnimationType != EHitAnimationType::AnimMontage)
+		{
+			return false;
+		}
+		
+		return ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_IsPlaying(GuardHitMontage);
+		
+	}
+	return false;
+}
+
 bool UAnimationHelperComponent::IsHitMontage(const UAnimMontage* Montage)
 {
 	if(HitAnimationType != EHitAnimationType::AnimMontage)
@@ -187,7 +249,7 @@ bool UAnimationHelperComponent::IsHitMontage(const UAnimMontage* Montage)
 
 	if(bUseDirection)
 	{
-		for (const auto& iter : HitMontages)
+		for (const auto& iter : HitMontageByDirection)
 		{
 			if (Montage == iter.Value)
 			{
@@ -202,21 +264,28 @@ bool UAnimationHelperComponent::IsHitMontage(const UAnimMontage* Montage)
 	return false;
 }
 
+bool UAnimationHelperComponent::IsGuradHitMontage(const UAnimMontage* Montage)
+{
+	return Montage == GuardHitMontage;
+}
+
 void UAnimationHelperComponent::OnHitMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if(ComponentOwnerCharacter)
 	{
 		if(!bInterrupted)
 		{
-			if(IsHitMontage(Montage) && ComponentOwnerCharacter->IsDead() == false)
+			if(ComponentOwnerCharacter->IsDead() == false)
 			{
-				ComponentOwnerCharacter->SetCharacterState(ECharacterState::NORMAL);
-				if (const auto aiCon = ComponentOwnerCharacter->GetController<AMonsterAIController>())
+				if(IsHitMontage(Montage) || IsGuradHitMontage(Montage))
 				{
-					UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 비헤이비어 트리 재 실행"),*GetNameSafe(this)));
-					aiCon->ReStartBehavior();
+					ComponentOwnerCharacter->SetCharacterState(ECharacterState::NORMAL);
+					if (const auto aiCon = ComponentOwnerCharacter->GetController<AMonsterAIController>())
+					{
+						UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 비헤이비어 트리 재 실행"),*GetNameSafe(this)));
+						//aiCon->ReStartBehavior();
+					}
 				}
-			
 			}
 		}
 	}

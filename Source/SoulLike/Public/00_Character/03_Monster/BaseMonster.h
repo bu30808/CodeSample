@@ -30,6 +30,8 @@ enum class EMonsterState : uint8
 	Aggressive UMETA(DisplayName = "전투"),
 	//적을 인식했지만 전투는 아닌 상태
 	Beware UMETA(DisplayName = "경계"),
+	//가드중인 상태
+	Guard UMETA(DisplayName = "방어"),
 	MAX
 };
 
@@ -41,7 +43,12 @@ enum class EMonsterType :uint8
 	//언데드
 	UNDEAD,
 	//트롤
-	TROLL
+	TROLL,
+	//골램
+	GOLEM,
+	//인간형
+	HUMANOID
+	//Humanoid
 };
 
 
@@ -101,6 +108,7 @@ public:
 /* 
  *	모든 몬스터의 기본 클래스
  *	IBossMonsterInterface를 상속받으면 보스몬스터 취급 합니다.
+ *	MonsterDataAsset내부의 몬스터 태그를 꼭 설정해 주세요.
  */
 UCLASS()
 class SOULLIKE_API ABaseMonster : public ABaseCharacter, public ILockOnInterface,
@@ -132,6 +140,11 @@ protected:
 	//보스몬스터 전용
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class UAudioComponent* MusicComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	class UNavigationInvokerComponent* NavigationInvokerComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	class UUROComponent* UROComponent;
 
 
 	UPROPERTY(Transient)
@@ -201,13 +214,27 @@ protected:
 	bool bLockOnAble = true;
 
 	/**********************************************상태*********************************************************/
-protected:
 	//적을 인식했는지 저장하는 변수입니다.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient)
 	EMonsterState MonsterState;
 	//몬스터 기본정보를 저장하는 데이터 에셋입니다.
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default")
 	class UMonsterDataAsset* MonsterDataAsset;
+	//이 값이 참이면, 비헤이비어 트리 즉시 시작 옵션을 덮어씁니다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default")
+	bool bOverrideStartBehaviorTreeImmediately = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default",meta=(EditCondition="bOverrideStartBehaviorTreeImmediately"))
+	bool bStartBehaviorTreeImmediately  = false;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default")
+	bool bFollowLeader = false;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default",meta=(EditCondition="bFollowLeader"))
+	class AActor* Leader;
+	
+public:
+	bool UseLeader() const {return bFollowLeader;}
+	AActor* GetLeader() const {return Leader;}
+	
 	//이 수치가 DataAsset에 저장된 수치보다 높아지면 이 수치를 0으로 초기화 하고, 강제로 피격 애니메이션을 재생하도록 합니다.
 	UPROPERTY(EditAnywhere, Transient)
 	float StunIntensity;
@@ -215,7 +242,6 @@ protected:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	EMonsterType GetMonsterType() { return MonsterDataAsset->MonsterType; }
 
-public:
 	UFUNCTION(BlueprintCallable)
 	void SetMonsterState(EMonsterState NewState);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
@@ -242,14 +268,14 @@ protected:
 	/**********************************************AI*********************************************************/
 protected:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool IsStartBehaviorTreeImmediately() const { return MonsterDataAsset->bStartBehaviorTreeImmediately; }
-
+	bool IsStartBehaviorTreeImmediately() const;
+	
 	/**********************************************기본정보*********************************************************/
 public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FText GetMonsterName() { return MonsterDataAsset->MonsterName; }
 
-	const FGameplayTag& GetMonsterTag() const { return MonsterDataAsset->MonsterTag; }
+	const FGameplayTag& GetMonsterTag() const;
 	/**********************************************애니메이션*********************************************************/
 	
 	virtual void OnTriggerHitAnimationEnterEvent(ABaseCharacter* DamagedCharacter, AActor* HitBy) override;
@@ -290,7 +316,7 @@ protected:
 public:
 	//보스 인터페이스를 상속중이라면, 음악을 재생합니다.
 	UFUNCTION(BlueprintCallable)
-	void PlayMusic(class USoundBase* Music);
+	void PlayMusic();
 	/**
 	 * AdjustVolumeDuration에 걸쳐서 볼륨을 0으로 만든 후, 컴포넌트를 파괴합니다.
 	 * @param AdjustVolumeDuration 

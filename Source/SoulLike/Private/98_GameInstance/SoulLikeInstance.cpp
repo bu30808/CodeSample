@@ -91,12 +91,19 @@ USoulLikeInstance::USoulLikeInstance()
 
 float USoulLikeInstance::GetBGMVolume()
 {
-	return BGMClass->Properties.Volume;
+	if(BGMClass){
+		return BGMClass->Properties.Volume;
+	}
+
+	return 0.5f;
 }
 
 float USoulLikeInstance::GetSFXVolume()
 {
-	return SFXClass->Properties.Volume;
+	if(SFXClass){
+		return SFXClass->Properties.Volume;
+	}
+	return 0.5f;
 }
 
 void USoulLikeInstance::SetBGMVolume(float vol)
@@ -112,10 +119,10 @@ void USoulLikeInstance::SetSFXVolume(float vol)
 void USoulLikeInstance::Init()
 {
 	Super::Init();
-
+	
 	FCoreUObjectDelegates::PreLoadMap.
 		AddUObject(this, &USoulLikeInstance::PreLoadMapEvent);
-
+	
 	FCoreUObjectDelegates::PostLoadMapWithWorld.AddUObject(this, &USoulLikeInstance::OnPostLoadMapWithWorldEvent);
 }
 
@@ -124,25 +131,31 @@ void USoulLikeInstance::PreLoadMapEvent(const FString& LevelName)
 	if (LoadingWidgetClass != nullptr)
 	{
 		if (auto widget =
-				CreateWidget<UUserWidget>(UGameplayStatics::GetPlayerController(GetWorld(), 0),
-				                          LoadingWidgetClass.Get());
-			widget != nullptr)
+				CreateWidget<UUserWidget>(GetWorld(),LoadingWidgetClass.Get()))
 		{
 			UKismetSystemLibrary::PrintString(this,TEXT("로딩 스크린 생성"));
 			FLoadingScreenAttributes LoadingScreen;
 			LoadingScreen.bAutoCompleteWhenLoadingCompletes = false;
 			LoadingScreen.WidgetLoadingScreen = /*FLoadingScreenAttributes::NewTestLoadingScreenWidget()*/widget->
 				TakeWidget();
-			LoadingScreen.bWaitForManualStop = false;
-			/*LoadingScreen.MinimumLoadingScreenDisplayTime = 50.f;
-			LoadingScreen.MoviePaths.Add("Blurred Distance_1080p");*/
+			LoadingScreen.bWaitForManualStop = true;
+			LoadingScreen.bAllowEngineTick = true;
+			LoadingScreen.MinimumLoadingScreenDisplayTime = 1.f;
 			GetMoviePlayer()->SetupLoadingScreen(LoadingScreen);
+		}else
+		{
+			UKismetSystemLibrary::PrintString(this,TEXT("위젯 포인터가 널입니다. 1 "));
 		}
+	}else
+	{
+		UKismetSystemLibrary::PrintString(this,TEXT("위젯 포인터가 널입니다.2 "));
 	}
 }
 
 void USoulLikeInstance::OnPostLoadMapWithWorldEvent(UWorld* World)
 {
+	GetMoviePlayer()->StopMovie();
+	UKismetSystemLibrary::PrintString(this,TEXT("로드 완료됨"));
 }
 
 bool USoulLikeInstance::IsUseGameSave() const
@@ -193,6 +206,7 @@ void USoulLikeInstance::LoadGame()
 		if (const auto instance = GetSaveGameInstance())
 		{
 			bBlockSave = true;
+			CurrentPlayer->SetGravityAroundPlayer(false);
 			UE_LOGFMT(LogSave,Warning,"세이브 불가능 상태로 전환합니다.");
 			switch (instance->GameLoadType)
 			{
@@ -255,31 +269,31 @@ void USoulLikeInstance::NormalLoad()
 	LoadLevel(UGameplayStatics::GetCurrentLevelName(CurrentPlayer->GetWorld()));
 	LoadLayer();
 	LoadCommon();
-	MarkLoadFinish();
+	TryLoadFinish();
 }
 
 void USoulLikeInstance::RespawnOrLastSavePointLoad()
 {
+	UE_LOGFMT(LogSave,Warning,"RespawnOrLastSavePointLoad");
 	if (auto instance = GetSaveGameInstance())
 	{
 		//레벨 복구
 		if (instance->SavedMapName.IsEmpty() == false)
 		{
 			LoadLevel(instance->SavedMapName);
-			instance->GameLoadType = EGameLoadType::TELEPORT_TO_LAST_SAVEPOINT;
-
-			if (instance->SavedLastSavePoint.SavedBonfireName.IsEmpty() == false)
+			if (instance->SavedLastSavePoint.SavedBonfireSafeName.IsEmpty() == false)
 			{
 				if (auto streamingActor = UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(CurrentPlayer))
 				{
 					UE_LOGFMT(LogSave, Log, "불러온 마지막 세이브 포인트 정보 : {0} {1} {2}", instance->SavedLastSavePoint.LevelName,
-							  instance->SavedLastSavePoint.SavedTransform.GetLocation().ToString(),
-							  instance->SavedLastSavePoint.SavedBonfireName);
-					CurrentPlayer->SetActorLocation(instance->SavedLastSavePoint.SavedTransform.GetLocation());
+							  instance->SavedLastSavePoint.SavedLocation.ToString(),
+							  instance->SavedLastSavePoint.SavedBonfireSafeName);
+				
+					CurrentPlayer->SetActorLocation(instance->SavedLastSavePoint.SavedLocation);
 					LoadCommon();
 					LoadSkyFromValue(instance->SavedLastSavePoint.SkyTime);
 					LoadLayer();
-					streamingActor->OnAfterStreamingComplete.AddUniqueDynamic(this, &USoulLikeInstance::MarkLoadFinish);
+					streamingActor->OnAfterStreamingComplete.AddUniqueDynamic(this, &USoulLikeInstance::TryLoadFinish);
 					streamingActor->OnAfterStreamingComplete.AddUniqueDynamic(this,&USoulLikeInstance::PotionReplenishment);
 					streamingActor->StreamingStart(CurrentPlayer->GetActorLocation());
 				}
@@ -288,7 +302,7 @@ void USoulLikeInstance::RespawnOrLastSavePointLoad()
 			{
 				LoadCommon();
 				LoadSky();
-				MarkLoadFinish();
+				TryLoadFinish();
 			}
 		}
 	}
@@ -308,6 +322,7 @@ void USoulLikeInstance::LoadSkyFromBonfire()
 
 void USoulLikeInstance::TeleportToOtherBonfireLoad()
 {
+	UE_LOGFMT(LogSave,Warning,"TeleportToOtherBonfireLoad");
 	if (auto instance = GetSaveGameInstance())
 	{
 		UE_LOGFMT(LogSave, Log, "다음 화톳불로 이동합니다 : {0}", instance->TeleportBonfireInfo.LocationName.ToString());
@@ -319,10 +334,10 @@ void USoulLikeInstance::TeleportToOtherBonfireLoad()
 			LoadCommon();
 			LoadSkyFromBonfire();
 			
-			streamingActor->OnAfterStreamingComplete.AddUniqueDynamic(this, &USoulLikeInstance::MarkLoadFinish);
-
+			streamingActor->OnAfterStreamingComplete.AddUniqueDynamic(this, &USoulLikeInstance::TryLoadFinish);
 			streamingActor->StreamingStart(instance->TeleportBonfireInfo.Location);
-			instance->GameLoadType = EGameLoadType::TELEPORT_TO_LAST_SAVEPOINT;
+
+			instance->SavedLastSavePoint = instance->TeleportBonfireInfo;
 		}
 	}
 }
@@ -332,13 +347,11 @@ void USoulLikeInstance::PotionReplenishment()
 	UItemHelperLibrary::PotionReplenishment(CurrentPlayer);
 }
 
-
 void USoulLikeInstance::LoadBonfireLayer(const FBonfireInformation& BonfireInformation)
 {
 	if (const auto gameLoadHandler = NewObject<UGameLoadHandler>(CurrentPlayer))
 	{
-		UE_LOGFMT(LogSave,Log,"레이어 로드 111111111111111111111111");
-		gameLoadHandler->RestoreDataLayer(CurrentPlayer, BonfireInformation.NeedToUnloadLayer,BonfireInformation.NeedToLoadLayer,BonfireInformation.NeedToActivateLayer, DataLayerTable);
+		gameLoadHandler->RestoreDataLayer(CurrentPlayer, BonfireInformation,DataLayerTable);
 		gameLoadHandler->MarkAsGarbage();
 	}
 }
@@ -347,10 +360,9 @@ void USoulLikeInstance::LoadLayer()
 {
 	if (const auto gameLoadHandler = NewObject<UGameLoadHandler>(CurrentPlayer))
 	{
-		UE_LOGFMT(LogSave,Log,"레이어 로드 2222222222222222222");
 		if (auto instance = GetSaveGameInstance())
 		{
-			gameLoadHandler->RestoreDataLayer(CurrentPlayer, instance->LayerState, DataLayerTable);
+			gameLoadHandler->RestoreDataLayer(CurrentPlayer, instance->LastSavedLayerState, DataLayerTable);
 		}
 		gameLoadHandler->MarkAsGarbage();
 	}
@@ -358,16 +370,15 @@ void USoulLikeInstance::LoadLayer()
 
 void USoulLikeInstance::LoadLayers(const TArray<FName>& LayerRowNames)
 {
-	UE_LOGFMT(LogSave,Log,"레이어 로드 33333333333333333333333");
 	for(const auto& iter : LayerRowNames)
 	{
+		UE_LOGFMT(LogSave,Log,"USoulLikeInstance::LoadLayers : {0}",iter);
 		LoadLayer(iter);
 	}
 }
 
 void USoulLikeInstance::LoadLayer(const FName& LayerRowName)
 {
-	UE_LOGFMT(LogSave,Log,"레이어 로드 44444444444444444444444");
 	if (const auto gameLoadHandler = NewObject<UGameLoadHandler>(CurrentPlayer))
 	{
 		gameLoadHandler->RestoreDataLayer(CurrentPlayer, LayerRowName, DataLayerTable);
@@ -513,7 +524,18 @@ void USoulLikeInstance::CreateSoulTomb(APlayerCharacter* Player)
 	}
 }
 
-void USoulLikeInstance::MarkLoadFinish()
+void USoulLikeInstance::TryLoadFinish()
+{
+	if(GetWorld()->GetTimerManager().TimerExists(LoadFinishTimerHandle))
+	{
+		UE_LOGFMT(LogSave,Warning,"이미 로드 완료 타이머가 실행중입니다.");
+		GetWorld()->GetTimerManager().ClearTimer(LoadFinishTimerHandle);
+	}
+	//n초있다가 실행하도록 하자. 바닥으로 꺼지는 문제 있다.
+	GetWorld()->GetTimerManager().SetTimer(LoadFinishTimerHandle,this,&USoulLikeInstance::LoadFinish,3.f,false);
+}
+
+void USoulLikeInstance::LoadFinish()
 {
 	UE_LOGFMT(LogSave,Warning,"세이브 가능 상태로 전환합니다.");
 	bBlockSave = false;
@@ -576,7 +598,7 @@ void USoulLikeInstance::TeleportToLastSavePoint(APlayerCharacter* Player)
 	}
 	else
 	{
-		Player->SetActorTransform(point.SavedTransform);
+		Player->SetActorLocation(point.SavedLocation);
 	}
 }
 
@@ -806,8 +828,7 @@ void USoulLikeInstance::SaveWithLastSavePoint(APlayerCharacter* Player, UBonfire
 	auto instance = GetSaveGameInstance();
 	instance->GameLoadType = EGameLoadType::TELEPORT_TO_LAST_SAVEPOINT;
 
-	instance->SaveLastSavePoint(UGameplayStatics::GetCurrentLevelName(Player), Player->GetActorTransform(),
-	                            BonfireComponent);
+	instance->SaveLastSavePoint(UGameplayStatics::GetCurrentLevelName(Player), Player->GetActorLocation(), BonfireComponent);
 	instance->SaveInventory(Player);
 	instance->SaveAttribute(Player);
 	instance->SaveDataLayer(Player,DataLayerTable);
@@ -906,7 +927,7 @@ void USoulLikeInstance::SaveBonfire(ABonfire* Bonfire)
 }
 
 bool USoulLikeInstance::IsActivatedBonfire(const FString& LevelName, const FString& SafeName)
-{
+{	
 	auto instance = GetSaveGameInstance();
 	const FName& safeName = FName(SafeName);
 	const auto& activatedBonfire = instance->ActivateBonfire;
@@ -1021,6 +1042,24 @@ void USoulLikeInstance::SaveDataLayer(APlayerCharacter* Player)
 	}
 }
 
+void USoulLikeInstance::SaveChest(AChest* Chest, bool bEaredChestItem)
+{
+	if (!IsUseGameSave())
+	{
+		return;
+	}
+
+	
+	if(Chest)
+	{
+		if (const auto instance = GetSaveGameInstance())
+		{
+			instance->SaveChest(Chest,bEaredChestItem);
+			SaveGameInstanceToSlot(instance);
+		}
+	}
+}
+
 bool USoulLikeInstance::IsActivatedBonfire(const ABonfire* Bonfire)
 {
 	if (!IsUseGameSave())
@@ -1099,6 +1138,59 @@ bool USoulLikeInstance::IsBossKilled(const FGameplayTag& BossMonsterTag)
 	if (const auto instance = GetSaveGameInstance())
 	{
 		return instance->KilledBossMonstersTag.Contains(BossMonsterTag);
+	}
+
+	return false;
+}
+
+bool USoulLikeInstance::IsOpenedChest(const AChest* Chest)
+{
+	if (!IsUseGameSave())
+	{
+		return false;
+	}
+
+	if (const auto instance = GetSaveGameInstance())
+	{
+		const auto& levelName = UGameplayStatics::GetCurrentLevelName(Chest);
+		const auto& safeName = GetNameSafe(Chest);
+		const auto& openedChest = instance->OpenedChests;
+		if(openedChest.Contains(levelName))
+		{
+			const auto& arr = openedChest[levelName].Information.Array();
+			if(arr.Contains(safeName))
+			{
+				return true;
+			}
+		}
+		
+	}
+
+	return false;
+}
+
+bool USoulLikeInstance::IsAlreadyGetChestItem(AChest* Chest)
+{
+	if (!IsUseGameSave())
+	{
+		return false;
+	}
+
+	if (const auto instance = GetSaveGameInstance())
+	{
+		const auto& levelName = UGameplayStatics::GetCurrentLevelName(Chest);
+		const auto& safeName = GetNameSafe(Chest);
+		
+		const auto& openedChest = instance->EarnedChestItems;
+		if(openedChest.Contains(levelName))
+		{
+			const auto& arr = openedChest[levelName].Information.Array();
+			if(arr.Contains(safeName))
+			{
+				return true;
+			}
+		}
+		
 	}
 
 	return false;

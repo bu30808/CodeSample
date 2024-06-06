@@ -24,12 +24,12 @@ public:
 	//어빌리티가 끝날때 까지 이 태스크를 유지할지 여부입니다.
 	UPROPERTY(EditAnywhere)
 	bool bWaitAbilityEnd = true;
-
-	//델리게이트 이벤트. 테스크 끝났을 떄 호출
-	FOnFinishTask OnFinishTask;
-
+	
 	UPROPERTY()
 	TWeakObjectPtr<class UAbilityAdditionalInformation> AdditionalInfo;
+
+	UPROPERTY()
+	TWeakObjectPtr<class AAIController> AICon;
 
 	UBTTask_UseAbility();
 
@@ -37,4 +37,24 @@ public:
 	virtual FString GetStaticDescription() const override;
 	UFUNCTION()
 	void OnEndAbilityEvent();
+};
+
+
+
+/**
+ * 
+ */
+UCLASS()
+class SOULLIKE_API UBTTask_ForceEndAbility : public UBTTask_BlackboardBase
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere)
+	FGameplayTag AbilityTag;
+	
+	UBTTask_ForceEndAbility();
+	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+	virtual FString GetStaticDescription() const override;
+
 };

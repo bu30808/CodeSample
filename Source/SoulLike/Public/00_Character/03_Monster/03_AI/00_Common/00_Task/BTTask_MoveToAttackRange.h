@@ -13,6 +13,7 @@
 /**
  * 
  */
+/*
 UCLASS()
 class SOULLIKE_API UBTTask_MoveToAttackRange : public UBTTask_MoveTo
 {
@@ -31,4 +32,33 @@ protected:
 	//이 값만큼 더 가까이 이동합니다.
 	UPROPERTY(EditAnywhere)
 	float ErrorMargin = 100.f;
+};
+*/
+
+UCLASS()
+class SOULLIKE_API UBTTask_MoveToAttackRange : public UBTTask_BlackboardBase
+{
+	GENERATED_BODY()
+
+protected:
+	UBTTask_MoveToAttackRange();
+
+
+	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+	virtual EBTNodeResult::Type AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
+	UFUNCTION()
+	void OnMoveFinished(FAIRequestID RequestID, EPathFollowingResult::Type Result);
+	
+
+	UPROPERTY(EditAnywhere)
+	FBlackboardKeySelector AttackRangeKey;
+	//목표가 이 값 이하면 다 이동한것으로 합니다.
+	UPROPERTY()
+	float AcceptableRadius;
+	//이 값만큼 더 가까이 이동합니다. 음수일경우 더 멀리서 멈춥니다.
+	UPROPERTY(EditAnywhere)
+	float OffsetDistance = 100.f;
+	
+	UPROPERTY(Transient)
+	TWeakObjectPtr<class AAIController> AICon;
 };

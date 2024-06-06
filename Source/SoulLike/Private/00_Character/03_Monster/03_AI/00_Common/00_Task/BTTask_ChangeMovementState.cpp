@@ -30,10 +30,7 @@ void UBTTask_ChangeMovementState::OnTaskFinished(UBehaviorTreeComponent& OwnerCo
                                                  EBTNodeResult::Type TaskResult)
 {
 	Super::OnTaskFinished(OwnerComp, NodeMemory, TaskResult);
-	/*if(auto character = OwnerComp.GetAIOwner()->GetPawn<ABaseMonster>())
-	{
-		character->ChangeMovementState(EMovementState::Walk);
-	}*/
+	
 }
 
 FString UBTTask_ChangeMovementState::GetStaticDescription() const

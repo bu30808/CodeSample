@@ -9,7 +9,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Logging/StructuredLog.h"
 
-
+/*
 UBTTask_MoveToAttackRange::UBTTask_MoveToAttackRange()
 {
 	bCreateNodeInstance = true;
@@ -18,6 +18,7 @@ UBTTask_MoveToAttackRange::UBTTask_MoveToAttackRange()
 	BlackboardKey.SelectedKeyName = "Target";
 	AttackRangeKey.SelectedKeyName = "AttackRange";
 }
+
 
 EBTNodeResult::Type UBTTask_MoveToAttackRange::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
@@ -57,3 +58,46 @@ void UBTTask_MoveToAttackRange::TickTask(UBehaviorTreeComponent& OwnerComp, uint
 		}
 	}
 }
+*/
+UBTTask_MoveToAttackRange::UBTTask_MoveToAttackRange()
+{
+	bCreateNodeInstance = true;
+	NodeName = TEXT("공격 범위 정보를 이용한 이동");
+	BlackboardKey.SelectedKeyName = "Target";
+	AttackRangeKey.SelectedKeyName = "AttackRange";
+}
+
+EBTNodeResult::Type UBTTask_MoveToAttackRange::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	AICon = OwnerComp.GetAIOwner();
+	if(AICon.IsValid()){
+		AcceptableRadius = OwnerComp.GetBlackboardComponent()->GetValueAsFloat(AttackRangeKey.SelectedKeyName) - OffsetDistance;
+
+		AICon->ReceiveMoveCompleted.AddUniqueDynamic(this,&UBTTask_MoveToAttackRange::OnMoveFinished);
+		
+		auto target = Cast<AActor>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(GetSelectedBlackboardKey()));
+		AICon->MoveToActor(target,AcceptableRadius);
+	
+		return EBTNodeResult::InProgress;
+	}
+	
+	return EBTNodeResult::Failed;
+}
+
+EBTNodeResult::Type UBTTask_MoveToAttackRange::AbortTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
+{
+	if(AICon.IsValid()){
+		AICon->ReceiveMoveCompleted.RemoveDynamic(this,&UBTTask_MoveToAttackRange::OnMoveFinished);
+		AICon->StopMovement();
+	}
+	return Super::AbortTask(OwnerComp, NodeMemory);
+}
+
+void UBTTask_MoveToAttackRange::OnMoveFinished(FAIRequestID RequestID, EPathFollowingResult::Type Result)
+{
+	if(AICon.IsValid()){
+		AICon->ReceiveMoveCompleted.RemoveDynamic(this,&UBTTask_MoveToAttackRange::OnMoveFinished);
+		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Succeeded);
+	}
+}
+

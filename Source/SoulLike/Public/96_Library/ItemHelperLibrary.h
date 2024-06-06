@@ -42,4 +42,7 @@ public:
 
 	static void PotionReplenishment(APlayerCharacter* Player);
 	static FLinearColor GetFragmentColorByType(const FInventoryItem& Fragment);
+
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	static bool HasItem(AActor* Character,FGameplayTag ItemTagToCheck);
 };

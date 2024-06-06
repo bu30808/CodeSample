@@ -8,7 +8,7 @@
 #include "BTTask_ChangeMovementState.generated.h"
 
 /**
- * 
+ * 몬스터의 걷기 혹은 달리기 상태를 변경합니다.
  */
 UCLASS()
 class SOULLIKE_API UBTTask_ChangeMovementState : public UBTTask_BlackboardBase

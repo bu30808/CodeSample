@@ -76,7 +76,7 @@ UStatusEffect_Freeze::UStatusEffect_Freeze()
 {
 	EffectApplyType = EEffectApplyType::Duration;
 	Time = 3.f;
-	AttributeEffects.Add(FAttributeEffect(EAttributeType::ChillAcc, EAttributeApplyMethod::REMOVE,INT_MAX));
+	AttributeEffects.Add(FAttributeEffect(EAttributeType::ChillAcc, EAttributeApplyMethod::REMOVE,static_cast<float>(INT_MAX)));
 	UniqueEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.Freeze.Effect");
 
 	{

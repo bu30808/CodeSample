@@ -30,4 +30,8 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void RemoveBossWidget(class ABaseMonster* Boss, AActor* PlayerCharacter);
 	virtual void RemoveBossWidget_Implementation(class ABaseMonster* Boss, AActor* PlayerCharacter);
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	class USoundBase* GetBossMusic();
+	virtual class USoundBase* GetBossMusic_Implementation();
 };

@@ -13,7 +13,7 @@ UStatusEffect_Bleed::UStatusEffect_Bleed()
 	EffectApplyType = EEffectApplyType::DurationWithTick;
 	Time = 5.f;
 
-	AttributeEffects.Add(FAttributeEffect(EAttributeType::BleedAcc, EAttributeApplyMethod::REMOVE,INT_MAX));
+	AttributeEffects.Add(FAttributeEffect(EAttributeType::BleedAcc, EAttributeApplyMethod::REMOVE,static_cast<float>(INT_MAX)));
 	UniqueEffectTag = FGameplayTag::RequestGameplayTag("Common.StatusEffect.Bleed.Effect");
 }
 

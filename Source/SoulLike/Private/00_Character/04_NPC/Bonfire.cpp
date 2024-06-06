@@ -20,6 +20,9 @@ class UDataLayerSubsystem;
 
 ABonfire::ABonfire()
 {
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.TickInterval = 1.f;
+	
 	NiagaraComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("ActivateParticle"));
 	NiagaraComponent->SetupAttachment(RootComponent);
 	NiagaraComponent->SetAutoActivate(false);
@@ -61,7 +64,18 @@ void ABonfire::BeginPlay()
 void ABonfire::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
+	
+	FHitResult hit;
+	TArray<TEnumAsByte<EObjectTypeQuery>> objectTypes;
+	objectTypes.Emplace(UEngineTypes::ConvertToObjectType(ECC_Monster));
+	//주변에 몬스터가 있는지 확인합시다.
+	bCanUseBonfire = !UKismetSystemLibrary::SphereTraceSingleForObjects(this,GetActorLocation(),GetActorLocation(),MonsterCheckRadius,objectTypes,false,TArray<AActor*>(),EDrawDebugTrace::ForDuration,hit,true);
+	CannotActivate_NiagaraComponent->SetActive(!bCanUseBonfire);
+	if (USaveGameHelperLibrary::IsActivatedBonfire(this))
+	{
+		NiagaraComponent->SetActive(bCanUseBonfire);
+	}
+	
 }
 
 void ABonfire::AddBonfireInToDataTable()
@@ -168,4 +182,9 @@ const FBonfireInformation& ABonfire::GetBonfireInformation()
 	}
 
 	return BonfireInformation;
+}
+
+bool ABonfire::ShowInteractionWidgetDirectly_Implementation()
+{
+	return bCanUseBonfire;
 }

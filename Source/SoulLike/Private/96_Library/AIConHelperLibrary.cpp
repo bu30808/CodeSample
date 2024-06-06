@@ -6,6 +6,8 @@
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/03_Monster/BaseMonster.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "Blueprint/AIBlueprintHelperLibrary.h"
 
 
 void UAIConHelperLibrary::ChangePlayerState(AActor* AIConOrMonster, AActor* Player, EPlayerCharacterState NewState)
@@ -26,4 +28,18 @@ void UAIConHelperLibrary::ChangePlayerState(AActor* AIConOrMonster, AActor* Play
 			Cast<APlayerCharacter>(Player)->SetPlayerStateBy(NewState, aiCon->GetPawn());
 		}
 	}
+}
+
+AActor* UAIConHelperLibrary::GetBlackboardValueNamedTarget(AActor* BlackboardOwner)
+{
+	if(auto bbComp = UAIBlueprintHelperLibrary::GetBlackboard(BlackboardOwner))
+	{
+		if(auto target = bbComp->GetValueAsObject("Target"))
+		{
+			return Cast<AActor>(target);
+		}
+		
+	}
+
+	return nullptr;
 }

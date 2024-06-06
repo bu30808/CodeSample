@@ -94,10 +94,61 @@ FVector UMathHelperLibrary::GetControllerInputDir(FRotator ControlRotation, FVec
 	return (rightDir + leftDir).GetSafeNormal();
 }
 
-bool UMathHelperLibrary::SameDirection(FVector A_ForwardVector, FVector B_ForwardVector)
+bool UMathHelperLibrary::SameDirection(FVector A_ForwardVector, FVector B_ForwardVector, float Threshold)
 {
-	UE_LOGFMT(LogTemp, Log, "{0}", FVector::DotProduct( A_ForwardVector,B_ForwardVector));
+	/*UE_LOGFMT(LogTemp, Log, "{0}", FVector::DotProduct( A_ForwardVector,B_ForwardVector));
 	//Dot 연산의 결과가 음수라면 같은 방향을 바라보는것이 됩니다.
 	//결과가 양수인 경우 다른 방향을 바라보고 있다고 할 수 있습니다.
-	return FVector::DotProduct(A_ForwardVector, B_ForwardVector) < 0;
+	return FVector::DotProduct(A_ForwardVector, B_ForwardVector) < 0;*/
+	UE_LOGFMT(LogTemp, Log, "같은 방향인가요 ? : {0}, {1}", FVector::DotProduct(A_ForwardVector,B_ForwardVector),FVector::DotProduct(A_ForwardVector,B_ForwardVector)>=Threshold);
+	return FVector::DotProduct(A_ForwardVector, B_ForwardVector) >= Threshold;
+}
+
+EDirection UMathHelperLibrary::DegreeToDirection(float Degree)
+{
+	float degreePiece = 22.5f;
+	
+	//전
+	if(-1 * degreePiece<Degree&& Degree <= degreePiece)
+	{
+		return EDirection::Front;
+	}
+
+	//전우
+	if(degreePiece<Degree&& Degree <= degreePiece * 3)
+	{
+		return EDirection::FrontRight;
+	}
+	//우
+	if(degreePiece * 3 <Degree&& Degree <= degreePiece * 5)
+	{
+		return EDirection::Right;
+	}
+	//후우
+	if(degreePiece * 5 <Degree&& Degree <= degreePiece * 7)
+	{
+		return EDirection::BackRight;
+	}
+	//후
+	if(degreePiece * 5 <Degree&& Degree <= degreePiece * 6)
+	{
+		return EDirection::Back;
+	}
+	//전좌
+	if(-3 * degreePiece > Degree&& Degree >= -1 * degreePiece)
+	{
+		return EDirection::FrontLeft;
+	}
+	//좌
+	if(-5 * degreePiece > Degree&& Degree >= -3 * degreePiece)
+	{
+		return EDirection::Left;
+	}
+	//좌후
+	if(-7 * degreePiece > Degree&& Degree >= -5 * degreePiece)
+	{
+		return EDirection::BackLeft;
+	}
+	//후
+	return EDirection::Back;
 }

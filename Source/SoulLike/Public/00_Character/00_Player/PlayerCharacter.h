@@ -8,6 +8,7 @@
 #include "InputActionValue.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "00_Character/BaseCharacter.h"
+#include "00_Controller/UserController.h"
 #include "93_SaveGame/SoulLikeSaveGame.h"
 #include "PlayerCharacter.generated.h"
 
@@ -87,6 +88,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUseQuickSlot, class UInputAction*
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangePlayerState, EPlayerCharacterState, State);
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameLoadingCompleted);
+
+
 UCLASS()
 class SOULLIKE_API APlayerCharacter : public ABaseCharacter
 {
@@ -104,9 +108,12 @@ protected:
 	//세이브 파일 없이 첫 시작시 불러올 테이블에 저장된 레이어 행 이름입니다.
 	UPROPERTY(EditAnywhere)
 	TArray<FName> StartLayerRowNames = {"/Game/DataLayer/Runtime/WaterFallLayer.WaterFallLayer","/Game/DataLayer/Runtime/WaterFall_NS_Layer.WaterFall_NS_Layer"};
-
+	
 	virtual void CreateBodyMaterialInstance() override;
 
+	UPROPERTY(BlueprintCallable,BlueprintAssignable)
+	FOnGameLoadingCompleted OnGameLoadingCompleted;
+	
 	UPROPERTY(EditAnywhere)
 	class UAnimMontage* StartKneelMontage;
 	void KneelStart();
@@ -115,8 +122,16 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void LoadGame();
 public:
+	//바닥이 로드되는것 보다, 액터가 먼저 로드되면 바닥으로 꺼지는 현상을 제거하기 위해, 주변 액터의 중력을 끕니다.
+	UFUNCTION(BlueprintCallable)
+	void SetGravityAroundPlayer(bool bActivate);
 	UFUNCTION()
 	void OnFinishLoadGame();
+	//bManual - 이 값이 참이면 즉시 화면을 가립니다.
+	UFUNCTION()
+	void StartLoadingCameraFade(bool bManual = false, float FadeTime = 2.f);
+	UFUNCTION()
+	void EndLoadingCameraFade();
 protected:
 	UFUNCTION(BlueprintCallable)
 	void CreateSoulTomb();
@@ -128,8 +143,16 @@ protected:
 	FTimerHandle GroundLocationSaveTimerHandle;
 	UFUNCTION()
 	void SaveLastGroundedLocation();
+	
 
 public:
+	/**
+	 * 로딩 화면을 생성합니다.
+	 * @param PC 
+	 * @param bShow 참이면 표시합니다. 거짓이면 없앱니다.
+	 */
+	UFUNCTION(BlueprintCallable)
+	void ShowLoadingScreen(bool bShow);
 	const FVector& GetLastGroundedLocation() const { return LastGroundedLocation; }
 
 protected:
@@ -166,8 +189,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class ULockOnComponent* LockOnComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
-	class UAbilityTalentComponent* AbilityTalentComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UWidgetComponent* ExecutionWidgetComponent;
@@ -198,8 +219,7 @@ public:
 	{
 		return SceneCaptureComponent2D;
 	}
-
-	FORCEINLINE class UAbilityTalentComponent* GetAbilityTalentComponent() const { return AbilityTalentComponent; }
+	
 	FORCEINLINE class UTeleportBonfireComponent* GetTeleportBonfireComponent()const {return TeleportBonfireComponent;}
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	class UInputHandlerComponent* GetInputHandlerComponent();
@@ -221,6 +241,9 @@ protected:
 	bool bPressMove;
 
 public:
+	const UInputAction* GetPickUpAction() const {return InputDataAsset->PickUpAction;}
+	const UInputAction* GetInteractionAction() const {return InputDataAsset->InteractAction;}
+	
 	UFUNCTION(BlueprintCallable)
 	void SetDefaultMappingContext();
 
@@ -379,6 +402,13 @@ protected:
 	UPROPERTY()
 	TWeakObjectPtr<AActor> InteractableActor;
 
+	//이 값이 거짓이어야만 인터렉션 위젯을 보입니다.
+	UPROPERTY(Transient,BlueprintReadOnly)
+	bool bBlockedShowInteraction;
+	//이 값이 참이면, FindInteractActor함수를 이용해 상호작용할 대상을 찾습니다.
+	UPROPERTY(Transient,BlueprintReadOnly)
+	bool bTryFindInteractionActor = true;
+	
 	/**
 	 * 상호작용 가능한 NPC를 틱마다 찾습니다.
 	 */
@@ -386,6 +416,13 @@ protected:
 	bool FindLadder();
 
 public:
+
+	bool GetBlockedShowInteraction() const {return bBlockedShowInteraction;}
+	void SetBlockedShowInteraction(bool bBlocked){bBlockedShowInteraction = bBlocked;}
+	
+	void PauseFindInteractionTarget();
+	void ResumeFindInteractionTarget();
+	
 	class UWidgetComponent* GetInteractionWidgetComponent()const {return InteractionWidgetComponent;}
 	/**
 	 * 상호작용에 필요한 키와 액션을 표시해줍니다.

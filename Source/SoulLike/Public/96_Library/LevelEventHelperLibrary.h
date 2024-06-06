@@ -13,8 +13,7 @@
 class UDataTable;
 class ABaseMonster;
 
-
-
+DECLARE_DYNAMIC_DELEGATE(FK2OnLayerActivated);
 UCLASS()
 class AMainLevelScriptActor : public ALevelScriptActor
 {
@@ -27,22 +26,25 @@ public:
 	
 	UPROPERTY(Transient)
 	TArray<AActor*> BlockingActors;
-	UFUNCTION()
+
+	
+	UFUNCTION(BlueprintNativeEvent)
 	void OnDeadBossEvent(AActor* Who, AActor* DeadBy);
-
-
+	virtual void OnDeadBossEvent_Implementation(AActor* Who, AActor* DeadBy);
+	
 	bool IsAlreadySet(AActor* Player,const TArray<UDataLayerAsset*>& LayerToActive, const TArray<UDataLayerAsset*>& LayerToLoaded);
 	
 	UFUNCTION(BlueprintCallable)
-	void ActiveLayerSetting(AActor* Player, TArray<UDataLayerAsset*> LayerToActive, TArray<UDataLayerAsset*> LayerToLoaded);
+	void ActiveLayerSetting(AActor* Player, TArray<UDataLayerAsset*> LayerToActive, TArray<UDataLayerAsset*> LayerToLoaded, const
+	                        FK2OnLayerActivated& K2_OnLayerActivated);
 	UFUNCTION(BlueprintCallable)
 	void EndActiveLayerSetting(AActor* Player);
 
 
-	FOnLayerActivated OnNexusLayerActivated;
+	FOnLayerActivated OnLayerActivated;
+	
 	UFUNCTION()
-	void OnChangedLayerStateForEnterNexus(const UDataLayerInstance* DataLayer, EDataLayerRuntimeState State);
-
+	void OnActivateLayerEvent(const UDataLayerInstance* DataLayer, EDataLayerRuntimeState State);
 };
 
 /**
@@ -57,7 +59,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	static ABaseMonster* SpawnBoss(AMainLevelScriptActor* ScriptActor, AActor* Trigger, AActor* OverlapActor,
 	                               TArray<AActor*> BlockingActors, AActor* TargetPoint,
-	                               TSubclassOf<class ABaseMonster> BossToSpawn, class USoundBase* MusicToPlay);
+	                               TSubclassOf<class ABaseMonster> BossToSpawn);
 	UFUNCTION(BlueprintCallable)
 	static void ActiveBlockingActors(TArray<AActor*> BlockingActors, bool bActive);
 };

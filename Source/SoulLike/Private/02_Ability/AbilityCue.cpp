@@ -128,21 +128,13 @@ void AAbilityCue::BeginPlay()
 	Super::BeginPlay();
 
 	UE_LOGFMT(LogCue, Log, "큐 시작됨 : {0},{1}", GetActorNameOrLabel(), CueTag.ToString());
-
-	/*
-	if(auto character = GetOwner<ABaseCharacter>())
-	{
-		character->OnDead.AddUniqueDynamic(this,&AAbilityCue::OnOwnerDeadEvent);
-	}
-	*/
-
-
+	
 	ParticleSystemComponent->Deactivate();
 	NiagaraComponent->Deactivate();
 	AudioComponent->Deactivate();
 }
 
-void AAbilityCue::PlayCue(const FAbilityCueInformation& CueInformation)
+void AAbilityCue::PlayCue_Implementation(const FAbilityCueInformation& CueInformation)
 {
 	DeactivateCue();
 
@@ -155,8 +147,8 @@ void AAbilityCue::PlayCue(const FAbilityCueInformation& CueInformation)
 	case EAbilityCueType::AtLocation:
 		UE_LOGFMT(LogCue, Log, "좌표 : {0}", CueInformation.SpawnLocation.ToString());
 		SetActorLocation(CueInformation.SpawnLocation);
-		AttachToActor(CueInformation.AttachTarget.Get(),
-		              FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
+		/*AttachToActor(CueInformation.AttachTarget.Get(),
+		              FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));*/
 		break;
 	case EAbilityCueType::AttachToTarget:
 		if (CueInformation.AttachTarget.IsValid())
@@ -198,8 +190,8 @@ void AAbilityCue::PlayCue(const FAbilityCueInformation& CueInformation)
 		if (GetOwner())
 		{
 			SetActorLocation(GetOwner()->GetActorLocation());
-			AttachToActor(CueInformation.AttachTarget.Get(),
-			              FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));
+			/*AttachToActor(CueInformation.AttachTarget.Get(),
+			              FAttachmentTransformRules(EAttachmentRule::KeepWorld, true));*/
 		}
 		break;
 	default: ;

@@ -4,9 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
-#include "InventoryComponent.h"
 #include "Components/ActorComponent.h"
-#include "00_Character/BaseCharacter.h"
 #include "02_Ability/AbilityBase.h"
 #include "02_Ability/AbilityCue.h"
 #include "02_Ability/AbilityEffect.h"
@@ -49,6 +47,7 @@ class UAbilityCueAdditionalInformation : public UObject
 
 public:
 	FVector HitLocation;
+	FVector ImpactNormal;
 	void UpdateCueLocation(TArray<FAbilityCueInformation>& CueInfos) const;
 };
 

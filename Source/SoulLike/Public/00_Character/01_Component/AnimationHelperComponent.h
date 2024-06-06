@@ -20,8 +20,11 @@ enum class EDeadAnimationPlayMode : uint8
 UENUM(BlueprintType)
 enum class EHitAnimationType : uint8
 {
+	//애니메이션 시퀀스를 이용함. 아직 사용처 및 기능이 없습니다. 몽타주 방식을 이용하세요.
 	AnimSequence,
+	//몽타주를 이용한 애니메이션 사용
 	AnimMontage,
+	//피격 애니메이션 없음
 	NoHitAnimation
 };
 
@@ -78,6 +81,7 @@ public:
 	EHitAnimationType HitAnimationType;
 	//이 값이 참이면 히트 몽타주 재생과 동시에 MightyTime동안 슈퍼아머를 부여합니다.
 	//연속으로 히트 애니메이션 재생으로 몬스터가 아무것도 못 하는것을 방지하기 좋습니다.
+	//오너의 DefaultAbility 변수에 Mighty 어빌리티가 포함되어 있어야 합니다.
 	UPROPERTY(EditAnywhere,Category="Animation",meta=(EditCondition = "HitAnimationType == EHitAnimationType::AnimMontage"))
 	bool bUseHitMighty = false;
 	UPROPERTY(EditAnywhere,Category="Animation",meta=(EditCondition = "HitAnimationType == EHitAnimationType::AnimMontage && bUseHitMighty"))
@@ -91,12 +95,13 @@ public:
 	
 
 
+	//방향별 몽타주를 사용하려면 참을 주세요.
 	UPROPERTY(EditAnywhere,Category="Animation",meta=(EditCondition = "HitAnimationType == EHitAnimationType::AnimMontage"))
 	bool bUseDirection = true;
 	//히트 애니메이션 처리를 몽타주로 하려면 사용하세요.
 	//ex) 때릴때마다, 히트 애니메이션을 다시 재생하려면 이 변수를 사용합니다.
 	UPROPERTY(EditAnywhere,Category="Animation",meta=(EditCondition = "HitAnimationType == EHitAnimationType::AnimMontage && bUseDirection == true"))
-	TMap<EDirection, UAnimMontage*> HitMontages;
+	TMap<EDirection, UAnimMontage*> HitMontageByDirection;
 	UPROPERTY(EditAnywhere,Category="Animation",meta=(EditCondition = "bUseDirection == false"))
 	UAnimMontage* HitMontage;
 	
@@ -107,14 +112,21 @@ public:
 	void PlayHitMontage();
 	void PlayHitMontageByDirection();
 
+	UPROPERTY(EditAnywhere,Category="Animation",meta=(EditCondition = "bUseDirection == false"))
+	UAnimMontage* GuardHitMontage;
+	//가드중일떄 피격당하면 호출됩니다.
+	void PlayGuardHitMontage();
+
 	/**
 	 * HitMontages에 포함된 몽타주가 지금 재생중인가요?
 	 * @return 
 	 */
 	bool IsPlayHitMontage();
+	bool IsPlayGuardHitMontage() const;
 
 	//이 몽타주가 HitMontage중 하나인가요?
 	bool IsHitMontage(const UAnimMontage* Montage);
+	bool IsGuradHitMontage(const UAnimMontage* Montage);
 
 	//플레이중이던 히트 몽타주가 끝나면 호출됩니다.
 	UFUNCTION()

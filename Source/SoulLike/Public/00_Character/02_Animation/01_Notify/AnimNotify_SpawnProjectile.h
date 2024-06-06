@@ -6,6 +6,7 @@
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "AnimNotify_SpawnProjectile.generated.h"
 
+enum class EProjectileType : uint8;
 enum class EProjectileShootType : uint8;
 enum class EProjectileDirection : uint8;
 /**
@@ -29,6 +30,9 @@ public:
 	EProjectileDirection ProjectileDirection;
 	UPROPERTY(EditAnywhere)
 	EProjectileShootType ProjectileShootType;
+	//ProjectileShootType의 값이 DelayUntilRotationWithTimeLimit일때, 이 시간 이후에 강제발사합니다.
+	UPROPERTY(EditAnywhere,meta=(EditCondition="ProjectileShootType == EProjectileShootType::DelayUntilRotationWithTimeLimit"))
+	float TimeLimit;
 	UPROPERTY(EditAnywhere)
 	FName SocketName;
 

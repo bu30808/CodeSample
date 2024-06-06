@@ -41,9 +41,12 @@ public:
 		meta=(EditCondition = "AbilityCueType == EAbilityCueType::AttachToSocket"))
 	FName SocketName;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite)
 	FVector SpawnLocation = FVector::ZeroVector;
 
+	UPROPERTY(BlueprintReadWrite)
+	FVector ImpactNormal;
+	
 	UPROPERTY()
 	TWeakObjectPtr<AActor> AttachTarget;
 
@@ -105,9 +108,10 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsReusable() { return bReusable; }
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable,BlueprintNativeEvent)
 	void PlayCue(const FAbilityCueInformation& CueInformation);
-
+	virtual void PlayCue_Implementation(const FAbilityCueInformation& CueInformation);
+	
 	UFUNCTION(BlueprintCallable)
 	void DeactivateCue() const;
 

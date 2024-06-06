@@ -81,7 +81,7 @@ void UAnimNotifyState_SpawnProjectile::NotifyEnd(USkeletalMeshComponent* MeshCom
 						p->DetachFromActor(FDetachmentTransformRules(DetachmentRule, true));
 						if (bUseBlackboard)
 						{
-							p->LaunchProjectileWithOption(ProjectileDirection, ProjectileShootType);
+							p->LaunchProjectileWithOption(ProjectileDirection, ProjectileShootType, TimeLimit);
 						}
 						else
 						{

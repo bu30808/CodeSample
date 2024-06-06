@@ -61,3 +61,8 @@ void IBossMonsterInterface::RemoveBossWidget_Implementation(ABaseMonster* Boss, 
 		}
 	}
 }
+
+USoundBase* IBossMonsterInterface::GetBossMusic_Implementation()
+{
+	return nullptr;
+}

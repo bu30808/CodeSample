@@ -22,7 +22,7 @@ public class SoulLikeEditor : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"SoulLike", "EditorScriptingUtilities", "Blutility"
+				"SoulLike", "EditorScriptingUtilities", "Blutility","ScriptableEditorWidgets"
 			}
 		);
 	}

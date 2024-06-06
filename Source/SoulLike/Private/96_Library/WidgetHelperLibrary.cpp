@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "96_Library/WidgetHelperLibrary.h"
 
+#include "MoviePlayer.h"
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/00_Player/00_Controller/UserController.h"
 #include "00_Character/00_Player/00_Controller/00_Component/InputHandlerComponent.h"
@@ -205,4 +206,9 @@ bool UWidgetHelperLibrary::IsUseSaveGameMode(UObject* WorldContext)
 		return world->GetAuthGameMode()->IsA<ASoulLikeGameMode>();
 	}
 	return false;
+}
+
+void UWidgetHelperLibrary::StopLoadingScreen()
+{
+	GetMoviePlayer()->StopMovie();
 }

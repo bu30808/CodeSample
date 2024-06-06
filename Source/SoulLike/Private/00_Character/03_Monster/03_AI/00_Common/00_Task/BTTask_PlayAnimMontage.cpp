@@ -7,6 +7,7 @@
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/01_Component/AnimationHelperComponent.h"
 #include "00_Character/01_Component/AttributeComponent.h"
+#include "00_Character/02_Animation/BaseAnimInstance.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "Logging/StructuredLog.h"
 
@@ -35,8 +36,12 @@ EBTNodeResult::Type UBTTask_PlayAnimMontage::ExecuteTask(UBehaviorTreeComponent&
 				monster->GetAnimationHelperComponent()->OnTriggerHitAnimationExit.Broadcast(monster, nullptr);
 			}
 
-			if (auto instance = monster->GetMesh()->GetAnimInstance())
+			if (auto instance = Cast<UBaseAnimInstance>(monster->GetMesh()->GetAnimInstance()))
 			{
+				bOriginalMirror = instance->IsMirrorAnimation();
+
+				instance->SetMirrorAnimation(bMirrorAnimation);
+
 				if (!bEnableRootMotion)
 				{
 					instance->RootMotionMode = ERootMotionMode::IgnoreRootMotion;
@@ -58,10 +63,21 @@ EBTNodeResult::Type UBTTask_PlayAnimMontage::ExecuteTask(UBehaviorTreeComponent&
 					return EBTNodeResult::Succeeded;
 				}
 
-				instance->OnMontageBlendingOut.AddUniqueDynamic(
-					this, &UBTTask_PlayAnimMontage::OnMontageBlendingOutEvent);
-				instance->Montage_Play(MontageToPlay, playSpeed);
 
+				switch (MontageFinishType)
+				{
+				case EMontageEndType::ENDED:
+					instance->OnMontageEnded.AddUniqueDynamic(
+						this, &UBTTask_PlayAnimMontage::OnMontageEndEvent);
+					break;
+				case EMontageEndType::BLEND_OUT:
+					instance->OnMontageBlendingOut.AddUniqueDynamic(
+						this, &UBTTask_PlayAnimMontage::OnMontageEndEvent);
+					break;
+				default: ;
+				}
+
+				instance->Montage_Play(MontageToPlay, playSpeed);
 				return EBTNodeResult::InProgress;
 			}
 			UE_LOGFMT(LogAICon, Error, "인스턴스를 가져올 수 없어요!!");
@@ -81,27 +97,35 @@ void UBTTask_PlayAnimMontage::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, 
 		// Root Motion 모드를 복구
 		if (auto pawn = aiCon->GetPawn<ABaseCharacter>())
 		{
-			if (auto instance = pawn->GetMesh()->GetAnimInstance())
+			if (auto instance = Cast<UBaseAnimInstance>(pawn->GetMesh()->GetAnimInstance()))
 			{
+				instance->SetMirrorAnimation(bOriginalMirror);
 				instance->RootMotionMode = ERootMotionMode::RootMotionFromMontagesOnly;
 			}
 		}
 	}
 }
 
-void UBTTask_PlayAnimMontage::OnMontageBlendingOutEvent(UAnimMontage* Montage, bool bInterrupted)
+void UBTTask_PlayAnimMontage::OnMontageEndEvent(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (MontageToPlay == Montage)
 	{
 		if (AIController != nullptr)
 		{
-			UKismetSystemLibrary::PrintString(AIController,
-			                                  FString::Printf(TEXT("%s 가 종료되었습니다."), *Montage->GetName()));
 			if (auto pawn = AIController->GetPawn<ABaseCharacter>())
 			{
 				if (auto instance = pawn->GetMesh()->GetAnimInstance())
 				{
-					instance->OnMontageBlendingOut.RemoveAll(this);
+					switch (MontageFinishType)
+					{
+					case EMontageEndType::ENDED:
+						instance->OnMontageEnded.RemoveAll(this);
+						break;
+					case EMontageEndType::BLEND_OUT:
+						instance->OnMontageBlendingOut.RemoveAll(this);
+						break;
+					default: ;
+					}
 					FinishLatentTask(*Cast<UBehaviorTreeComponent>(AIController->GetBrainComponent()),
 					                 EBTNodeResult::Succeeded);
 				}
