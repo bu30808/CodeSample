@@ -16,7 +16,8 @@ DECLARE_LOG_CATEGORY_EXTERN(LogMonster, Log, All);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnFinishSpawnAlly, class UBehaviorTreeComponent*, OwnerComp,
                                              EBTNodeResult::Type, Result);
-
+//파라미터로 타겟을 기억하던 본인을 받습니다.
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBlackboardTargetIsNotValid,class AAIController*,SelfController);
 /**
  * 
  */
@@ -125,8 +126,6 @@ protected:
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void PostInitializeComponents() override;
 	void DetachDroppedItem();
-
-
 	UFUNCTION()
 	void OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayReason);
 	UFUNCTION()
@@ -226,7 +225,7 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default",meta=(EditCondition="bOverrideStartBehaviorTreeImmediately"))
 	bool bStartBehaviorTreeImmediately  = false;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default",meta=(EditCondition="bStartBehaviorTreeImmediately"))
 	bool bFollowLeader = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default",meta=(EditCondition="bFollowLeader"))
 	class AActor* Leader;
@@ -266,12 +265,20 @@ protected:
 
 
 	/**********************************************AI*********************************************************/
-protected:
+
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsStartBehaviorTreeImmediately() const;
 	
-	/**********************************************기본정보*********************************************************/
 public:
+	//기억하던 블랙보드의 타겟이 유효하지 않게 되면 호출됩니다.
+	UPROPERTY(BlueprintAssignable,BlueprintCallable)
+	FOnBlackboardTargetIsNotValid OnBlackboardTargetIsNotValid;
+
+
+	UFUNCTION()	
+	void OnBlackboardTargetIsNotValidEvent(class AAIController* SelfController);
+
+	/**********************************************기본정보*********************************************************/
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	FText GetMonsterName() { return MonsterDataAsset->MonsterName; }
 

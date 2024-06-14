@@ -48,6 +48,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ReStartBehavior();
 
+	UFUNCTION(BlueprintCallable)
+	void OverrideTeamId(const FGenericTeamId& NewTeamID);
 	//팀 비교하는 함수
 	virtual ETeamAttitude::Type GetTeamAttitudeTowards(const AActor& Other) const override;
 

@@ -44,11 +44,9 @@ bool UStatusEffect_Petrifaction::CanApplyEffect_Implementation(ABaseCharacter* T
 
 void UStatusEffect_Petrifaction::KillTarget(ABaseCharacter* Target, AActor* EffectBy)
 {
-	/*Target->OnDead.Broadcast(Target,EffectBy);*/
 	if (Target->GetCharacterState() != ECharacterState::DEAD)
 	{
-		Target->SetCharacterState(ECharacterState::DEAD);
-		UGameplayStatics::OpenLevel(this, FName(UGameplayStatics::GetCurrentLevelName(Target)));
+		Target->OnDead.Broadcast(Target,EffectBy);
 	}
 }
 

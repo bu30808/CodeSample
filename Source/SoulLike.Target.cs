@@ -12,7 +12,7 @@ public class SoulLikeTarget : TargetRules
 		ExtraModuleNames.Add("SoulLike");
 		
 		bLegacyParentIncludePaths = false;
-		CppStandard = CppStandardVersion.Default; 
+		CppStandard = CppStandardVersion.Default;
 		WindowsPlatform.bStrictConformanceMode = true;
 	}
 } 

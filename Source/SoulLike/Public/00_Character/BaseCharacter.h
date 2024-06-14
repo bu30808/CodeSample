@@ -75,6 +75,10 @@ enum class ETeam : uint8
 {
 	Player UMETA(DisplayName = "Player"),
 	Monster UMETA(DisplayName = "Monster"),
+	//아래는 특수한 경우에만 사용하세요.
+	TeamA,
+	TeamB,
+	TeamC
 };
 
 UENUM(BlueprintType)

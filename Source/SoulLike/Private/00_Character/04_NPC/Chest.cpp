@@ -102,16 +102,18 @@ void AChest::OnBeginOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActo
 	}
 }
 
-void AChest::OpenChest(APlayerCharacter* player)
+void AChest::OpenChest(APlayerCharacter* Player)
 {
 	bOpened = true;
 	ChestItemGlowNiagaraComponent->Activate();
 	UGameplayStatics::PlaySoundAtLocation(this,OpenSound,GetActorLocation(),FRotator::ZeroRotator);
 			
-	player->HideInteractionWidget();
-	player->ShowInteractionWidget(this,player->GetPickUpAction(),GlobalChestActionText::pickUpText);
+	Player->HideInteractionWidget();
+	Player->ShowInteractionWidget(this,Player->GetPickUpAction(),GlobalChestActionText::pickUpText);
 
 	ChestOpenTimelineComponent->PlayFromStart();
+	
+	OnOpenChest.Broadcast(this,Player);
 
 	//상자가 열렸다고 저장합니다.
 	USaveGameHelperLibrary::SaveChestOpen(this);

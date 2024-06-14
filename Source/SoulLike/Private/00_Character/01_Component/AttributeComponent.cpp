@@ -23,7 +23,7 @@ UStatusEffectValueHandler::UStatusEffectValueHandler()
 	ReduceValueDefineMap.Add(EStatusEffect::BURN, 1.f);
 	ReduceValueDefineMap.Add(EStatusEffect::CHILL, 1.f);
 	ReduceValueDefineMap.Add(EStatusEffect::BLEED, 1.f);
-	ReduceValueDefineMap.Add(EStatusEffect::PETRIFACTION, 0);
+	ReduceValueDefineMap.Add(EStatusEffect::PETRIFACTION, 1.f);
 }
 
 void UStatusEffectValueHandler::Init(UAttributeComponent* AttComp, EStatusEffect StatusEffect)
@@ -36,12 +36,12 @@ void UStatusEffectValueHandler::ReduceAccValue(float DeltaTime)
 {
 	if (AttributeComponent)
 	{
-		//UE_LOGFMT(LogTemp, Log, "{0}에 대한 감소 효과", StaticEnum<EStatusEffect>()->GetValueAsString(TargetStatusEffect));
 
 		float curValue = 0;
 		float resistValue = 0;
 		const float reducePerSec = ReduceValueDefineMap[TargetStatusEffect];
 
+		UE_LOGFMT(LogTemp, Log, "{0}누적치를 {1}만큼 감소시킵니다", StaticEnum<EStatusEffect>()->GetValueAsString(TargetStatusEffect),reducePerSec);
 
 		switch (TargetStatusEffect)
 		{
@@ -621,7 +621,7 @@ void UAttributeComponent::BroadcastMaxSPEvent() const
 
 void UAttributeComponent::OnUpdateStatusEffectEvent(EStatusEffect StatusEffect, float Value, float ResistValue)
 {
-	//UKismetSystemLibrary::PrintString(this,FString::Printf(TEXT("%s 를 %f만큼 증가시킴, 저항치 %f"),*StaticEnum<EStatusEffect>()->GetValueAsString(StatusEffect),Value,ResistValue));
+	UE_LOGFMT(LogTemp, Log, "{0}를 {1}만큼 증가시킴, 저항치 {2}",StaticEnum<EStatusEffect>()->GetValueAsString(StatusEffect),Value,ResistValue);
 	if (Value <= 0.f)
 	{
 		if (DecreaseAccTasks.Contains(StatusEffect))

@@ -29,11 +29,14 @@ EBTNodeResult::Type UBTTask_PlayAnimMontage::ExecuteTask(UBehaviorTreeComponent&
 
 		if (auto monster = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
 		{
-			if (!monster->GetAnimationHelperComponent()->GetIsTriggeredHitAnimationExitEvent())
+			if(bForceTriggerHitExitEvent)
 			{
-				UE_LOGFMT(LogAICon, Log, "{0} {1} : OnTriggerHitAnimationExit이벤트가 발동하지 않은 상태임으로 강제로 브로드케스트 합니다.",
-				          __FUNCTION__, __LINE__);
-				monster->GetAnimationHelperComponent()->OnTriggerHitAnimationExit.Broadcast(monster, nullptr);
+				if (!monster->GetAnimationHelperComponent()->GetIsTriggeredHitAnimationExitEvent())
+				{
+					UE_LOGFMT(LogAICon, Log, "{0} {1} : OnTriggerHitAnimationExit이벤트가 발동하지 않은 상태임으로 강제로 브로드케스트 합니다.",
+							  __FUNCTION__, __LINE__);
+					monster->GetAnimationHelperComponent()->OnTriggerHitAnimationExit.Broadcast(monster, nullptr);
+				}
 			}
 
 			if (auto instance = Cast<UBaseAnimInstance>(monster->GetMesh()->GetAnimInstance()))
@@ -80,6 +83,7 @@ EBTNodeResult::Type UBTTask_PlayAnimMontage::ExecuteTask(UBehaviorTreeComponent&
 				instance->Montage_Play(MontageToPlay, playSpeed);
 				return EBTNodeResult::InProgress;
 			}
+			
 			UE_LOGFMT(LogAICon, Error, "인스턴스를 가져올 수 없어요!!");
 		}
 	}
@@ -126,6 +130,7 @@ void UBTTask_PlayAnimMontage::OnMontageEndEvent(UAnimMontage* Montage, bool bInt
 						break;
 					default: ;
 					}
+					UE_LOGFMT(LogAICon,Log,"몽타주 재생 테스크 종료");
 					FinishLatentTask(*Cast<UBehaviorTreeComponent>(AIController->GetBrainComponent()),
 					                 EBTNodeResult::Succeeded);
 				}

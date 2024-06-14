@@ -6,6 +6,8 @@
 #include "NPCBase.h"
 #include "Chest.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnOpenChest,class AChest*, Box,class ABaseCharacter*, OpendBy);
+
 UCLASS()
 class SOULLIKE_API AChest : public ANPCBase
 {
@@ -20,6 +22,7 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void PostInitializeComponents() override;
+	
 	UFUNCTION()
 	void OnBeginOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
@@ -52,6 +55,11 @@ protected:
 	class USoundBase* OpenSound;
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 	class UCurveFloat* ChestOpenCurve;
+
+
+	//상자가 열렸을 때, 해야 할 일이 있다면 사용하세요.(ex 함정)
+	UPROPERTY(BlueprintAssignable)
+	FOnOpenChest OnOpenChest;
 	
 	FOnTimelineFloatStatic OnUpdateChestOpenTimeLine;
 	FOnTimelineEventStatic OnFinishChestOpenTimeLine;
@@ -65,7 +73,7 @@ protected:
 	//이 상자 내부 아이템이 획득된 적이 있는지 확인합니다.
 	bool IsAlreadyGetChestItem();
 	//상자를 엽니다.
-	void OpenChest(class APlayerCharacter* player);
+	void OpenChest(class APlayerCharacter* Player);
 	//아이템을 플레이어에게 줍니다.
 	void GiveChestItemToPlayer();
 

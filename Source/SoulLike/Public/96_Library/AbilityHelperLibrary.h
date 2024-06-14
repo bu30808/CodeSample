@@ -29,9 +29,9 @@ public:
 	static FGameplayTag GetDodgeContTag(UInventoryComponent* InventoryComponent);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	static ABaseCharacter* GetTargetFromBlackboard(AActor* AIMonster, FName Key);
+	static ABaseCharacter* GetTargetFromBlackboard(AActor* AIMonster, FName Key = "Target");
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	static ABaseCharacter* GetTargetFromBlackboard_AICon(class AAIController* AICon, FName Key);
+	static ABaseCharacter* GetTargetFromBlackboard_AICon(class AAIController* AICon, FName Key = "Target");
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static bool IsDead(AActor* Actor);

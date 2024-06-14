@@ -318,16 +318,16 @@ protected:
 
 
 	//이팩트 타겟에게 단발성으로 적용할 큐 정보입니다.
-	UPROPERTY(EditAnywhere, Category="Cue")
+	UPROPERTY(EditAnywhere, Category="Cue",BlueprintReadWrite)
 	TArray<FAbilityCueInformation> InstanceAbilityCues;
 	//일정 주기로 큐를 적용할 경우에 사용하세요
-	UPROPERTY(EditAnywhere, Category="Cue")
+	UPROPERTY(EditAnywhere, Category="Cue",BlueprintReadWrite)
 	TArray<FAbilityCueInformation> IntervalAbilityCues;
 	//영구 혹은 지속시간동안 큐를 적용해야 할 경우 사용하세요.
-	UPROPERTY(EditAnywhere, Category="Cue")
+	UPROPERTY(EditAnywhere, Category="Cue",BlueprintReadWrite)
 	TArray<FAbilityCueInformation> InfiniteAbilityCues;
 	//이팩트가 종료될 때 적용할 큐가 있다면 사용하세요
-	UPROPERTY(EditAnywhere, Category="Cue")
+	UPROPERTY(EditAnywhere, Category="Cue",BlueprintReadWrite)
 	TArray<FAbilityCueInformation> InstanceEndAbilityCues;
 
 	//틱마다 사용되는 태스크 

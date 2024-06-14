@@ -242,9 +242,12 @@ bool UAbilityHelperLibrary::IsInvincible(AActor* CheckTarget)
 
 UAbilityComponent* UAbilityHelperLibrary::GetAbilityComponent(AActor* CheckTarget)
 {
-	if(CheckTarget->IsA<ABaseCharacter>())
+	if(CheckTarget!=nullptr)
 	{
-		return Cast<ABaseCharacter>(CheckTarget)->GetAbilityComponent();
+		if(CheckTarget->IsA<ABaseCharacter>())
+		{
+			return Cast<ABaseCharacter>(CheckTarget)->GetAbilityComponent();
+		}
 	}
 	return nullptr;
 }

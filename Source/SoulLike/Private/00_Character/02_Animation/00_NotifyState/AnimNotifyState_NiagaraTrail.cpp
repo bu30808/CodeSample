@@ -5,6 +5,9 @@
 
 #include "Logging/StructuredLog.h"
 #include "NiagaraComponent.h"
+#include "00_Character/BaseCharacter.h"
+#include "97_Interface/LinetraceAbilityEffectInterface.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 UAnimNotifyState_NiagaraTrail::UAnimNotifyState_NiagaraTrail()
 {
@@ -16,10 +19,32 @@ void UAnimNotifyState_NiagaraTrail::NotifyTick(USkeletalMeshComponent* MeshComp,
 {
 	if (MeshComp)
 	{
+		if(bUseOtherComponent)
+		{
+			if(auto owner = MeshComp->GetOwner<ABaseCharacter>())
+			{
+				if(UKismetSystemLibrary::DoesImplementInterface(owner,ULinetraceAbilityEffectInterface::StaticClass()))
+				{
+					if(auto comp = ILinetraceAbilityEffectInterface::Execute_GetPrimitiveComponentForLineTrace(owner))
+					{
+						if (const auto effect = GetSpawnedEffect(MeshComp))
+						{
+							effect->SetVectorParameter("StartTrail", comp->GetSocketLocation(Start));
+							effect->SetVectorParameter("EndTrail", comp->GetSocketLocation(End));
+							effect->SetFloatParameter("Ribbon Width", Width);
+						}
+					}
+					
+				}
+			}
+			return;
+		}
+	
 		if (const auto effect = GetSpawnedEffect(MeshComp))
 		{
 			effect->SetVectorParameter("StartTrail", MeshComp->GetSocketLocation(Start));
 			effect->SetVectorParameter("EndTrail", MeshComp->GetSocketLocation(End));
+			effect->SetFloatParameter("Ribbon Width", Width);
 		}
 		else
 		{

@@ -17,10 +17,15 @@ class SOULLIKE_API UAnimNotifyState_NiagaraTrail : public UAnimNotifyState_Timed
 protected:
 	UAnimNotifyState_NiagaraTrail();
 
+	//이 값이 참이면 ILinetraceAbilityEffectInterface인터페이스 함수를 호출합니다.
+	UPROPERTY(EditAnywhere)
+	bool bUseOtherComponent = false;
 	UPROPERTY(EditAnywhere)
 	FName Start;
 	UPROPERTY(EditAnywhere)
 	FName End;
+	UPROPERTY(EditAnywhere)
+	float Width = 5.f;
 
 	virtual void NotifyTick(USkeletalMeshComponent* MeshComp, UAnimSequenceBase* Animation, float FrameDeltaTime,
 	                        const FAnimNotifyEventReference& EventReference) override;

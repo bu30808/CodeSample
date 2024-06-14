@@ -67,4 +67,8 @@ public:
 	//이 값이 참이면 애니메이션을 좌우반전합니다.
 	UPROPERTY(EditAnywhere)
 	bool bMirrorAnimation = false;
+	//강제로 Hit 애니메이션 빠져나감 이벤트를 트리거 해야 할 때 참으로 주세요.
+	//이 값이 참이면, 이 노드가 실행되는 순간 Hit애니메이션이 재생중이라면 취소되고 NORMAL상태로 되돌립니다.
+	UPROPERTY(EditAnywhere)
+	bool bForceTriggerHitExitEvent = true;
 };

@@ -108,11 +108,11 @@ public:
 	//참이면 다시 히트될때마다 재생중이던 몽타주를 정지합니다.
 	UPROPERTY(EditAnywhere,Category="Animation",meta=(EditCondition = "HitAnimationType == EHitAnimationType::AnimMontage"))
 	bool bResetHitMontageWhenHit;
-	
+
 	void PlayHitMontage();
 	void PlayHitMontageByDirection();
 
-	UPROPERTY(EditAnywhere,Category="Animation",meta=(EditCondition = "bUseDirection == false"))
+	UPROPERTY(EditAnywhere,Category="Animation")
 	UAnimMontage* GuardHitMontage;
 	//가드중일떄 피격당하면 호출됩니다.
 	void PlayGuardHitMontage();
@@ -131,6 +131,8 @@ public:
 	//플레이중이던 히트 몽타주가 끝나면 호출됩니다.
 	UFUNCTION()
 	void OnHitMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	UFUNCTION()
+	void OnHitMontageBlendOut(UAnimMontage* Montage, bool bInterrupted);
 	
 	//이 값이 참이면 본 트렌스폼을 변경하는코드를 실행합니다.
 	UPROPERTY(Transient, BlueprintReadOnly)

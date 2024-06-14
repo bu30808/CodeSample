@@ -138,7 +138,11 @@ protected:
 	//히트가 감지되면 호출되는 이벤트입니다.
 	UPROPERTY(BlueprintAssignable)
 	FOnHitActor OnHitActor;
-	//히트가 감지되면 호출되는 함수입니다. 필요하다면 블루프린트에서 덮어쓰세요.
+	/**
+	 * 히트가 감지되면 호출되는 함수입니다. 필요하다면 블루프린트에서 덮어쓰세요.
+	 * @param Hit 
+	 * @param Target 이 이팩트의 주인입니다.
+	 */
 	UFUNCTION(BlueprintNativeEvent)
 	void OnHitActorEvent(const FHitResult& Hit, ABaseCharacter* Target);
 
@@ -236,6 +240,13 @@ protected:
 	void SpawnNiagaraEffect(const FHitResult& Hit) const;
 	void UpdateLastNiagaraSpawnSocketLocation();
 
+	/**
+	 * 
+	 * @param Target 이 이팩트를 사용하는 대상입니다.
+	 * @param EffectBy 누구에 의해 이팩트가 적용되는지
+	 * @param From 어떤 어빌리티로부터 온 이팩트인지
+	 * @param AdditionalData 필요하다면 추가 데이터를 넘겨주세요.
+	 */
 	virtual void ProcessEffect_Implementation(class ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From,
 	                                          UObject* AdditionalData = nullptr) override;
 	virtual void OnTaskTickEvent_Implementation(float DeltaTime) override;

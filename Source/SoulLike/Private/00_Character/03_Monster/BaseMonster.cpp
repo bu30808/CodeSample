@@ -206,6 +206,8 @@ void ABaseMonster::PostInitializeComponents()
 	OnEndPlay.AddUniqueDynamic(this, &ABaseMonster::OnEndPlayEvent);
 	OnDestroyed.AddUniqueDynamic(this, &ABaseMonster::OnDestroyedEvent);
 
+	OnBlackboardTargetIsNotValid.AddUniqueDynamic(this,&ABaseMonster::OnBlackboardTargetIsNotValidEvent);
+
 	DefaultMeshTr = GetMesh()->GetRelativeTransform();
 	DefaultHealthBarTr = HealthBarWidgetComponent->GetRelativeTransform();
 
@@ -623,6 +625,17 @@ bool ABaseMonster::IsStartBehaviorTreeImmediately() const
 	}
 	
 	return MonsterDataAsset->bStartBehaviorTreeImmediately; 
+}
+
+void ABaseMonster::OnBlackboardTargetIsNotValidEvent(AAIController* SelfController)
+{
+	if(SelfController)
+	{
+		if(auto bbComp = SelfController->GetBlackboardComponent())
+		{
+			bbComp->SetValueAsObject("Target",nullptr);
+		}
+	}
 }
 
 

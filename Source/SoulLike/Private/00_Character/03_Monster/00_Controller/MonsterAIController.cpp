@@ -81,8 +81,15 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 {
 	if (Stimulus.WasSuccessfullySensed())
 	{
-		if (Target != nullptr && Target->IsA<APlayerCharacter>())
+		if (Target != nullptr && Target->IsA<ABaseCharacter>())
 		{
+			// 같은 팀일 경우 감지를 무시함
+			if (GetTeamAttitudeTowards(*Target) == ETeamAttitude::Friendly)
+			{
+				return;
+			}
+			
+
 			if (GetPawn<ABaseMonster>()->IsDead())
 			{
 				UE_LOGFMT(LogAICon, Error, "{0} 해당 몬스터는 이미 사망 상태입니다. 퍼셉션을 업데이트 할 필요가 없습니다.", GetNameSafe(GetPawn()));
@@ -96,11 +103,8 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 
 			if (!IsBehaviorTreeRunning())
 			{
-				UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 비헤이비어 트리가 실행중이 아니므로, 실행합니다."),*GetNameSafe(GetPawn())));
+				//UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 비헤이비어 트리가 실행중이 아니므로, 실행합니다."),*GetNameSafe(GetPawn())));
 				StartBehavior();
-			}else
-			{
-				UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 이미 비헤이비어 트리가 실행중입니다."),*GetNameSafe(GetPawn())));
 			}
 
 			if (auto bbComp = GetBlackboardComponent())
@@ -126,6 +130,9 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 							IBossMonsterInterface::Execute_ShowBossWidget(GetPawn(), GetPawn<ABaseMonster>(), Target);
 						}
 					}
+				}else
+				{
+					UE_LOGFMT(LogAICon,Log,"타겟이 널포인터가 아닌데요");
 				}
 			}
 		}
@@ -134,7 +141,7 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 
 void AMonsterAIController::OnTargetPerceptionForgottenEvent(AActor* Target)
 {
-	if (Target != nullptr && Target->IsA<APlayerCharacter>())
+	if (Target != nullptr && Target->IsA<ABaseCharacter>())
 	{
 		if (auto bbComp = GetBlackboardComponent())
 		{
@@ -243,6 +250,12 @@ void AMonsterAIController::ReStartBehavior()
 	}
 }
 
+void AMonsterAIController::OverrideTeamId(const FGenericTeamId& NewTeamID)
+{
+	UE_LOGFMT(LogAICon, Log, "Override Team ID : {0}", NewTeamID.GetId());
+	SetGenericTeamId(NewTeamID);
+}
+
 ETeamAttitude::Type AMonsterAIController::GetTeamAttitudeTowards(const AActor& Other) const
 {
 	if (const APawn* OtherPawn = Cast<APawn>(&Other))
@@ -252,21 +265,27 @@ ETeamAttitude::Type AMonsterAIController::GetTeamAttitudeTowards(const AActor& O
 		{
 			return Super::GetTeamAttitudeTowards(*OtherPawn->GetController());
 		}*/
-
+		
 		//OR CUSTOM BEHAVIOUR--------------------------------------------------
 		if (const IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController()))
 		{
 			//Create an alliance with Team with ID 10 and set all the other teams as Hostiles:
 			FGenericTeamId OtherTeamID = TeamAgent->GetGenericTeamId();
+					
 			if (OtherTeamID == 10)
 			{
 				return ETeamAttitude::Neutral;
 			}
-			return ETeamAttitude::Hostile;
+
+			if(OtherTeamID == GetGenericTeamId())
+			{
+				//UE_LOGFMT(LogAICon, Log, "Other Team ID: {0}, My Team ID: {1} , return Friendly", OtherTeamID.GetId(), GetGenericTeamId().GetId());
+				return ETeamAttitude::Friendly;
+			}
 		}
 	}
 
-	return ETeamAttitude::Neutral;
+	return ETeamAttitude::Hostile;
 }
 
 void AMonsterAIController::ResetBlackboard()

@@ -272,6 +272,7 @@ void UAbilityEffect::EndEffect_Implementation(ABaseCharacter* Target)
 			//돌아가는 타이머가 있다면 제거합니다.
 			if (Target->GetWorldTimerManager().TimerExists(IntervalTimerHandle))
 			{
+				UE_LOGFMT(LogEffect,Log,"주기 타이머 종료");
 				Target->GetWorldTimerManager().ClearTimer(IntervalTimerHandle);
 			}
 
@@ -538,7 +539,7 @@ void UAbilityEffect::UpdateCharacterInfoWidget(ABaseCharacter* Target)
 bool UAbilityEffect::ApplyInstantEffect_Implementation(ABaseCharacter* Target, UObject* AdditionalInfo, float DeltaTime)
 {
 	ensure(Target);
-
+	UE_LOGFMT(LogEffect,Log,"ApplyInstantEffect_Implementation");
 	if (!CanApplyEffect(Target))
 	{
 		UE_LOGFMT(LogEffect, Error, "즉발 이팩트를 적용할 수 없습니다 : {0} {1}", __FUNCTION__, __LINE__);
@@ -617,8 +618,7 @@ bool UAbilityEffect::ApplyInstantEffect_Implementation(ABaseCharacter* Target, U
 					}
 				}
 			}
-
-
+			
 			for (auto attributeEffect : UpdatedAttributeEffectsAffectedByOwnersAttribute)
 			{
 				if (const auto processor = attributeProcessSubsystem->GetProcessor(attributeEffect.ApplyMethod))
@@ -680,6 +680,8 @@ void UAbilityEffect::ApplyDurationEffect(ABaseCharacter* Target)
 void UAbilityEffect::ApplyIntervalEffect(ABaseCharacter* Target)
 {
 	ensure(Target);
+	UE_LOGFMT(LogEffect,Log,"ApplyIntervalEffect");
+
 	FTimerManager& timerManager = Target->GetWorldTimerManager();
 
 	if (timerManager.TimerExists(IntervalTimerHandle))
@@ -1051,6 +1053,7 @@ void UAbilityEffect::ApplyCueInterval(ABaseCharacter* Target, UObject* Additiona
 	ensure(Target);
 	if (auto abComp = Target->GetAbilityComponent())
 	{
+		UE_LOGFMT(LogEffect,Log,"ApplyCueInterval");
 		UpdateCueDataFromAdditionalData(AdditionalData, IntervalAbilityCues);
 		abComp->ApplyCues(IntervalAbilityCues);
 	}

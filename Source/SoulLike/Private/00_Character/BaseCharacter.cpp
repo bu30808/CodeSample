@@ -324,7 +324,6 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 	UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 호출", GetActorNameOrLabel());
 	if (CharacterState != ECharacterState::DEAD)
 	{
-
 		UGameplayStatics::PlaySound2D(this,DeadCue);
 		UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 / 정보 설정", GetActorNameOrLabel());
 		SetCharacterState(ECharacterState::DEAD);
@@ -348,7 +347,7 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 void ABaseCharacter::SetCharacterState(ECharacterState NewState)
 {
 	CharacterState = NewState;
-	//UE_LOGFMT(LogCharacter,Log,"{0}, 캐릭터 상태 업데이트 111111111111: {1}",GetNameSafe(this),StaticEnum<ECharacterState>()->GetValueAsString(NewState));
+	UE_LOGFMT(LogCharacter,Log,"{0}, 캐릭터 상태 업데이트: {1}",GetNameSafe(this),StaticEnum<ECharacterState>()->GetValueAsString(NewState));
 }
 
 void ABaseCharacter::ChangeMovementState(EMovementState Type, float Multiplier)
@@ -359,9 +358,11 @@ void ABaseCharacter::ChangeMovementState(EMovementState Type, float Multiplier)
 	{
 	case EMovementState::Walk:
 		GetCharacterMovement()->MaxWalkSpeed = AttributeComponent->GetMoveSpeed() * Multiplier;
+		UE_LOGFMT(LogCharacter,Log,"걷기로 변경 : {0}",GetCharacterMovement()->MaxWalkSpeed);
 		break;
 	case EMovementState::Run:
 		GetCharacterMovement()->MaxWalkSpeed = AttributeComponent->GetMoveSpeed() * Multiplier;
+		UE_LOGFMT(LogCharacter,Log,"뛰기로 변경 : {0}",GetCharacterMovement()->MaxWalkSpeed);
 		break;
 	default: ;
 	}
@@ -415,6 +416,7 @@ void ABaseCharacter::OnTriggerHitAnimationExitEvent(ABaseCharacter* DamagedChara
 {
 	if (CharacterState != ECharacterState::DEAD)
 	{
+		UE_LOGFMT(LogCharacter,Log,"OnTriggerHitAnimationExitEvent : 캐릭터 상태를 노말로 되돌립니다.");
 		AnimationHelperComponent->SetIsTriggeredHitAnimationExitEvent(true);
 		SetCharacterState(ECharacterState::NORMAL);
 	}

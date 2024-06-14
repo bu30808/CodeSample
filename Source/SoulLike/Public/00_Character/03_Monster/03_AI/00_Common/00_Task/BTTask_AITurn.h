@@ -82,6 +82,9 @@ protected:
 	//또한 UseOtherMeshComponentForward를 사용하는 경우, 해당 대상이 LinetraceAbilityEffectInterface를 상속받고 있어야 합니다.
 	UPROPERTY(EditAnywhere, meta=(EditCondition="bUseStopTrace"), Category="Option")
 	EStopTraceType StopTraceType;
+	UPROPERTY(EditAnywhere, meta=(EditCondition="bUseStopTrace"), Category="Option")
+	FVector StopTraceBoxHalfExtent = FVector(10,10,500);
+	
 	//메시 전방을 사용하려면 소켓의 이름이 필요합니다. 머리나 눈같은 소켓이름을 주세요.
 	UPROPERTY(EditAnywhere, meta=(EditCondition="bUseStopTrace && StopTraceType == EStopTraceType::PawnMeshForward || StopTraceType == EStopTraceType::UseOtherMeshComponentForward"),
 		Category="Option")

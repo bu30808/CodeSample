@@ -62,22 +62,20 @@ void UAnimationHelperComponent::PlayHitMontage()
 		if(HitAnimationType == EHitAnimationType::AnimMontage)
 		{
 			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(this,&UAnimationHelperComponent::OnHitMontageEnded);
-			if(bUseHitMighty)
-			{
-				ActivateHitMightyAbility(HitMightyTime);
-			}
-
-		
+			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(this,&UAnimationHelperComponent::OnHitMontageBlendOut);
 			if(bResetHitMontageWhenHit)
 			{
 				UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
 				if(IsPlayHitMontage())
 				{
 					UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
-					ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Stop(0);
+					ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Stop(0.1f);
 				}
 			}
-			PlayHitMontageByDirection();
+			if(!IsPlayHitMontage())
+			{
+				PlayHitMontageByDirection();
+			}
 		}
 	}
 }
@@ -117,7 +115,7 @@ void UAnimationHelperComponent::PlayHitMontageByDirection()
 			}
 		}
 
-		UE_LOGFMT(LogAnimation,Error,"이 방향에 대한 피격 애니메이션을 찾을 수 없습니다 : {0}",StaticEnum<EDirection>()->GetValueAsString(dir));
+		UE_LOGFMT(LogTemp,Error,"이 방향에 대한 피격 애니메이션을 찾을 수 없습니다 : {0}",StaticEnum<EDirection>()->GetValueAsString(dir));
 		
 		/*
 		//전
@@ -181,20 +179,20 @@ void UAnimationHelperComponent::PlayGuardHitMontage()
 		if(HitAnimationType == EHitAnimationType::AnimMontage)
 		{
 			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(this,&UAnimationHelperComponent::OnHitMontageEnded);
-			if(bUseHitMighty)
-			{
-				ActivateHitMightyAbility(HitMightyTime);
-			}
-
+			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(this,&UAnimationHelperComponent::OnHitMontageBlendOut);
 		
 			if(bResetHitMontageWhenHit)
 			{
 				if(IsPlayGuardHitMontage())
 				{
-					ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Stop(0);
+					ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Stop(0.1f);
 				}
 			}
-			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(GuardHitMontage);
+			
+			if(!IsPlayGuardHitMontage())
+			{
+				ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(GuardHitMontage);
+			}
 		}
 	}
 }
@@ -279,11 +277,32 @@ void UAnimationHelperComponent::OnHitMontageEnded(UAnimMontage* Montage, bool bI
 			{
 				if(IsHitMontage(Montage) || IsGuradHitMontage(Montage))
 				{
+							
 					ComponentOwnerCharacter->SetCharacterState(ECharacterState::NORMAL);
 					if (const auto aiCon = ComponentOwnerCharacter->GetController<AMonsterAIController>())
 					{
 						UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 비헤이비어 트리 재 실행"),*GetNameSafe(this)));
-						//aiCon->ReStartBehavior();
+					}
+				}
+			}
+		}
+	}
+}
+
+void UAnimationHelperComponent::OnHitMontageBlendOut(UAnimMontage* Montage, bool bInterrupted)
+{
+	if(ComponentOwnerCharacter)
+	{
+		if(!bInterrupted)
+		{
+			if(ComponentOwnerCharacter->IsDead() == false)
+			{
+				if(IsHitMontage(Montage) || IsGuradHitMontage(Montage))
+				{
+					if(bUseHitMighty)
+					{
+						UE_LOGFMT(LogTemp,Log,"슈퍼아머 부여");
+						ActivateHitMightyAbility(HitMightyTime);
 					}
 				}
 			}

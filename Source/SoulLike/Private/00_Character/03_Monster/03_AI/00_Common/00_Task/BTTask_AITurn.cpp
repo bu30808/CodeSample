@@ -11,7 +11,6 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "Logging/StructuredLog.h"
 
-#define PLAYER_TRACE_CHANNEL ECC_GameTraceChannel5
 
 UBTTask_AITurn::UBTTask_AITurn()
 {
@@ -132,7 +131,7 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 					break;
 				case EStopTraceType::PawnForward:
 					{
-						startLoc = aiPawn->GetActorLocation();
+						startLoc = aiPawn->GetActorLocation() + aiPawn->GetActorForwardVector()*50.f;
 						endLoc = startLoc + aiPawn->GetActorForwardVector() * 20000.f;
 					}
 					break;
@@ -167,23 +166,29 @@ void UBTTask_AITurn::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemo
 
 
 				{
-					FHitResult hit;
+					TArray<FHitResult> hits;
 					TArray<TEnumAsByte<EObjectTypeQuery>> objectTypes;
-					objectTypes.Emplace(UEngineTypes::ConvertToObjectType(PLAYER_TRACE_CHANNEL));
+					objectTypes.Emplace(UEngineTypes::ConvertToObjectType(ECC_Player));
+					objectTypes.Emplace(UEngineTypes::ConvertToObjectType(ECC_Monster));
 
-					bool bHit = UKismetSystemLibrary::BoxTraceSingleForObjects(target->GetWorld(), startLoc, endLoc,
-					                                                           FVector(10, 10, 500),
+					bool bHit = UKismetSystemLibrary::BoxTraceMultiForObjects(target->GetWorld(), startLoc, endLoc,
+					                                                           StopTraceBoxHalfExtent,
 					                                                           FRotator::ZeroRotator,
 					                                                           objectTypes, false,
 					                                                           TArray<AActor*>(),
-					                                                           EDrawDebugTrace::ForOneFrame, hit,
+					                                                           EDrawDebugTrace::ForOneFrame, hits,
 					                                                           true);
 					if (bHit)
 					{
-						if (hit.GetActor() == target)
+
+						for(const auto& hit : hits)
 						{
-							if(!bShouldManualFinish){
-								FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+							if (hit.GetActor() == target)
+							{
+								if(!bShouldManualFinish){
+									FinishLatentTask(OwnerComp, EBTNodeResult::Succeeded);
+									break;
+								}
 							}
 						}
 					}
@@ -261,7 +266,6 @@ void UBTTask_AITurn::Turn()
 				if (FMath::Abs(DeltaYaw) < StopDeltaYaw)
 				{
 					UE_LOGFMT(LogAICon, Warning, "이미 목표 각도 안이므로 종료합니다 : {0}", DeltaYaw);
-					UE_LOGFMT(LogTemp, Warning, "333333333333333333333333");
 					FinishLatentTask(*OwnerComp, EBTNodeResult::Succeeded);
 					return;
 				}
@@ -286,7 +290,6 @@ void UBTTask_AITurn::Turn()
 						else
 						{
 							UE_LOGFMT(LogAICon, Warning, "델타값이 0이라 종료합니다. : {0}", DeltaYaw);
-							UE_LOGFMT(LogTemp, Warning, "4444444444444444444444");
 							FinishLatentTask(*OwnerComp, EBTNodeResult::Succeeded);
 						}
 					}

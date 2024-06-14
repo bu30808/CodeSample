@@ -405,6 +405,7 @@ void UAbilityComponent::EndEffectByTag(FGameplayTag Tag)
 	{
 		if (auto e = GetAppliedEffectByTag(Tag))
 		{
+			AppliedEffects.Remove(e);
 			e->EndEffect(Cast<ABaseCharacter>(GetOwner()));
 		}
 	}
