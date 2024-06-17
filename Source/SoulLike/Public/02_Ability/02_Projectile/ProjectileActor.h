@@ -114,9 +114,9 @@ public:
 
 	//P_ShootType이 DelayUntilRotationWithTimeLimit일 경우 LimitTime시간 이후 강제로 발사합니다.
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void LaunchProjectileWithOption(EProjectileDirection P_Direction, EProjectileShootType P_ShootType, float LimitTime);
+	void LaunchProjectileWithOption(EProjectileDirection P_Direction, EProjectileShootType P_ShootType, float LimitTime,class USoundBase* SoundToPlay);
 	virtual void LaunchProjectileWithOption_Implementation(EProjectileDirection P_Direction,
-	                                                       EProjectileShootType P_ShootType, float LimitTime);
+	                                                       EProjectileShootType P_ShootType, float LimitTime,class USoundBase* SoundToPlay);
 
 	UFUNCTION()
 	void ForceShoot();
@@ -126,7 +126,7 @@ public:
 	//P_ShootType이 DelayUntilRotationWithTimeLimit일 경우 LimitTime시간 이후 강제로 발사합니다.
 	UFUNCTION(BlueprintCallable)
 	void LaunchProjectileDelayWithOption(float DelayTime, EProjectileDirection P_Direction,
-	                                     EProjectileShootType P_ShootType, float LimitTime);
+	                                     EProjectileShootType P_ShootType, float LimitTime, USoundBase* SoundToPlay);
 
 	UFUNCTION(BlueprintCallable)
 	void SetEffect(const TArray<TSubclassOf<UAbilityEffect>>& Effects);

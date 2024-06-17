@@ -21,6 +21,6 @@ protected:
 	virtual void BeginPlay() override;
 	
 	UPROPERTY(EditAnywhere, Category = URO, meta = (AllowPrivateAccess = "true"))
-	TArray<int> m_pLOD_FrameRate = {0,2,4,8};
+	TArray<int> m_pLOD_FrameRate = {0,1,2,4};
 
 };

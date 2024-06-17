@@ -30,7 +30,8 @@ void UAnimationHelperComponent::BeginPlay()
 
 	// ...
 	ComponentOwnerCharacter = GetOwner<ABaseCharacter>();
-	if(ComponentOwnerCharacter){
+	if (ComponentOwnerCharacter)
+	{
 		ComponentOwnerCharacter->GetDeadDissolveTimeLineComponent()->SetTimelineLength(DissolveTime);
 		UpdateDissolve.BindDynamic(ComponentOwnerCharacter, &ABaseCharacter::OnUpdateDeadDissolveTimeLine);
 		OnFinishDissolve.BindDynamic(ComponentOwnerCharacter, &ABaseCharacter::OnFinishDissolveTimeLine);
@@ -40,39 +41,43 @@ void UAnimationHelperComponent::BeginPlay()
 void UAnimationHelperComponent::PostInitProperties()
 {
 	Super::PostInitProperties();
-	
 }
 
 void UAnimationHelperComponent::ActivateHitMightyAbility(float MightyDeactivateTime)
 {
-	if(ComponentOwnerCharacter)
+	if (ComponentOwnerCharacter)
 	{
 		if (!ComponentOwnerCharacter->GetWorldTimerManager().TimerExists(HitMightyTimerHandle))
 		{
 			ComponentOwnerCharacter->GetAbilityComponent()->ActivateAbility(MIGHTY_TAG, ComponentOwnerCharacter);
-			ComponentOwnerCharacter->GetWorldTimerManager().SetTimer(HitMightyTimerHandle, ComponentOwnerCharacter.Get(), &ABaseCharacter::DeactivateMightyAbility, MightyDeactivateTime,false);
+			ComponentOwnerCharacter->GetWorldTimerManager().SetTimer(HitMightyTimerHandle,
+			                                                         ComponentOwnerCharacter.Get(),
+			                                                         &ABaseCharacter::DeactivateMightyAbility,
+			                                                         MightyDeactivateTime, false);
 		}
 	}
 }
 
 void UAnimationHelperComponent::PlayHitMontage()
 {
-	if(ComponentOwnerCharacter)
+	if (ComponentOwnerCharacter)
 	{
-		if(HitAnimationType == EHitAnimationType::AnimMontage)
+		if (HitAnimationType == EHitAnimationType::AnimMontage)
 		{
-			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(this,&UAnimationHelperComponent::OnHitMontageEnded);
-			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(this,&UAnimationHelperComponent::OnHitMontageBlendOut);
-			if(bResetHitMontageWhenHit)
+			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(
+				this, &UAnimationHelperComponent::OnHitMontageEnded);
+			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(
+				this, &UAnimationHelperComponent::OnHitMontageBlendOut);
+			if (bResetHitMontageWhenHit)
 			{
-				UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
-				if(IsPlayHitMontage())
+				UE_LOGFMT(LogTemp, Log, "히트 몽타주 : {0} {1}", __FUNCTION__, __LINE__);
+				if (IsPlayHitMontage())
 				{
-					UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
+					UE_LOGFMT(LogTemp, Log, "히트 몽타주 : {0} {1}", __FUNCTION__, __LINE__);
 					ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Stop(0.1f);
 				}
 			}
-			if(!IsPlayHitMontage())
+			if (!IsPlayHitMontage())
 			{
 				PlayHitMontageByDirection();
 			}
@@ -82,41 +87,76 @@ void UAnimationHelperComponent::PlayHitMontage()
 
 void UAnimationHelperComponent::PlayHitMontageByDirection()
 {
-	if(ComponentOwnerCharacter){
-	
-		UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
-		if(HitAnimationType != EHitAnimationType::AnimMontage)
+	if (ComponentOwnerCharacter)
+	{
+		UE_LOGFMT(LogTemp, Log, "히트 몽타주 : {0} {1}", __FUNCTION__, __LINE__);
+		if (HitAnimationType != EHitAnimationType::AnimMontage)
 		{
 			return;
 		}
 
-		if(!bUseDirection)
+		if (!bUseDirection)
 		{
-			UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
+			UE_LOGFMT(LogTemp, Log, "히트 몽타주 : {0} {1}", __FUNCTION__, __LINE__);
 			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(HitMontage);
 			return;
 		}
 
 		const auto& dir = UMathHelperLibrary::DegreeToDirection(HitDegree);
-		if(HitMontageByDirection.Contains(dir))
+		if (HitMontageByDirection.Contains(dir))
 		{
 			ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[dir]);
-		}else
+			return;
+		}
+		switch (dir)
 		{
-			switch (dir) {
-			case EDirection::FrontRight:
-			case EDirection::FrontLeft:
-				ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::Front]);
-				return;
-			case EDirection::BackRight:
-			case EDirection::BackLeft:
-				ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::Back]);
-				return;
+		case EDirection::Front:
+			if (HitMontageByDirection.Contains(EDirection::FrontLeft) || HitMontageByDirection.Contains(
+				EDirection::FrontRight))
+			{
+				if (FMath::RandBool())
+				{
+					ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::FrontLeft]);
+				}
+				else
+				{
+					ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::FrontRight]);
+				}
 			}
+			return;
+		case EDirection::Back:
+			if (HitMontageByDirection.Contains(EDirection::BackLeft) || HitMontageByDirection.Contains(
+				EDirection::BackRight))
+			{
+				if (FMath::RandBool())
+				{
+					ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::BackLeft]);
+				}
+				else
+				{
+					ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::BackRight]);
+				}
+			}
+			return;
 		}
 
-		UE_LOGFMT(LogTemp,Error,"이 방향에 대한 피격 애니메이션을 찾을 수 없습니다 : {0}",StaticEnum<EDirection>()->GetValueAsString(dir));
-		
+
+		switch (dir)
+		{
+		case EDirection::FrontRight:
+		case EDirection::FrontLeft:
+			ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::Front]);
+			return;
+		case EDirection::BackRight:
+		case EDirection::BackLeft:
+			ComponentOwnerCharacter->PlayAnimMontage(HitMontageByDirection[EDirection::Back]);
+			return;
+		}
+
+
+		UE_LOGFMT(LogTemp, Error, "이 방향에 대한 피격 애니메이션을 찾을 수 없습니다 : {0}",
+		          StaticEnum<EDirection>()->GetValueAsString(dir));
+
 		/*
 		//전
 		{
@@ -174,22 +214,24 @@ void UAnimationHelperComponent::PlayHitMontageByDirection()
 
 void UAnimationHelperComponent::PlayGuardHitMontage()
 {
-	if(ComponentOwnerCharacter)
+	if (ComponentOwnerCharacter)
 	{
-		if(HitAnimationType == EHitAnimationType::AnimMontage)
+		if (HitAnimationType == EHitAnimationType::AnimMontage)
 		{
-			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(this,&UAnimationHelperComponent::OnHitMontageEnded);
-			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(this,&UAnimationHelperComponent::OnHitMontageBlendOut);
-		
-			if(bResetHitMontageWhenHit)
+			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(
+				this, &UAnimationHelperComponent::OnHitMontageEnded);
+			ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->OnMontageBlendingOut.AddUniqueDynamic(
+				this, &UAnimationHelperComponent::OnHitMontageBlendOut);
+
+			if (bResetHitMontageWhenHit)
 			{
-				if(IsPlayGuardHitMontage())
+				if (IsPlayGuardHitMontage())
 				{
 					ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Stop(0.1f);
 				}
 			}
-			
-			if(!IsPlayGuardHitMontage())
+
+			if (!IsPlayGuardHitMontage())
 			{
 				ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_Play(GuardHitMontage);
 			}
@@ -199,14 +241,14 @@ void UAnimationHelperComponent::PlayGuardHitMontage()
 
 bool UAnimationHelperComponent::IsPlayHitMontage()
 {
-	if(ComponentOwnerCharacter)
+	if (ComponentOwnerCharacter)
 	{
-		if(HitAnimationType != EHitAnimationType::AnimMontage)
+		if (HitAnimationType != EHitAnimationType::AnimMontage)
 		{
 			return false;
 		}
 
-		if(bUseDirection)
+		if (bUseDirection)
 		{
 			for (const auto& iter : HitMontageByDirection)
 			{
@@ -215,7 +257,8 @@ bool UAnimationHelperComponent::IsPlayHitMontage()
 					return true;
 				}
 			}
-		}else
+		}
+		else
 		{
 			return ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_IsPlaying(HitMontage);
 		}
@@ -225,27 +268,26 @@ bool UAnimationHelperComponent::IsPlayHitMontage()
 
 bool UAnimationHelperComponent::IsPlayGuardHitMontage() const
 {
-	if(ComponentOwnerCharacter)
+	if (ComponentOwnerCharacter)
 	{
-		if(HitAnimationType != EHitAnimationType::AnimMontage)
+		if (HitAnimationType != EHitAnimationType::AnimMontage)
 		{
 			return false;
 		}
-		
+
 		return ComponentOwnerCharacter->GetMesh()->GetAnimInstance()->Montage_IsPlaying(GuardHitMontage);
-		
 	}
 	return false;
 }
 
 bool UAnimationHelperComponent::IsHitMontage(const UAnimMontage* Montage)
 {
-	if(HitAnimationType != EHitAnimationType::AnimMontage)
+	if (HitAnimationType != EHitAnimationType::AnimMontage)
 	{
 		return false;
 	}
 
-	if(bUseDirection)
+	if (bUseDirection)
 	{
 		for (const auto& iter : HitMontageByDirection)
 		{
@@ -254,7 +296,8 @@ bool UAnimationHelperComponent::IsHitMontage(const UAnimMontage* Montage)
 				return true;
 			}
 		}
-	}else
+	}
+	else
 	{
 		return Montage == HitMontage;
 	}
@@ -269,19 +312,19 @@ bool UAnimationHelperComponent::IsGuradHitMontage(const UAnimMontage* Montage)
 
 void UAnimationHelperComponent::OnHitMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if(ComponentOwnerCharacter)
+	if (ComponentOwnerCharacter)
 	{
-		if(!bInterrupted)
+		if (!bInterrupted)
 		{
-			if(ComponentOwnerCharacter->IsDead() == false)
+			if (ComponentOwnerCharacter->IsDead() == false)
 			{
-				if(IsHitMontage(Montage) || IsGuradHitMontage(Montage))
+				if (IsHitMontage(Montage) || IsGuradHitMontage(Montage))
 				{
-							
 					ComponentOwnerCharacter->SetCharacterState(ECharacterState::NORMAL);
 					if (const auto aiCon = ComponentOwnerCharacter->GetController<AMonsterAIController>())
 					{
-						UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 비헤이비어 트리 재 실행"),*GetNameSafe(this)));
+						UKismetSystemLibrary::PrintString(
+							this, FString::Printf(TEXT("%s : 비헤이비어 트리 재 실행"), *GetNameSafe(this)));
 					}
 				}
 			}
@@ -291,17 +334,17 @@ void UAnimationHelperComponent::OnHitMontageEnded(UAnimMontage* Montage, bool bI
 
 void UAnimationHelperComponent::OnHitMontageBlendOut(UAnimMontage* Montage, bool bInterrupted)
 {
-	if(ComponentOwnerCharacter)
+	if (ComponentOwnerCharacter)
 	{
-		if(!bInterrupted)
+		if (!bInterrupted)
 		{
-			if(ComponentOwnerCharacter->IsDead() == false)
+			if (ComponentOwnerCharacter->IsDead() == false)
 			{
-				if(IsHitMontage(Montage) || IsGuradHitMontage(Montage))
+				if (IsHitMontage(Montage) || IsGuradHitMontage(Montage))
 				{
-					if(bUseHitMighty)
+					if (bUseHitMighty)
 					{
-						UE_LOGFMT(LogTemp,Log,"슈퍼아머 부여");
+						UE_LOGFMT(LogTemp, Log, "슈퍼아머 부여");
 						ActivateHitMightyAbility(HitMightyTime);
 					}
 				}
@@ -319,7 +362,8 @@ void UAnimationHelperComponent::StartDeadDissolve()
 		{
 			UE_LOGFMT(LogCharacter, Log, "사망 파티클 생성");
 			const auto comp = UNiagaraFunctionLibrary::SpawnSystemAttached(
-				DissolveParticle, ComponentOwnerCharacter->GetRootComponent(), NAME_None, FVector::ZeroVector, FRotator::ZeroRotator,
+				DissolveParticle, ComponentOwnerCharacter->GetRootComponent(), NAME_None, FVector::ZeroVector,
+				FRotator::ZeroRotator,
 				EAttachLocation::SnapToTargetIncludingScale, false);
 			comp->SetColorParameter("Color", DissolveColor);
 		}
@@ -333,7 +377,6 @@ void UAnimationHelperComponent::StartDeadDissolve()
 
 void UAnimationHelperComponent::PlayDeadAnimationByMode()
 {
-	
 	switch (DeadAnimationPlayMode)
 	{
 	case EDeadAnimationPlayMode::Sequence:
@@ -350,7 +393,7 @@ void UAnimationHelperComponent::PlayDeadAnimationByMode()
 
 void UAnimationHelperComponent::PlayDeadAnimationSequence()
 {
-	if(ComponentOwnerCharacter)
+	if (ComponentOwnerCharacter)
 	{
 		ComponentOwnerCharacter->GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
 		auto randIndex = FMath::RandRange(0, DeadAnimations.Num() - 1);
@@ -376,5 +419,3 @@ bool UAnimationHelperComponent::CanApplyRagdoll()
 {
 	return DeadAnimationPlayMode == EDeadAnimationPlayMode::None;
 }
-
-

@@ -43,11 +43,12 @@ public:
 
 	virtual void OnPossess(APawn* InPawn) override;
 
+	
 	UFUNCTION(BlueprintCallable)
 	void StartBehavior();
 	UFUNCTION(BlueprintCallable)
 	void ReStartBehavior();
-
+	
 	UFUNCTION(BlueprintCallable)
 	void OverrideTeamId(const FGenericTeamId& NewTeamID);
 	//팀 비교하는 함수

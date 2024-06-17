@@ -5,7 +5,12 @@
 
 #include "NiagaraComponent.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
+#include "00_Character/00_Player/01_Component/AbilityTalentComponent.h"
+#include "00_Character/01_Component/AnimationHelperComponent.h"
+#include "00_Character/01_Component/FootStepComponent.h"
+#include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "96_Library/SaveGameHelperLibrary.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -38,6 +43,32 @@ AChest::AChest()
 	ChestItemGlowNiagaraComponent->SetupAttachment(ItemSpawnPointComponent);
 	
 	ChestOpenTimelineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("ChestOpenTimelineComponent"));
+	
+	
+	if(InventoryComponent)
+	{
+		InventoryComponent->DestroyComponent();
+	}
+
+	if(FootStepComponent)
+	{
+		FootStepComponent->DestroyComponent();
+	}
+
+	if(AnimationHelperComponent)
+	{
+		AnimationHelperComponent->DestroyComponent();
+	}
+
+	if(DeadDissolveTimeLineComponent)
+	{
+		DeadDissolveTimeLineComponent->DestroyComponent();
+	}
+
+	if(AbilityTalentComponent)
+	{
+		AbilityTalentComponent->DestroyComponent();
+	}
 }
 
 // Called when the game starts or when spawned
@@ -70,6 +101,22 @@ void AChest::PostInitializeComponents()
 	ChestOpenTimelineComponent->SetTimelineFinishedFunc(OnFinishChestOpenTimeLine);
 
 	ChestItemGlowNiagaraComponent->Deactivate();
+
+	if(bIsTrapChest){
+		switch (TrapChestType)
+		{
+		case ETrapChestType::CallSelectedMonsters:
+			OnOpenChest.AddUniqueDynamic(this,&AChest::CallSelectedMonstersEvent);
+			break;
+		case ETrapChestType::SpawnMonsters:
+			OnOpenChest.AddUniqueDynamic(this,&AChest::SpawnMonstersEvent);
+			break;
+		case ETrapChestType::Explosion:
+			OnOpenChest.AddUniqueDynamic(this,&AChest::ExplosionEvent);
+			break;
+		default: ;
+		}
+	}
 }
 
 void AChest::OnBeginOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -117,6 +164,26 @@ void AChest::OpenChest(APlayerCharacter* Player)
 
 	//상자가 열렸다고 저장합니다.
 	USaveGameHelperLibrary::SaveChestOpen(this);
+}
+
+void AChest::CallSelectedMonstersEvent(AChest* Box, ABaseCharacter* OpendBy)
+{
+	for(auto iter : SelectedMonsters)
+	{
+		auto aiCon = Cast<AMonsterAIController>(iter->GetController());
+		aiCon->StartBehavior();
+		aiCon->GetBlackboardComponent()->SetValueAsObject("Target",OpendBy);
+	}
+}
+
+void AChest::SpawnMonstersEvent(AChest* Box, ABaseCharacter* OpendBy)
+{
+	//DO SOMETHING!!
+}
+
+void AChest::ExplosionEvent(AChest* Box, ABaseCharacter* OpendBy)
+{
+	//DO SOMETHING!!
 }
 
 void AChest::Interaction_Implementation(ABaseCharacter* Start)

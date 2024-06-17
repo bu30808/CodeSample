@@ -178,11 +178,24 @@ void ABaseCharacter::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	OnDead.AddUniqueDynamic(this, &ABaseCharacter::OnDeadEvent);
-	AnimationHelperComponent->OnTriggerHitAnimationEnter.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationEnterEvent);
-	AnimationHelperComponent->OnTriggerHitAnimationExit.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationExitEvent);
-	
+	if(AnimationHelperComponent)
+	{
+		AnimationHelperComponent->OnTriggerHitAnimationEnter.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationEnterEvent);
+		AnimationHelperComponent->OnTriggerHitAnimationExit.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationExitEvent);
+	}
 
-	OriginalMaterials = GetMesh()->GetMaterials();
+	if(GetMesh()!=nullptr){
+		OriginalMaterials = GetMesh()->GetMaterials();
+	}
+}
+
+void ABaseCharacter::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+	if(AttributeComponent)
+	{
+		AttributeComponent->InitAttributes();
+	}
 }
 
 void ABaseCharacter::ShowGotHitCue(FVector HitLocation)
@@ -324,7 +337,7 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 	UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 호출", GetActorNameOrLabel());
 	if (CharacterState != ECharacterState::DEAD)
 	{
-		UGameplayStatics::PlaySound2D(this,DeadCue);
+		UGameplayStatics::PlaySoundAtLocation(this,DeadCue,Who->GetActorLocation());
 		UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 / 정보 설정", GetActorNameOrLabel());
 		SetCharacterState(ECharacterState::DEAD);
 		GetCapsuleComponent()->SetCollisionProfileName("Spectator");
@@ -348,6 +361,21 @@ void ABaseCharacter::SetCharacterState(ECharacterState NewState)
 {
 	CharacterState = NewState;
 	UE_LOGFMT(LogCharacter,Log,"{0}, 캐릭터 상태 업데이트: {1}",GetNameSafe(this),StaticEnum<ECharacterState>()->GetValueAsString(NewState));
+
+	switch(CharacterState)
+	{
+	case ECharacterState::DEAD:
+	case ECharacterState::HIT:
+	case ECharacterState::STUN:
+	case ECharacterState::EXCUTE:
+		GetController()->StopMovement();
+		break;
+	case ECharacterState::NORMAL:
+		break;
+	case ECharacterState::MAX:
+		break;
+	default: ;
+	}
 }
 
 void ABaseCharacter::ChangeMovementState(EMovementState Type, float Multiplier)

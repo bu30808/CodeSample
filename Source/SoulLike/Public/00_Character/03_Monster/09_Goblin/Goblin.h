@@ -97,3 +97,42 @@ public:
 	UFUNCTION(BlueprintCallable,BlueprintPure)
 	class UPrimitiveComponent* GetStaffComponent() const {return StaffComponent;}
 };
+
+UCLASS()
+class SOULLIKE_API AGoblinSwarm : public ABaseMonster , public IBossMonsterInterface
+{
+	GENERATED_BODY()
+
+public:
+	AGoblinSwarm();
+
+	virtual void BeginPlay() override;
+
+private:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Display, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UBillboardComponent> SpriteComponent;
+
+protected:
+	UPROPERTY(BlueprintReadOnly)
+	TSet<class AActor*> Goblins;
+	
+	UPROPERTY(BlueprintReadWrite, EditAnywhere,Category = Default)
+	TArray<TSubclassOf<class AGoblin>> GoblinClass;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere,Category = Default)
+	TSubclassOf<class AGoblin> GoblinEliteClass;
+	
+	UPROPERTY(BlueprintReadWrite)
+	TArray<class UActorComponent*> SpawnPoints;
+	UPROPERTY(BlueprintReadWrite, EditAnywhere,Category = Default)
+	TSubclassOf<class UAbilityEffect> DamageEffect;
+public:
+	UFUNCTION(BlueprintCallable)
+	void SpawnGoblin(TArray<TSubclassOf<class AGoblin>> SpawnClass,int32 SpawnCount);
+	UFUNCTION(BlueprintCallable)
+	void SpawnGoblinElite();
+protected:
+	UFUNCTION()
+	void OnGoblinDeadEvent(AActor* Who, AActor* DeadBy);
+	
+	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy) override;
+};

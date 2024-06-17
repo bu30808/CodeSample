@@ -125,6 +125,13 @@ protected:
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void PostInitializeComponents() override;
+	virtual void Tick(float DeltaSeconds) override;
+	
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	void DrawPerceptionDebug();
+#endif
+	
 	void DetachDroppedItem();
 	UFUNCTION()
 	void OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayReason);
@@ -151,6 +158,9 @@ protected:
 	
 
 public:
+
+	FORCEINLINE class UItemDropComponent* GetItemDropComponent() const {return ItemDropComponent;}
+	
 	class UWidgetComponent* GetHealthBarWidgetComponent() const { return HealthBarWidgetComponent; }
 
 protected:
@@ -224,7 +234,9 @@ protected:
 	bool bOverrideStartBehaviorTreeImmediately = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default",meta=(EditCondition="bOverrideStartBehaviorTreeImmediately"))
 	bool bStartBehaviorTreeImmediately  = false;
-	
+	//이 값이 참이라면, 비헤이비어 트리가 실행되기 전에 타겟이 될 만한 대상을 발견해도 비헤이비어 트리를 실행하지 않습니다. 피해에 대해서는 반응합니다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default",meta=(EditCondition="!bStartBehaviorTreeImmediately"))
+	bool bIgnorePerceptionTargetBeforeRunBehaviorTree = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default",meta=(EditCondition="bStartBehaviorTreeImmediately"))
 	bool bFollowLeader = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default",meta=(EditCondition="bFollowLeader"))
@@ -268,6 +280,8 @@ protected:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsStartBehaviorTreeImmediately() const;
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool IsIgnorePerceptionTargetBeforeRunBehaviorTree() const {return bIgnorePerceptionTargetBeforeRunBehaviorTree;}
 	
 public:
 	//기억하던 블랙보드의 타겟이 유효하지 않게 되면 호출됩니다.

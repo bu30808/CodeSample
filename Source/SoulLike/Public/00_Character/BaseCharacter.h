@@ -152,6 +152,7 @@ public:
 
 	virtual void PostInitializeComponents() override;
 
+	virtual void OnConstruction(const FTransform& Transform) override;
 
 	/**************************컴포넌트*************************/
 protected:

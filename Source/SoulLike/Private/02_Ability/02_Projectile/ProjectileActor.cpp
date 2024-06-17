@@ -11,6 +11,7 @@
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Components/SphereComponent.h"
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Logging/StructuredLog.h"
@@ -198,13 +199,17 @@ void AProjectileActor::ShootSetting(EProjectileDirection ProjectileDirection)
 }
 
 void AProjectileActor::LaunchProjectileWithOption_Implementation(
-	EProjectileDirection P_Direction, EProjectileShootType P_ShootType,float LimitTime)
+	EProjectileDirection P_Direction, EProjectileShootType P_ShootType,float LimitTime,class USoundBase* SoundToPlay)
 {
 	CurProjectileDirectionType = P_Direction;
 	CurProjectileShootType = P_ShootType;
 
 	if (auto owner = GetOwner<ABaseCharacter>())
 	{
+
+
+		UGameplayStatics::PlaySoundAtLocation(this,SoundToPlay,GetActorLocation());
+		
 		switch (P_ShootType)
 		{
 		case EProjectileShootType::Immediately:
@@ -281,18 +286,18 @@ void AProjectileActor::ForceShoot()
 }
 
 void AProjectileActor::LaunchProjectileDelayWithOption(float DelayTime, EProjectileDirection P_Direction,
-                                                       EProjectileShootType P_ShootType, float LimitTime)
+                                                       EProjectileShootType P_ShootType, float LimitTime, USoundBase* SoundToPlay)
 {
 	if(DelayTime<=0)
 	{
-		LaunchProjectileWithOption(P_Direction,P_ShootType,LimitTime);
+		LaunchProjectileWithOption(P_Direction,P_ShootType,LimitTime,SoundToPlay);
 		return;
 	}
 	
 	if (!GetWorldTimerManager().TimerExists(DelayLaunchTimerHandle))
 	{
 		FTimerDelegate timerDel = FTimerDelegate::CreateUObject(this, &AProjectileActor::LaunchProjectileWithOption,
-		                                                        P_Direction, P_ShootType,LimitTime);
+		                                                        P_Direction, P_ShootType,LimitTime,SoundToPlay);
 		GetWorldTimerManager().SetTimer(DelayLaunchTimerHandle, timerDel, DelayTime, false);
 	}
 }

@@ -432,6 +432,8 @@ protected:
 	class USphereComponent* SphereComponent;
 	UPROPERTY(VisibleAnywhere, Category=Component, meta=(AllowPrivateAccess="true"))
 	class UNiagaraComponent* NiagaraComponent;
+	UPROPERTY(VisibleAnywhere, Category=Component, meta=(AllowPrivateAccess="true"))
+	class UBillboardComponent* BillboardComponent;
 
 	UPROPERTY(EditAnywhere, Category=Info)
 	FGameplayTag ItemTag;

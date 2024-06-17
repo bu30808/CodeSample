@@ -92,6 +92,11 @@ void UItemDropComponent::PostInitProperties()
 
 void UItemDropComponent::BossDropItem(ABaseCharacter* DropBy)
 {
+	if(bIgnoreDropItem)
+	{
+		return;
+	}
+	
 	APlayerCharacter* player = nullptr;
 
 	if (DropBy->IsA<APlayerCharacter>())
@@ -127,6 +132,11 @@ void UItemDropComponent::BossDropItem(ABaseCharacter* DropBy)
 
 AItemActor* UItemDropComponent::DropItem(ABaseCharacter* DropBy)
 {
+	if(bIgnoreDropItem)
+	{
+		return nullptr;
+	}
+	
 	/*if (auto interface = Cast<IBossMonsterInterface>(GetOwner()))
 	{
 		BossDropItem(DropBy);
@@ -174,6 +184,12 @@ AItemActor* UItemDropComponent::DropItem(ABaseCharacter* DropBy)
 
 void UItemDropComponent::GiveExp(ABaseCharacter* DropBy)
 {
+
+	if(bIgnoreDropExp)
+	{
+		return;
+	}
+	
 	if (Exp <= 0)
 	{
 		return;

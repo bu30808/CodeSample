@@ -54,6 +54,11 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AExpOrb> ExpOrbObject;
 
+	UPROPERTY(EditAnywhere)
+	bool bIgnoreDropItem = false;
+	UPROPERTY(EditAnywhere)
+	bool bIgnoreDropExp = false;
+	
 	//몬스터가 드롭할 수 있는 아이템 리스트
 	UPROPERTY(VisibleAnywhere)
 	TArray<FDropItem> DropItems;
@@ -66,10 +71,17 @@ protected:
 
 	void CreateDropItemListFromTable();
 	void GetDropExpFromTable();
-
+	
 	virtual void PostInitProperties() override;
 
+	
+	
 public:
+	UFUNCTION(BlueprintCallable)
+	void SetIgnoreDropItem(){bIgnoreDropItem = true;}
+	UFUNCTION(BlueprintCallable)
+	void SetIgnoreDropExp(){bIgnoreDropExp = true;}
+	
 	void BossDropItem(class ABaseCharacter* DropBy);
 	/**
 	 * 아이템을 드롭합니다.

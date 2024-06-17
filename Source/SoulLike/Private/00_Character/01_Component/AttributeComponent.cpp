@@ -608,7 +608,6 @@ void UAttributeComponent::BroadcastMaxHPEvent() const
 	OnChangeMaxHPValue.Broadcast(GetMaxHP());
 }
 
-
 void UAttributeComponent::BroadcastMaxMPEvent() const
 {
 	OnChangeMaxMPValue.Broadcast(GetMaxMP());

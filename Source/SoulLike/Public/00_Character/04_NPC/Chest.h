@@ -8,6 +8,17 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnOpenChest,class AChest*, Box,class ABaseCharacter*, OpendBy);
 
+UENUM(BlueprintType)
+enum class ETrapChestType : uint8
+{
+	//주변에 설정된 몇몇 몬스터를 불러드립니다.
+	CallSelectedMonsters,
+	//상자 근처에 몬스터를 스폰합니다.
+	SpawnMonsters,
+	//폭발합니다.
+	Explosion
+};
+
 UCLASS()
 class SOULLIKE_API AChest : public ANPCBase
 {
@@ -20,7 +31,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	
 	virtual void PostInitializeComponents() override;
 	
 	UFUNCTION()
@@ -56,10 +67,28 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Timeline")
 	class UCurveFloat* ChestOpenCurve;
 
-
+	UPROPERTY(EditAnywhere,Category=Default)
+	bool bIsTrapChest= false;
+	UPROPERTY(EditAnywhere,Category=Default,meta=(EditCondition = "bIsTrabChest"))
+	ETrapChestType TrapChestType;
+	UPROPERTY(EditAnywhere,Category=Default,meta=(EditCondition = "bIsTrabChest && TrapChestType == ETrapChestType::CallSelectedMonsters"))
+	TArray<class ABaseMonster*> SelectedMonsters;
+	UPROPERTY(EditAnywhere,Category=Default,meta=(EditCondition = "bIsTrabChest && TrapChestType == ETrapChestType::SpawnMonsters"))
+	TArray<TSubclassOf<class ABaseMonster>> SpawnMonsters;
+	UPROPERTY(EditAnywhere,Category=Default,meta=(EditCondition = "bIsTrabChest && TrapChestType == ETrapChestType::Explosion"))
+	TSubclassOf<class AActor> BombObject;
+	
+	
 	//상자가 열렸을 때, 해야 할 일이 있다면 사용하세요.(ex 함정)
 	UPROPERTY(BlueprintAssignable)
 	FOnOpenChest OnOpenChest;
+
+	UFUNCTION()
+	void CallSelectedMonstersEvent(AChest* Box, ABaseCharacter* OpendBy);
+	UFUNCTION()
+	void SpawnMonstersEvent(AChest* Box, ABaseCharacter* OpendBy);
+	UFUNCTION()
+	void ExplosionEvent(AChest* Box, ABaseCharacter* OpendBy);
 	
 	FOnTimelineFloatStatic OnUpdateChestOpenTimeLine;
 	FOnTimelineEventStatic OnFinishChestOpenTimeLine;

@@ -27,16 +27,16 @@ void UUROComponent::BeginPlay()
 	UActorComponent* pCpt = GetOwner()->GetComponentByClass(USkinnedMeshComponent::StaticClass());
 	if (pCpt != nullptr)
 	{
-		USkinnedMeshComponent* pSKMesh = Cast<USkinnedMeshComponent>(pCpt);
-		pSKMesh->bEnableUpdateRateOptimizations = true;
-		pSKMesh->AnimUpdateRateParams->bShouldUseLodMap = true;
-
-		for (int i = 0; i < m_pLOD_FrameRate.Num(); i++)
+		if(USkinnedMeshComponent* pSKMesh = Cast<USkinnedMeshComponent>(pCpt))
 		{
-			pSKMesh->AnimUpdateRateParams->LODToFrameSkipMap.Add(i, m_pLOD_FrameRate[i]);
+			pSKMesh->bEnableUpdateRateOptimizations = true;
+			pSKMesh->AnimUpdateRateParams->bShouldUseLodMap = true;
+
+			for (int i = 0; i < m_pLOD_FrameRate.Num(); i++)
+			{
+				pSKMesh->AnimUpdateRateParams->LODToFrameSkipMap.Add(i, m_pLOD_FrameRate[i]);
+			}
 		}
-
-
 	}
 	
 }

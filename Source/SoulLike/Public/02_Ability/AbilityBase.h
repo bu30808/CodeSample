@@ -512,8 +512,10 @@ protected:
 	virtual void PostInitProperties() override;
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
-#endif
 
+#endif
+	
+	
 public:
 	const FGameplayTag& GetAbilityTag() { return AbilityTag; }
 

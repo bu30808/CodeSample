@@ -9,6 +9,7 @@
 #include "00_Character/01_Component/AbilityComponent.h"
 #include "02_Ability/AbilityBase.h"
 #include "96_Library/SaveGameHelperLibrary.h"
+#include "Components/BillboardComponent.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
@@ -41,6 +42,9 @@ AItemActor::AItemActor()
 	SphereComponent->CanCharacterStepUpOn = ECB_No;
 #if WITH_EDITOR
 	RuntimeGrid = "ItemGrid";
+	BillboardComponent = CreateDefaultSubobject<UBillboardComponent>(TEXT("BillboardComponent"));
+	BillboardComponent->SetupAttachment(RootComponent);
+	BillboardComponent->SetHiddenInGame(true);
 #endif
 	
 }

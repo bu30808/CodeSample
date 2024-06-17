@@ -29,6 +29,7 @@
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "Logging/StructuredLog.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISense_Damage.h"
@@ -39,8 +40,12 @@ DEFINE_LOG_CATEGORY(LogMonster)
 ABaseMonster::ABaseMonster()
 {
 	PrimaryActorTick.bCanEverTick = true;
+#if WITH_EDITOR
+	PrimaryActorTick.bStartWithTickEnabled = true;
+#else
 	PrimaryActorTick.bStartWithTickEnabled = false;
-	
+#endif
+
 	GetCapsuleComponent()->SetCollisionProfileName("Pawn");
 	GetMesh()->SetCollisionProfileName("MonsterMesh");
 	GetMesh()->SetBodyNotifyRigidBodyCollision(true);
@@ -54,11 +59,11 @@ ABaseMonster::ABaseMonster()
 	HealthBarWidgetComponent->SetDrawSize(FVector2D(125, 5));
 
 	NavigationInvokerComponent = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavInvoker"));
-	NavigationInvokerComponent->SetGenerationRadii(5000.f,7000.f);
+	NavigationInvokerComponent->SetGenerationRadii(5000.f, 7000.f);
 
 	UROComponent = CreateDefaultSubobject<UUROComponent>(TEXT("UROComponent"));
-	
-	
+
+
 	static ConstructorHelpers::FClassFinder<UUserWidget> widget(TEXT(
 		"/Script/UMGEditor.WidgetBlueprint'/Game/Blueprints/02_Widget/UMG_HealthBar.UMG_HealthBar_C'"));
 	if (widget.Succeeded())
@@ -82,7 +87,7 @@ ABaseMonster::ABaseMonster()
 #if WITH_EDITOR
 	RuntimeGrid = "MonsterGrid";
 #endif
-	
+
 	/*GetArrowComponent()->ArrowColor = FColor::Blue;
 	GetArrowComponent()->ArrowSize = 5.f;*/
 }
@@ -190,6 +195,8 @@ void ABaseMonster::PostInitializeComponents()
 
 		HealthBarWidgetComponent->AttachToComponent(
 			GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), "HealthBar");
+
+		DefaultHealthBarTr = HealthBarWidgetComponent->GetRelativeTransform();
 	}
 	AttributeComponent->OnChangeHPValue.AddUniqueDynamic(this, &ABaseMonster::UpdateHealthBar);
 
@@ -206,13 +213,69 @@ void ABaseMonster::PostInitializeComponents()
 	OnEndPlay.AddUniqueDynamic(this, &ABaseMonster::OnEndPlayEvent);
 	OnDestroyed.AddUniqueDynamic(this, &ABaseMonster::OnDestroyedEvent);
 
-	OnBlackboardTargetIsNotValid.AddUniqueDynamic(this,&ABaseMonster::OnBlackboardTargetIsNotValidEvent);
+	OnBlackboardTargetIsNotValid.AddUniqueDynamic(this, &ABaseMonster::OnBlackboardTargetIsNotValidEvent);
 
-	DefaultMeshTr = GetMesh()->GetRelativeTransform();
-	DefaultHealthBarTr = HealthBarWidgetComponent->GetRelativeTransform();
-
+	if (GetMesh())
+	{
+		DefaultMeshTr = GetMesh()->GetRelativeTransform();
+	}
 	InitTransform = GetActorTransform();
 }
+
+void ABaseMonster::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+
+#if WITH_EDITOR
+	DrawPerceptionDebug();
+#endif
+}
+
+#if WITH_EDITOR
+void ABaseMonster::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+	DrawPerceptionDebug();
+}
+
+void ABaseMonster::DrawPerceptionDebug()
+{
+	if (GetController() == nullptr)
+	{
+		if (MonsterDataAsset)
+		{
+			auto SightRadius = MonsterDataAsset->SightRadius;
+			auto PeripheralVisionAngleDegrees = MonsterDataAsset->PeripheralVisionAngleDegrees;
+
+			DrawDebugCircle(GetWorld(), GetActorLocation(), SightRadius, 32, FColor::Red, false,
+			                -1, 0, .5f, FVector(0, 1, 0), FVector(1, 0, 0));
+
+			const FVector& forwardVector = UKismetMathLibrary::GetForwardVector(GetControlRotation());
+			//Z축을 기준으로 방향백터를 시야만큼 회전시킵니다.
+			const FVector& right = UKismetMathLibrary::RotateAngleAxis(
+				forwardVector, PeripheralVisionAngleDegrees,
+				FVector(0, 0, 1)) * SightRadius + GetActorLocation();
+			DrawDebugLine(GetWorld(), GetActorLocation(), right, FColor::Blue, false, 0.1f, 0, 1.0f);
+
+			//Z축을 기준으로 방향백터를 시야만큼 회전시킵니다.
+			const FVector& left = UKismetMathLibrary::RotateAngleAxis(
+				forwardVector, PeripheralVisionAngleDegrees * -1,
+				FVector(0, 0, 1)) * SightRadius + GetActorLocation();
+			DrawDebugLine(GetWorld(), GetActorLocation(), left, FColor::Blue, false, 0.1f, 0, 1.0f);
+
+
+			if (UKismetSystemLibrary::DoesImplementInterface(this, UAIInterface::StaticClass()))
+			{
+				float range;
+				IAIInterface::Execute_GetAttackRange(this, range);
+				DrawDebugCircle(GetWorld(), GetActorLocation(), range, 32, FColor::Magenta, false, 0.1f, 0,
+				                .5f,
+				                FVector(0, 1, 0), FVector(1, 0, 0));
+			}
+		}
+	}
+}
+#endif
 
 void ABaseMonster::DetachDroppedItem()
 {
@@ -433,7 +496,7 @@ void ABaseMonster::Deactivate()
 
 const FGameplayTag& ABaseMonster::GetMonsterTag() const
 {
-	if(MonsterDataAsset)
+	if (MonsterDataAsset)
 	{
 		return MonsterDataAsset->MonsterTag;
 	}
@@ -443,17 +506,18 @@ const FGameplayTag& ABaseMonster::GetMonsterTag() const
 
 void ABaseMonster::OnTriggerHitAnimationEnterEvent(ABaseCharacter* DamagedCharacter, AActor* HitBy)
 {
-
-	if(AnimationHelperComponent->HitAnimationType == EHitAnimationType::NoHitAnimation)
+	if (AnimationHelperComponent->HitAnimationType == EHitAnimationType::NoHitAnimation)
 	{
 		return;
 	}
-	
-	UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);	
-	if(AnimationHelperComponent->HitAnimationType == EHitAnimationType::AnimMontage)
+
+	UE_LOGFMT(LogTemp, Log, "히트 몽타주 : {0} {1}", __FUNCTION__, __LINE__);
+	if (AnimationHelperComponent->HitAnimationType == EHitAnimationType::AnimMontage)
 	{
 		AnimationHelperComponent->SetIsTriggeredHitAnimationExitEvent(false);
-	}else{
+	}
+	else
+	{
 		Super::OnTriggerHitAnimationEnterEvent(DamagedCharacter, HitBy);
 	}
 }
@@ -462,11 +526,11 @@ void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy)
 {
 	Super::OnDeadEvent(Who, DeadBy);
 
-	if(auto aiCon = GetController<AMonsterAIController>())
+	if (auto aiCon = GetController<AMonsterAIController>())
 	{
 		aiCon->K2_ClearFocus();
 	}
-	
+
 
 	/*UE_LOGFMT(LogMonster, Warning, "몬스터 사망 이벤트 호출 : {0}", GetNameSafe(this));*/
 	UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 몬스터 사망"), *GetNameSafe(this)));
@@ -495,7 +559,7 @@ void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy)
 
 			UAIConHelperLibrary::ChangePlayerState(Who, DeadBy, EPlayerCharacterState::Peaceful);
 
-			if(AnimationHelperComponent->CanApplyRagdoll())
+			if (AnimationHelperComponent->CanApplyRagdoll())
 			{
 				EnableRagdoll();
 				RunDeactivateTimer();
@@ -520,7 +584,7 @@ void ABaseMonster::OnDeadBossEvent(AActor* Who, AActor* DeadBy)
 			AnimationHelperComponent->StartDeadDissolve();
 		});
 
-		GetWorldTimerManager().SetTimer(dissolveTimerHandle,dissolveTimerDel,5.f,false);
+		GetWorldTimerManager().SetTimer(dissolveTimerHandle, dissolveTimerDel, 5.f, false);
 	}
 }
 
@@ -532,9 +596,8 @@ void ABaseMonster::PlayDeadAnimationSequence()
 
 void ABaseMonster::PlayDeadAnimationMontage()
 {
-
 	SelectedDeadMontageToPlay = AnimationHelperComponent->GetRandomDeadAnimationMontage();
-	
+
 
 	if (SelectedDeadMontageToPlay != nullptr && GetMesh()->GetAnimInstance() != nullptr)
 	{
@@ -598,10 +661,12 @@ void ABaseMonster::IncreaseStunIntensity(const FAttributeEffect& Effect,
 			StunIntensity = 0;
 			if (auto aiCon = GetController<AMonsterAIController>())
 			{
-				if(!AbilityComponent->HasEffectTag(ExecuteEffectTag)){
+				if (!AbilityComponent->HasEffectTag(ExecuteEffectTag))
+				{
 					UE_LOGFMT(LogAICon, Warning, "{0}가 스턴됨!!!", GetActorNameOrLabel());
 					SetCharacterState(ECharacterState::STUN);
-					GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(this,&ABaseMonster::OnStunMontageEnded);
+					GetMesh()->GetAnimInstance()->OnMontageEnded.AddUniqueDynamic(
+						this, &ABaseMonster::OnStunMontageEnded);
 					GetMesh()->GetAnimInstance()->Montage_Play(MonsterDataAsset->StunMontage);
 				}
 			}
@@ -611,7 +676,7 @@ void ABaseMonster::IncreaseStunIntensity(const FAttributeEffect& Effect,
 
 void ABaseMonster::OnStunMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	if(MonsterDataAsset!=nullptr && MonsterDataAsset->StunMontage == Montage)
+	if (MonsterDataAsset != nullptr && MonsterDataAsset->StunMontage == Montage)
 	{
 		SetCharacterState(ECharacterState::NORMAL);
 	}
@@ -619,39 +684,38 @@ void ABaseMonster::OnStunMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 
 bool ABaseMonster::IsStartBehaviorTreeImmediately() const
 {
-	if(bOverrideStartBehaviorTreeImmediately)
+	if (bOverrideStartBehaviorTreeImmediately)
 	{
 		return bStartBehaviorTreeImmediately;
 	}
-	
-	return MonsterDataAsset->bStartBehaviorTreeImmediately; 
+
+	return MonsterDataAsset->bStartBehaviorTreeImmediately;
 }
 
 void ABaseMonster::OnBlackboardTargetIsNotValidEvent(AAIController* SelfController)
 {
-	if(SelfController)
+	if (SelfController)
 	{
-		if(auto bbComp = SelfController->GetBlackboardComponent())
+		if (auto bbComp = SelfController->GetBlackboardComponent())
 		{
-			bbComp->SetValueAsObject("Target",nullptr);
+			bbComp->SetValueAsObject("Target", nullptr);
 		}
 	}
 }
 
 
 void ABaseMonster::OnRemoveAttributeEffectAdditionalInformationEvent_Implementation(const FAttributeEffect& Effect,
-                                                                                    UAbilityEffectAdditionalInformation*
-                                                                                    AdditionalInformation, float DeltaTime)
+	UAbilityEffectAdditionalInformation*
+	AdditionalInformation, float DeltaTime)
 {
 	if (AdditionalInformation != nullptr)
 	{
-		
 		if (Effect.Attribute == EAttributeType::HP)
 		{
-		UE_LOGFMT(LogMonster, Log, "ABaseMonster {0}이(가) {1}에게 입은 피해량 : {2}", GetActorNameOrLabel(),
-		          AdditionalInformation->HitBy->GetActorNameOrLabel(), Effect.ApplyValue * DeltaTime);
-			
-			UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
+			UE_LOGFMT(LogMonster, Log, "ABaseMonster {0}이(가) {1}에게 입은 피해량 : {2}", GetActorNameOrLabel(),
+			          AdditionalInformation->HitBy->GetActorNameOrLabel(), Effect.ApplyValue * DeltaTime);
+
+			UE_LOGFMT(LogTemp, Log, "히트 몽타주 : {0} {1}", __FUNCTION__, __LINE__);
 			//사망에 이르렀니?
 			if (AttributeComponent->GetHP() <= 0)
 			{
@@ -665,7 +729,7 @@ void ABaseMonster::OnRemoveAttributeEffectAdditionalInformationEvent_Implementat
 
 			IncreaseStunIntensity(Effect, AdditionalInformation);
 			TriggerHitAnimation(AdditionalInformation);
-			
+
 			if (auto aiCon = GetController<AMonsterAIController>())
 			{
 				UAISense_Damage::ReportDamageEvent(this, this, AdditionalInformation->HitBy.Get(), Effect.ApplyValue,
@@ -682,10 +746,9 @@ void ABaseMonster::SetRandomRotationYaw()
 
 void ABaseMonster::TriggerHitAnimation_Implementation(UAbilityEffectAdditionalInformation* AdditionalInformation)
 {
-
 	if (IsMighty() == false)
 	{
-		if(AnimationHelperComponent->HitAnimationType != EHitAnimationType::NoHitAnimation)
+		if (AnimationHelperComponent->HitAnimationType != EHitAnimationType::NoHitAnimation)
 		{
 			//상태만 바꾸면 되는게 아닐까요
 			/*if (auto aiCon = Cast<AMonsterAIController>(GetController()))
@@ -696,11 +759,13 @@ void ABaseMonster::TriggerHitAnimation_Implementation(UAbilityEffectAdditionalIn
 				}
 			}*/
 		}
-		
-		if(MonsterState == EMonsterState::Guard)
+
+		if (MonsterState == EMonsterState::Guard)
 		{
 			AnimationHelperComponent->PlayGuardHitMontage();
-		}else{
+		}
+		else
+		{
 			AnimationHelperComponent->PlayHitMontage();
 		}
 	}
