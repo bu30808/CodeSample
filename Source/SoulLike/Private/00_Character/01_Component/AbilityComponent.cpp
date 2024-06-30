@@ -6,7 +6,6 @@
 #include "TimerManager.h"
 #include "02_Ability/AbilityBase.h"
 #include "02_Ability/AbilityEffect.h"
-#include "03_Widget/07_NPC/NPCActionButtonWidget.h"
 #include "Logging/StructuredLog.h"
 
 DEFINE_LOG_CATEGORY(LogAbilityComponent)
@@ -523,8 +522,14 @@ AAbilityCue* UAbilityComponent::ApplyCue(FAbilityCueInformation CueInformation)
 			else
 			{
 				cueActor = ReusableCues[CueInformation.CueTag];
-				UE_LOGFMT(LogAbilityComponent, Log, "재사용 가능한 큐 꺼내옴 : {0}, {1}", cueActor->GetActorNameOrLabel(),
-				          CueInformation.CueTag.ToString());
+				if(cueActor){
+					UE_LOGFMT(LogAbilityComponent, Log, "재사용 가능한 큐 꺼내옴 : {0}, {1}", cueActor->GetActorNameOrLabel(),
+							  CueInformation.CueTag.ToString());
+				}else
+				{
+					UE_LOGFMT(LogAbilityComponent, Log, "재사용 가능한 큐가 유효하지 않습니다. {0}",
+							  CueInformation.CueTag.ToString());
+				}
 			}
 		}
 		//재 사용 가능한 큐가 아닌 경우.

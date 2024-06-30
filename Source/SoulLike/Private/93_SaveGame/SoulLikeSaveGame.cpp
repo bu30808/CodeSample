@@ -553,7 +553,7 @@ void UGameLoadHandler::RestoreSky(APlayerCharacter* Player, float CurrentSkyTime
 	{
 		if (auto sky = Player->GetDynamicSky())
 		{
-			sky->CurrentTime = CurrentSkyTime;
+			sky->TimeOfDay = CurrentSkyTime;
 		}
 	}
 }
@@ -1407,7 +1407,7 @@ void USoulLikeSaveGame::SaveSkyTime(APlayerCharacter* Player)
 {
 	if (auto sky = Player->GetDynamicSky())
 	{
-		CurrentSkyTime = sky->CurrentTime;
+		CurrentSkyTime = sky->TimeOfDay;
 	}
 }
 
@@ -1456,6 +1456,54 @@ void USoulLikeSaveGame::SaveChest(AChest* Chest, bool bEaredChestItem)
 				//뭐 열림 여부만 저장되면 되는거라 모든 정보를 다 저장할 필요는 없지만, 혹시 몰루니깐
 				EarnedChestItems[levelName].Information.Add(FActorSave(Chest,safeName,Chest->GetClass(),Chest->GetTransform()));
 			}
+		}
+	}
+}
+
+void USoulLikeSaveGame::SaveNPC(ANPCBase* NPC, bool bIsDestroyed)
+{
+	const auto& tag = NPC->GetNPCTag();
+	if(tag.IsValid())
+	{
+		if(!NPCState.Contains(tag))
+		{
+			NPCState.Add(tag,FNPCState(NPC,bIsDestroyed));
+			return;
+		}
+
+		NPCState[tag].Update(NPC);
+
+		UE_LOGFMT(LogSave,Log,"NPC 상태 저장 : {0} {1} {2} {3}",NPCState[tag].bHasMet,NPCState[tag].bJoinBasement,NPCState[tag].SafeName,NPCState[tag].NPCLocation.ToString());
+	}
+}
+
+void USoulLikeSaveGame::LoadNPC(ANPCBase* NPC)
+{
+	const auto& tag = NPC->GetNPCTag();
+	if(tag.IsValid())
+	{
+		if(NPCState.Contains(tag))
+		{	
+			if(NPCState[tag].bHasMet)
+			{
+				NPC->SetMetNPC(false);
+			}
+		
+			if(NPCState[tag].bJoinBasement)
+			{
+				NPC->SetJoinNPCAtBasement(false);
+			}
+			
+			if(NPCState[tag].bIsDestroyed)
+			{
+				UE_LOGFMT(LogSave,Warning,"{0} NPC는 제거된 상태로 저장되었습니다. Destroy합니다.",tag.ToString());
+				NPC->Destroyed();
+				return;
+			}
+			
+
+			UE_LOGFMT(LogSave,Log,"NPC 상태 로드 : {0} {1} {2} {3}",NPCState[tag].bHasMet,NPCState[tag].bJoinBasement,NPCState[tag].SafeName,NPCState[tag].NPCLocation.ToString());
+			NPC->OnLoadNPCState.Broadcast(NPCState[tag]);
 		}
 	}
 }

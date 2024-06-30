@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "97_Interface/LockOnInterface.h"
 #include "Camera/CameraComponent.h"
 #include "Components/ActorComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -18,6 +19,23 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUpdateLockOnTargetWidget, FVector
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLockOnTargetChangeNext);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLockOnTargetChangePre);
+
+
+/*
+ * 특정 부위를 락온하기 위해 사용되는 액터입니다.
+ * 락온하고자 하는 부위에다 자식액터로 부착하세요.
+ */
+UCLASS()
+class SOULLIKE_API ALockOnPointActor : public AActor,public ILockOnInterface
+{
+	GENERATED_BODY()
+	
+	ALockOnPointActor();
+
+protected:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
+	class UStaticMeshComponent* StaticMeshComponent;
+};
 
 /**
  * 락온기능을 담은 컴포넌트입니다.
@@ -140,6 +158,8 @@ protected:
 	 */
 	UPROPERTY(BlueprintReadWrite)
 	bool bEnableLockOnRotation = true;
+	UPROPERTY(Transient)
+	FRotator OriginalRotationRate;
 
 
 	// Called when the game starts
@@ -254,3 +274,4 @@ private:
 	//락온 인터페이스를 상속받는 대상들 중, 락온불가능 판정인 대상을 리스트에서 제거합니다.
 	void RemoveCannotLockOnTargetOnList();
 };
+

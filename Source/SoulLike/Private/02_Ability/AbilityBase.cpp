@@ -435,8 +435,8 @@ UAnimMontage* UAbilityBase::GetNextMontage()
 				if (auto subsystem = UGameplayStatics::GetGameInstance(AbilityOwner.Get())->GetSubsystem<
 					UAttackChainSubsystem>())
 				{
-					UE_LOGFMT(LogTemp, Log, "체인 저장 : {0} , {1}", ChainTag.ToString(), ChainValue[MontageIndex]);
-					subsystem->AddChainValue(ChainTag, ChainValue[MontageIndex]);
+					UE_LOGFMT(LogTemp, Log, "배율 저장 : {0} , {1}", ChainTag.ToString(), ChainValue[MontageIndex]);
+					subsystem->AddChainValue(ChainTag, ChainValue[MontageIndex], this);
 				}
 			}
 		}
@@ -466,8 +466,8 @@ float UAbilityBase::PlayMontageWithCustomChain(ABaseCharacter* Target, UAnimMont
 	if (auto subsystem = UGameplayStatics::GetGameInstance(AbilityOwner.Get())->GetSubsystem<
 		UAttackChainSubsystem>())
 	{
-		UE_LOGFMT(LogTemp, Log, "커스텀 체인 저장 : {0} , {1}", ChainTag.ToString(), CustomChainValue);
-		subsystem->AddChainValue(ChainTag, CustomChainValue);
+		UE_LOGFMT(LogTemp, Log, "커스텀 배율 저장 : {0} , {1}", ChainTag.ToString(), CustomChainValue);
+		subsystem->AddChainValue(ChainTag, CustomChainValue,this);
 	}
 
 	const auto& playRate = Target->GetAttributeComponent()->GetActionSpeed();

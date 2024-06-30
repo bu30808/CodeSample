@@ -302,7 +302,7 @@ void APlayerCharacter::OnAfterLoadStartLayerEvent()
 				
 		AttributeComponent->SetHP(AttributeComponent->GetMaxHP());
 		AttributeComponent->SetMP(AttributeComponent->GetMaxMP());
-		AttributeComponent->BroadcastHPEvent();
+		AttributeComponent->BroadcastHPEvent(0);
 		AttributeComponent->BroadcastMPEvent();
 
 		FTimerHandle timerHandle;

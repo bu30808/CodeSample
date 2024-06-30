@@ -69,6 +69,20 @@ UItemManagerSubsystem::UItemManagerSubsystem()
 	{
 		KeyItemTable = keyItemTable.Object;
 	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> fragmentSlotOpenMaterialTable(TEXT(
+	"/Script/Engine.DataTable'/Game/Blueprints/04_Item/Equip/Orb/Fragment/DT_FragmentSlotOpenMaterial.DT_FragmentSlotOpenMaterial'"));
+	if (fragmentSlotOpenMaterialTable.Succeeded())
+	{
+		FragmentSlotOpenMaterialTable = fragmentSlotOpenMaterialTable.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> stuffItemTable(TEXT(
+	"/Script/Engine.DataTable'/Game/Blueprints/04_Item/Stuff/DT_StuffItem.DT_StuffItem'"));
+	if (stuffItemTable.Succeeded())
+	{
+		StuffItemTable = stuffItemTable.Object;
+	}
 }
 
 
@@ -184,6 +198,32 @@ const FItemInformation* UItemManagerSubsystem::GetKeyItemInformation(FGameplayTa
 	if (KeyItemTable)
 	{
 		if (const auto info = KeyItemTable->FindRow<FItemInformation>(ItemTag.GetTagName(), ""))
+		{
+			return info;
+		}
+	}
+
+	return nullptr;
+}
+
+const FItemInformation* UItemManagerSubsystem::GetFragmentSlotOpenMaterialItemInformation(FGameplayTag ItemTag) const
+{
+	if (FragmentSlotOpenMaterialTable)
+	{
+		if (const auto info = FragmentSlotOpenMaterialTable->FindRow<FItemInformation>(ItemTag.GetTagName(), ""))
+		{
+			return info;
+		}
+	}
+
+	return nullptr;
+}
+
+const FItemInformation* UItemManagerSubsystem::GetStuffItemInformation(FGameplayTag ItemTag) const
+{
+	if (StuffItemTable)
+	{
+		if (const auto info = StuffItemTable->FindRow<FItemInformation>(ItemTag.GetTagName(), ""))
 		{
 			return info;
 		}

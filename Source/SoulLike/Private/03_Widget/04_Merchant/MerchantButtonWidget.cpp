@@ -43,6 +43,9 @@ void UMerchantButtonWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 				{
 					Image_Item->SetBrushFromSoftTexture(
 						itemData->Item_Image);
+				}else
+				{
+					UE_LOGFMT(LogTemp,Error,"{0} 아이템 이미지를 가져올 수 없습니다!!",itemData->Item_Name.ToString());
 				}
 
 				TextBlock_ItemName->SetText(itemData->Item_Name);

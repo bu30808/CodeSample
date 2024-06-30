@@ -80,15 +80,18 @@ EBTNodeResult::Type UBTTask_PlayAnimMontage::ExecuteTask(UBehaviorTreeComponent&
 				default: ;
 				}
 
-				instance->Montage_Play(MontageToPlay, playSpeed);
+				if(instance->Montage_Play(MontageToPlay, playSpeed) ==0.f)
+				{
+					UE_LOGFMT(LogAICon, Error, "몽타주 재생에 실패했습니다.");
+				}
 				return EBTNodeResult::InProgress;
 			}
 			
-			UE_LOGFMT(LogAICon, Error, "인스턴스를 가져올 수 없어요!!");
+			UE_LOGFMT(LogAICon, Error, "몽타주를 재생할 인스턴스를 가져올 수 없어요!!");
 		}
 	}
 	UE_LOGFMT(LogAICon, Error, "플레이할 몽타주가 없어요!");
-	UKismetSystemLibrary::PrintString(AIController, FString::Printf(TEXT("몽타주 재생에 실패했음!!!!!!!!!!!!!!!!!!")));
+
 	return EBTNodeResult::Failed;
 }
 

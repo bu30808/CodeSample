@@ -56,7 +56,7 @@ void AWolfBoss::BeginPlay()
 	if (auto actor = UGameplayStatics::GetActorOfClass(this, ADynamicSkyActor::StaticClass()))
 	{
 		Sky = Cast<ADynamicSkyActor>(actor);
-		OriginalTime = Sky->CurrentTime;
+		OriginalTime = Sky->TimeOfDay;
 	}
 }
 
@@ -75,6 +75,6 @@ void AWolfBoss::ChangeSkyTime(float Time, float Alpha)
 {
 	if (Sky)
 	{
-		Sky->CurrentTime = FMath::Lerp(OriginalTime, Time, Alpha);
+		Sky->TimeOfDay = FMath::Lerp(OriginalTime, Time, Alpha);
 	}
 }

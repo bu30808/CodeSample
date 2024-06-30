@@ -3,32 +3,52 @@
 
 #include "03_Widget/07_NPC/OrbMatrixSlotOpenWidget.h"
 
-#include "00_Character/04_NPC/99_Component/OrbMatrixSlotOpenComponent.h"
+#include "00_Character/04_NPC/99_Component/MatrixSlotOpenComponent.h"
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/00_Player/OrbBackgroundActor.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
-#include "00_Character/01_Component/AttributeComponent.h"
 #include "03_Widget/01_Menu/05_Orb/OrbMatrixElementWidget.h"
 #include "03_Widget/05_Alert/AlertWidget.h"
+#include "96_Library/ItemHelperLibrary.h"
 #include "96_Library/WidgetHelperLibrary.h"
+#include "99_Subsystem/ItemManagerSubsystem.h"
 #include "Components/Button.h"
 #include "Components/TextBlock.h"
 #include "Logging/StructuredLog.h"
-#include "00_Character/00_Player/00_Controller/UserController.h"
+
 
 
 #define LOCTEXT_NAMESPACE "OrbMatrixSlotOpenWidget"
 
 namespace GlobalOrbMatrixSlotOpenText
 {
+	static const FText countText = NSLOCTEXT("OrbMatrixSlotOpenWidget", "countText", "개");
+	static const FText combineText =  NSLOCTEXT("OrbMatrixSlotOpenWidget", "combineText", "및");
 	static const FText unlockText = NSLOCTEXT("OrbMatrixSlotOpenWidget", "SlotUnlockText", "비용을 지불하여 슬롯 개방");
 	static const FText alreadyOpenedAlertText = NSLOCTEXT("OrbMatrixSlotOpenWidget", "AlertText", "이미 개방된 슬롯입니다.");
 }
 #undef LOCTEXT_NAMESPACE
-void UOrbMatrixSlotOpenWidget::ShowUnlockCost(int32 Cost)
+void UOrbMatrixSlotOpenWidget::ShowUnlockCost(const FOrbSlotUnlockCost& Cost)
 {
-	TextBlock_UnLock->SetText(
-		FText::FromString(FString::FormatAsNumber(Cost) + GlobalOrbMatrixSlotOpenText::unlockText.ToString()));
+	if(auto subsystem = GetGameInstance()->GetSubsystem<UItemManagerSubsystem>())
+	{
+		FString needItem;
+		for(const auto& iter : Cost.NeedItem)
+		{
+			if(auto info = subsystem->GetFragmentSlotOpenMaterialItemInformation(iter.Key))
+			{
+				needItem += info->Item_Name.ToString() +" " +  FString::FromInt(iter.Value) + GlobalOrbMatrixSlotOpenText::countText.ToString() + "\n";
+			}
+		}
+		
+		//ex)
+		//아이템이름 n개
+		//아이템2 m개
+		//및
+		//x비용을 지불하여 슬롯 개방
+		TextBlock_UnLock->SetText(
+		FText::FromString(needItem + GlobalOrbMatrixSlotOpenText::combineText.ToString() + "\n" + FString::FormatAsNumber(Cost.Cost) + GlobalOrbMatrixSlotOpenText::unlockText.ToString()));
+	}
 }
 
 UOrbMatrix* UOrbMatrixSlotOpenWidget::GetCoreMatrix(const FInventoryItem& OrbCoreItem)
@@ -68,7 +88,7 @@ void UOrbMatrixSlotOpenWidget::OnClickedOrbMatrixElement(const FOrbMatrixElement
 				auto index = CoreMatrix->PhysicalLine.IndexOfByKey(MatrixInfo);
 				if (UnlockTable.IsValidIndex(index))
 				{
-					ShowUnlockCost(UnlockTable[index]->Cost);
+					ShowUnlockCost(*UnlockTable[index]);
 				}
 				else
 				{
@@ -82,7 +102,7 @@ void UOrbMatrixSlotOpenWidget::OnClickedOrbMatrixElement(const FOrbMatrixElement
 				auto index = CoreMatrix->DefenceLine.IndexOfByKey(MatrixInfo);
 				if (UnlockTable.IsValidIndex(index))
 				{
-					ShowUnlockCost(UnlockTable[index]->Cost);
+					ShowUnlockCost(*UnlockTable[index]);
 				}
 				else
 				{
@@ -96,7 +116,7 @@ void UOrbMatrixSlotOpenWidget::OnClickedOrbMatrixElement(const FOrbMatrixElement
 				auto index = CoreMatrix->MagicalLine.IndexOfByKey(MatrixInfo);
 				if (UnlockTable.IsValidIndex(index))
 				{
-					ShowUnlockCost(UnlockTable[index]->Cost);
+					ShowUnlockCost(*UnlockTable[index]);
 				}
 				else
 				{
@@ -110,7 +130,7 @@ void UOrbMatrixSlotOpenWidget::OnClickedOrbMatrixElement(const FOrbMatrixElement
 				auto index = CoreMatrix->FreeLine.IndexOfByKey(MatrixInfo);
 				if (UnlockTable.IsValidIndex(index))
 				{
-					ShowUnlockCost(UnlockTable[index]->Cost);
+					ShowUnlockCost(*UnlockTable[index]);
 				}
 				else
 				{
@@ -124,7 +144,7 @@ void UOrbMatrixSlotOpenWidget::OnClickedOrbMatrixElement(const FOrbMatrixElement
 	}
 }
 
-void UOrbMatrixSlotOpenWidget::SetOrbMatrixSlotOpenComponent(UOrbMatrixSlotOpenComponent* Component)
+void UOrbMatrixSlotOpenWidget::SetOrbMatrixSlotOpenComponent(UMatrixSlotOpenComponent* Component)
 {
 	OrbMatrixSlotOpenComponent = Component;
 }
@@ -167,8 +187,12 @@ void UOrbMatrixSlotOpenWidget::NativeConstruct()
 		pawn->OrbBackgroundActor->ShowRender(true);
 	}
 
-	UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),
-	                                         FGameplayTag::RequestGameplayTag("Tutorial.Orb.SlotOpen"));
+	
+	if(auto tuto = UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),
+	                                         FGameplayTag::RequestGameplayTag("Tutorial.Orb.SlotOpen")))
+	{
+		tuto->OnClosedTutorialWidget.BindDynamic(this,&UPopUpBasedWidget::SetFocusOnThisWidget);
+	}
 }
 
 void UOrbMatrixSlotOpenWidget::Init()

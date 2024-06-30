@@ -80,6 +80,9 @@ protected:
 	void TradeAbility() const;
 
 public:
+
+	void SetOwnerNPC(class ANPCBase* NPC);
+	
 	UFUNCTION()
 	void OnClickedUpButton();
 	UFUNCTION()

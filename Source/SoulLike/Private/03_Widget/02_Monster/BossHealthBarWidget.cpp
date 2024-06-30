@@ -16,6 +16,7 @@ void UBossHealthBarWidget::SetInfo(class ABaseMonster* Boss)
 
 		if (auto attComp = Boss->GetAttributeComponent())
 		{
+			attComp->OnDamagedHP.AddUniqueDynamic(this,&UBossHealthBarWidget::ShowDamage);
 			attComp->OnChangeHPValue.AddUniqueDynamic(this, &UBossHealthBarWidget::OnChangeHPValueEvent);
 			attComp->OnChangeHPValue.Broadcast(attComp->GetHP(), attComp->GetMaxHP());
 		}

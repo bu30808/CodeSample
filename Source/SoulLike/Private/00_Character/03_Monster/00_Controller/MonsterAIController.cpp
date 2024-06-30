@@ -322,6 +322,11 @@ void AMonsterAIController::ResetBlackboard()
 
 void AMonsterAIController::StartImmediatelyBehavior()
 {
+	if(!IsValidLowLevel())
+	{
+		return;
+	}
+	
 	if (auto pawn = GetPawn<ABaseMonster>())
 	{
 		if (auto gameMode = Cast<ASoulLikeGameMode>(UGameplayStatics::GetGameMode(this)))

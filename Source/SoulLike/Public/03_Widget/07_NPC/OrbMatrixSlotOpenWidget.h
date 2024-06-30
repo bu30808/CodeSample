@@ -11,6 +11,10 @@ struct FOrbSlotUnlockCost : public FTableRowBase
 {
 	GENERATED_BODY()
 
+	//슬롯 해금에 필요한 아이템이 있다면 설정하세요.
+	UPROPERTY(EditAnywhere)
+	TMap<FGameplayTag,int32> NeedItem;
+	//슬롯 해금에 필요한 비용
 	UPROPERTY(EditAnywhere)
 	int32 Cost = 0.f;
 };
@@ -33,7 +37,7 @@ class SOULLIKE_API UOrbMatrixSlotOpenWidget : public UOrbWidget
 	GENERATED_BODY()
 
 	UPROPERTY()
-	TWeakObjectPtr<class UOrbMatrixSlotOpenComponent> OrbMatrixSlotOpenComponent;
+	TWeakObjectPtr<class UMatrixSlotOpenComponent> OrbMatrixSlotOpenComponent;
 	UPROPERTY()
 	TWeakObjectPtr<class UOrbMatrix> CoreMatrix;
 
@@ -44,7 +48,7 @@ class SOULLIKE_API UOrbMatrixSlotOpenWidget : public UOrbWidget
 	UPROPERTY()
 	TWeakObjectPtr<class UOrbMatrixElementWidget> SelectedMatrixElementWidget;
 
-	void ShowUnlockCost(int32 Cost);
+	void ShowUnlockCost(const FOrbSlotUnlockCost& Cost);
 
 	class UOrbMatrix* GetCoreMatrix(const FInventoryItem& OrbCoreItem);
 
@@ -62,7 +66,7 @@ protected:
 	class UTextBlock* TextBlock_UnLock;
 
 public:
-	void SetOrbMatrixSlotOpenComponent(class UOrbMatrixSlotOpenComponent* Component);
+	void SetOrbMatrixSlotOpenComponent(class UMatrixSlotOpenComponent* Component);
 
 	UFUNCTION()
 	void OnClickedUnLock();

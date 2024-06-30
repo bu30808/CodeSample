@@ -44,6 +44,15 @@ AGoblin::AGoblin()
 	LegComponent->SetLeaderPoseComponent(GetMesh());
 	BracerComponent->SetLeaderPoseComponent(GetMesh());
 	BodyComponent->SetLeaderPoseComponent(GetMesh());
+	
+	SET_LDMaxDrawDistance(HelmetComponent,5000.f);
+	SET_LDMaxDrawDistance(SkirtComponent,5000.f);
+	SET_LDMaxDrawDistance(LegComponent,5000.f);
+	SET_LDMaxDrawDistance(BracerComponent,5000.f);
+	SET_LDMaxDrawDistance(BodyComponent,5000.f);
+	SET_LDMaxDrawDistance(WeaponComponent,5000.f);
+	
+	
 }
 
 AGoblinRogue::AGoblinRogue()
@@ -59,10 +68,13 @@ AGoblinWarrior::AGoblinWarrior()
 	if (WeaponComponent)
 	{
 		WeaponComponent->SetupAttachment(GetMesh(), "Sword");
+		SET_LDMaxDrawDistance(WeaponComponent,5000.f);
 	}
 
 	ShieldComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShieldComponent"));
 	ShieldComponent->SetupAttachment(GetMesh(), "Shield");
+
+	SET_LDMaxDrawDistance(ShieldComponent,5000.f);
 }
 
 AGoblinMage::AGoblinMage()
@@ -70,6 +82,7 @@ AGoblinMage::AGoblinMage()
 	if (WeaponComponent)
 	{
 		WeaponComponent->SetupAttachment(GetMesh(), "Staff");
+		SET_LDMaxDrawDistance(WeaponComponent,5000.f);
 	}
 }
 
@@ -78,40 +91,66 @@ AGoblinCrystallized::AGoblinCrystallized()
 	CrystallizedArmComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CrystallizedArmComponent"));
 	CrystallizedArmComponent->SetupAttachment(GetMesh());
 
+	CrystallizedLegTopComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CrystallizedLegTopComponent"));
+	CrystallizedLegTopComponent->SetupAttachment(GetMesh());
+
+	CrystallizedHeadComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CrystallizedHeadComponent"));
+	CrystallizedHeadComponent->SetupAttachment(GetMesh());
+	
+	CrystallizedArmComponent->SetLeaderPoseComponent(GetMesh());
+	CrystallizedLegTopComponent->SetLeaderPoseComponent(GetMesh());
+	CrystallizedHeadComponent->SetLeaderPoseComponent(GetMesh());
+
+	if(HelmetComponent)
+	{
+		HelmetComponent->DestroyComponent();
+	}
+
+	if(BodyComponent)
+	{
+		BodyComponent->DestroyComponent();
+	}
+
+	if(WeaponComponent)
+	{
+		WeaponComponent->DestroyComponent();
+	}
+
+	SET_LDMaxDrawDistance(CrystallizedArmComponent,3500.f);
+	SET_LDMaxDrawDistance(CrystallizedLegTopComponent,3500.f);
+	SET_LDMaxDrawDistance(CrystallizedHeadComponent,3500.f);
+	
+}
+
+AGoblinBattleMage::AGoblinBattleMage()
+{
+	if(WeaponComponent == nullptr)
+	{
+		WeaponComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponComponent"));
+		WeaponComponent->SetupAttachment(GetMesh());
+	}
+
+	
+	WeaponComponent->SetupAttachment(GetMesh(), "Sword");
+	
 	CrystallizedBodyComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CrystallizedBodyComponent"));
 	CrystallizedBodyComponent->SetupAttachment(GetMesh());
 
 	CrystallizedLegBottomComponent = CreateDefaultSubobject<USkeletalMeshComponent>(
 		TEXT("CrystallizedLegBottomComponent"));
 	CrystallizedLegBottomComponent->SetupAttachment(GetMesh());
-
-	CrystallizedLegTopComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CrystallizedLegTopComponent"));
-	CrystallizedLegTopComponent->SetupAttachment(GetMesh());
-
-	CrystallizedHeadComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CrystallizedHeadComponent"));
-	CrystallizedHeadComponent->SetupAttachment(GetMesh());
-
+	
 	CrystallizedShoulderComponent = CreateDefaultSubobject<USkeletalMeshComponent>(
 		TEXT("CrystallizedShoulderComponent"));
 	CrystallizedShoulderComponent->SetupAttachment(GetMesh());
-
-	CrystallizedArmComponent->SetLeaderPoseComponent(GetMesh());
+	
 	CrystallizedBodyComponent->SetLeaderPoseComponent(GetMesh());
 	CrystallizedLegBottomComponent->SetLeaderPoseComponent(GetMesh());
-	CrystallizedLegTopComponent->SetLeaderPoseComponent(GetMesh());
-	CrystallizedHeadComponent->SetLeaderPoseComponent(GetMesh());
 	CrystallizedShoulderComponent->SetLeaderPoseComponent(GetMesh());
-}
-
-AGoblinBattleMage::AGoblinBattleMage()
-{
-	if (WeaponComponent)
-	{
-		WeaponComponent->SetupAttachment(GetMesh(), "Sword");
-	}
-
+	
 	StaffComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaffComponent"));
 	StaffComponent->SetupAttachment(GetMesh(), "StaffMirror");
+	
 }
 
 AGoblinSwarm::AGoblinSwarm()

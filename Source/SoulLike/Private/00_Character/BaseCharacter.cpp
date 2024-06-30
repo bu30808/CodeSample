@@ -3,9 +3,6 @@
 
 #include "00_Character/BaseCharacter.h"
 
-#include "NavigationInvokerComponent.h"
-#include "NiagaraComponent.h"
-#include "NiagaraFunctionLibrary.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/00_Player/00_Controller/00_Component/InputHandlerComponent.h"
 #include "00_Character/01_Component/AbilityComponent.h"
@@ -34,11 +31,12 @@ ABaseCharacter::ABaseCharacter()
 	AbilityComponent = CreateDefaultSubobject<UAbilityComponent>(TEXT("AbilityComponent"));
 	FootStepComponent = CreateDefaultSubobject<UFootStepComponent>(TEXT("FootStepComponent"));
 	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
-	AnimationHelperComponent= CreateDefaultSubobject<UAnimationHelperComponent>(TEXT("AnimationHelperComponent"));
+	AnimationHelperComponent = CreateDefaultSubobject<UAnimationHelperComponent>(TEXT("AnimationHelperComponent"));
 	/*NavigationInvokerComponent = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavigationInvokerComponent"));*/
 
 	DeadDissolveTimeLineComponent = CreateDefaultSubobject<UTimelineComponent>(TEXT("DeadDissolveTimeLine"));
 	AbilityTalentComponent = CreateDefaultSubobject<UAbilityTalentComponent>(TEXT("AbilityTalentComponent"));
+
 
 	{
 		static ConstructorHelpers::FClassFinder<UAbilityEffect> fallDamageClass(TEXT(
@@ -51,7 +49,7 @@ ABaseCharacter::ABaseCharacter()
 
 	{
 		static ConstructorHelpers::FObjectFinder<USoundBase> deadCue(TEXT(
-		"/Script/Engine.SoundCue'/Game/CommonResource/Sound/ondead_cue.ondead_cue'"));
+			"/Script/Engine.SoundCue'/Game/CommonResource/Sound/ondead_cue.ondead_cue'"));
 		if (deadCue.Succeeded())
 		{
 			DeadCue = deadCue.Object;
@@ -63,7 +61,7 @@ ABaseCharacter::ABaseCharacter()
 void ABaseCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	CheckTerrainIsLoaded();
 
 	//속성 초기화
 	AttributeComponent->InitAttributes();
@@ -73,7 +71,7 @@ void ABaseCharacter::BeginPlay()
 
 	GiveDefaultAbility();
 	ActivateDefaultAbility();
-	
+
 	if (!IsA<APlayerCharacter>())
 	{
 		GiveDefaultItem();
@@ -104,8 +102,8 @@ void ABaseCharacter::CheckFallDeath()
 		}
 		else
 		{
-			UE_LOGFMT(LogCharacter,Log,"발 아래 : {0}",hit.GetActor()->GetActorNameOrLabel());
-			
+			UE_LOGFMT(LogCharacter, Log, "발 아래 : {0}", hit.GetActor()->GetActorNameOrLabel());
+
 			if (bStartFallDamageProcess == false)
 			{
 				bStartFallDamageProcess = true;
@@ -161,6 +159,29 @@ void ABaseCharacter::CheckFallDeath()
 	}
 }
 
+void ABaseCharacter::CheckTerrainIsLoaded()
+{
+	GetCapsuleComponent()->SetEnableGravity(false);
+
+	// 지형의 콜리전 상태를 확인합니다.
+	FHitResult HitResult;
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(HitResult, GetActorLocation(), GetActorUpVector() * -1000.f,
+	                                                 ECC_Visibility, QueryParams);
+
+	if (bHit && HitResult.GetActor()->IsValidLowLevel())
+	{
+		GetCapsuleComponent()->SetEnableGravity(true);
+	}
+	else
+	{
+		// 1초 후에 다시 시도합니다.
+		GetWorldTimerManager().SetTimerForNextTick(this, &ABaseCharacter::CheckTerrainIsLoaded);
+	}
+}
+
 // Called every frame
 void ABaseCharacter::Tick(float DeltaTime)
 {
@@ -178,21 +199,25 @@ void ABaseCharacter::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	OnDead.AddUniqueDynamic(this, &ABaseCharacter::OnDeadEvent);
-	if(AnimationHelperComponent)
+	if (AnimationHelperComponent)
 	{
-		AnimationHelperComponent->OnTriggerHitAnimationEnter.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationEnterEvent);
-		AnimationHelperComponent->OnTriggerHitAnimationExit.AddUniqueDynamic(this, &ABaseCharacter::OnTriggerHitAnimationExitEvent);
+		AnimationHelperComponent->OnTriggerHitAnimationEnter.AddUniqueDynamic(
+			this, &ABaseCharacter::OnTriggerHitAnimationEnterEvent);
+		AnimationHelperComponent->OnTriggerHitAnimationExit.AddUniqueDynamic(
+			this, &ABaseCharacter::OnTriggerHitAnimationExitEvent);
 	}
 
-	if(GetMesh()!=nullptr){
+	if (GetMesh() != nullptr)
+	{
 		OriginalMaterials = GetMesh()->GetMaterials();
 	}
 }
 
+
 void ABaseCharacter::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
-	if(AttributeComponent)
+	if (AttributeComponent)
 	{
 		AttributeComponent->InitAttributes();
 	}
@@ -243,10 +268,11 @@ void ABaseCharacter::OnRemoveAttributeEffectAdditionalInformationEvent_Implement
 	if (AdditionalInformation != nullptr && IsValidLowLevel())
 	{
 		if (Effect.Attribute == EAttributeType::HP)
-		{		
+		{
 			if (AdditionalInformation->HitBy != nullptr)
 			{
-				UE_LOGFMT(LogCharacter, Log, "ABaseCharacter {0}이(가) {1}에게 입은 피해량 : {2} 111111111111", GetActorNameOrLabel(),
+				UE_LOGFMT(LogCharacter, Log, "ABaseCharacter {0}이(가) {1}에게 입은 피해량 : {2} 111111111111",
+				          GetActorNameOrLabel(),
 				          AdditionalInformation->HitBy->GetActorNameOrLabel(), Effect.ApplyValue * DeltaTime);
 			}
 
@@ -299,9 +325,9 @@ void ABaseCharacter::OnRemoveAttributeEffectAdditionalInformationEvent_Implement
 bool ABaseCharacter::IsMighty()
 {
 	const bool& result = AbilityComponent->HasEffectTag(MIGHTY_EFFECT_TAG);
-	if(result)
+	if (result)
 	{
-		UE_LOGFMT(LogCharacter,Warning,"이 캐릭터는 슈퍼아머 상태입니다 : {0}",GetNameSafe(this));
+		UE_LOGFMT(LogCharacter, Warning, "이 캐릭터는 슈퍼아머 상태입니다 : {0}", GetNameSafe(this));
 	}
 	return result;
 }
@@ -316,7 +342,7 @@ bool ABaseCharacter::ShouldSkipHitAnimation(float Damage, float SkipThreshold)
 void ABaseCharacter::OnUpdateDeadDissolveTimeLine(float Value)
 {
 	const FName& param = "Percent";
-	for(auto iter : BodyMaterialInstance)
+	for (auto iter : BodyMaterialInstance)
 	{
 		iter->SetScalarParameterValue(param, Value);
 	}
@@ -337,14 +363,14 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 	UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 호출", GetActorNameOrLabel());
 	if (CharacterState != ECharacterState::DEAD)
 	{
-		UGameplayStatics::PlaySoundAtLocation(this,DeadCue,Who->GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation(this, DeadCue, Who->GetActorLocation());
 		UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 / 정보 설정", GetActorNameOrLabel());
 		SetCharacterState(ECharacterState::DEAD);
 		GetCapsuleComponent()->SetCollisionProfileName("Spectator");
 		GetMesh()->SetCollisionProfileName("Spectator");
 
 		AnimationHelperComponent->PlayDeadAnimationByMode();
-	
+
 
 		if (AbilityComponent)
 		{
@@ -352,17 +378,16 @@ void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
 		}
 
 		AnimationHelperComponent->StartDeadDissolve();
-
-	
 	}
 }
 
 void ABaseCharacter::SetCharacterState(ECharacterState NewState)
 {
 	CharacterState = NewState;
-	UE_LOGFMT(LogCharacter,Log,"{0}, 캐릭터 상태 업데이트: {1}",GetNameSafe(this),StaticEnum<ECharacterState>()->GetValueAsString(NewState));
+	UE_LOGFMT(LogCharacter, Log, "{0}, 캐릭터 상태 업데이트: {1}", GetNameSafe(this),
+	          StaticEnum<ECharacterState>()->GetValueAsString(NewState));
 
-	switch(CharacterState)
+	switch (CharacterState)
 	{
 	case ECharacterState::DEAD:
 	case ECharacterState::HIT:
@@ -386,11 +411,11 @@ void ABaseCharacter::ChangeMovementState(EMovementState Type, float Multiplier)
 	{
 	case EMovementState::Walk:
 		GetCharacterMovement()->MaxWalkSpeed = AttributeComponent->GetMoveSpeed() * Multiplier;
-		UE_LOGFMT(LogCharacter,Log,"걷기로 변경 : {0}",GetCharacterMovement()->MaxWalkSpeed);
+		UE_LOGFMT(LogCharacter, Log, "걷기로 변경 : {0}", GetCharacterMovement()->MaxWalkSpeed);
 		break;
 	case EMovementState::Run:
 		GetCharacterMovement()->MaxWalkSpeed = AttributeComponent->GetMoveSpeed() * Multiplier;
-		UE_LOGFMT(LogCharacter,Log,"뛰기로 변경 : {0}",GetCharacterMovement()->MaxWalkSpeed);
+		UE_LOGFMT(LogCharacter, Log, "뛰기로 변경 : {0}", GetCharacterMovement()->MaxWalkSpeed);
 		break;
 	default: ;
 	}
@@ -431,7 +456,7 @@ void ABaseCharacter::ChangeBodyCollisionEnabled(ECollisionEnabled::Type NewColli
 
 void ABaseCharacter::OnTriggerHitAnimationEnterEvent(ABaseCharacter* DamagedCharacter, AActor* HitBy)
 {
-	UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
+	UE_LOGFMT(LogTemp, Log, "히트 몽타주 : {0} {1}", __FUNCTION__, __LINE__);
 	AnimationHelperComponent->SetIsTriggeredHitAnimationExitEvent(false);
 	//재생중인 몽타주를 멈춥니다.
 	if (GetMesh()->GetAnimInstance() != nullptr && GetMesh()->GetAnimInstance()->IsAnyMontagePlaying())
@@ -444,7 +469,7 @@ void ABaseCharacter::OnTriggerHitAnimationExitEvent(ABaseCharacter* DamagedChara
 {
 	if (CharacterState != ECharacterState::DEAD)
 	{
-		UE_LOGFMT(LogCharacter,Log,"OnTriggerHitAnimationExitEvent : 캐릭터 상태를 노말로 되돌립니다.");
+		UE_LOGFMT(LogCharacter, Log, "OnTriggerHitAnimationExitEvent : 캐릭터 상태를 노말로 되돌립니다.");
 		AnimationHelperComponent->SetIsTriggeredHitAnimationExitEvent(true);
 		SetCharacterState(ECharacterState::NORMAL);
 	}
@@ -454,20 +479,21 @@ void ABaseCharacter::TriggerHitAnimation_Implementation(UAbilityEffectAdditional
 {
 	if (IsMighty() == false)
 	{
-		UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
+		UE_LOGFMT(LogTemp, Log, "히트 몽타주 : {0} {1}", __FUNCTION__, __LINE__);
 		if (AdditionalInformation->bTriggerHitAnimation)
 		{
-			UE_LOGFMT(LogTemp,Log,"히트 몽타주 : {0} {1}",__FUNCTION__,__LINE__);
+			UE_LOGFMT(LogTemp, Log, "히트 몽타주 : {0} {1}", __FUNCTION__, __LINE__);
 			AnimationHelperComponent->OnTriggerHitAnimationEnter.Broadcast(this, AdditionalInformation->HitBy.Get());
 			//피격 애니메이션 블랜드를 위한 각도를 저장합니다.
-			AnimationHelperComponent->HitDegree = UMathHelperLibrary::CalculateDegree(this, AdditionalInformation->Hit.Location);
+			AnimationHelperComponent->HitDegree = UMathHelperLibrary::CalculateDegree(
+				this, AdditionalInformation->Hit.Location);
 			SetCharacterState(ECharacterState::HIT);
 		}
 	}
 }
 
 void ABaseCharacter::SetIgnoreMoveInput(bool bIgnore, AActor* AccruedBy, FGameplayTag AccruedTag)
-	//강인함 효과가 적용되어있는가 확인합니다.
+//강인함 효과가 적용되어있는가 확인합니다.
 {
 	if (GetController() == nullptr)
 	{
@@ -636,4 +662,3 @@ void ABaseCharacter::CreateBodyMaterialInstance()
 		BodyMaterialInstance.Add(GetMesh()->CreateDynamicMaterialInstance(i));
 	}
 }
-

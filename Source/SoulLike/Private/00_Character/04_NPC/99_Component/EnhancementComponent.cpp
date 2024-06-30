@@ -11,6 +11,7 @@
 #include "96_Library/WidgetHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "99_Subsystem/EnhancementSubsystem.h"
+#include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
 #include "UObject/ConstructorHelpers.h"
@@ -94,15 +95,15 @@ void UEnhancementComponent::CreateEnhancementWidget(const ABaseCharacter* Intera
 	}
 }
 
-void UEnhancementComponent::AddEnhancementWidget(const class ABaseCharacter* InteractPlayer)
+void UEnhancementComponent::AddEnhancementWidget(const class ABaseCharacter* InteractPlayer, EEnhancementType EnhancementType)
 {
 	CreateEnhancementWidget(InteractPlayer);
+	
 	if (EnhancementWidget->IsInViewport() == false)
 	{
+		EnhancementWidget->SetEnhancementType(EnhancementType);
 		EnhancementWidget->AddToViewport();
 	}
-
-	/*UWidgetHelperLibrary::OpenWidgetSetting(pc, EnhancementWidget.Get());*/
 }
 
 const FEnhancementMaterial& UEnhancementComponent::GetNextEnhancementInfo(const int32 CurEnhancement)

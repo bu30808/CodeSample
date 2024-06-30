@@ -11,9 +11,11 @@
 enum class EAttributePointType : uint8;
 enum class EAttributeType : uint8;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnChangedAttribute, float, value, float, maxValue);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnChangedAttribute, float, curValue, float, maxValue);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangedMaxAttribute, float, maxValue);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDamagedHP, float, damage);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterInformationUpdate);
 
@@ -606,6 +608,11 @@ public:
 	//스테값이 변하면 호출되는 이벤트입니다.
 	FOnChangedAttribute OnChangeSPValue;
 
+
+	//피해를 받아 HP가 변하면 호출됩니다.
+	FOnDamagedHP OnDamagedHP;
+	
+
 	//최대 체력값이 변하면 호출되는 이벤트입니다.
 	FOnChangedMaxAttribute OnChangeMaxHPValue;
 	//최대 마력값이 변하면 호출되는 이벤트입니다.
@@ -633,7 +640,7 @@ public:
 	FOnMultiplicationAttributeEffectAdditionalInformation OnMultiplicationAttributeEffectAdditionalInformation;
 	FOnDivisionAttributeEffectAdditionalInformation OnDivisionAttributeEffectAdditionalInformation;
 
-	void BroadcastHPEvent() const;
+	void BroadcastHPEvent(float Damage = 0) const;
 	void BroadcastMPEvent() const;
 	void BroadcastSPEvent() const;
 

@@ -15,6 +15,8 @@
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
 #include "NiagaraSystem.h"
+#include "96_Library/ItemHelperLibrary.h"
+#include "SoulLike/SoulLike.h"
 
 DEFINE_LOG_CATEGORY(LogFragment)
 
@@ -47,6 +49,61 @@ void AEquipmentItemActor_OrbFragment::BeginPlay()
 {
 	Super::BeginPlay();
 	//CreateFragmentInfo();
+}
+
+FText AEquipmentItemActor_OrbFragment::GetFormattedDescription_Implementation()
+{
+	FFormatOrderedArguments args;
+	args.Add(FText::FromString("<orb.name>" + GetItemInformation()->Item_Name.ToString() + "</>\n")); // -1
+
+	
+		const auto frag = static_cast<const FOrbFragmentInformation*>(GetItemInformation());
+
+		args.Add(SlotTypeToDecoText(frag->SlotType)); //0
+		args.Add(FText::FromString(OrbMatrixSlotTypeToText(frag->SlotType).ToString() + "</>\n")); //1
+		args.Add(RarityToDecoText(frag->Rarity)); //2
+		args.Add(FText::FromString(RarityToText(frag->Rarity).ToString() + "</>\n")); //3
+	
+		FText additionalAbilityText = NSLOCTEXT("FragmentToolTipHelper", "FragmentAdditionalAbilityText", "추가 특성");
+		args.Add(FText::FromString(additionalAbilityText.ToString() + "\n")); //4
+
+	if (frag->Abilities.Num() > 0)
+	{
+		FString abilitys = "";
+
+		for (auto ab : frag->Abilities)
+		{
+			abilitys += "<orb.talent>" + ab.GetDefaultObject()->GetAbilityInformation().AbilityName.ToString() +
+				"</>\n";
+			abilitys += "<orb.talent.desc>" + ab.GetDefaultObject()->GetAbilityInformation().AbilityDescription.
+												 ToString() + "</>\n";
+		}
+
+		args.Add(FText::FromString(abilitys + "\n")); //5
+	}
+	else
+	{
+		args.Add(FText::FromString("-\n")); //5
+	}
+
+	if (GetItemInformation()->bSellable)
+	{
+		FString sell = "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
+			FString::FormatAsNumber(GetItemInformation()->Item_Price) + "</>";
+		args.Add(FText::FromString(sell)); //6
+		/*
+		resultMsg += "\n" + AttributeTypeToImageString(EAttributeType::EXP) + " <price>" +
+			FString::FormatAsNumber(itemInfo->Item_Price) + "</>";*/
+	}
+	else
+	{
+		FText notSellableText = NSLOCTEXT("FragmentToolTipHelper", "NotSellableText", "판매불가");
+		args.Add(FText::FromString("\n<error>" + notSellableText.ToString() + "</>")); //6
+		//resultMsg += TEXT("\n<error>판매불가</>");
+	}
+
+	return FText::Format(NSLOCTEXT("FragmentToolTipHelper", "FragmentToolTipText",
+							   "{0}{1}{2}{3}{4}{5}{6}"), args);
 }
 
 /*

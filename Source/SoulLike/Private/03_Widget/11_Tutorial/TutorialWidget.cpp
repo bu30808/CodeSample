@@ -21,7 +21,14 @@ void UTutorialWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 			TutorialObjectPtr->Destroy();
 			TutorialObjectPtr = nullptr;
 		}
+
+		OnClosedTutorialWidget.ExecuteIfBound();
 	}
+}
+
+void UTutorialWidget::OnClickedOKButton()
+{
+	SetVisibility(ESlateVisibility::Collapsed);
 }
 
 void UTutorialWidget::NativeConstruct()
@@ -29,6 +36,9 @@ void UTutorialWidget::NativeConstruct()
 	bUseAsPopUp = true;
 
 	Super::NativeConstruct();
+
+	Button_OK->OnClicked.AddUniqueDynamic(this,&UTutorialWidget::OnClickedOKButton);
+	
 	OnVisibilityChanged.AddUniqueDynamic(this, &UTutorialWidget::OnVisibilityChangedEvent);
 	UGameplayStatics::SetGamePaused(this,true);
 }

@@ -6,6 +6,7 @@
 #include "00_Character/04_NPC/NPCBase.h"
 #include "03_Widget/03_LevelUp/LevelUpWidget.h"
 #include "96_Library/WidgetHelperLibrary.h"
+#include "Components/Button.h"
 #include "Logging/StructuredLog.h"
 
 // Sets default values for this component's properties

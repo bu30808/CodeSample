@@ -249,8 +249,6 @@ public:
 	bool bShouldCreateSoulTomb = false;
 };
 
-
-
 UCLASS()
 class UGameLoadHandler : public UObject
 {
@@ -483,6 +481,13 @@ public:
 
 	//상자의 열림 상태 및 내부 아이템 획득 상황을 저장합니다.
 	void SaveChest(class AChest* Chest, bool bEaredChestItem);
+
+
+	UPROPERTY()
+	TMap<FGameplayTag, FNPCState> NPCState;
+	//NPC관련 정보를 저장합니다.
+	void SaveNPC(class ANPCBase* NPC, bool bIsDestroyed);
+	void LoadNPC(class ANPCBase* NPC);
 
 
 	UPROPERTY()

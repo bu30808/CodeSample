@@ -17,6 +17,9 @@
 enum class EStatusEffect : uint8;
 DECLARE_LOG_CATEGORY_EXTERN(LogCharacter, Log, All);
 
+#define SET_LDMaxDrawDistance(component,distance) component->LDMaxDrawDistance = distance;
+//#define ATTRIBUTE_STRUCTURE_GETTER(attributeName) public: const FAttribute& Get##attributeName##Attribute() const {return attributeName;}
+
 
 UCLASS(Blueprintable)
 class UFallingDamageData : public UObject
@@ -28,8 +31,6 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	float FallingDamageRatio = 0;
 };
-
-
 
 
 USTRUCT(BlueprintType)
@@ -142,7 +143,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	void CheckFallDeath();
-
+	//바닥에 지형이 생성되었는지 확인합니다.
+	void CheckTerrainIsLoaded();
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

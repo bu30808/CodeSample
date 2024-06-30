@@ -18,10 +18,20 @@ class SOULLIKE_API UHealthBarWidget : public UGradientBaseWidget
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UImage* Image_Progress;
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	class UTextBlock* TextBlock_Damage;
+
+	UPROPERTY(Transient)
+	FTimerHandle visibilityTimerHandle;
+	UPROPERTY(Transient)
+	int32 AccDamage;
+
 
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
+	void HideDamage();
 public:
-	//virtual void UpdateProgress(float cur, float max) override;
+	UFUNCTION()
+	void ShowDamage(float Damage);
 };

@@ -88,7 +88,7 @@ void UAbilityEffect::UnRegisterEffectTag(ABaseCharacter* Target)
 	}
 }
 
-void UAbilityEffect::ChainSetting(ABaseCharacter* Target)
+void UAbilityEffect::ChainSetting(ABaseCharacter* Target, UAbilityBase* From)
 {
 	if (CauseFromThisAbility != nullptr && bUseSelfChainSystem == false)
 	{
@@ -96,13 +96,28 @@ void UAbilityEffect::ChainSetting(ABaseCharacter* Target)
 		ChainTagFromAbility = CauseFromThisAbility->GetChainTag();
 	}
 
-	if (bUseSelfChainSystem)
+#if WITH_EDITOR
+	if(bUseChainSystemFromAbility)
 	{
-		if (auto subsystem = UGameplayStatics::GetGameInstance(Target)->GetSubsystem<
-			UAttackChainSubsystem>())
+		UE_LOGFMT(LogEffect,Log,"어빌리티로부터 배율 시스템을 사용하도록 설정되었습니다.");	
+	}
+#endif
+	
+
+	
+	if (auto subsystem = UGameplayStatics::GetGameInstance(Target)->GetSubsystem<
+		UAttackChainSubsystem>())
+	{
+		if (bUseSelfChainSystem)
 		{
-			UE_LOGFMT(LogTemp, Log, "셀프 체인 저장 : {0} , {1}", SelfChainTag.ToString(), ChainValue);
-			subsystem->AddChainValue(SelfChainTag, ChainValue);
+			UE_LOGFMT(LogTemp, Log, "셀프 체인 저장 : {0} , {1}", SelfChainTag.ToString(), SelfChainValue);
+			subsystem->AddChainValue(SelfChainTag, SelfChainValue,From);
+		}else
+		{
+			if(From!=nullptr){
+				UE_LOGFMT(LogTemp, Log, "어빌리티 체인 저장 : {0} , {1}", From->GetChainTag().ToString(), SelfChainValue);
+				subsystem->AddChainValue(ChainTagFromAbility, SelfChainValue,From);
+			}
 		}
 	}
 }
@@ -123,7 +138,7 @@ void UAbilityEffect::ProcessEffect_Implementation(ABaseCharacter* Target, AActor
 	}
 
 	CauseFromThisAbility = From;
-	ChainSetting(Target);
+	ChainSetting(Target, CauseFromThisAbility);
 
 #if WITH_EDITOR
 	for (auto attributeEffect : AttributeEffects)
@@ -324,139 +339,137 @@ void UAbilityEffect::RemoveEffectFromAbilityComponent(ABaseCharacter* Target)
 	}
 }
 
-void UAbilityEffect::ApplyAbilityDamageTalent(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy)
+void UAbilityEffect::ApplyAbilityDamageTalent(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy, FAttributeEffect& AttributeEffect)
 {
-	if (DamagedBy->IsA<ABaseCharacter>())
+
+	if(DamagedBy->IsA<ABaseCharacter>())
 	{
-		UE_LOGFMT(LogTalent,Log,"{0} : 공격력 특성 적용",DamagedBy->GetActorNameOrLabel());
-		
+		UE_LOGFMT(LogEffect,Log,"{0} : 공격력 특성 적용",DamagedBy->GetActorNameOrLabel());
 		if (const auto atComp = Cast<ABaseCharacter>(DamagedBy)->GetAbilityTalentComponent())
 		{
-			UE_LOGFMT(LogTemp, Warning, "{0}가 {1}에 대해 피해특성을 적용합니다", DamagedBy->GetActorNameOrLabel(),
-			          DamagedCharacter->GetActorNameOrLabel());
-			for (auto& effect : UpdatedAttributeEffectsAffectedByOwnersAttribute)
+			UE_LOGFMT(LogEffect, Warning, "{0}가 {1}에 주는 피해에특성을 적용합니다", DamagedBy->GetActorNameOrLabel(),
+					  DamagedCharacter->GetActorNameOrLabel());
+
+			UE_LOGFMT(LogEffect, Warning, "------------------------");
+			UE_LOGFMT(LogEffect, Warning, "기본 피해량 : {0}", AttributeEffect.ApplyValue);
+
+			//타격 성공 특성 적용
 			{
-				UE_LOGFMT(LogTemp, Warning, "------------------------");
-				UE_LOGFMT(LogTemp, Warning, "기본 피해량 : {0}", effect.ApplyValue);
-
-				//타격 성공 특성 적용
-				{
-					atComp->BroadcastOnSuccessHit(DamagedBy, DamagedCharacter);
-				}
-				UE_LOGFMT(LogTemp, Warning, "1111111111111111111111111111111111");
-				//피해량 특성 적용
-				{
-					const auto& sum = atComp->CalculateModifiedDamageWithTraits(
-						DamagedCharacter, DamagedBy, AttackType, effect.ApplyValue);
-					UE_LOGFMT(LogTemp, Warning, "피해량 특성으로 증가할 예정인 피해량 : {0}", sum);
-					effect.ApplyValue += sum;
-				}
-
-				//회피 성공 피해량 특성 적용
-				{
-					const auto& sum = atComp->CalculateModifiedDodgeSuccWithTraits(
-						Cast<APlayerCharacter>(DamagedBy), effect.ApplyValue);
-					UE_LOGFMT(LogTemp, Warning, "회피 피해량 특성으로 증가할 예정인 피해량 : {0}", sum);
-					effect.ApplyValue += sum;
-				}
-
-
-				UE_LOGFMT(LogTemp, Warning, "특성이 적용된 피해량 : {0}", effect.ApplyValue);
-				UE_LOGFMT(LogTemp, Warning, "------------------------");
-
-				//최종 피해량 특성 적용
-				{
-					const auto& sum = atComp->CalculateModifiedResultDamageWithTraits(
-						DamagedCharacter, DamagedBy, AttackType, effect.ApplyValue);
-					UE_LOGFMT(LogTemp, Warning, "피해량 특성으로 증가할 예정인 피해량 : {0}", sum);
-					effect.ApplyValue += sum;
-					UE_LOGFMT(LogTemp, Warning, "최종 피해량 특성이 적용된 피해량 : {0}", effect.ApplyValue);
-					UE_LOGFMT(LogTemp, Warning, "------------------------");
-				}
+				atComp->BroadcastOnSuccessHit(DamagedBy, DamagedCharacter);
 			}
+			//피해량 특성 적용
+			{
+				const auto& sum = atComp->CalculateModifiedDamageWithTraits(
+					DamagedCharacter, DamagedBy, AttackType, AttributeEffect.ApplyValue);
+				UE_LOGFMT(LogEffect, Warning, "피해량 특성으로 증가할 예정인 피해량 : {0}", sum);
+				AttributeEffect.ApplyValue += sum;
+			}
+
+			//회피 성공 피해량 특성 적용
+			{
+				const auto& sum = atComp->CalculateModifiedDodgeSuccWithTraits(
+					Cast<APlayerCharacter>(DamagedBy), AttributeEffect.ApplyValue);
+				UE_LOGFMT(LogEffect, Warning, "회피 피해량 특성으로 증가할 예정인 피해량 : {0}", sum);
+				AttributeEffect.ApplyValue += sum;
+			}
+
+
+			UE_LOGFMT(LogEffect, Warning, "특성이 적용된 피해량 : {0}", AttributeEffect.ApplyValue);
+			UE_LOGFMT(LogEffect, Warning, "------------------------");
+
+			//최종 피해량 특성 적용
+			{
+				const auto& sum = atComp->CalculateModifiedResultDamageWithTraits(
+					DamagedCharacter, DamagedBy, AttackType, AttributeEffect.ApplyValue);
+				UE_LOGFMT(LogEffect, Warning, "피해량 특성으로 증가할 예정인 피해량 : {0}", sum);
+				AttributeEffect.ApplyValue += sum;
+				UE_LOGFMT(LogEffect, Warning, "최종 피해량 특성이 적용된 피해량 : {0}", AttributeEffect.ApplyValue);
+				UE_LOGFMT(LogEffect, Warning, "------------------------");
+			}
+			
 		}
 	}
+	
 }
 
-void UAbilityEffect::ApplyAbilityDecreaseDamageTalent(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy)
+void UAbilityEffect::ApplyAbilityDecreaseDamageTalent(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy, FAttributeEffect& AttributeEffect, TArray<FAttributeEffect
+                                                      >& EffectsByTalent)
 {
-	
 	if (DamagedCharacter->IsA<ABaseCharacter>())
 	{
-		UE_LOGFMT(LogTalent,Log,"{0} : 방어력 특성 적용, {1}에게 피해를 입음",DamagedCharacter->GetActorNameOrLabel(),DamagedBy->GetActorNameOrLabel());
+		UE_LOGFMT(LogEffect,Log,"{0}의 방어력 특성 적용, {1} 에게 피해를 입음",DamagedCharacter->GetActorNameOrLabel(),DamagedBy->GetActorNameOrLabel());
 		
 		//방어력 특성 적용
 		if (const auto atComp = Cast<ABaseCharacter>(DamagedCharacter)->GetAbilityTalentComponent())
 		{
-			for (auto& effect : UpdatedAttributeEffectsAffectedByOwnersAttribute)
+			UE_LOGFMT(LogEffect, Warning, "------------------------");
+			UE_LOGFMT(LogEffect, Warning, "{0} : 기본 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), AttributeEffect.ApplyValue);
 			{
-				UE_LOGFMT(LogTemp, Warning, "------------------------");
-				UE_LOGFMT(LogTemp, Warning, "{0} : 기본 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), effect.ApplyValue);
-				{
-					const auto& sum = atComp->CalculateModifiedDecreaseDamageWithTraits(
-						DamagedCharacter, DamagedBy, AttackType, effect.ApplyValue);
-					UE_LOGFMT(LogTemp, Warning, "{0} : 방어 특성으로 감소할 예정인 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), sum);
-					effect.ApplyValue -= sum;
+				const auto& sum = atComp->CalculateModifiedDecreaseDamageWithTraits(
+					DamagedCharacter, DamagedBy, AttackType, AttributeEffect.ApplyValue);
+				UE_LOGFMT(LogEffect, Warning, "{0} : 방어 특성으로 감소할 예정인 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), sum);
+				AttributeEffect.ApplyValue -= sum;
 
-					const auto& increaseDamage = atComp->CalculateModifiedIncreaseGotHitDamageWithTraits(
-						DamagedCharacter, DamagedBy, AttackType, effect.ApplyValue);
-					UE_LOGFMT(LogTemp, Warning, "{0} : 입는 피해량 증가 특성으로 증가할 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), increaseDamage);
-					effect.ApplyValue += increaseDamage;
-				}
-
-
-				UE_LOGFMT(LogTemp, Warning, "{0} : 모든 특성이 적용된 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), effect.ApplyValue);
+				const auto& increaseDamage = atComp->CalculateModifiedIncreaseGotHitDamageWithTraits(
+					DamagedCharacter, DamagedBy, AttackType, AttributeEffect.ApplyValue);
+				UE_LOGFMT(LogEffect, Warning, "{0} : 입는 피해량 증가 특성으로 증가할 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), increaseDamage);
+				AttributeEffect.ApplyValue += increaseDamage;
 			}
+
+
+			UE_LOGFMT(LogEffect, Warning, "{0} : 모든 특성이 적용된 피해량 : {1}",DamagedCharacter->GetActorNameOrLabel(), AttributeEffect.ApplyValue);
+		
 
 			if (auto attComp = Cast<ABaseCharacter>(DamagedCharacter)->GetAttributeComponent())
 			{
 				//MP로 받을 피해량이 저장될 구조체
 				FAttributeEffect mpEffect;
 				//피해량 MP치환 특성 적용
-				for (auto& effect : UpdatedAttributeEffectsAffectedByOwnersAttribute)
+			
+				if (AttributeEffect.Attribute == EAttributeType::HP)
 				{
-					if (effect.Attribute == EAttributeType::HP)
-					{
-						//지금 플레이어가 가진 MP수치를 가져옵니다.
-						const auto& mp = attComp->GetMP();
-						UE_LOGFMT(LogTemp, Warning, "현재 MP : {0}", mp);
-						//MP로 치환될 피해량 수치
-						const auto& toMp = FMath::Clamp(
-							atComp->CalculateModifiedDamageToMPWithTraits(
-								DamagedCharacter, DamagedBy, effect.ApplyValue), 0, mp);
-						UE_LOGFMT(LogTemp, Warning, "MP로 치환될 피해량 : {0}", toMp);
+					//지금 플레이어가 가진 MP수치를 가져옵니다.
+					const auto& mp = attComp->GetMP();
+					UE_LOGFMT(LogEffect, Warning, "현재 MP : {0}", mp);
+					//MP로 치환될 피해량 수치
+					const auto& toMp = FMath::Clamp(
+						atComp->CalculateModifiedDamageToMPWithTraits(
+							DamagedCharacter, DamagedBy, AttributeEffect.ApplyValue), 0, mp);
+					UE_LOGFMT(LogEffect, Warning, "MP로 치환될 피해량 : {0}", toMp);
 
-						//mp량을 초과하는 수치
-						const auto& overMP = FMath::Clamp(toMp - mp, 0, mp);
-						UE_LOGFMT(LogTemp, Warning, "MP를 초과한 피해량 : {0}", overMP);
+					//mp량을 초과하는 수치
+					const auto& overMP = FMath::Clamp(toMp - mp, 0, mp);
+					UE_LOGFMT(LogEffect, Warning, "MP를 초과한 피해량 : {0}", overMP);
 
-						//MP로 받을 피해량 저장
-						mpEffect.ApplyValue = toMp;
-						mpEffect.Attribute = EAttributeType::MP;
-						mpEffect.ApplyMethod = EAttributeApplyMethod::REMOVE;
-						UE_LOGFMT(LogTemp, Warning, "MP로 받을 피해량 : {0}", mpEffect.ApplyValue);
+					//MP로 받을 피해량 저장
+					mpEffect.ApplyValue = toMp;
+					mpEffect.Attribute = EAttributeType::MP;
+					mpEffect.ApplyMethod = EAttributeApplyMethod::REMOVE;
+					UE_LOGFMT(LogEffect, Warning, "MP로 받을 피해량 : {0}", mpEffect.ApplyValue);
 
-						//치환되고 남은 피해량
-						const auto& remainDamage = FMath::Clamp(effect.ApplyValue - toMp, 0, effect.ApplyValue) +
-							overMP;
-						UE_LOGFMT(LogTemp, Warning, "치환되고 남은 HP 피해량 : {0}", remainDamage);
+					//치환되고 남은 피해량
+					const auto& remainDamage = FMath::Clamp(AttributeEffect.ApplyValue - toMp, 0, AttributeEffect.ApplyValue) +
+						overMP;
+					UE_LOGFMT(LogEffect, Warning, "치환되고 남은 HP 피해량 : {0}", remainDamage);
 
-						//남은 피해량을 HP로
-						effect.ApplyValue = remainDamage;
-					}
+					//남은 피해량을 HP로
+					AttributeEffect.ApplyValue = remainDamage;
 				}
-
-				UpdatedAttributeEffectsAffectedByOwnersAttribute.Add(mpEffect);
+				EffectsByTalent.Emplace(mpEffect);
+				
+				/*//TODO 여기서 문제가 됨.
+				UpdatedAttributeEffectsAffectedByOwnersAttribute.Add(mpEffect);*/
 			}
 		}
 	}
+	
 }
 
 void UAbilityEffect::ApplyGotHitTalent(ABaseCharacter* DamagedCharacter, float OriginalDamage, UObject* AdditionalInfo)
 {
 	if (bIsHitDamageEffect)
 	{
-		UE_LOGFMT(LogTalent,Log,"{0} : 피해 입었을 때, 특성 적용",DamagedCharacter->GetActorNameOrLabel());
+		UE_LOGFMT(LogEffect,Log,"{0} : 피해 입었을 때, 특성 적용",DamagedCharacter->GetActorNameOrLabel());
 		if (DamagedCharacter->IsA<ABaseCharacter>() && AdditionalInfo != nullptr)
 		{
 			if (const UAbilityEffectAdditionalInformation* addInfo = Cast<UAbilityEffectAdditionalInformation>(
@@ -473,7 +486,7 @@ void UAbilityEffect::ApplyGotHitTalent(ABaseCharacter* DamagedCharacter, float O
 	}
 }
 
-float UAbilityEffect::ApplyChangeHealAmountTalent(ABaseCharacter* Target, FAttributeEffect AttributeEffect)
+float UAbilityEffect::ApplyChangeHealAmountTalent(ABaseCharacter* Target, FAttributeEffect AttributeEffect) const
 {
 	if (bIsHitDamageEffect)
 	{
@@ -482,7 +495,7 @@ float UAbilityEffect::ApplyChangeHealAmountTalent(ABaseCharacter* Target, FAttri
 
 	if (Target->IsA<ABaseCharacter>())
 	{
-		UE_LOGFMT(LogTalent,Log,"{0} : 힐량 특성 적용",Target->GetActorNameOrLabel());
+		UE_LOGFMT(LogEffect,Log,"{0} : 힐량 특성 적용",Target->GetActorNameOrLabel());
 		if (auto atComp = Cast<ABaseCharacter>(Target)->GetAbilityTalentComponent())
 		{
 			if (AttributeEffect.Attribute == EAttributeType::HP)
@@ -547,118 +560,141 @@ bool UAbilityEffect::ApplyInstantEffect_Implementation(ABaseCharacter* Target, U
 		return false;
 	}
 
-	const auto attributeProcessSubsystem = GetAttributeProcessSubsystem(Target);
-	if (attributeProcessSubsystem->IsValidLowLevel())
+	if(!Target->GetAttributeComponent()->IsValidLowLevel())
 	{
-		if (auto atComp = Target->GetAttributeComponent())
+		return false;
+	}
+	
+	if (!GetAttributeProcessSubsystem(Target)->IsValidLowLevel())
+	{
+		return false;
+	}
+	
+
+	//피해를 위한 이팩트인가요?
+	if(bIsHitDamageEffect)
+	{
+		//무적에 대한 처리
+		if (Target->GetAbilityComponent()->IsInvincible())
 		{
-			if (bIsHitDamageEffect)
+			UE_LOGFMT(LogEffect, Error, "{0}는 무적 상태입니다.", Target->GetActorNameOrLabel());
+			if (auto character = Cast<ABaseCharacter>(Target))
 			{
-				if (Target->GetAbilityComponent()->IsInvincible())
+				//무적이고, 회피태그가 있을 경우에
+				const auto& dodgeTag = UAbilityHelperLibrary::GetDodgeTag(character->GetInventoryComponent());
+				if (Target->GetAbilityComponent()->HasAllActivateAbilityTags(FGameplayTagContainer(dodgeTag)))
 				{
-					UE_LOGFMT(LogEffect, Error, "{0}는 무적 상태입니다.", Target->GetActorNameOrLabel());
-					if (auto character = Cast<ABaseCharacter>(Target))
-					{
-						//무적이고, 회피태그가 있을 경우에
-						const auto& dodgeTag = UAbilityHelperLibrary::GetDodgeTag(character->GetInventoryComponent());
-						if (Target->GetAbilityComponent()->HasAllActivateAbilityTags(FGameplayTagContainer(dodgeTag)))
-						{
-							character->GetAbilityTalentComponent()->BroadcastOnSuccessDodge(character);
-						}
-					}
-
-					return false;
+					character->GetAbilityTalentComponent()->BroadcastOnSuccessDodge(character);
 				}
-
-				if (UAbilityEffectAdditionalInformation* addInfo = Cast<UAbilityEffectAdditionalInformation>(
-					AdditionalInfo))
-				{
-					//피격 대상의 피해감소 특성을 적용합니다.
-					ApplyAbilityDecreaseDamageTalent(Target, Cast<ABaseCharacter>(addInfo->HitBy.Get()));
-					
-					
-					if (addInfo->HitBy != nullptr)
-					{
-						UE_LOGFMT(LogEffect, Warning, "누구에 의해 피해를 입었나요? : {0}",
-								  addInfo->HitBy->GetActorNameOrLabel());
-						//피해를 받는 경우, 공격 특성을 적용합니다.
-						ApplyAbilityDamageTalent(Target, Cast<ABaseCharacter>(addInfo->HitBy.Get()));
-					}
-					else
-					{
-						UE_LOGFMT(LogTemp, Error, "태그 : {0}, 타겟 : {1} 누구에게 피격당했는지 정보가 없습니다.",
-								  UniqueEffectTag.ToString(), Target->GetActorNameOrLabel());
-					}
-				}
-				
 			}
 
-			for (auto attributeEffect : AttributeEffects)
+			return false;
+		}
+
+		// 고정 피해 처리
+		ProcessDamageAttributeEffects(AttributeEffects, Target, AdditionalInfo, DeltaTime);
+		// 일반 피해 처리
+		ProcessDamageAttributeEffects(UpdatedAttributeEffectsAffectedByOwnersAttribute, Target, AdditionalInfo, DeltaTime);
+			
+		UpdateCharacterInfoWidget(Target);
+		
+		return true;
+	}
+
+	//피해가 아닌 다른 어트리뷰트에 대한 처리
+	ProcessAttributeEffects(AttributeEffects, Target, AdditionalInfo, DeltaTime);
+	ProcessAttributeEffects(UpdatedAttributeEffectsAffectedByOwnersAttribute, Target, AdditionalInfo, DeltaTime);
+
+	UpdateCharacterInfoWidget(Target);
+	
+	return true;
+}
+
+void UAbilityEffect::ProcessDamageAttributeEffects(const TArray<FAttributeEffect>& AttributeEffectsArray,
+                                                   ABaseCharacter* Target, UObject* AdditionalInfo, float DeltaTime)
+{
+	if (auto atComp = Target->GetAttributeComponent())
+	{
+		const auto attributeProcessSubsystem = GetAttributeProcessSubsystem(Target);
+		if (attributeProcessSubsystem->IsValidLowLevel())
+		{
+			//특성으로 인해서 추가로 적용되어야 할 것들을 여기에 저장합니다.
+			TArray<FAttributeEffect> effectsByTalent;
+			
+			for (auto attributeEffect : AttributeEffectsArray)
 			{
 				if (const auto processor = attributeProcessSubsystem->GetProcessor(attributeEffect.ApplyMethod))
 				{
-					if (bIsHitDamageEffect)
+					if (UAbilityEffectAdditionalInformation* addInfo = Cast<UAbilityEffectAdditionalInformation>(AdditionalInfo))
 					{
-						attributeEffect.ApplyValue = ApplyAttackChain(Target, attributeEffect.ApplyValue);
-						attributeEffect.ApplyValue = ApplyDefence(Target, AdditionalInfo, attributeEffect.ApplyValue);
-						attributeEffect.ApplyValue = ApplyChangeHealAmountTalent(Target, attributeEffect);
+						if (addInfo->HitBy != nullptr)
+						{
+							// 1. 공격 배율 적용
+							attributeEffect.ApplyValue = ApplyAttackChain(Target, attributeEffect.ApplyValue,Cast<ABaseCharacter>(addInfo->HitBy.Get()));
+							UE_LOGFMT(LogEffect,Log,"공격 배율이 적용된 후의 값 : {0}",attributeEffect.ApplyValue);
+							// 2. 방어력 적용
+							attributeEffect.ApplyValue = ApplyDefence(Target, AdditionalInfo, attributeEffect.ApplyValue);
+							// 3. 특성 적용
 
-						ApplyGotHitTalent(Target, attributeEffect.ApplyValue, AdditionalInfo);
+					
+							// 3-0. 피해를 주는 대상의 공격 성공 시 호출되는 특성 (주로 피해량 증감 특성)
+							ApplyAbilityDamageTalent(Target, Cast<ABaseCharacter>(addInfo->HitBy.Get()), attributeEffect);
+							// 3-1. 피격 대상의 피해 감소 특성
+							ApplyAbilityDecreaseDamageTalent(Target, Cast<ABaseCharacter>(addInfo->HitBy.Get()), attributeEffect,effectsByTalent);
+						}
 					}
-					
-					
-					const auto applyValue = processor->ProcessAttributeEffect(
-						atComp, attributeEffect, DeltaTime, AdditionalInfo);
+					// 3-2. 피격 시 호출되는 특성 (예: 피격 당하면 폭발합니다)
+					ApplyGotHitTalent(Target, attributeEffect.ApplyValue, AdditionalInfo);
+
+
+					const auto applyValue = processor->ProcessAttributeEffect(atComp, attributeEffect, DeltaTime, AdditionalInfo);
 
 					if (bRestoreAttributeOnEnd)
 					{
 						AffectedValueFromAttributeEffects.Add(attributeEffect.Attribute,
-						                                      FAttributeRestoreData(
-							                                      attributeEffect, applyValue));
+															  FAttributeRestoreData(
+																  attributeEffect, applyValue));
 					}
 				}
 			}
 			
-			for (auto attributeEffect : UpdatedAttributeEffectsAffectedByOwnersAttribute)
+
+			//특성으로 추가로 적용되는 것들에 대해서는 특성을 다시 적용하지 않도록 합니다.
+			for (auto attributeEffect : effectsByTalent)
 			{
 				if (const auto processor = attributeProcessSubsystem->GetProcessor(attributeEffect.ApplyMethod))
 				{
-					if (bIsHitDamageEffect)
-					{
-						attributeEffect.ApplyValue = ApplyAttackChain(Target, attributeEffect.ApplyValue);
-						attributeEffect.ApplyValue = ApplyDefence(Target, AdditionalInfo, attributeEffect.ApplyValue);
-						attributeEffect.ApplyValue = ApplyChangeHealAmountTalent(Target, attributeEffect);
+					const auto applyValue = processor->ProcessAttributeEffect(atComp, attributeEffect, DeltaTime, AdditionalInfo);
+				}
+			}
+		}
+	}
+}
 
-						ApplyGotHitTalent(Target, attributeEffect.ApplyValue, AdditionalInfo);
-					}
-				
-					const auto applyValue = processor->ProcessAttributeEffect(
-						atComp, attributeEffect, DeltaTime, AdditionalInfo);
+void UAbilityEffect::ProcessAttributeEffects(const TArray<FAttributeEffect>& AttributeEffectsArray, ABaseCharacter* Target,
+                                             UObject* AdditionalInfo, float DeltaTime)
+{
+	if (auto atComp = Target->GetAttributeComponent())
+	{
+		const auto attributeProcessSubsystem = GetAttributeProcessSubsystem(Target);
+		if (attributeProcessSubsystem->IsValidLowLevel())
+		{
+			for (auto& attributeEffect : AttributeEffectsArray)
+			{
+				if (const auto processor = attributeProcessSubsystem->GetProcessor(attributeEffect.ApplyMethod))
+				{
+					const auto applyValue = processor->ProcessAttributeEffect(atComp, attributeEffect, DeltaTime, AdditionalInfo);
 
 					if (bRestoreAttributeOnEnd)
 					{
 						AffectedValueFromAttributeEffects.Add(attributeEffect.Attribute,
-						                                      FAttributeRestoreData(
-							                                      attributeEffect, applyValue));
+															  FAttributeRestoreData(
+																  attributeEffect, applyValue));
 					}
 				}
 			}
-
-			UpdateCharacterInfoWidget(Target);
-		}
-		else
-		{
-			UE_LOGFMT(LogEffect, Error, "어트리뷰트 컴포넌트를 가져올 수 없습니다.");
-			return false;
 		}
 	}
-	else
-	{
-		UE_LOGFMT(LogEffect, Error, "속성 메니저가 유효하지 않습니다.");
-		return false;
-	}
-
-	return true;
 }
 
 void UAbilityEffect::ApplyDurationEffect(ABaseCharacter* Target)
@@ -763,9 +799,10 @@ void UAbilityEffect::AddStack(UAbilityBase* From)
 	}
 }
 
-float UAbilityEffect::ApplyAttackChain(const ABaseCharacter* Target, float Original) const
+float UAbilityEffect::ApplyAttackChain(const ABaseCharacter* Target, float Original, ABaseCharacter* Causer) const
 {
 	ensure(Target);
+	
 	if (Target->IsA<ABaseCharacter>())
 	{
 		if (auto subsystem = UGameplayStatics::GetGameInstance(Target)->GetSubsystem<UAttackChainSubsystem>())
@@ -773,7 +810,7 @@ float UAbilityEffect::ApplyAttackChain(const ABaseCharacter* Target, float Origi
 			if (bUseChainSystemFromAbility)
 			{
 				const auto result = Original * subsystem->GetChainValue(ChainTagFromAbility);
-				UE_LOGFMT(LogEffect, Log, "{0} : 기본값 : {1}, 체인 결과값 : {2}", UniqueEffectTag.ToString(), Original,
+				UE_LOGFMT(LogEffect, Error, "{0} : {1}의 배율을 적용합니다. 기본값 : {2}, 배율 결과값 : {3}", UniqueEffectTag.ToString(), Causer->GetName(),Original,
 				          result);
 				return result;
 			}
@@ -781,10 +818,13 @@ float UAbilityEffect::ApplyAttackChain(const ABaseCharacter* Target, float Origi
 			if (bUseSelfChainSystem)
 			{
 				const auto result = Original * subsystem->GetChainValue(SelfChainTag);
-				UE_LOGFMT(LogEffect, Log, "{0} : 기본값 : {1}, 체인 결과값 : {2}", UniqueEffectTag.ToString(), Original,
-				          result);
+				UE_LOGFMT(LogEffect, Error, "{0} : {1}의 셀프 배율을 적용합니다. 기본값 : {2}, 배율 결과값 : {3}", UniqueEffectTag.ToString(), Causer->GetName(),Original,
+							  result);
 				return result;
 			}
+		}else
+		{
+			UE_LOGFMT(LogEffect,Error,"배율시스템을 가져올 수 없습니다.");
 		}
 	}
 
@@ -797,7 +837,6 @@ float UAbilityEffect::ApplyDefence(ABaseCharacter* DamagedCharacter, UObject* Ad
 	{
 		return Damage;
 	}
-
 
 	if (DamagedCharacter->IsA<ABaseCharacter>() && AdditionalInfo != nullptr)
 	{
@@ -820,7 +859,7 @@ float UAbilityEffect::ApplyDefence(ABaseCharacter* DamagedCharacter, UObject* Ad
 				def = atComp->CalculateModifiedDefenceByMonsterTypeWithTraits(
 					def, Cast<ABaseCharacter>(addInfo->HitBy.Get()));
 
-				UE_LOGFMT(LogTemp, Warning, "{0}의 특성으로 변경된 방어력 : {1}, 최종 피해량 : {2}",
+				UE_LOGFMT(LogEffect, Warning, "{0}의 특성으로 변경된 방어력 : {1}, 최종 피해량 : {2}",
 				          DamagedCharacter->GetActorNameOrLabel(), def,
 				          FMath::Clamp(Damage - def, 0, Damage + FMath::Abs(def)));
 				return FMath::Clamp(Damage - def, 0, Damage + FMath::Abs(def));
@@ -834,11 +873,11 @@ float UAbilityEffect::ApplyDefence(ABaseCharacter* DamagedCharacter, UObject* Ad
 			switch (AttackType)
 			{
 			case EAttackType::Physical:
-				UE_LOGFMT(LogTemp, Warning, "{0}의 물리방어력 적용 : {1}", DamagedCharacter->GetActorNameOrLabel(),
+				UE_LOGFMT(LogEffect, Warning, "{0}의 물리방어력 적용 : {1}", DamagedCharacter->GetActorNameOrLabel(),
 				          atComp->GetPhysicalDefense());
 				return FMath::Clamp(Damage - atComp->GetPhysicalDefense(), 0, Damage);
 			case EAttackType::Magical:
-				UE_LOGFMT(LogTemp, Warning, "{0}의 마법방어력 적용 : {1}", DamagedCharacter->GetActorNameOrLabel(),
+				UE_LOGFMT(LogEffect, Warning, "{0}의 마법방어력 적용 : {1}", DamagedCharacter->GetActorNameOrLabel(),
 				          atComp->GetMagicalDefense());
 				return FMath::Clamp(Damage - atComp->GetMagicalDefense(), 0, Damage);
 			}
@@ -949,7 +988,7 @@ UAttributeProcessSubsystem* UAbilityEffect::GetAttributeProcessSubsystem(ABaseCh
 	return nullptr;
 }
 
-void UAbilityEffect::UpdateAttributeEffectsAffectedByOwnersAttribute_Implementation(
+bool UAbilityEffect::UpdateAttributeEffectsAffectedByOwnersAttribute_Implementation(
 	ABaseCharacter* Target)
 {
 	ensure(Target);
@@ -959,11 +998,13 @@ void UAbilityEffect::UpdateAttributeEffectsAffectedByOwnersAttribute_Implementat
 		UpdatedAttributeEffectsAffectedByOwnersAttribute = manager->UpdateAttributeEffectsAffectedByOwnersAttribute(
 			Cast<ABaseCharacter>(Target)->GetAttributeComponent(),
 			AttributeEffectsAffectedByOwnersAttribute, AttackType);
+
+		return true;
 	}
-	else
-	{
 		UE_LOGFMT(LogTemp, Error, "{0} : 속성 처리 서브시스템을 가져올 수 없어요!", Target->GetActorNameOrLabel());
-	}
+	
+
+	return false;
 }
 
 void UAbilityEffect::OverrideAttributeEffects_Implementation(ABaseCharacter* Target, AActor* EffectBy)

@@ -107,7 +107,7 @@ void UMainWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
 
-	if (UMG_AbilityDebug)
+	/*if (UMG_AbilityDebug)
 	{
 		UMG_AbilityDebug->SetVisibility(ESlateVisibility::Collapsed);
 	}
@@ -117,7 +117,7 @@ void UMainWidget::NativePreConstruct()
 	{
 		UMG_AbilityDebug->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 	}
-#endif
+#endif*/
 }
 
 void UMainWidget::NativeConstruct()

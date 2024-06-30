@@ -121,7 +121,8 @@ class SOULLIKE_API ABaseMonster : public ABaseCharacter, public ILockOnInterface
 	/**********************************************기본 상속 함수*********************************************************/
 protected:
 	ABaseMonster();
-
+	void SetAllCurDistance();
+	
 	virtual void BeginPlay() override;
 	virtual void PossessedBy(AController* NewController) override;
 	virtual void PostInitializeComponents() override;
@@ -129,7 +130,6 @@ protected:
 	
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-	void DrawPerceptionDebug();
 #endif
 	
 	void DetachDroppedItem();
@@ -168,7 +168,8 @@ protected:
 
 	UFUNCTION()
 	void UpdateHealthBar(float Value, float MaxValue);
-
+	UFUNCTION()
+	void UpdateDamagedHealthBar(float Damage);
 
 	//레그돌에서 복구할 때 사용할 컴포넌트 기본 트렌스폼
 	FTransform DefaultMeshTr;

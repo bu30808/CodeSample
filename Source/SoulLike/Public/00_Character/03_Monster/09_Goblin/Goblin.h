@@ -72,16 +72,16 @@ public:
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class USkeletalMeshComponent* CrystallizedArmComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	class USkeletalMeshComponent* CrystallizedBodyComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	class USkeletalMeshComponent* CrystallizedLegBottomComponent;
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	//class USkeletalMeshComponent* CrystallizedBodyComponent;
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	//class USkeletalMeshComponent* CrystallizedLegBottomComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class USkeletalMeshComponent* CrystallizedLegTopComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class USkeletalMeshComponent* CrystallizedHeadComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	class USkeletalMeshComponent* CrystallizedShoulderComponent;
+	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+//	class USkeletalMeshComponent* CrystallizedShoulderComponent;
 };
 
 UCLASS()
@@ -93,6 +93,13 @@ public:
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class UStaticMeshComponent* StaffComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	class USkeletalMeshComponent* CrystallizedBodyComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	class USkeletalMeshComponent* CrystallizedLegBottomComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	class USkeletalMeshComponent* CrystallizedShoulderComponent;
 public:
 	UFUNCTION(BlueprintCallable,BlueprintPure)
 	class UPrimitiveComponent* GetStaffComponent() const {return StaffComponent;}

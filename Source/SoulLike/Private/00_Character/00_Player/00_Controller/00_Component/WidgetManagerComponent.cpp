@@ -42,7 +42,7 @@ UClass* UWidgetManagerComponent::GetWidgetClassFromTable(FGameplayTag WidgetTag)
 	return nullptr;
 }
 
-UUserWidget* UWidgetManagerComponent::AddWidget(FGameplayTag WidgetTag, int32 ZOrder, bool bSave)
+UUserWidget* UWidgetManagerComponent::AddWidget(FGameplayTag WidgetTag, int32 ZOrder, bool bSave, bool bAddToViewport)
 {
 	//위젯을 저장하지 않고 생성하는 경우
 	if (bSave == false)
@@ -51,7 +51,10 @@ UUserWidget* UWidgetManagerComponent::AddWidget(FGameplayTag WidgetTag, int32 ZO
 		{
 			if (auto widget = CreateWidget<UUserWidget>(GetOwner<AUserController>(), widgetClass))
 			{
-				widget->AddToViewport(ZOrder);
+				if(bAddToViewport)
+				{
+					widget->AddToViewport(ZOrder);
+				}
 				return widget;
 			}
 		}
@@ -64,7 +67,10 @@ UUserWidget* UWidgetManagerComponent::AddWidget(FGameplayTag WidgetTag, int32 ZO
 			if (auto widget = CreateWidget<UUserWidget>(GetOwner<AUserController>(), widgetClass))
 			{
 				Widgets.Add(WidgetTag, widget);
-				widget->AddToViewport(ZOrder);
+				if(bAddToViewport)
+				{
+					widget->AddToViewport(ZOrder);
+				}
 				return widget;
 			}
 		}
@@ -78,7 +84,10 @@ UUserWidget* UWidgetManagerComponent::AddWidget(FGameplayTag WidgetTag, int32 ZO
 				if (auto widget = CreateWidget<UUserWidget>(GetOwner<AUserController>(), widgetClass))
 				{
 					Widgets[WidgetTag] = widget;
-					widget->AddToViewport(ZOrder);
+					if(bAddToViewport)
+					{
+						widget->AddToViewport(ZOrder);
+					}
 					return widget;
 				}
 			}
@@ -86,7 +95,10 @@ UUserWidget* UWidgetManagerComponent::AddWidget(FGameplayTag WidgetTag, int32 ZO
 
 		if (Widgets[WidgetTag]->IsInViewport() == false)
 		{
-			Widgets[WidgetTag]->AddToViewport(ZOrder);
+			if(bAddToViewport)
+			{
+				Widgets[WidgetTag]->AddToViewport(ZOrder);
+			}
 		}
 
 		return Widgets[WidgetTag];

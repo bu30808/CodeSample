@@ -154,7 +154,7 @@ void UWidgetHelperLibrary::ShowBossItemGetWidget(AUserController* PC, AItemActor
 	}
 }
 
-void UWidgetHelperLibrary::ShowTutorialWidget(APlayerController* PC, FGameplayTag TutorialTag)
+UTutorialWidget* UWidgetHelperLibrary::ShowTutorialWidget(APlayerController* PC, FGameplayTag TutorialTag)
 {
 	if (PC)
 	{
@@ -165,7 +165,7 @@ void UWidgetHelperLibrary::ShowTutorialWidget(APlayerController* PC, FGameplayTa
 			{
 				if (instance->IsSkippedTutorial(TutorialTag))
 				{
-					return;
+					return nullptr;
 				}
 			}
 
@@ -174,14 +174,18 @@ void UWidgetHelperLibrary::ShowTutorialWidget(APlayerController* PC, FGameplayTa
 			{
 				UE_LOGFMT(LogTemp, Warning, "튜토리얼 위젯을 추가합니다.");
 				Cast<UTutorialWidget>(widget)->SetTutorial(TutorialTag, nullptr);
-
+				
 				if (IsUseSaveGameMode(PC))
 				{
 					instance->SaveTutorial(TutorialTag);
 				}
+
+				return Cast<UTutorialWidget>(widget);
 			}
 		}
 	}
+
+	return nullptr;
 }
 
 void UWidgetHelperLibrary::PopUpWidgetProcess(UUserWidget* Widget, bool bIsRemovable)

@@ -65,4 +65,8 @@ public:
 	void SetMouseSensitivity(float Sensitivity);
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	float GetMouseSensitivity();
+
+
+	UFUNCTION(BlueprintCallable)
+	void AddDialogWidget(class AActor* NPC,class UDialogue* InDialogue);
 };

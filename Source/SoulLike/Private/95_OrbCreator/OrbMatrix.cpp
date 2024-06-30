@@ -4,7 +4,7 @@
 #include "95_OrbCreator/OrbMatrix.h"
 
 #include "00_Character/00_Player/PlayerCharacter.h"
-#include "00_Character/04_NPC/99_Component/OrbMatrixSlotOpenComponent.h"
+#include "00_Character/04_NPC/99_Component/MatrixSlotOpenComponent.h"
 #include "93_SaveGame/SoulLikeSaveGame.h"
 #include "Logging/StructuredLog.h"
 
@@ -32,7 +32,7 @@ void UOrbMatrix::LoadMatrix(const FOrbMatrixSave& OrbMatrixSave, APlayerCharacte
 		FreeLine = OrbMatrixSave.FreeLine;
 
 		//라인이 완성되어있는 상태라면, 완성 보너스를 줍니다.
-		if (const auto orbOpenComp = NewObject<UOrbMatrixSlotOpenComponent>(this))
+		if (const auto orbOpenComp = NewObject<UMatrixSlotOpenComponent>(this))
 		{
 			orbOpenComp->GiveLineCompleteReward(Cast<APlayerController>(Player->GetController()), this,
 			                                    EOrbMatrixSlotType::PHYSICAL, false);

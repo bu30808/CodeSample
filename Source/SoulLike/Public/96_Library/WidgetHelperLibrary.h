@@ -6,8 +6,11 @@
 #include "GameplayTagContainer.h"
 #include "01_GameMode/SoulLikeGameMode.h"
 #include "03_Widget/05_Alert/AlertWidget.h"
+#include "03_Widget/11_Tutorial/TutorialWidget.h"
 #include "UObject/NoExportTypes.h"
 #include "WidgetHelperLibrary.generated.h"
+
+
 
 /**
  * 
@@ -48,7 +51,7 @@ public:
 	static void ShowBossItemGetWidget(AUserController* PC, AItemActor* Item);
 
 	UFUNCTION(BlueprintCallable)
-	static void ShowTutorialWidget(APlayerController* PC, FGameplayTag TutorialTag);
+	static class UTutorialWidget* ShowTutorialWidget(APlayerController* PC, FGameplayTag TutorialTag);
 
 	/**
 * ESC로 순차적으로 닫기거나 혹은

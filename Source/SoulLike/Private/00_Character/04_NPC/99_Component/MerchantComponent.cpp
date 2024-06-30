@@ -3,9 +3,10 @@
 
 #include "00_Character/04_NPC/99_Component/MerchantComponent.h"
 
+#include "00_Character/00_Player/00_Controller/00_Component/WidgetManagerComponent.h"
 #include "00_Character/04_NPC/NPCBase.h"
 #include "03_Widget/04_Merchant/MerchantWidget.h"
-#include "96_Library/WidgetHelperLibrary.h"
+#include "00_Character/00_Player/00_Controller/UserController.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
@@ -30,6 +31,9 @@ FMerchandiseItem::FMerchandiseItem(ANPCBase* Owner, FGuid Guid, const FMerchandi
 				SpawndItemActor = Owner->GetWorld()->SpawnActor<AItemActor>(load, spawnParams);
 				SpawndItemActor->SetActorEnableCollision(false);
 				SpawndItemActor->SetActorHiddenInGame(true);
+			}else
+			{
+				UE_LOGFMT(LogTemp,Error,"{0} {1} , 아이템 액터 로드에 실패했습니다",__FUNCTION__,__LINE__);
 			}
 		}
 	}
@@ -135,6 +139,11 @@ void UMerchantComponent::CreateSellItemList(UDataTable* ItemTable)
 			UE_LOGFMT(LogTemp, Log, "상품 아이템 추가 : {0}", m->Tag.ToString());
 			AddMerchandise(*m);
 		}
+
+		/*for(auto iter : MerchandiseItem)
+		{
+			UE_LOGFMT(LogTemp,Log,"저장된 상품 체크 : {0} {1}",iter.Value.GetItemInformation()->Item_Name.ToString(),iter.Value.GetItemInformation()->Item_Image.LoadSynchronous()->GetName());
+		}*/
 	}
 }
 
@@ -161,33 +170,32 @@ void UMerchantComponent::CreateMerchantWidget(const ABaseCharacter* InteractPlay
 	{
 		if (MerchantWidgetObject)
 		{
-			if (const auto pc = InteractPlayer->GetController<APlayerController>())
+			if (const auto pc = InteractPlayer->GetController<AUserController>())
 			{
-				if (MerchantWidget.IsValid() == false)
-				{
-					MerchantWidget = CreateWidget<UMerchantWidget>(pc,
-					                                               MerchantWidgetObject);
-					MerchantWidget->Button_Close->OnClicked.AddUniqueDynamic(
-						GetOwner<ANPCBase>(), &ANPCBase::FinishInteraction);
-				}
-			}
+				MerchantWidget = Cast<UMerchantWidget>(pc->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("Widget.Merchant"),1,false,false));
+				MerchantWidget->AddToViewport();
+				
+				MerchantWidget->SetKeyboardFocus();  // 키보드 포커스를 설정합니다.
+				MerchantWidget->SetUserFocus(pc);  // 플레이어의 포커스를 설정합니다.
 
-			MerchantWidget->OnVisibilityChanged.AddUniqueDynamic(
-				this, &UMerchantComponent::OnMerchantWidgetVisibilityChangedEvent);
+				MerchantWidget->OnVisibilityChanged.AddUniqueDynamic(
+					this, &UMerchantComponent::OnMerchantWidgetVisibilityChangedEvent);
+				MerchantWidget->Button_Close->OnClicked.AddUniqueDynamic(
+							GetOwner<ANPCBase>(), &ANPCBase::FinishInteraction);
+				MerchantWidget->SetOwnerNPC(GetOwner<ANPCBase>());
+			}
 		}
 	}
+	
 }
 
 void UMerchantComponent::ShowMerchantWidget(const ABaseCharacter* InteractPlayer)
 {
 	CreateMerchantWidget(InteractPlayer);
-
-	if (MerchantWidget->IsInViewport() == false)
-	{
-		MerchantWidget->AddToViewport();
+	if(MerchantWidget.IsValid()){
+		UE_LOGFMT(LogTemp, Log, "상점 아이템 리스트 생성");
+		MerchantWidget->CreateMerchandiseList(this);
 	}
-	UE_LOGFMT(LogTemp, Log, "상점 아이템 리스트 생성0");
-	MerchantWidget->CreateMerchandiseList(this);
 }
 
 void UMerchantComponent::OnMerchantWidgetVisibilityChangedEvent(ESlateVisibility InVisibility)

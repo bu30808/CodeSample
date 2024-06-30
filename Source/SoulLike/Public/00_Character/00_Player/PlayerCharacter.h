@@ -417,7 +417,9 @@ protected:
 
 public:
 
+	UFUNCTION(BlueprintCallable,BlueprintPure)
 	bool GetBlockedShowInteraction() const {return bBlockedShowInteraction;}
+	UFUNCTION(BlueprintCallable)
 	void SetBlockedShowInteraction(bool bBlocked){bBlockedShowInteraction = bBlocked;}
 	
 	void PauseFindInteractionTarget();

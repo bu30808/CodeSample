@@ -77,7 +77,11 @@ void UAbilityEffect_Linetrace::OnHitActorEvent_Implementation(const FHitResult& 
 					}
 				}
 
-				UpdateAttributeEffectsAffectedByOwnersAttribute(Target);
+				if(!UpdateAttributeEffectsAffectedByOwnersAttribute(Target))
+				{
+					UE_LOGFMT(LogEffect,Error,"오너의 스텟정보를 이용한 적용 값 업데이트에 실패했습니다.");
+					return;
+				}
 
 				const auto addInfo = CreateAdditionalInfo();
 				addInfo->Hit = Hit;
@@ -1006,7 +1010,14 @@ void UAbilityEffect_Linetrace::ProcessEffect_Implementation(ABaseCharacter* Targ
 	}
 
 	CauseFromThisAbility = From;
-	ChainSetting(Target);
+	if(CauseFromThisAbility!=nullptr)
+	{
+		UE_LOGFMT(LogAbility,Warning,"{0} 어빌리티 이팩트는 {1}로부터 유발되었습니다",GetEffectTag().ToString(),CauseFromThisAbility->GetAbilityTag().ToString());
+	}else
+	{
+		UE_LOGFMT(LogAbility,Error,"{0} 어빌리티 이팩트가 어느 어빌리티로부터 유발되었는지 알 수 없습니다.",GetEffectTag().ToString());
+	}
+	ChainSetting(Target, CauseFromThisAbility);
 
 	RegisterEffectTag(Target);
 	if (bSpawnNiagaraWhenHitNonCharacter)

@@ -55,14 +55,22 @@ void UMerchantWidget::NativeConstruct()
 	{
 		CheckWidget = CreateWidget<UMerchandiseCheckWidget>(GetOwningPlayer(), CheckWidgetObject);
 	}
+	
 
-	UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(), FGameplayTag::RequestGameplayTag("Tutorial.Merchant"));
+	if(auto tuto  = UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(), FGameplayTag::RequestGameplayTag("Tutorial.Merchant")))
+	{
+		tuto->OnClosedTutorialWidget.BindDynamic(this,&UPopUpBasedWidget::SetFocusOnThisWidget);
+	}
+}
+
+void UMerchantWidget::SetOwnerNPC(ANPCBase* NPC)
+{
+	MerchantNPC = NPC;
+	CheckWidget->SetOwnerNPC(MerchantNPC.Get());
 }
 
 void UMerchantWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponent)
 {
-	MerchantNPC = MerchantComponent->GetOwner<ANPCBase>();
-
 	if (MerchantNPC.IsValid() && UKismetSystemLibrary::DoesImplementInterface(
 		MerchantNPC.Get(), UMerchantInterface::StaticClass()))
 	{
@@ -79,7 +87,6 @@ void UMerchantWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponen
 
 		if (UMG_MerchantList)
 		{
-			UE_LOGFMT(LogTemp, Log, "상점 아이템 리스트 생성1");
 			UMG_MerchantList->CreateMerchandiseList(MerchantComponent);
 		}
 	}

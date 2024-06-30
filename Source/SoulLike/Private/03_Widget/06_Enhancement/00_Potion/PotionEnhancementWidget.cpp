@@ -91,8 +91,11 @@ void UPotionEnhancementWidget::NativeConstruct()
 
 	Button_Close->OnClicked.AddUniqueDynamic(this, &UPotionEnhancementWidget::OnClickedCloseButton);
 
-	UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),
-	                                         FGameplayTag::RequestGameplayTag("Tutorial.Enhancement.Potion"));
+	if(auto tuto = UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),
+	                                         FGameplayTag::RequestGameplayTag("Tutorial.Enhancement.Potion")))
+	{
+		tuto->OnClosedTutorialWidget.BindDynamic(this,&UPopUpBasedWidget::SetFocusOnThisWidget);
+	}
 }
 
 void UPotionEnhancementWidget::SetPotionEnhancementComponent(UPotionEnhancementComponent* Component)

@@ -69,7 +69,7 @@ public:
 	 * @param bSave 참이면 Widgets변수에 저장합니다.
 	 */
 	UFUNCTION(BlueprintCallable)
-	UUserWidget* AddWidget(FGameplayTag WidgetTag, int32 ZOrder = 0, bool bSave = true);
+	UUserWidget* AddWidget(FGameplayTag WidgetTag, int32 ZOrder = 0, bool bSave = true, bool bAddToViewport = true);
 
 	/**
 	 * 해당 태그의 위젯을 Widgets에서 찾아 가져옵니다.

@@ -32,7 +32,7 @@ void UMerchantListWidget::CreateMerchandiseList(UMerchantComponent* MerchantComp
 		{
 			data->MerchandiseItem = iter.Value;
 			data->MerchantListWidget = this;
-			UE_LOGFMT(LogTemp, Log, "상점 아이템 추가 : {0}", iter.Value.MerchandiseData.Tag.ToString());
+			UE_LOGFMT(LogTemp, Log, "상점 아이템 추가 : {0}, {1}", iter.Value.MerchandiseData.Tag.ToString(), data->MerchandiseItem.GetItemInformation()->Item_Image.LoadSynchronous()->GetName());
 
 			MerchantData.Add(data);
 			ListView_Purchase->AddItem(data);
@@ -82,7 +82,7 @@ void UMerchantListWidget::CreateRepurchaseList()
 	if (MerchantNPC.IsValid())
 	{
 		{
-			const auto& items = IMerchantInterface::Execute_GetMerchantComponent(MerchantNPC.Get())->
+			const auto& items = MerchantNPC->GetMerchantComponent()->
 				GetRepurchaseItems();
 			for (auto iter : items)
 			{
@@ -97,7 +97,7 @@ void UMerchantListWidget::CreateRepurchaseList()
 		}
 
 		{
-			const auto& abilities = IMerchantInterface::Execute_GetMerchantComponent(MerchantNPC.Get())->
+			const auto& abilities = MerchantNPC->GetMerchantComponent()->
 				GetRepurchaseAbility();
 			for (auto iter : abilities)
 			{

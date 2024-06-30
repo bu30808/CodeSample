@@ -6,6 +6,7 @@
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/00_Player/00_Controller/00_Component/InputHandlerComponent.h"
 #include "00_Character/00_Player/00_Controller/00_Component/WidgetManagerComponent.h"
+#include "03_Widget/12_Dialog/DialogueWidget.h"
 #include "96_Library/WidgetHelperLibrary.h"
 #include "Blueprint/UserWidget.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
@@ -97,4 +98,21 @@ float AUserController::GetMouseSensitivity()
 	}
 
 	return 0.5f;
+}
+
+void AUserController::AddDialogWidget(AActor* NPC, UDialogue* InDialogue)
+{
+
+	if(auto widget = GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("Widget.Dialogue"),1,false,false))
+	{
+		if(auto dialogue = Cast<UDialogueWidget>(widget))
+		{
+			AddToPopUp(dialogue);
+			dialogue->NPCActor = NPC;
+			dialogue->SetDialogue(InDialogue);
+			dialogue->AddToViewport(1);
+			
+		}
+	}
+	
 }

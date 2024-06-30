@@ -3,8 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "00_Character/04_NPC/Bonfire.h"
-#include "00_Character/04_NPC/Chest.h"
 #include "03_Widget/01_Menu/00_Inventory/ItemListWidget.h"
 #include "92_Tools/TutorialActor.h"
 #include "Engine/GameInstance.h"
@@ -71,7 +69,6 @@ public:
 
 	void SetPlayer(APlayerCharacter* PlayerCharacter){CurrentPlayer = PlayerCharacter;}
 	
-
 
 	UPROPERTY()
 	int32 SaveIndex = 0;
@@ -269,6 +266,29 @@ public:
 	 */
 	void SaveChest(AChest* Chest, bool bEaredChestItem);
 
+
+	/**
+	 * NPC를 만난적이 있는가 저장합니다.
+	 * @param NPC 
+	 */
+	void SaveNPCMet(class ANPCBase* NPC);
+	/**
+	 * NPC가 거점에 합류했는지 저장합니다.
+	 * @param NPC 
+	 */
+	void SaveNPCJoin(class ANPCBase* NPC);
+
+	
+	void SaveNPCDestoryed(class ANPCBase* NPC);
+
+	
+	/**
+	 * 저장된 NPC정보를 읽어와 복구합니다.
+	 * @param NPC
+	 */
+	void LoadNPCState(class ANPCBase* NPC);
+	
+
 	friend class USaveGameHelperLibrary;
 
 protected:
@@ -284,4 +304,5 @@ protected:
 	bool IsOpenedChest(const class AChest* Chest);
 	//이미 이 상자의 아이템을 획득했는지 확인합니다.
 	bool IsAlreadyGetChestItem(class AChest* Chest);
+	
 };

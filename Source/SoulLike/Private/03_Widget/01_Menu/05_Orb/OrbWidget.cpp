@@ -243,8 +243,12 @@ void UOrbWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 		pawn->OrbBackgroundActor->ShowRender(IsVisible());
 		if (IsVisible())
 		{
-			UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),
-			                                         FGameplayTag::RequestGameplayTag("Tutorial.Orb"));
+			if(auto tuto = UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),
+			                                         FGameplayTag::RequestGameplayTag("Tutorial.Orb")))
+			{
+				tuto->OnClosedTutorialWidget.BindDynamic(this,&UPopUpBasedWidget::SetFocusOnThisWidget);
+			}
+			
 			UMG_OrbElementListCore->Refresh();
 			UMG_OrbElementListFragment->Refresh();
 

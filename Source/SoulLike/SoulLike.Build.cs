@@ -24,7 +24,7 @@ public class SoulLike : ModuleRules
 			"NavigationSystem",
 			"NiagaraUIRenderer",
 			"Json",
-			"JsonUtilities", "NiagaraAnimNotifies", "NiagaraAnimNotifies"/*,"AsyncLoadingScreen"*/
+			"JsonUtilities", "NiagaraAnimNotifies", "NiagaraAnimNotifies"/*,"AsyncLoadingScreen"*/,"DialoguePlugin"
 		});
 	}
 }

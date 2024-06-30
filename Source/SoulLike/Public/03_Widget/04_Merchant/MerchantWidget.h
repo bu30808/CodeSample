@@ -6,8 +6,7 @@
 #include "00_Character/04_NPC/99_Component/MerchantComponent.h"
 #include "02_Ability/AbilityBase.h"
 #include "03_Widget/97_PopUp/PopUpBasedWidget.h"
-#include "Blueprint/UserWidget.h"
-#include "04_Item/ItemActor.h"
+
 
 #include "MerchantWidget.generated.h"
 
@@ -17,6 +16,7 @@ class UBaseMerchandiseListData : public UObject
 	GENERATED_BODY()
 
 public:
+	UPROPERTY()
 	TWeakObjectPtr<class UMerchantListWidget> MerchantListWidget;
 };
 
@@ -26,6 +26,7 @@ class UMerchandiseItemListData : public UBaseMerchandiseListData
 	GENERATED_BODY()
 
 public:
+	UPROPERTY()
 	FMerchandiseItem MerchandiseItem;
 };
 
@@ -35,6 +36,7 @@ class UMerchandiseAbilityListData : public UBaseMerchandiseListData
 	GENERATED_BODY()
 
 public:
+	UPROPERTY()
 	FMerchandiseAbility MerchandiseAbility;
 };
 
@@ -70,6 +72,8 @@ public:
 	UPROPERTY(meta=(BindWidget))
 	class UButton* Button_Close;
 
+	void SetOwnerNPC(class ANPCBase* NPC);
+	
 	void CreateMerchandiseList(class UMerchantComponent* MerchantComponent);
 
 	//플레이어가 NPC에게 아이템을 구매할때 호출됩니다.

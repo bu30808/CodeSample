@@ -9,6 +9,7 @@
 #include "03_Widget/07_NPC/00_Bonfire/BonfireTeleportWidget.h"
 #include "96_Library/ItemHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
+#include "Components/Button.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
 
@@ -59,7 +60,6 @@ void UBonfireComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
 }
-
 
 void UBonfireComponent::Rest(APlayerCharacter* Player)
 {

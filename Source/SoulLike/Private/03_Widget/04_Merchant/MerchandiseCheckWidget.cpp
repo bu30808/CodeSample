@@ -41,24 +41,28 @@ void UMerchandiseCheckWidget::NativeConstruct()
 
 void UMerchandiseCheckWidget::TradeItem() const
 {
+	UE_LOGFMT(LogTemp,Log,"{0} {1}",__FUNCTION__,__LINE__);
 	if (UKismetSystemLibrary::DoesImplementInterface(MerchantNPC.Get(), UMerchantInterface::StaticClass()))
 	{
-		auto interface = Cast<IMerchantInterface>(MerchantNPC);
-
+		UE_LOGFMT(LogTemp,Log,"{0} {1}",__FUNCTION__,__LINE__);
+		
 		switch (TradeType)
 		{
 		case EPlayerTradeToNPCType::Purchase:
-			interface->SellItemToPlayer(MerchantNPC.Get(), GetOwningPlayerPawn<APlayerCharacter>(), ItemUniqueID,
-			                            TradeCount);
+			UE_LOGFMT(LogTemp,Log,"{0} {1}",__FUNCTION__,__LINE__);
+			MerchantNPC->SellItemToPlayer(MerchantNPC.Get(), GetOwningPlayerPawn<APlayerCharacter>(), ItemUniqueID,
+										TradeCount);
 			break;
 		case EPlayerTradeToNPCType::Sell:
-			interface->BuyItemFromPlayer(MerchantNPC.Get(), GetOwningPlayerPawn<APlayerCharacter>(), ItemUniqueID,
-			                             TradeCount);
+			UE_LOGFMT(LogTemp,Log,"{0} {1}",__FUNCTION__,__LINE__);
+			MerchantNPC->BuyItemFromPlayer(MerchantNPC.Get(), GetOwningPlayerPawn<APlayerCharacter>(), ItemUniqueID,
+										 TradeCount);
 			break;
 		default: ;
 		}
 	}
 }
+
 
 void UMerchandiseCheckWidget::TradeAbility() const
 {
@@ -78,6 +82,11 @@ void UMerchandiseCheckWidget::TradeAbility() const
 		default: ;
 		}
 	}
+}
+
+void UMerchandiseCheckWidget::SetOwnerNPC(ANPCBase* NPC)
+{
+	MerchantNPC = NPC;
 }
 
 void UMerchandiseCheckWidget::OnClickedUpButton()
@@ -101,6 +110,8 @@ void UMerchandiseCheckWidget::OnClickedDownButton()
 
 void UMerchandiseCheckWidget::OnClickedOkButton()
 {
+	UE_LOGFMT(LogTemp,Log,"{0} {1}",__FUNCTION__,__LINE__);
+	
 	SetVisibility(ESlateVisibility::Collapsed);
 	if (MerchantNPC.IsValid())
 	{

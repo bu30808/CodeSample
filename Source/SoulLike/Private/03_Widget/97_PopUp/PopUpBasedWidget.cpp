@@ -23,3 +23,9 @@ void UPopUpBasedWidget::OnVisibilityChangedEvent(ESlateVisibility InVisibility)
 		UWidgetHelperLibrary::PopUpWidgetProcess(this, bRemovable);
 	}
 }
+
+void UPopUpBasedWidget::SetFocusOnThisWidget()
+{
+	SetKeyboardFocus();  // 키보드 포커스를 설정합니다.
+	SetUserFocus(GetOwningPlayer());  // 플레이어의 포커스를 설정합니다.
+}

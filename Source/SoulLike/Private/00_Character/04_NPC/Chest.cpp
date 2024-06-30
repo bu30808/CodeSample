@@ -69,6 +69,11 @@ AChest::AChest()
 	{
 		AbilityTalentComponent->DestroyComponent();
 	}
+
+	if(GetMesh())
+	{
+		GetMesh()->DestroyComponent();
+	}
 }
 
 // Called when the game starts or when spawned

@@ -19,7 +19,6 @@
 #include "96_Library/AIConHelperLibrary.h"
 #include "96_Library/SaveGameHelperLibrary.h"
 #include "97_Interface/BossMonsterInterface.h"
-#include "98_GameInstance/SoulLikeInstance.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
@@ -29,7 +28,6 @@
 #include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "Logging/StructuredLog.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISense_Damage.h"
@@ -37,26 +35,25 @@
 #define ExecuteEffectTag FGameplayTag::RequestGameplayTag("Common.Active.Execute.Effect")
 DEFINE_LOG_CATEGORY(LogMonster)
 
+
 ABaseMonster::ABaseMonster()
 {
 	PrimaryActorTick.bCanEverTick = true;
-#if WITH_EDITOR
-	PrimaryActorTick.bStartWithTickEnabled = true;
-#else
 	PrimaryActorTick.bStartWithTickEnabled = false;
-#endif
-
+	
 	GetCapsuleComponent()->SetCollisionProfileName("Pawn");
 	GetMesh()->SetCollisionProfileName("MonsterMesh");
 	GetMesh()->SetBodyNotifyRigidBodyCollision(true);
 	GetMesh()->SetGenerateOverlapEvents(true);
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickMontagesWhenNotRendered;
 
+	SetAllCurDistance();
+
 	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidgetComponent"));
 	HealthBarWidgetComponent->SetupAttachment(GetMesh(), "HealthBar");
 
 	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
-	HealthBarWidgetComponent->SetDrawSize(FVector2D(125, 5));
+	HealthBarWidgetComponent->SetDrawSize(FVector2D(150, 5));
 
 	NavigationInvokerComponent = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavInvoker"));
 	NavigationInvokerComponent->SetGenerationRadii(5000.f, 7000.f);
@@ -71,10 +68,13 @@ ABaseMonster::ABaseMonster()
 		HealthBarWidgetComponent->SetWidgetClass(widget.Class);
 	}
 
+	SET_LDMaxDrawDistance(HealthBarWidgetComponent,3500.f);
+	
 
 	ItemDropComponent = CreateDefaultSubobject<UItemDropComponent>(TEXT("ItemDropComponent"));
 
 	//이 두개의 옵션으로 AI가 MoveTo 함수 등으로 네비메시에서 이동할 때, 보간없이 휙휙 도는 현상이 제거됩니다.
+	//포커스를 이용하는 경우에는 아랫값을 변경해야 합니다.
 	bUseControllerRotationYaw = false;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	GetCharacterMovement()->bUseControllerDesiredRotation = false;
@@ -83,7 +83,7 @@ ABaseMonster::ABaseMonster()
 	AIControllerClass = AMonsterAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 
-	/*bEnableAutoLODGeneration = false;*/
+	bEnableAutoLODGeneration = false;
 #if WITH_EDITOR
 	RuntimeGrid = "MonsterGrid";
 #endif
@@ -91,6 +91,23 @@ ABaseMonster::ABaseMonster()
 	/*GetArrowComponent()->ArrowColor = FColor::Blue;
 	GetArrowComponent()->ArrowSize = 5.f;*/
 }
+
+
+void ABaseMonster::SetAllCurDistance()
+{
+	SET_LDMaxDrawDistance(GetMesh(),4000.f);
+	
+	TArray<USceneComponent*> children;
+	GetMesh()->GetChildrenComponents(true,children);
+	for(auto c : children)
+	{
+		if(c->IsA<UPrimitiveComponent>())
+		{
+			SET_LDMaxDrawDistance(Cast<UPrimitiveComponent>(c),5000.f);
+		}
+	}
+}
+
 
 void ABaseMonster::K2_SpawnAlly_Implementation(int32 SpawnCount)
 {
@@ -199,7 +216,8 @@ void ABaseMonster::PostInitializeComponents()
 		DefaultHealthBarTr = HealthBarWidgetComponent->GetRelativeTransform();
 	}
 	AttributeComponent->OnChangeHPValue.AddUniqueDynamic(this, &ABaseMonster::UpdateHealthBar);
-
+	AttributeComponent->OnDamagedHP.AddUniqueDynamic(this,&ABaseMonster::UpdateDamagedHealthBar);
+	
 	if (auto aiCon = Cast<AMonsterAIController>(GetController()))
 	{
 		aiCon->OverrideSightConfig(MonsterDataAsset);
@@ -225,55 +243,14 @@ void ABaseMonster::PostInitializeComponents()
 void ABaseMonster::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-#if WITH_EDITOR
-	DrawPerceptionDebug();
-#endif
+	
 }
 
 #if WITH_EDITOR
 void ABaseMonster::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
-	DrawPerceptionDebug();
-}
 
-void ABaseMonster::DrawPerceptionDebug()
-{
-	if (GetController() == nullptr)
-	{
-		if (MonsterDataAsset)
-		{
-			auto SightRadius = MonsterDataAsset->SightRadius;
-			auto PeripheralVisionAngleDegrees = MonsterDataAsset->PeripheralVisionAngleDegrees;
-
-			DrawDebugCircle(GetWorld(), GetActorLocation(), SightRadius, 32, FColor::Red, false,
-			                -1, 0, .5f, FVector(0, 1, 0), FVector(1, 0, 0));
-
-			const FVector& forwardVector = UKismetMathLibrary::GetForwardVector(GetControlRotation());
-			//Z축을 기준으로 방향백터를 시야만큼 회전시킵니다.
-			const FVector& right = UKismetMathLibrary::RotateAngleAxis(
-				forwardVector, PeripheralVisionAngleDegrees,
-				FVector(0, 0, 1)) * SightRadius + GetActorLocation();
-			DrawDebugLine(GetWorld(), GetActorLocation(), right, FColor::Blue, false, 0.1f, 0, 1.0f);
-
-			//Z축을 기준으로 방향백터를 시야만큼 회전시킵니다.
-			const FVector& left = UKismetMathLibrary::RotateAngleAxis(
-				forwardVector, PeripheralVisionAngleDegrees * -1,
-				FVector(0, 0, 1)) * SightRadius + GetActorLocation();
-			DrawDebugLine(GetWorld(), GetActorLocation(), left, FColor::Blue, false, 0.1f, 0, 1.0f);
-
-
-			if (UKismetSystemLibrary::DoesImplementInterface(this, UAIInterface::StaticClass()))
-			{
-				float range;
-				IAIInterface::Execute_GetAttackRange(this, range);
-				DrawDebugCircle(GetWorld(), GetActorLocation(), range, 32, FColor::Magenta, false, 0.1f, 0,
-				                .5f,
-				                FVector(0, 1, 0), FVector(1, 0, 0));
-			}
-		}
-	}
 }
 #endif
 
@@ -349,6 +326,35 @@ void ABaseMonster::UpdateHealthBar(float Value, float MaxValue)
 			GetWorldTimerManager().SetTimer(HealthBarVisibleTimerHandle, hiddenTimerDel, 3.f, false);
 
 			widget->UpdateProgress(Value, MaxValue);
+		}
+		else
+		{
+			UE_LOGFMT(LogTemp, Error, "{0} {1}", __FUNCTION__, __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOGFMT(LogTemp, Error, "{0} {1}", __FUNCTION__, __LINE__);
+	}
+}
+
+void ABaseMonster::UpdateDamagedHealthBar(float Damage)
+{
+	if (HealthBarWidgetComponent->IsValidLowLevel() == false)
+	{
+		return;
+	}
+
+	if (IsDead())
+	{
+		return;
+	}
+
+	if (HealthBarWidgetComponent->GetUserWidgetObject())
+	{
+		if (auto widget = Cast<UHealthBarWidget>(HealthBarWidgetComponent->GetUserWidgetObject()))
+		{
+			widget->ShowDamage(Damage);
 		}
 		else
 		{

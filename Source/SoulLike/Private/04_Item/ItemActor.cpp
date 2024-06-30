@@ -41,12 +41,14 @@ AItemActor::AItemActor()
 	SphereComponent->SetCanEverAffectNavigation(false);
 	SphereComponent->CanCharacterStepUpOn = ECB_No;
 #if WITH_EDITOR
-	RuntimeGrid = "ItemGrid";
+	//RuntimeGrid = "ItemGrid";
 	BillboardComponent = CreateDefaultSubobject<UBillboardComponent>(TEXT("BillboardComponent"));
 	BillboardComponent->SetupAttachment(RootComponent);
 	BillboardComponent->SetHiddenInGame(true);
 #endif
+
 	
+	SET_LDMaxDrawDistance(NiagaraComponent,3500.f);
 }
 
 void AItemActor::DestroyIfPlayerAlreadyGetThisItemFromField()

@@ -33,21 +33,25 @@ class SOULLIKE_API IMerchantInterface
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 	//해당 ID를 가진 아이템을 BuyCount만큼 구입합니다.
-	void BuyItemFromPlayer(ANPCBase* Merchant, class APlayerCharacter* PlayerCharacter, FGuid ItemUniqueID,
-	                       int32 BuyCount);
+	UFUNCTION()
+	virtual void BuyItemFromPlayer(ANPCBase* Merchant, class APlayerCharacter* PlayerCharacter, FGuid ItemUniqueID,
+	                       int32 BuyCount) = 0;
 	//해당 ID를 가진 아이템을 Count만큼 판매합니다
-	void SellItemToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter, FGuid ItemUniqueID, int32 TradeCount);
+	UFUNCTION()
+	virtual void SellItemToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter, FGuid ItemUniqueID, int32 TradeCount) = 0;
 
 	//해당 AbilityTag를 가진 어빌리티를 BuyCount만큼 구입합니다.
-	void BuyAbilityFromPlayer(ANPCBase* Merchant, class APlayerCharacter* PlayerCharacter, FMerchandiseAbility
-	                          MerchandiseAbility, int32 BuyCount = 1);
+	UFUNCTION()
+	virtual void BuyAbilityFromPlayer(ANPCBase* Merchant, class APlayerCharacter* PlayerCharacter, FMerchandiseAbility
+	                          MerchandiseAbility, int32 BuyCount = 1) = 0;
 	//해당 AbilityTag를 가진 어빌리티를 Count만큼 판매합니다
-	void SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter,
-	                         FMerchandiseAbility MerchandiseAbility, int32 TradeCount = 1);
+	UFUNCTION()
+	virtual void SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter,
+	                         FMerchandiseAbility MerchandiseAbility, int32 TradeCount = 1) = 0;
 
-	UFUNCTION(BlueprintNativeEvent)
-	class UMerchantComponent* GetMerchantComponent();
-	virtual class UMerchantComponent* GetMerchantComponent_Implementation() const { return nullptr; }
+	UFUNCTION()
+	virtual class UMerchantComponent* GetMerchantComponent() = 0;
 
-	void UpdateExpWidget(APlayerCharacter* Player, const int32& AddExp);
+	UFUNCTION()
+	virtual void UpdateExpWidget(APlayerCharacter* Player, const int32& AddExp) = 0;
 };

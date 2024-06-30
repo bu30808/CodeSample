@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "00_Character/04_NPC/NPCBase.h"
 #include "03_Widget/06_Enhancement/EnhancementWidget.h"
 #include "04_Item/ItemActor.h"
 #include "Components/ActorComponent.h"
@@ -45,7 +46,7 @@ public:
 	UFUNCTION()
 	void OnEnhancementWidgetVisibilityChangedEvent(ESlateVisibility InVisibility);
 	void CreateEnhancementWidget(const class ABaseCharacter* InteractPlayer);
-	void AddEnhancementWidget(const class ABaseCharacter* InteractPlayer);
+	void AddEnhancementWidget(const class ABaseCharacter* InteractPlayer, EEnhancementType EnhancementType);
 	const FEnhancementMaterial& GetNextEnhancementInfo(const int32 CurEnhancement);
 	const TArray<FAttributeValuePerEnhancement*>& GetAttributeValuePerEnhancement();
 	bool CanEnhance(const class ABaseCharacter* Character, const FInventoryItem& Item);

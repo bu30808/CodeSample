@@ -3,7 +3,9 @@
 
 #include "03_Widget/02_Monster/HealthBarWidget.h"
 
+#include "Components/TextBlock.h"
 #include "Logging/StructuredLog.h"
+
 
 void UHealthBarWidget::NativePreConstruct()
 {
@@ -17,5 +19,34 @@ void UHealthBarWidget::NativePreConstruct()
 void UHealthBarWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
+	TextBlock_Damage->SetVisibility(ESlateVisibility::Hidden);
+	AccDamage = 0;
 	//UpdateProgress(1,1);
 }
+
+void UHealthBarWidget::HideDamage()
+{
+	TextBlock_Damage->SetVisibility(ESlateVisibility::Hidden);
+	AccDamage = 0;
+}
+
+void UHealthBarWidget::ShowDamage(float Damage)
+{
+	if(Damage>=0)
+	{
+		AccDamage+=Damage;
+		UE_LOGFMT(LogTemp,Log,"표시할 피해량 : {0}", Damage);
+		
+		//피해량을 표시합니다.
+		TextBlock_Damage->SetVisibility(ESlateVisibility::Visible);
+		TextBlock_Damage->SetText(FText::AsNumber(AccDamage));
+		//n초후에 제거합니다.
+		if(GetOwningPlayer()->GetWorldTimerManager().TimerExists(visibilityTimerHandle))
+		{
+			GetOwningPlayer()->GetWorldTimerManager().ClearTimer(visibilityTimerHandle);
+		}
+			
+		GetOwningPlayer()->GetWorldTimerManager().SetTimer(visibilityTimerHandle,this,&UHealthBarWidget::HideDamage,3.f,false);
+	}
+}
+

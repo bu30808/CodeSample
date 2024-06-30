@@ -9,6 +9,8 @@
 #include "Engine/DataTable.h"
 #include "TutorialWidget.generated.h"
 
+DECLARE_DYNAMIC_DELEGATE(FOnClosedTutorialWidget);
+
 USTRUCT(BlueprintType)
 struct FTutorialInformation : public FTableRowBase
 {
@@ -38,12 +40,21 @@ protected:
 	UPROPERTY(meta=(BindWidget), BlueprintReadOnly)
 	class UTextBlock* TextBlock_Msg;
 
+
 	UPROPERTY(BlueprintReadWrite)
 	AActor* TutorialObjectPtr;
 
 public:
 	virtual void OnVisibilityChangedEvent(ESlateVisibility InVisibility) override;
+	
+	UPROPERTY(meta=(BindWidget), BlueprintReadOnly)
+	class UButton* Button_OK;
+	
+	UFUNCTION()
+	void OnClickedOKButton();
 
+	FOnClosedTutorialWidget OnClosedTutorialWidget;
+	
 	virtual void NativeConstruct() override;
 
 	void SetTutorial(FGameplayTag Tag, class AActor* TutorialObject);

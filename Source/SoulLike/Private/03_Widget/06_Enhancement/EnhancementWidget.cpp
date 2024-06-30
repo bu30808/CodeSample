@@ -116,8 +116,11 @@ void UEnhancementWidget::NativeConstruct()
 
 
 	UGameplayStatics::PlaySound2D(this, OpenSound);
-	UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),
-	                                         FGameplayTag::RequestGameplayTag("Tutorial.Enhancement"));
+	if(auto tuto = UWidgetHelperLibrary::ShowTutorialWidget(GetOwningPlayer(),
+	                                         FGameplayTag::RequestGameplayTag("Tutorial.Enhancement")))
+	{
+		tuto->OnClosedTutorialWidget.BindDynamic(this,&UPopUpBasedWidget::SetFocusOnThisWidget);
+	}
 }
 
 void UEnhancementWidget::OnClickedArmor()
@@ -395,5 +398,23 @@ void UEnhancementWidget::OnUpgradeEquipmentEvent(const FGuid& ID, AEquipmentItem
 		{
 			UKismetSystemLibrary::PrintString(this,TEXT("강화하려는 장비 아이템을 인벤토리에서 찾을 수 없습니다!!"));
 		}
+	}
+}
+
+void UEnhancementWidget::SetEnhancementType(EEnhancementType EnhancementType) const
+{
+	switch (EnhancementType) {
+	case EEnhancementType::Equipment:
+		Button_Core->SetVisibility(ESlateVisibility::Collapsed);
+		Button_Fragment->SetVisibility(ESlateVisibility::Collapsed);
+		Button_Spirit->SetVisibility(ESlateVisibility::Visible);
+		Button_Armor->SetVisibility(ESlateVisibility::Visible);
+		break;
+	case EEnhancementType::Orb:
+		Button_Spirit->SetVisibility(ESlateVisibility::Collapsed);
+		Button_Armor->SetVisibility(ESlateVisibility::Collapsed);
+		Button_Core->SetVisibility(ESlateVisibility::Visible);
+		Button_Fragment->SetVisibility(ESlateVisibility::Visible);
+		break;
 	}
 }

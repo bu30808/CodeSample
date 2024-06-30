@@ -412,7 +412,7 @@ void UAttributeComponent::InitDefaultAttribute()
 			if(auto monster = GetOwner<ABaseMonster>()){
 				if(!monster->GetMonsterTag().IsValid())
 				{
-					UE_LOGFMT(LogActorComponent, Error, "{0} {1}: 몬스터에 할당된 태그가 유효하지 않습니다.", __FUNCTION__,GetOwner()->GetActorNameOrLabel());
+					//UE_LOGFMT(LogActorComponent, Error, "{0} {1}: 몬스터에 할당된 태그가 유효하지 않습니다.", __FUNCTION__,GetOwner()->GetActorNameOrLabel());
 					return;
 				}
 				init = AttributeInitTable->FindRow<FAttributeInit>(
@@ -579,7 +579,7 @@ const FAttribute* UAttributeComponent::GetLevelUpAttributeByType(EAttributeType 
 
 void UAttributeComponent::InitProgressWidget() const
 {
-	BroadcastHPEvent();
+	BroadcastHPEvent(0);
 	BroadcastMPEvent();
 	BroadcastSPEvent();
 
@@ -588,9 +588,13 @@ void UAttributeComponent::InitProgressWidget() const
 	BroadcastMaxSPEvent();
 }
 
-void UAttributeComponent::BroadcastHPEvent() const
+void UAttributeComponent::BroadcastHPEvent(float Damage) const
 {
 	OnChangeHPValue.Broadcast(GetHP(), GetMaxHP());
+	if(Damage > 0)
+	{
+		OnDamagedHP.Broadcast(Damage);
+	}
 }
 
 void UAttributeComponent::BroadcastMPEvent() const

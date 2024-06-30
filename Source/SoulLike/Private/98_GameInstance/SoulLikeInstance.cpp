@@ -640,6 +640,7 @@ void USoulLikeInstance::SaveGameInstanceToSlot(USoulLikeSaveGame* SaveInstance,
 {
 	if (bBlockSave)
 	{
+		UE_LOGFMT(LogSave,Warning,"저장 불가능한 상태입니다.");
 		return;
 	}
 
@@ -1057,6 +1058,61 @@ void USoulLikeInstance::SaveChest(AChest* Chest, bool bEaredChestItem)
 			instance->SaveChest(Chest,bEaredChestItem);
 			SaveGameInstanceToSlot(instance);
 		}
+	}
+}
+
+void USoulLikeInstance::SaveNPCMet(ANPCBase* NPC)
+{
+	if (!IsUseGameSave())
+	{
+		return;
+	}
+
+	if (const auto instance = GetSaveGameInstance())
+	{
+		instance->SaveNPC(NPC, false);
+		SaveGameInstanceToSlot(instance);
+	}
+}
+
+void USoulLikeInstance::SaveNPCJoin(ANPCBase* NPC)
+{
+	if (!IsUseGameSave())
+	{
+		return;
+	}
+
+	if (const auto instance = GetSaveGameInstance())
+	{
+		instance->SaveNPC(NPC, false);
+		SaveGameInstanceToSlot(instance);
+	}
+}
+
+void USoulLikeInstance::SaveNPCDestoryed(ANPCBase* NPC)
+{
+	if (!IsUseGameSave())
+	{
+		return;
+	}
+
+	if (const auto instance = GetSaveGameInstance())
+	{
+		instance->SaveNPC(NPC, true);
+		SaveGameInstanceToSlot(instance);
+	}
+}
+
+void USoulLikeInstance::LoadNPCState(ANPCBase* NPC)
+{
+	if (!IsUseGameSave())
+	{
+		return;
+	}
+
+	if (const auto instance = GetSaveGameInstance())
+	{
+		instance->LoadNPC(NPC);
 	}
 }
 

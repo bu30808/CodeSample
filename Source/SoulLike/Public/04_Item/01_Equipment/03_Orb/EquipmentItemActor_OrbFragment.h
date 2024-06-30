@@ -86,6 +86,8 @@ protected:
 #endif
 	virtual void BeginPlay() override;
 
+	virtual FText GetFormattedDescription_Implementation() override;
+	
 	//virtual FString GetFormattedDescription_Implementation() override;
 	//void CreateFragmentInfo();
 

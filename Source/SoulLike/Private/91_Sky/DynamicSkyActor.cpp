@@ -24,9 +24,11 @@ void ADynamicSkyActor::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
+
 void ADynamicSkyActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ADynamicSkyActor, CurrentTime);
+	DOREPLIFETIME(ADynamicSkyActor, bAnimateTimeOfDay);
 }
+

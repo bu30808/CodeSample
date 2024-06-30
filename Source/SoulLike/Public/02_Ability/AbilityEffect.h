@@ -333,24 +333,28 @@ protected:
 	//틱마다 사용되는 태스크 
 	UPROPERTY()
 	TWeakObjectPtr<class UGameplayTask_LaunchEvent> TickTask;
-	//공격배율을 사용합니까?
-	//공격배율은 어빌리티 내부에서 설정됩니다.
-	//이팩트가 적용될 때, 어빌리티로부터 가져옵니다.
-	UPROPERTY(Transient)
-	bool bUseChainSystemFromAbility = false;
-	//공격 배율을 사용하기 위한 태그입니다. 없으면 배율이 적용되지 않습니다
-	//이팩트가 적용될 때, 어빌리티로부터 가져옵니다.
-	UPROPERTY(Transient)
-	FGameplayTag ChainTagFromAbility;
 
 	//이 값이 참이라면, 어빌리티와 관계없이 배율 시스템을 적용합니다.
 	//다만 이렇게 적용할 경우, 하나의 정해진 값만 적용 가능합니다.
 	UPROPERTY(EditAnywhere)
 	bool bUseSelfChainSystem = false;
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,meta=(EditCondition="bUseSelfChainSystem"))
 	FGameplayTag SelfChainTag;
-	UPROPERTY(EditAnywhere)
-	float ChainValue = 0;
+	UPROPERTY(EditAnywhere,meta=(EditCondition="bUseSelfChainSystem"))
+	float SelfChainValue = 0;
+	//공격배율을 사용합니까?
+	//공격배율은 어빌리티 내부에서 설정됩니다.
+	//이팩트가 적용될 때, 어빌리티로부터 가져옵니다.
+	//몽타주 내부에서 이팩트가 발생되는 경우와 같은 특수한 경우, 이 값을 참으로 준 뒤 ChainTagFromAbility변수를 어빌리티 내부 배율 태그와 같은 값을 주세요.
+	UPROPERTY(EditAnywhere,meta=(EditCondition="!bUseSelfChainSystem"))
+	bool bUseChainSystemFromAbility = false;
+	//공격 배율을 사용하기 위한 태그입니다. 없으면 배율이 적용되지 않습니다
+	//이팩트가 적용될 때, 어빌리티로부터 가져옵니다.
+	//몽타주 내부에서 이팩트가 발생되는 경우와 같은 특수한 경우, 어빌리티 내부 배율 태그와 같은 값을 주세요.s
+	UPROPERTY(EditAnywhere,meta=(EditCondition="bUseChainSystemFromAbility"))
+	FGameplayTag ChainTagFromAbility;
+
+	
 
 	//이 이팩트가 타격으로 피해를 주기 위한 이팩트일경우 설정하세요
 	//이 변수가 참인 경우에는, 무적 태그가 적용되어있는동안 이 이팩트가 적용되지 않는다는 뜻이기도 합니다.
@@ -410,7 +414,8 @@ protected:
 	//이팩트 태그를 등록 해제합니다.
 	UFUNCTION(BlueprintCallable)
 	void UnRegisterEffectTag(ABaseCharacter* Target);
-	void ChainSetting(ABaseCharacter* Target);
+	
+	void ChainSetting(ABaseCharacter* Target, UAbilityBase* From);
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void ProcessEffect(ABaseCharacter* Target, AActor* EffectBy, UAbilityBase* From, UObject* AdditionalData = nullptr);
@@ -430,21 +435,24 @@ protected:
 	 * 위 결과를 가지고 특성을 적용한 값을 계산합니다.
 	 * @param DamagedCharacter 피해를 입은 대상
 	 * @param DamagedBy  피해를 준 대상
+	 * @param AttributeEffect
 	 */
-	virtual void ApplyAbilityDamageTalent(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy);
+	virtual void ApplyAbilityDamageTalent(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy, FAttributeEffect& AttributeEffect);
 
 
 	/**
-	 * 피해를 받는 대상이 플레이어일 때,
-	 * 플레이어의 피해감소 특성을 적용합니다.( 방어력 증감 특성과 다릅니다 )
+	 * 피해감소 특성을 적용합니다.( 방어력 증감 특성과 다릅니다 )
 	 * @param DamagedCharacter 피해를 입은 대상
 	 * @param DamagedBy 피해를 준 대상
+	 * @param AttributeEffect
+	 * @param EffectsByTalent
 	 */
-	virtual void ApplyAbilityDecreaseDamageTalent(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy);
+	virtual void ApplyAbilityDecreaseDamageTalent(ABaseCharacter* DamagedCharacter, ABaseCharacter* DamagedBy, FAttributeEffect& AttributeEffect, TArray<FAttributeEffect
+	                                              >& EffectsByTalent);
 
 
 	/**
-	 * 플레이어 캐릭터가 피해를 받는 경우, 특성을 적용합니다.
+	 * 캐릭터가 피해를 받는 경우 발동하는 특성을 처리합니다.
 	 * @param DamagedCharacter 피해를 받은 플레이어
 	 * @param OriginalDamage 피해량
 	 * @param AdditionalInfo 누가 피해를 줬는지에 대한 정보가 들어있는 오브젝트
@@ -458,7 +466,7 @@ protected:
 	 * @param AttributeEffect 
 	 * @return 
 	 */
-	float ApplyChangeHealAmountTalent(ABaseCharacter* Target, FAttributeEffect AttributeEffect);
+	float ApplyChangeHealAmountTalent(ABaseCharacter* Target, FAttributeEffect AttributeEffect) const;
 	//얼마나 지속되었는가 확인할 타이머 핸들
 	FTimerHandle DurationTimerHandle;
 	//일정 주기마다 반복할 타이머 핸들
@@ -482,6 +490,13 @@ protected:
 	bool ApplyInstantEffect(ABaseCharacter* Target, UObject* AdditionalInfo = nullptr, float DeltaTime = 1);
 	virtual bool ApplyInstantEffect_Implementation(ABaseCharacter* Target, UObject* AdditionalInfo = nullptr,
 	                                               float DeltaTime = 1);
+	
+	void ProcessDamageAttributeEffects(const TArray<FAttributeEffect>& AttributeEffectsArray, class ABaseCharacter* Target, class UObject* AdditionalInfo, float
+	                                   DeltaTime);
+	void ProcessAttributeEffects(const TArray<FAttributeEffect>& AttributeEffectsArray, class ABaseCharacter* Target, class UObject* AdditionalInfo, float
+	                             DeltaTime);
+
+	
 	//ApplyInstantEffect가 적용되고, 일정시간 후 종료됩니다.
 	void ApplyDurationEffect(ABaseCharacter* Target);
 	//일정 주기로 ApplyInstantEffect가 호출됩니다.
@@ -499,7 +514,7 @@ protected:
 	void AddStack(UAbilityBase* From);
 
 	//배율을 꺼내와 적용합니다. 플레이어만 해당합니다.
-	float ApplyAttackChain(const ABaseCharacter* Target, float Original) const;
+	float ApplyAttackChain(const ABaseCharacter* Target, float Original, ABaseCharacter* Causer) const;
 	//이 이팩트가 피해 이팩트인 경우, 피해량에 방어력을 적용합니다.
 	float ApplyDefence(ABaseCharacter* DamagedCharacter, UObject* AdditionalInfo, const float& Damage);
 
@@ -528,8 +543,8 @@ protected:
 	//오너의 스텟에 영향을 받은 어트리뷰트 이팩트 값을 갱신합니다.
 	//AttributeEffectsAffectedByOwnersAttribute변수가 비어있으면 아무것도 안 합니다.
 	UFUNCTION(BlueprintNativeEvent)
-	void UpdateAttributeEffectsAffectedByOwnersAttribute(ABaseCharacter* Target);
-	virtual void UpdateAttributeEffectsAffectedByOwnersAttribute_Implementation(
+	bool UpdateAttributeEffectsAffectedByOwnersAttribute(ABaseCharacter* Target);
+	virtual bool UpdateAttributeEffectsAffectedByOwnersAttribute_Implementation(
 		ABaseCharacter* Target);
 
 

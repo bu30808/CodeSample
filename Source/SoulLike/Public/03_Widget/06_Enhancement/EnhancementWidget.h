@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "00_Character/01_Component/InventoryComponent.h"
+#include "00_Character/04_NPC/NPCBase.h"
 #include "03_Widget/97_PopUp/PopUpBasedWidget.h"
 #include "Blueprint/UserWidget.h"
 #include "EnhancementWidget.generated.h"
@@ -118,4 +119,7 @@ public:
 
 	UFUNCTION()
 	void OnUpgradeEquipmentEvent(const FGuid& ID, AEquipmentItemActor* EquipmentItemActor);
+
+	void SetEnhancementType(EEnhancementType EnhancementType) const;
+	
 };

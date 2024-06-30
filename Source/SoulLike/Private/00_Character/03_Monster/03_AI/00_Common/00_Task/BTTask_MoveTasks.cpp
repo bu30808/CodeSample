@@ -493,9 +493,15 @@ EBTNodeResult::Type UBTTask_MoveAlongSpline::ExecuteTask(UBehaviorTreeComponent&
 			SaveOriginalValues(character);
 			ApplyFocusSetting(character);
 			
+			if(SplineComp == nullptr)
+			{
+				SplineComp = Cast<USplineComponent>(comp);
+			}
 
-			SplineComp = Cast<USplineComponent>(comp);
-			SplineComp->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld,false));
+			if(SplineComp->IsAttachedTo(character->GetRootComponent()))
+			{
+				SplineComp->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld,false));
+			}
 			
 			if (SplineComp.IsValid())
 			{
@@ -553,6 +559,7 @@ void UBTTask_MoveAlongSpline::MoveToNextPoint()
 				MoveFinish();
 				return;
 			}
+		//	UE_LOGFMT(LogAICon,Log,"{0}번 포인트로 이동합니다",CurMoveSplinePoint);
 			const FVector& nextPoint = SplineComp->GetLocationAtSplinePoint(
 				CurMoveSplinePoint, ESplineCoordinateSpace::World);
 			CurMoveSplinePoint--;
@@ -565,6 +572,7 @@ void UBTTask_MoveAlongSpline::MoveToNextPoint()
 				MoveFinish();
 				return;
 			}
+			//UE_LOGFMT(LogAICon,Log,"{0}번 포인트로 이동합니다",CurMoveSplinePoint);
 			const FVector& nextPoint = SplineComp->GetLocationAtSplinePoint(
 				CurMoveSplinePoint, ESplineCoordinateSpace::World);
 			CurMoveSplinePoint++;
@@ -575,6 +583,7 @@ void UBTTask_MoveAlongSpline::MoveToNextPoint()
 
 void UBTTask_MoveAlongSpline::OnAIMoveCompleted(FAIRequestID RequestID, EPathFollowingResult::Type Result)
 {
+	//UE_LOGFMT(LogAICon,Log,"이동 결과 : {0}",StaticEnum<EPathFollowingResult::Type>()->GetValueAsString(Result));
 	MoveToNextPoint();
 }
 
@@ -608,7 +617,9 @@ void UBTTask_MoveWithLeader::MoveToLeader()
 			//relativePos를 leaderRot각만큼 회전시킵니다.
 			//이 과정으로 리더에 대한 상대 위치를 계속 유지할 수 있습니다.
 			FVector targetLoc = leaderLoc + leaderRot.RotateVector(relativePos);
-			AICon->MoveToLocation(targetLoc);
+			auto result = AICon->MoveToLocation(targetLoc,AcceptanceRadius);
+			UE_LOGFMT(LogAICon,Log,"{0}의 리더 이동 실행 결과 : {1}",AICon->GetPawn()->GetName(),StaticEnum<EPathFollowingRequestResult::Type>()->GetValueAsString(result));
+			
 		}else
 		{
 			FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Failed);
@@ -700,5 +711,19 @@ void UBTTask_MoveWithLeader::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, u
 
 void UBTTask_MoveWithLeader::OnMoveFinish(FAIRequestID RequestID, EPathFollowingResult::Type Result)
 {
-	FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Succeeded);
+	UE_LOGFMT(LogAICon,Log,"{0}의 이동 결과 : {1}",AICon->GetPawn()->GetName(),StaticEnum<EPathFollowingRequestResult::Type>()->GetValueAsString(Result));
+	switch(Result)
+	{
+	case EPathFollowingResult::Success:
+		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Succeeded);
+		break;
+	case EPathFollowingResult::Blocked:
+	case EPathFollowingResult::OffPath:
+	case EPathFollowingResult::Aborted:
+	case EPathFollowingResult::Skipped_DEPRECATED:
+	case EPathFollowingResult::Invalid:
+		FinishLatentTask(*Cast<UBehaviorTreeComponent>(AICon->GetBrainComponent()),EBTNodeResult::Failed);
+		break;
+	default: ;
+	}
 }

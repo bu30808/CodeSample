@@ -45,7 +45,7 @@ float UAttributeProcessor_Add::ProcessAttributeEffect(class UAttributeComponent*
 			setValue = FMath::Clamp(AttributeComponent->GetHP() + Effect.ApplyValue * DeltaTime, 0,
 			                        AttributeComponent->GetMaxHP());
 			AttributeComponent->SetHP(setValue);
-			AttributeComponent->BroadcastHPEvent();
+			AttributeComponent->BroadcastHPEvent(0);
 			break;
 		case EAttributeType::SP:
 			//UE_LOGFMT(LogTemp,Log,"초당 회복량 : {0}",Effect.ApplyValue);
@@ -64,7 +64,7 @@ float UAttributeProcessor_Add::ProcessAttributeEffect(class UAttributeComponent*
 			setValue = AttributeComponent->GetMaxHP() + Effect.ApplyValue * DeltaTime;
 			AttributeComponent->SetMaxHP(setValue);
 			AttributeComponent->SetHP(AttributeComponent->GetHP() + Effect.ApplyValue * DeltaTime);
-			AttributeComponent->BroadcastHPEvent();
+			AttributeComponent->BroadcastHPEvent(0);
 			AttributeComponent->BroadcastMaxHPEvent();
 			break;
 		case EAttributeType::MaxSP:
@@ -231,12 +231,12 @@ float UAttributeProcessor_Remove::ProcessAttributeEffect(UAttributeComponent* At
 		case EAttributeType::NONE:
 			break;
 		case EAttributeType::HP:
-			UE_LOGFMT(LogTemp, Warning, "{0} 에게 {1}만큼의 피해를 주려 합니다.",
+			UE_LOGFMT(LogEffect, Warning, "{0} 에게 {1}만큼의 피해를 주려 합니다.",
 			          AttributeComponent->GetOwner()->GetActorNameOrLabel(), Effect.ApplyValue * DeltaTime);
 			setValue = FMath::Clamp(AttributeComponent->GetHP() - Effect.ApplyValue * DeltaTime, 0,
 			                        AttributeComponent->GetMaxHP());
 			AttributeComponent->SetHP(setValue);
-			AttributeComponent->BroadcastHPEvent();
+			AttributeComponent->BroadcastHPEvent(Effect.ApplyValue * DeltaTime);
 			break;
 		case EAttributeType::SP:
 #if WITH_EDITOR
@@ -263,7 +263,7 @@ float UAttributeProcessor_Remove::ProcessAttributeEffect(UAttributeComponent* At
 			AttributeComponent->SetMaxHP(setValue);
 			AttributeComponent->SetHP(AttributeComponent->GetHP() - Effect.ApplyValue * DeltaTime);
 			AttributeComponent->BroadcastMaxHPEvent();
-			AttributeComponent->BroadcastHPEvent();
+			AttributeComponent->BroadcastHPEvent(0);
 			break;
 		case EAttributeType::MaxSP:
 			setValue = AttributeComponent->GetMaxSP() - Effect.ApplyValue * DeltaTime;
@@ -430,7 +430,13 @@ float UAttributeProcessor_Multiplication::ProcessAttributeEffect(UAttributeCompo
 			setValue = FMath::Clamp(AttributeComponent->GetHP() * Effect.ApplyValue * DeltaTime, 0,
 			                        AttributeComponent->GetMaxHP());
 			AttributeComponent->SetHP(setValue);
-			AttributeComponent->BroadcastHPEvent();
+			if(Effect.ApplyValue<1.f)
+			{
+				AttributeComponent->BroadcastHPEvent(Effect.ApplyValue * DeltaTime);
+			}else
+			{
+				AttributeComponent->BroadcastHPEvent(0);
+			}
 			break;
 		case EAttributeType::SP:
 			//UE_LOGFMT(LogTemp,Log,"초당 회복량 : {0}",Effect.ApplyValue);
@@ -449,7 +455,7 @@ float UAttributeProcessor_Multiplication::ProcessAttributeEffect(UAttributeCompo
 			setValue = AttributeComponent->GetMaxHP() * Effect.ApplyValue * DeltaTime;
 			AttributeComponent->SetMaxHP(setValue);
 			AttributeComponent->BroadcastMaxHPEvent();
-			AttributeComponent->BroadcastHPEvent();
+			AttributeComponent->BroadcastHPEvent(0);
 			break;
 		case EAttributeType::MaxSP:
 			setValue = AttributeComponent->GetMaxSP() * Effect.ApplyValue * DeltaTime;
@@ -614,7 +620,7 @@ float UAttributeProcessor_Division::ProcessAttributeEffect(UAttributeComponent* 
 			setValue = FMath::Clamp(AttributeComponent->GetHP() / Effect.ApplyValue * DeltaTime, 0,
 			                        AttributeComponent->GetMaxHP());
 			AttributeComponent->SetHP(setValue);
-			AttributeComponent->BroadcastHPEvent();
+			AttributeComponent->BroadcastHPEvent(Effect.ApplyValue * DeltaTime);
 			break;
 		case EAttributeType::SP:
 			//UE_LOGFMT(LogTemp,Log,"초당 회복량 : {0}",Effect.ApplyValue);
@@ -633,7 +639,7 @@ float UAttributeProcessor_Division::ProcessAttributeEffect(UAttributeComponent* 
 			setValue = AttributeComponent->GetMaxHP() / Effect.ApplyValue * DeltaTime;
 			AttributeComponent->SetMaxHP(setValue);
 			AttributeComponent->BroadcastMaxHPEvent();
-			AttributeComponent->BroadcastHPEvent();
+			AttributeComponent->BroadcastHPEvent(0);
 			break;
 		case EAttributeType::MaxSP:
 			setValue = AttributeComponent->GetMaxSP() / Effect.ApplyValue * DeltaTime;

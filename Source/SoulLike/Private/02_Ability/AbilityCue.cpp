@@ -30,6 +30,9 @@ AAbilityCue::AAbilityCue()
 
 	AudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("AudioComponent"));
 	AudioComponent->SetupAttachment(RootComponent);
+
+	ParticleSystemComponent->LDMaxDrawDistance = 3000.f;
+	NiagaraComponent->LDMaxDrawDistance = 3000.f;
 }
 
 void AAbilityCue::OnNiagaraFinished(UNiagaraComponent* PSystem)

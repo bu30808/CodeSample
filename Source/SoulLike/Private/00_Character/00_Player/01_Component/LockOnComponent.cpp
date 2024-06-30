@@ -10,11 +10,24 @@
 #include "00_Character/03_Monster/BaseMonster.h"
 #include "97_Interface/LockOnInterface.h"
 #include "Components/WidgetComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Logging/StructuredLog.h"
 
 DEFINE_LOG_CATEGORY(LogLockOnComponent)
+
+ALockOnPointActor::ALockOnPointActor()
+{
+	PrimaryActorTick.bCanEverTick = false;
+
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
+	StaticMeshComponent->SetCollisionProfileName("LockOnPoint");
+	
+	RootComponent = StaticMeshComponent;
+
+	SetActorHiddenInGame(true);
+}
 
 // Sets default values for this component's properties
 ULockOnComponent::ULockOnComponent()
@@ -40,6 +53,9 @@ void ULockOnComponent::BeginPlay()
 		SpringArm = Owner->GetCameraBoom();
 		SpringArmOriginalLocation = SpringArm->GetRelativeLocation();
 		OriginalArmLength = SpringArm->TargetArmLength;
+		
+		OriginalRotationRate = Owner->GetCharacterMovement()->RotationRate;
+		
 	}
 }
 
@@ -68,6 +84,9 @@ void ULockOnComponent::Start()
 		CurIndex = 0;
 		HitActors.Empty();
 
+		/*Owner->bUseControllerRotationYaw = true;*/
+		Owner->GetCharacterMovement()->RotationRate = FRotator::ZeroRotator;
+		
 		Owner->GetAnimationHelperComponent()->bModifySkeletonTransform = true;
 		Owner->GetController()->SetIgnoreLookInput(true);
 		SpringArm->bEnableCameraLag = false;
@@ -92,6 +111,10 @@ void ULockOnComponent::End()
 
 		Owner->GetAnimationHelperComponent()->bModifySkeletonTransform = false;
 		Owner->GetController()->SetIgnoreLookInput(false);
+		Owner->GetCharacterMovement()->RotationRate = OriginalRotationRate;
+		/*Owner->bUseControllerRotationYaw = false;*/
+
+		
 		SpringArm->bEnableCameraLag = true;
 		SpringArm->bEnableCameraRotationLag = true;
 		SpringArm->TargetArmLength = OriginalArmLength;
@@ -377,7 +400,7 @@ void ULockOnComponent::CreateTrace()
 
 		//트레이스를 그려 대상들을 감지합니다.
 		UKismetSystemLibrary::BoxTraceMultiForObjects(Owner.Get(), startLocation, endLocation, BoxHalfSize,
-		                                              FRotator::ZeroRotator, ObjectTypes, bTraceComplex, ignoreActors,
+		                                              Camera->GetComponentRotation(), ObjectTypes, bTraceComplex, ignoreActors,
 		                                              DrawDebugType, outHits, true, TraceColor, FLinearColor::Green,
 		                                              DrawTime);
 
@@ -483,6 +506,7 @@ void ULockOnComponent::LookAtTarget(float DeltaTime)
 			//플레이어가 타겟을 바라봄
 			if (bEnableLockOnRotation)
 			{
+				
 				//정상적으로 가져온 경우
 				FRotator characterLookAtRot = UKismetMathLibrary::FindLookAtRotation(Owner->GetActorLocation(),
 					LookTarget->GetActorLocation());
@@ -491,11 +515,14 @@ void ULockOnComponent::LookAtTarget(float DeltaTime)
 				FRotator characterInterpRot = FMath::RInterpTo(characterRot, characterLookAtRot, DeltaTime,
 															   CharaterRotationLerpSpeed);
 				Owner->SetActorRotation(FRotator(0, characterInterpRot.Yaw, 0));
+				
+			
+				
 				if(auto helperComp = Owner->GetAnimationHelperComponent()){
 					helperComp->SpineRotation = (LookTarget->GetActorLocation() - Owner->GetActorLocation()).Rotation();
 				}
 			}
-
+						
 			FRotator cameraLookAtRot = UKismetMathLibrary::FindLookAtRotation(Camera->GetComponentLocation(),
 			                                                                  LookTarget->GetActorLocation());
 			FRotator controllRot = Owner->GetControlRotation();
