@@ -24,7 +24,19 @@ public class SoulLike : ModuleRules
 			"NavigationSystem",
 			"NiagaraUIRenderer",
 			"Json",
-			"JsonUtilities", "NiagaraAnimNotifies", "NiagaraAnimNotifies"/*,"AsyncLoadingScreen"*/,"DialoguePlugin"
+			"JsonUtilities", "NiagaraAnimNotifies", "NiagaraAnimNotifies"/*,"AsyncLoadingScreen"*/,"DialoguePlugin",
+			"SkeletalMerging",
+			"RHI"
 		});
+		
+		//PrivateDependencyModuleNames.AddRange(new string[] { "AIModule"});
+		
+		
+		/*if ((Target.IsInPlatformGroup(UnrealPlatformGroup.Windows)))
+		{
+			// Uses DXGI to query GPU hardware
+			// This is what will allow us to get GPU usage statistics at runtime
+			PublicSystemLibraries.Add("DXGI.lib");
+		}*/
 	}
 }

@@ -18,11 +18,15 @@ enum class EQuickSlotType : uint8
 
 struct FInventoryItem;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRegisterItemOrAbility, class APlayerCharacter*, Player,
-                                               class UInventoryData*, Data, int32, Index);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRegisterItem, class APlayerCharacter*, Player,
+											   class UItemData*, Data, int32, Index);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRemoveAlreadyRegisteredSlot, class UInventoryData*, Data);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRegisterAbility, class APlayerCharacter*, Player,
+											   class UAbilityData*, Data, int32, Index);
 
+
+DECLARE_DELEGATE_RetVal_OneParam(int32,FOnRemoveAlreadyRegisteredSlotItem, class UItemData* Data);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRemoveAlreadyRegisteredSlotAbility, class UAbilityData*, Data);
 /**
  * 
  */
@@ -42,17 +46,19 @@ protected:
 	class UTextBlock* TextBlock_Count;
 
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	EQuickSlotType QuickSlotType;
 	UPROPERTY(EditAnywhere)
 	FText KeyText;
 
 	UPROPERTY(EditAnywhere)
 	TSoftObjectPtr<class UTexture2D> DefaultImage;
+	
 	UPROPERTY(Transient)
 	TObjectPtr<class UInventoryData> InventoryData;
-
-
+	UPROPERTY(Transient)
+	TObjectPtr<class UInventoryComponent> InventoryComponent;
+	
 	//이 슬롯의 위치정보
 	UPROPERTY(VisibleAnywhere)
 	int32 Index = 0;
@@ -61,65 +67,131 @@ protected:
 	TWeakObjectPtr<class UQuickSlotWidget> MainQuickSlotWidget;
 
 
-	//이 슬롯에 아이템이나 어빌리티가 등록되면 호출됩니다.
-	FOnRegisterItemOrAbility OnRegisterItemOrAbility;
-	//이 슬롯에 아이템이나 어빌리티가 등록 해제되면 호출됩니다.
-	FOnRegisterItemOrAbility OnUnRegisterItemOrAbility;
-
-
-	//메인위젯에 붙어있는 퀵슬롯과 연동합니다.
-	/*void LinkToMainWidgetSlot(bool bClear = false);*/
 public:
-	void SetQuickSlotType(EQuickSlotType NewType);
 
+	void SetIndex(const int32 NewIndex){ Index = NewIndex;}
+	const int32& GetIndex() const {return Index;}
+	
+	virtual void NativePreConstruct() override;
+	virtual void NativeConstruct() override;
+	
+	/**
+	 * 버튼을 데이터 내용으로 설정합니다.
+	 * @param Data 
+	 * @param bIsLoaded 게임을 로드할 때 초기화 하는 경우에 참을 주세요. 그렇지 않으면 무한루프에 빠집니다.
+	 */
+	virtual void Init(UInventoryData* Data, bool bIsLoaded = false) { }
+	UFUNCTION()
+	virtual void UseQuickSlot(UInputAction* InputAction){ }
+
+	virtual void ClearSlot();
+	
+	template <class T>
+	T* GetSlotData();
+};
+
+template <class T>
+T* UQuickSlotButtonWidget::GetSlotData()
+{
+	if(InventoryData)
+	{
+		return Cast<T>(InventoryData);
+	}
+	return nullptr;
+}
+
+
+UCLASS()
+class SOULLIKE_API UItemQuickSlotButtonWidget : public UQuickSlotButtonWidget
+{
+	GENERATED_BODY()
+
+protected:
+
+	UPROPERTY(Blueprintable)
+	FOnRegisterItem OnRegisterItem;
+public:
+	FOnRemoveAlreadyRegisteredSlotItem OnRemoveAlreadyRegisteredSlotItem;
+protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
-	void Init(UInventoryData* Data, bool bShouldClearData, bool bFromMainQuickSlot = false);
-	/*void Clean();*/
-
-	//메인위젯에 붙어있는 퀵슬롯 버튼만 호출하세요. 무한루프를 방지합니다.
-	void CleanMainQuickSlotButton();
-
-	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
-	                          UDragDropOperation* InOperation) override;
-
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
-
-	//장비창에서 이미 등록된 아이템을 다른 슬롯에 등록하려 했을 때, 기존슬롯의 정보를 지우는 이벤트
-	FOnRemoveAlreadyRegisteredSlot OnRemoveAlreadyRegisteredSlot;
-
-	void SetIndex(int32 NewIndex);
-	//또다른 퀵슬롯이 드롭되었을 때 처리하는 함수입니다.
-	void OnDropOtherQuickSlot(class UQuickSlotButtonWidget* OtherQuickSlotButtonWidget);
-	//인벤토리 버튼이 드롭되었고, 소비아이템인경우 처리합니다.
-	void OnDropConsumeItem(class UItemButtonWidget* InventoryButtonWidget);
-	//인벤토리 버튼이 드롭되었고, 어빌리티인경우 처리합니다.
-	void OnDropAbility(class UItemButtonWidget* InventoryButtonWidget);
-	//이미 퀵에 등록되어있는지 확인합니다.
-	bool IsAlreadyRegistered(class UItemData* Data) const;
-	bool IsAlreadyRegistered(class UAbilityData* Data) const;
-	UFUNCTION()
-	void UseQuickSlot(UInputAction* InputAction);
-	//아이템 카운트 변경시 슬롯 정보를 업데이트 하는 이벤트 함수입니다.
+	//슬롯에 등록된 아이템이 추가, 변경(사용)되었을 때 호출됩니다.
 	UFUNCTION()
 	void OnRefreshItemSlot(const FGuid& ItemUniqueID, const int32& NewCount);
-	//이 슬롯에 등록된 아이템 정보가 제거되었을 때 호출되는 이벤트 함수입니다.
+	//슬롯에 등록된 아이템이 제거되었을 떄 호출됩니다.
 	UFUNCTION()
-	void OnSlotItemRemoved(ABaseCharacter* Player, const FGuid& ItemUniqueID);
+	void OnSlotItemRemoved(ABaseCharacter* UsedBy, const FGuid& RemoveItemUniqueID);
+	
 
-	//어빌리티가 제거되었을 때, 이 슬롯에 등록된 어빌리티인지 확인하고 업데이트하는 이벤트 함수입니다.
+	//이미 다른 슬롯에 등록되어진 아이템인지 확인합니다.
+	bool IsAlreadyRegistered(UItemData* Data) const;
+	
+	virtual void Init(UInventoryData* Data, bool bIsLoaded = false) override;
+	virtual void UseQuickSlot(UInputAction* InputAction) override;
+
+public:
+	virtual void ClearSlot() override;
+	void RestoreSlotFromUniqueID(const FGuid& ItemID);
+};
+
+UCLASS()
+class SOULLIKE_API UMainItemQuickSlotButtonWidget : public UQuickSlotButtonWidget
+{
+	GENERATED_BODY()
+
+protected:
+	virtual void NativeConstruct() override;
 	UFUNCTION()
-	void OnRemoveAbilityEvent(const FGameplayTag& AbilityTag);
+	void OnFirstUpdateMainItemQuickSlotEvent(const UItemData* Data, int32 SlotIndex);
+	UFUNCTION()
+	void OnChangeItemQuickSlotEvent(const FInventoryItem& Item, int32 SlotIndex);
+	UFUNCTION()
+	void OnItemQuickSlotUpdateEvent(const FGuid& ItemUniqueID, const int32& NewCount);
+	UFUNCTION()
+	void OnRemoveItemQuickSlotEvent(const UItemData* Data, int32 SlotIndex);
 
-	FGuid GetSlotItemUniqueID();
-	FGameplayTag GetSlotAbilityTag();
-	int32 GetSlotIndex() const { return Index; }
+	//이 슬롯이 표시하고 있는 아이템의 유니크 아이디
+	UPROPERTY(Transient)
+	FGuid MemorisedUniqueID;
 
-	void RestoreSlotFromItemGUID(const FGuid& ItemID);
-	void RestoreSlotFromAbilityTag(const FGameplayTag& AbilityTag);
+	virtual void ClearSlot() override;
+};
 
-	UInventoryData* GetQuickSlotData() const { return InventoryData.Get(); }
+UCLASS()
+class SOULLIKE_API UAbilityQuickSlotButtonWidget : public UQuickSlotButtonWidget
+{
+	GENERATED_BODY()
+
+protected:
+
+
+	UPROPERTY(Blueprintable)
+	FOnRegisterAbility OnRegisterAbility;
+public:
+	UPROPERTY(BlueprintAssignable)
+	FOnRemoveAlreadyRegisteredSlotAbility OnRemoveAlreadyRegisteredSlotAbility;
+protected:
+	virtual void NativePreConstruct() override;
+	virtual void NativeConstruct() override;
+
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual FReply NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	
+	//슬롯에 등록된 어빌리티가 제거되었을 떄 호출됩니다.
+	UFUNCTION()
+	void OnSlotAbilityRemoved(ABaseCharacter* UsedBy, const FGameplayTag& AbilityTag);
+	
+
+	//이미 다른 슬롯에 등록되어진 어빌리티인지 확인합니다.
+	bool IsAlreadyRegistered(UAbilityData* Data) const;
+	
+	virtual void Init(UInventoryData* Data, bool bIsLoaded = false) override;
+	virtual void UseQuickSlot(UInputAction* InputAction) override;
+
 };

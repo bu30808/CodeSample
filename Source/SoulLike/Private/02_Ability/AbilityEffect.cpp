@@ -18,28 +18,6 @@
 DEFINE_LOG_CATEGORY(LogEffect)
 DEFINE_LOG_CATEGORY(LogTalent)
 
-#if WITH_EDITOR
-void UAbilityEffect::CopyValues(UAbilityEffect* Effect)
-{
-	EffectApplyType = Effect->EffectApplyType;
-	Time = Effect->Time;
-	IntervalTime = Effect->IntervalTime;
-	AttributeEffects = Effect->AttributeEffects;
-	AttributeEffectsAffectedByOwnersAttribute = Effect->AttributeEffectsAffectedByOwnersAttribute;
-	bRestoreAttributeOnEnd = Effect->bRestoreAttributeOnEnd;
-	UniqueEffectTag = Effect->UniqueEffectTag;
-	AdditionalEffectTags = Effect->AdditionalEffectTags;
-	BannedEffectTags = Effect->BannedEffectTags;
-	NeedEffectTags = Effect->NeedEffectTags;
-	BannedActivateAbilityTags = Effect->BannedActivateAbilityTags;
-	NeedActivateAbilityTags = Effect->NeedActivateAbilityTags;
-	InstanceAbilityCues = Effect->InstanceAbilityCues;
-	IntervalAbilityCues = Effect->IntervalAbilityCues;
-	ChainTagFromAbility = Effect->ChainTagFromAbility;
-	bIsHitDamageEffect = Effect->bIsHitDamageEffect;
-	AttackType = Effect->AttackType;
-}
-#endif
 
 void UAbilityEffect::SetExpiredDelegate(const FOnEffectExpired& OnEffectExpiredDel)
 {

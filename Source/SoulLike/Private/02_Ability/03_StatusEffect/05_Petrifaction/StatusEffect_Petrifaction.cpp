@@ -3,6 +3,7 @@
 
 #include "02_Ability/03_StatusEffect/05_Petrifaction/StatusEffect_Petrifaction.h"
 
+#include "ClothingSimulationInteractor.h"
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/01_Component/AbilityComponent.h"
 #include "00_Character/01_Component/AttributeComponent.h"
@@ -19,6 +20,8 @@ UStatusEffect_Petrifaction::UStatusEffect_Petrifaction()
 void UStatusEffect_Petrifaction::ProcessEffect_Implementation(ABaseCharacter* Target, AActor* EffectBy,
                                                               UAbilityBase* From, UObject* AdditionalData)
 {
+	RegisterEffectTag(Target);
+	
 	Target->SetIgnoreMoveInput(true, EffectBy, UniqueEffectTag);
 	Target->SetIgnoreLookInput(true, EffectBy, UniqueEffectTag);
 
@@ -26,6 +29,7 @@ void UStatusEffect_Petrifaction::ProcessEffect_Implementation(ABaseCharacter* Ta
 	{
 		instance->Montage_Pause();
 		Target->GetMesh()->bPauseAnims = true;
+		Target->GetMesh()->SuspendClothingSimulation();
 	}
 
 	Target->ChangeStatusEffectMaterial(EStatusEffect::PETRIFACTION);
@@ -46,7 +50,7 @@ void UStatusEffect_Petrifaction::KillTarget(ABaseCharacter* Target, AActor* Effe
 {
 	if (Target->GetCharacterState() != ECharacterState::DEAD)
 	{
-		Target->OnDead.Broadcast(Target,EffectBy);
+		Target->OnDead.Broadcast(Target,EffectBy,EDeadReason::DiedFromPetrifaction);
 	}
 }
 

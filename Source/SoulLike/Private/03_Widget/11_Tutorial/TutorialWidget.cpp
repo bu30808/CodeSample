@@ -4,6 +4,7 @@
 #include "03_Widget/11_Tutorial/TutorialWidget.h"
 
 #include "96_Library/WidgetHelperLibrary.h"
+#include "Components/Button.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
@@ -42,16 +43,6 @@ void UTutorialWidget::NativeConstruct()
 	OnVisibilityChanged.AddUniqueDynamic(this, &UTutorialWidget::OnVisibilityChangedEvent);
 	UGameplayStatics::SetGamePaused(this,true);
 }
-
-/*
-void UTutorialWidget::SetTutorial(UTexture2D* Image, FText Msg, AActor* TutorialObject)
-{
-	TutorialObjectPtr = TutorialObject;
-	Image_Tuto->SetBrushFromTexture(Image,true);
-	
-	TextBlock_Msg->SetText(Msg);
-}
-*/
 
 void UTutorialWidget::SetTutorial(FGameplayTag Tag, AActor* TutorialObject)
 {

@@ -24,7 +24,10 @@ UBTTask_MoveRandomPoint::UBTTask_MoveRandomPoint()
 
 void UBTTask_MoveRandomPoint::OnMoveCompleteEvent(FAIRequestID RequestID, EPathFollowingResult::Type Result)
 {
-	OnAIMoveComplete.ExecuteIfBound();
+	if(!OnAIMoveComplete.ExecuteIfBound())
+	{
+		UE_LOGFMT(LogAICon,Log,"RandomMoveTo의 AIMove가 끝났지만, 바인드된 함수가 따로 없습니다.");
+	}
 	/*switch (Result)
 	{
 	case EPathFollowingResult::Success:
@@ -71,8 +74,6 @@ EBTNodeResult::Type UBTTask_MoveRandomPoint::ExecuteTask(UBehaviorTreeComponent&
 			FNavLocation result;
 			if (NavSystem->GetRandomPointInNavigableRadius(character->GetActorLocation() + MoveDirection, 50.f, result))
 			{
-				DrawDebugPoint(character->GetWorld(), result.Location, 100.f, FColor::Blue);
-
 				OnAIMoveComplete.BindLambda([&OwnerComp, this,aiCon]()
 				{
 					aiCon->ReceiveMoveCompleted.RemoveDynamic(this, &UBTTask_MoveRandomPoint::OnMoveCompleteEvent);
@@ -83,10 +84,6 @@ EBTNodeResult::Type UBTTask_MoveRandomPoint::ExecuteTask(UBehaviorTreeComponent&
 				// 이동 명령을 내립니다.
 				aiCon->MoveToLocation(result.Location);
 				return EBTNodeResult::InProgress;
-			}
-			else
-			{
-				UE_LOGFMT(LogAICon, Error, "UBTTask_MoveRandomPoint 좌표를 가져올 수 없습니다.");
 			}
 		}
 		else

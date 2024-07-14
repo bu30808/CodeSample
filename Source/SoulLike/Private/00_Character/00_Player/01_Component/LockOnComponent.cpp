@@ -395,15 +395,38 @@ void ULockOnComponent::CreateTrace()
 		const auto startLocation = Camera->GetComponentLocation();
 		const auto endLocation = (cameraForward * Distance) + Camera->GetComponentLocation();
 
-		TArray<AActor*> ignoreActors;
 		TArray<FHitResult> outHits;
+		TArray<AActor*> ignoreActors;
 
+		switch (LockOnTraceType) {
+		case ELockOnTraceType::OBJECT:
+			//트레이스를 그려 대상들을 감지합니다.
+			UKismetSystemLibrary::BoxTraceMultiForObjects(Owner.Get(), startLocation, endLocation, BoxHalfSize,
+														  Camera->GetComponentRotation(), ObjectTypes, bTraceComplex, ignoreActors,
+														  DrawDebugType, outHits, true, TraceColor, FLinearColor::Green,
+														  DrawTime);
+			break;
+		case ELockOnTraceType::PROFILE:
+			
+			break;
+		case ELockOnTraceType::CHANNEL:
+			UKismetSystemLibrary::BoxTraceMulti(Owner.Get(), startLocation, endLocation, BoxHalfSize,
+														  Camera->GetComponentRotation(), TraceChannel, bTraceComplex, ignoreActors,
+														  DrawDebugType, outHits, true, TraceColor, FLinearColor::Green,
+														  DrawTime);
+			break;
+		}
+
+	
+	
 		//트레이스를 그려 대상들을 감지합니다.
-		UKismetSystemLibrary::BoxTraceMultiForObjects(Owner.Get(), startLocation, endLocation, BoxHalfSize,
-		                                              Camera->GetComponentRotation(), ObjectTypes, bTraceComplex, ignoreActors,
-		                                              DrawDebugType, outHits, true, TraceColor, FLinearColor::Green,
-		                                              DrawTime);
+		/*UKismetSystemLibrary::BoxTraceMulti(Owner.Get(), startLocation, endLocation, BoxHalfSize,
+													  Camera->GetComponentRotation(), UEngineTypes::ConvertToTraceType(ECC_Visibility), bTraceComplex, ignoreActors,
+													  DrawDebugType, outHits, true, TraceColor, FLinearColor::Green,
+													  DrawTime);*/
 
+		//감지된 대상을 배열에 저장합니다.
+		AddTraceHitActors(outHits);
 
 		//감지된 대상이 장애물 뒤에 숨어있는지 확인합니다.
 		//CheckTraceHitActorIsHide(outHits);
@@ -422,21 +445,19 @@ void ULockOnComponent::CreateTrace()
 
 void ULockOnComponent::AddTraceHitActors(const TArray<FHitResult>& Hits)
 {
+	
 	for (const auto& Hit : Hits)
 	{
+		
 		if (!HitActors.ContainsByPredicate([&](const FHitResult& Inner) { return Inner.GetActor() == Hit.GetActor(); }))
 		{
-			//UE_LOGFMT(LogActorComponent, Log, "ADD NEW HIT ACTOR : {0}", Hit.GetActor()->GetName());
 			if (UKismetSystemLibrary::DoesImplementInterface(Hit.GetActor(), ULockOnInterface::StaticClass()))
 			{
+				UE_LOGFMT(LogActorComponent, Log, "ADD NEW HIT ACTOR : {0}", Hit.GetActor()->GetName());
 				if (ILockOnInterface::Execute_IsLockOnAble(Hit.GetActor()))
 				{
 					HitActors.Add(Hit);
 				}
-			}
-			else
-			{
-				HitActors.Add(Hit);
 			}
 		}
 	}

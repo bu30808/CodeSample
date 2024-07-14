@@ -39,6 +39,8 @@ protected:
 	UPROPERTY(EditAnywhere,Category="Teleport")
 	TArray<class UDataLayerAsset*> LayerToActivate;
 	UPROPERTY(EditAnywhere,Category="Teleport")
+	TArray<class UDataLayerAsset*> LayerToLoaded;
+	UPROPERTY(EditAnywhere,Category="Teleport")
 	const UDataLayerAsset* NexusLayerAsset;
 
 
@@ -57,8 +59,8 @@ protected:
 	
 	UFUNCTION(BlueprintCallable)
 	void SetPortalMaterial();
-	UFUNCTION()
-	void OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* OtherActor);
+	UFUNCTION(BlueprintCallable)
+	void StartTeleport(AActor* OtherActor);
 	UFUNCTION()
 	void OnStreamingCompleteEvent();
 	UFUNCTION()

@@ -56,7 +56,33 @@ UBlueprint* UBlueprintHelperLibrary::CreateBlueprint(FString Path, TSubclassOf<U
 
 FString UBlueprintHelperLibrary::OpenDirectoryDialog()
 {
-	// Open a native file picker dialog
+	// 네이티브 파일 선택 다이얼로그 열기
+	if (IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get())
+	{
+		FString DirPath;
+		const FString DefaultPath = FPaths::ProjectDir(); // 기본 경로 설정
+		auto ParentWindowHandle = FSlateApplication::Get().FindBestParentWindowHandleForDialogs(nullptr);
+
+		// 모달 대화 상자 설정
+		FScopedSlowTask SlowTask(0, FText::FromString("선택 경로 대기 중..."));
+		SlowTask.MakeDialog();
+		
+		if (DesktopPlatform->OpenDirectoryDialog(
+			ParentWindowHandle, TEXT("생성 경로 선택"), DefaultPath, DirPath))
+		{
+			const FString ContentString = "/Content";
+			const int32 FoundIndex = DirPath.Find(ContentString, ESearchCase::IgnoreCase);
+			if (FoundIndex != INDEX_NONE)
+			{
+				FString ResultString = DirPath.RightChop(FoundIndex + ContentString.Len());
+				ResultString.InsertAt(0, "/Game");
+				return ResultString;
+			}
+		}
+	}
+
+	return TEXT("경로가 선택되지 않았습니다.");
+	/*// Open a native file picker dialog
 	if (IDesktopPlatform* DesktopPlatform = FDesktopPlatformModule::Get())
 	{
 		FString DirPath;
@@ -76,7 +102,7 @@ FString UBlueprintHelperLibrary::OpenDirectoryDialog()
 		}
 	}
 
-	return "ERRROR";
+	return "ERRROR";*/
 }
 
 void UBlueprintHelperLibrary::ShowAlertDialog(const FText& DialogText)

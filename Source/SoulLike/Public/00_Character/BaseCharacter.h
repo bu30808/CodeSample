@@ -114,12 +114,25 @@ enum class ECharacterState : uint8
 	MAX,
 };
 
+UENUM(BlueprintType)
+enum class EDeadReason : uint8
+{
+	DiedFromHPDepletion UMETA(DisplayName = "HP Depletion"),   // HP가 0이 되어서 사망
+	DiedFromFalling UMETA(DisplayName = "Falling"),            // 떨어져 사망
+	DiedFromPetrifaction UMETA(DisplayName = "Falling"),	   // 석화
+	DiedFromBurning UMETA(DisplayName = "Burning"),            // 불타서 사망
+	DiedFromPoisoning UMETA(DisplayName = "Poisoning"),        // 중독
+	DiedFromFreezing UMETA(DisplayName = "Freezing"),          // 동사
+	DiedFromBleeding UMETA(DisplayName = "Bleeding"),          // 출혈
+	DiedFromUnknown UMETA(DisplayName = "Unknown")             // 알 수 없는 이유로 사망
+};
+
 /*
  * 모든 캐릭터의 기본이 되는 클래스입니다.
  */
 
 //캐릭터 사망 처리
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnDead, class AActor*, Who, class AActor*, DeadBy);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnDead, class AActor*, Who, class AActor*, DeadBy,EDeadReason, DeadReason);
 
 
 //델리게이트 선언시 맵 타입을 전달하면 생기는 오류를 회피하는 방법입니다.
@@ -155,6 +168,7 @@ public:
 	virtual void PostInitializeComponents() override;
 
 	virtual void OnConstruction(const FTransform& Transform) override;
+
 
 	/**************************컴포넌트*************************/
 protected:
@@ -265,6 +279,8 @@ public:
 	virtual void OnUpdateDeadDissolveTimeLine(float Value);
 	UFUNCTION()
 	virtual void OnFinishDissolveTimeLine();
+	UFUNCTION()
+	virtual void StopDeadDissolve();
 	
 protected:
 	virtual void PlayDeadAnimationSequence();
@@ -278,7 +294,7 @@ public:
 protected:
 	//사망했을 떄, 무엇인가 하려면 덮어쓰세요.
 	UFUNCTION()
-	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy);
+	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason);
 
 	//사망시 디졸브를 위한 인스턴스
 	UPROPERTY(Transient)
@@ -385,6 +401,16 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable)
 	void ClearLookInputForGameplayTag(AActor* AccruedBy, FGameplayTag AccruedTag);
+
+
+	/**
+	 * 카메라 입력 금지를 전부 제거합니다.
+	 */
+	void ClearLookInput();
+	/**
+	 * 움직임 입력 금지를 전부 제거합니다.
+	 */
+	void ClearMoveInput();
 
 protected:
 

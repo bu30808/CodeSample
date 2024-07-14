@@ -3,9 +3,10 @@
 
 #include "00_Character/02_Animation/00_NotifyState/AnimNotifyState_ApplyEffect.h"
 
+#include "99_Subsystem/AbilitySubsystem.h"
+
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/01_Component/AbilityComponent.h"
-#include "02_Ability/AbilityEffect.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
 
@@ -28,8 +29,7 @@ void UAnimNotifyState_ApplyEffect::NotifyBegin(USkeletalMeshComponent* MeshComp,
 		{
 			if (auto subsystem = UGameplayStatics::GetGameInstance(character)->GetSubsystem<UAbilitySubsystem>())
 			{
-				subsystem->AppliedEffectDuringAnimation.Add(
-					character, character->GetAbilityComponent()->K2_ApplyEffectsWithReturn(EffectObjects, character));
+				subsystem->AppliedEffectDuringAnimation.Add(character, FAnimationNotifyEffects(character->GetAbilityComponent()->K2_ApplyEffectsWithReturn(EffectObjects, character)));
 			}
 		}
 	}
@@ -48,7 +48,7 @@ void UAnimNotifyState_ApplyEffect::NotifyEnd(USkeletalMeshComponent* MeshComp, U
 			{
 				if (subsystem->AppliedEffectDuringAnimation.Contains(character))
 				{
-					character->GetAbilityComponent()->EndEffects(subsystem->AppliedEffectDuringAnimation[character]);
+					character->GetAbilityComponent()->EndEffects(subsystem->AppliedEffectDuringAnimation[character].Effects);
 					subsystem->AppliedEffectDuringAnimation.Remove(character);
 				}
 			}

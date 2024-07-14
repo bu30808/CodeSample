@@ -11,7 +11,6 @@
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "00_Character/03_Monster/01_Component/ItemDropComponent.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Components/ArrowComponent.h"
 #include "Components/BillboardComponent.h"
 #include "Components/WidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -25,34 +24,32 @@ AGoblin::AGoblin()
 
 	SkirtComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkirtComponent"));
 	SkirtComponent->SetupAttachment(GetMesh());
-
-	LegComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("LegComponent"));
-	LegComponent->SetupAttachment(GetMesh());
-
-	BracerComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BracerComponent"));
-	BracerComponent->SetupAttachment(GetMesh());
-
-	BodyComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("BodyComponent"));
-	BodyComponent->SetupAttachment(GetMesh());
-
+	
 	WeaponComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponComponent"));
 	WeaponComponent->SetupAttachment(GetMesh());
-
-
+	
 	HelmetComponent->SetLeaderPoseComponent(GetMesh());
 	SkirtComponent->SetLeaderPoseComponent(GetMesh());
-	LegComponent->SetLeaderPoseComponent(GetMesh());
-	BracerComponent->SetLeaderPoseComponent(GetMesh());
-	BodyComponent->SetLeaderPoseComponent(GetMesh());
-	
+
 	SET_LDMaxDrawDistance(HelmetComponent,5000.f);
 	SET_LDMaxDrawDistance(SkirtComponent,5000.f);
-	SET_LDMaxDrawDistance(LegComponent,5000.f);
-	SET_LDMaxDrawDistance(BracerComponent,5000.f);
-	SET_LDMaxDrawDistance(BodyComponent,5000.f);
 	SET_LDMaxDrawDistance(WeaponComponent,5000.f);
 	
 	
+}
+
+void AGoblin::BeginPlay()
+{
+	Super::BeginPlay();
+	DoMergeSkeletalMesh();
+
+	if (GetMesh())
+	{
+		GetMesh()->SetCollisionProfileName("Monster");
+		/*GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		GetMesh()->SetCollisionObjectType(MONSTER_CHANNEL); // Monster 채널에 해당하는 채널로 설정
+		GetMesh()->SetCollisionResponseToAllChannels(ECR_Block);*/
+	}
 }
 
 AGoblinRogue::AGoblinRogue()
@@ -88,37 +85,6 @@ AGoblinMage::AGoblinMage()
 
 AGoblinCrystallized::AGoblinCrystallized()
 {
-	CrystallizedArmComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CrystallizedArmComponent"));
-	CrystallizedArmComponent->SetupAttachment(GetMesh());
-
-	CrystallizedLegTopComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CrystallizedLegTopComponent"));
-	CrystallizedLegTopComponent->SetupAttachment(GetMesh());
-
-	CrystallizedHeadComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CrystallizedHeadComponent"));
-	CrystallizedHeadComponent->SetupAttachment(GetMesh());
-	
-	CrystallizedArmComponent->SetLeaderPoseComponent(GetMesh());
-	CrystallizedLegTopComponent->SetLeaderPoseComponent(GetMesh());
-	CrystallizedHeadComponent->SetLeaderPoseComponent(GetMesh());
-
-	if(HelmetComponent)
-	{
-		HelmetComponent->DestroyComponent();
-	}
-
-	if(BodyComponent)
-	{
-		BodyComponent->DestroyComponent();
-	}
-
-	if(WeaponComponent)
-	{
-		WeaponComponent->DestroyComponent();
-	}
-
-	SET_LDMaxDrawDistance(CrystallizedArmComponent,3500.f);
-	SET_LDMaxDrawDistance(CrystallizedLegTopComponent,3500.f);
-	SET_LDMaxDrawDistance(CrystallizedHeadComponent,3500.f);
 	
 }
 
@@ -127,26 +93,10 @@ AGoblinBattleMage::AGoblinBattleMage()
 	if(WeaponComponent == nullptr)
 	{
 		WeaponComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("WeaponComponent"));
-		WeaponComponent->SetupAttachment(GetMesh());
 	}
-
 	
 	WeaponComponent->SetupAttachment(GetMesh(), "Sword");
 	
-	CrystallizedBodyComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CrystallizedBodyComponent"));
-	CrystallizedBodyComponent->SetupAttachment(GetMesh());
-
-	CrystallizedLegBottomComponent = CreateDefaultSubobject<USkeletalMeshComponent>(
-		TEXT("CrystallizedLegBottomComponent"));
-	CrystallizedLegBottomComponent->SetupAttachment(GetMesh());
-	
-	CrystallizedShoulderComponent = CreateDefaultSubobject<USkeletalMeshComponent>(
-		TEXT("CrystallizedShoulderComponent"));
-	CrystallizedShoulderComponent->SetupAttachment(GetMesh());
-	
-	CrystallizedBodyComponent->SetLeaderPoseComponent(GetMesh());
-	CrystallizedLegBottomComponent->SetLeaderPoseComponent(GetMesh());
-	CrystallizedShoulderComponent->SetLeaderPoseComponent(GetMesh());
 	
 	StaffComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaffComponent"));
 	StaffComponent->SetupAttachment(GetMesh(), "StaffMirror");
@@ -253,7 +203,7 @@ void AGoblinSwarm::SpawnGoblinElite()
 	
 }
 
-void AGoblinSwarm::OnGoblinDeadEvent(AActor* Who, AActor* DeadBy)
+void AGoblinSwarm::OnGoblinDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason)
 {
 	Goblins.Remove(Who);
 
@@ -271,12 +221,12 @@ void AGoblinSwarm::OnGoblinDeadEvent(AActor* Who, AActor* DeadBy)
 
 		if(AttributeComponent->GetHP()<=0)
 		{
-			OnDead.Broadcast(this,DeadBy);
+			OnDead.Broadcast(this,DeadBy,DeadReason);
 		}
 	}
 }
 
-void AGoblinSwarm::OnDeadEvent(AActor* Who, AActor* DeadBy)
+void AGoblinSwarm::OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason)
 {
 	UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 호출", GetActorNameOrLabel());
 	if (CharacterState != ECharacterState::DEAD)

@@ -7,6 +7,9 @@
 #include "Animation/AnimNotifies/AnimNotifyState.h"
 #include "AnimNotifyState_WaitKeyPress.generated.h"
 
+
+
+
 /**
  * 특정 구간에 키 입력을 기다려야 하는 경우 사용합니다.
  * 구간이 끝날 때, 입력이 있었다면, 트리거됩니다.
@@ -20,6 +23,11 @@ public:
 	UAnimNotifyState_WaitKeyPress();
 
 protected:
+
+	//눌렀을때 처리하나요? 땠을때 처리하나요?
+	UPROPERTY(EditAnywhere)
+	EInputType InputType;
+	
 	//어떤 액션을 기다리나요?
 	UPROPERTY(EditAnywhere)
 	TArray<FKeyPressedInfo> WaitAction;

@@ -10,8 +10,8 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "AbilityEffectCreatorWidget.generated.h"
 
-UCLASS()
-class SOULLIKEEDITOR_API UNormalEffectInfo : public UObject
+UCLASS(Transient)
+class SOULLIKEEDITOR_API UAbilityEffectDetails : public UObject
 {
 	GENERATED_BODY()
 
@@ -20,14 +20,13 @@ public:
 	UAbilityEffect* Effect = NewObject<UAbilityEffect>();
 };
 
-UCLASS()
-class SOULLIKEEDITOR_API ULinetraceEffectInfo : public UObject
+UCLASS(Transient)
+class SOULLIKEEDITOR_API ULinetraceEffectDetails : public UAbilityEffectDetails
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, Transient)
-	UAbilityEffect_Linetrace* Effect = NewObject<UAbilityEffect_Linetrace>();
+	ULinetraceEffectDetails();
 };
 
 /**
@@ -60,6 +59,9 @@ public:
 	class UButton* Button_Create;
 
 	FString SelectedType;
+	
+	UPROPERTY(Transient)
+	TObjectPtr<UAbilityEffectDetails> EffectHandler;
 
 	UFUNCTION()
 	void OnSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);

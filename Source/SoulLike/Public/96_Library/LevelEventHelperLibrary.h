@@ -20,7 +20,8 @@ class AMainLevelScriptActor : public ALevelScriptActor
 	GENERATED_BODY()
 
 public:
-
+	AMainLevelScriptActor();
+	
 	UPROPERTY(EditAnywhere)
 	UDataTable* LayerTable;
 	
@@ -29,8 +30,8 @@ public:
 
 	
 	UFUNCTION(BlueprintNativeEvent)
-	void OnDeadBossEvent(AActor* Who, AActor* DeadBy);
-	virtual void OnDeadBossEvent_Implementation(AActor* Who, AActor* DeadBy);
+	void OnDeadBossEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason);
+	virtual void OnDeadBossEvent_Implementation(AActor* Who, AActor* DeadBy, EDeadReason DeadReason);
 	
 	bool IsAlreadySet(AActor* Player,const TArray<UDataLayerAsset*>& LayerToActive, const TArray<UDataLayerAsset*>& LayerToLoaded);
 	

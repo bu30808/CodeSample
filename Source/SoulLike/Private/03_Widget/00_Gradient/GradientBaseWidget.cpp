@@ -18,10 +18,8 @@ void UGradientBaseWidget::NativeConstruct()
 	Super::NativeConstruct();
 }
 
-void UGradientBaseWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+void UGradientBaseWidget::UpdateProgressToMaterial(float InDeltaTime)
 {
-	Super::NativeTick(MyGeometry, InDeltaTime);
-
 	if (DynamicMat && ParentImage)
 	{
 		CurAlpha = CurAlpha + (InDeltaTime / ResponseTime);
@@ -29,6 +27,13 @@ void UGradientBaseWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaT
 		float Alpha = FMath::Clamp(CurAlpha, 0, 1);
 		DynamicMat->SetScalarParameterValue(ProgressParamName, FMath::Lerp(PrePercent, Percent, Alpha));
 	}
+}
+
+void UGradientBaseWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	UpdateProgressToMaterial(InDeltaTime);
 }
 
 void UGradientBaseWidget::SetDynamicMaterial()

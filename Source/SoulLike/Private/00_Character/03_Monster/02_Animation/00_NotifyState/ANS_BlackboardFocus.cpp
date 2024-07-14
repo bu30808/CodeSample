@@ -31,6 +31,7 @@ void UANS_BlackboardFocus::NotifyBegin(USkeletalMeshComponent* MeshComp, UAnimSe
 					npc->bUseControllerRotationYaw = bUseControllerRotationYaw;
 					npc->GetCharacterMovement()->bUseControllerDesiredRotation = bUseControllerRotationYaw;
 					npc->GetCharacterMovement()->bOrientRotationToMovement = !bUseControllerRotationYaw;
+					aiCon->SetActorTickEnabled(true);
 					aiCon->SetFocus(target);
 				}
 			}
@@ -52,6 +53,7 @@ void UANS_BlackboardFocus::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnimSequ
 				npc->bUseControllerRotationYaw = false;
 				npc->GetCharacterMovement()->bOrientRotationToMovement = true;
 				aiCon->K2_ClearFocus();
+				aiCon->SetActorTickEnabled(false);
 			}
 		}
 	}

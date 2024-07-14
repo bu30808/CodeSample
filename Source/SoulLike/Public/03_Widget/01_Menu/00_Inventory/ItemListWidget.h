@@ -35,6 +35,7 @@ class UItemData : public UInventoryData
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(Transient)
 	FInventoryItem InventoryItem;
 	FOnPlayerBuyItemFromNPC OnPlayerBuyItemFromNPC;
 };
@@ -46,6 +47,7 @@ class UAbilityData : public UInventoryData
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(Transient)
 	FAbilityInformation AbilityInformation;
 };
 

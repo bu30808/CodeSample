@@ -30,20 +30,24 @@ void UAbilityCreatorWidget_Req::OnCheckCost(bool bIsChecked)
 	if (bIsChecked)
 	{
 		DetailsView_Cost->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-		if (DetailsView_Cost->GetObject())
+
+		if(CostHandler != nullptr)
 		{
-			DetailsView_Cost->GetObject()->ConditionalBeginDestroy();
+			CostHandler->ConditionalBeginDestroy();
+			CostHandler = nullptr;
 		}
-		DetailsView_Cost->SetObject(NewObject<UCostCreateInfo>());
+
+		CostHandler = NewObject<UCostCreateInfo>();
+		
+		DetailsView_Cost->SetObject(CostHandler);
 	}
 	else
 	{
 		UE_LOGFMT(LogTemp, Log, "코스트 체크 해제");
 		DetailsView_Cost->SetVisibility(ESlateVisibility::Collapsed);
-
-		if (DetailsView_Cost->GetObject())
+		if(CostHandler !=nullptr)
 		{
-			DetailsView_Cost->GetObject()->ConditionalBeginDestroy();
+			CostHandler->ConditionalBeginDestroy();
 		}
 		DetailsView_Cost->SetObject(nullptr);
 	}
@@ -54,20 +58,23 @@ void UAbilityCreatorWidget_Req::OnCheckCooldown(bool bIsChecked)
 	if (bIsChecked)
 	{
 		DetailsView_Cooldown->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-		if (DetailsView_Cooldown->GetObject())
+
+		if(CooldownHandler != nullptr)
 		{
-			DetailsView_Cooldown->GetObject()->ConditionalBeginDestroy();
+			CooldownHandler->ConditionalBeginDestroy();
 		}
 
+		CooldownHandler = NewObject<UCooldownCreateInfo>();
+		
 		DetailsView_Cooldown->SetObject(NewObject<UCooldownCreateInfo>());
 	}
 	else
 	{
 		UE_LOGFMT(LogTemp, Log, "쿨다운 체크 해제");
 		DetailsView_Cooldown->SetVisibility(ESlateVisibility::Collapsed);
-		if (DetailsView_Cooldown->GetObject())
+		if(CooldownHandler != nullptr)
 		{
-			DetailsView_Cooldown->GetObject()->ConditionalBeginDestroy();
+			CooldownHandler->ConditionalBeginDestroy();
 		}
 		DetailsView_Cooldown->SetObject(nullptr);
 	}
@@ -94,12 +101,20 @@ void UAbilityCreatorWidget_Req::NativePreConstruct()
 
 	if (DetailsView_EffectTag)
 	{
-		DetailsView_EffectTag->SetObject(NewObject<UReqTagInfo>());
+		if(ReqTagHandler == nullptr)
+		{
+			ReqTagHandler = NewObject<UReqTagInfo>();
+		}
+		DetailsView_EffectTag->SetObject(ReqTagHandler);
 	}
 
 	if (DetailsView_AbilityTag)
 	{
-		DetailsView_AbilityTag->SetObject(NewObject<UReqAbilityTagInfo>());
+		if(ReqAbilityTagHandler == nullptr)
+		{
+			ReqAbilityTagHandler = NewObject<UReqAbilityTagInfo>();
+		}
+		DetailsView_AbilityTag->SetObject(ReqAbilityTagHandler);
 	}
 }
 

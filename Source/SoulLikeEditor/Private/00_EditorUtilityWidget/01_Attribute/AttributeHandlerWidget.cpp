@@ -3,6 +3,8 @@
 
 #include "00_EditorUtilityWidget/01_Attribute/AttributeHandlerWidget.h"
 
+#include "DetailCategoryBuilder.h"
+#include "DetailLayoutBuilder.h"
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/03_Monster/BaseMonster.h"
@@ -84,19 +86,18 @@ void UAttributeHandlerWidget::NativeConstruct()
 	VerticalBox_AttPerPoint->SetVisibility(ESlateVisibility::Collapsed);
 	if (DetailsView_AttPerPoint->GetObject() == nullptr)
 	{
-		auto data = NewObject<UAttributePerPointHandler>();
-
+		PerPointHandler =NewObject<UAttributePerPointHandler>();
 		if(AttributePerPointTable)
 		{
 			TArray<FAttributePerPoint*> out;
 			AttributePerPointTable->GetAllRows<FAttributePerPoint>("",out);
 			if(out.IsValidIndex(0))
 			{
-				data->AttributePerPoint = *out[0];
+				PerPointHandler->AttributePerPoint = *out[0];
 			}
 		}
 		
-		DetailsView_AttPerPoint->SetObject(data);
+		DetailsView_AttPerPoint->SetObject(PerPointHandler);
 	}
 	Button_AttPerPoint->OnClicked.AddUniqueDynamic(this, &UAttributeHandlerWidget::OnClickedAttPerPoint);
 
@@ -108,6 +109,12 @@ void UAttributeHandlerWidget::NativeConstruct()
 	for(auto iter : BaseCharacters)
 	{
 		ComboBoxString_AttInit->AddOption(iter.Key);
+	}
+
+	if(DetailsView_AttInit->GetObject()==nullptr)
+	{
+		InitHandler = NewObject<UAttributeInitHandler>();
+		DetailsView_AttInit->SetObject(InitHandler);
 	}
 	
 
@@ -145,6 +152,14 @@ void UAttributeHandlerWidget::OnClickedAttInit()
 
 void UAttributeHandlerWidget::OnSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
+
+	if(InitHandler ==nullptr)
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("InitHandler포인터가 유효하지 않습니다.")));
+		return;
+	}
+
+	
 	if(BaseCharacters.Contains(SelectedItem))
 	{
 		auto target = BaseCharacters[SelectedItem];
@@ -167,39 +182,16 @@ void UAttributeHandlerWidget::OnSelectionChanged(FString SelectedItem, ESelectIn
 			
 	
 			auto row = table->FindRow<FAttributeInit>(tag.GetTagName(),"");
-
-			if(DetailsView_AttInit->GetObject() == nullptr)
+			
+			if(row==nullptr)
 			{
-				if(UAttributeInitHandler* handler = NewObject<UAttributeInitHandler>())
-				{
-					if(row==nullptr)
-					{
-						handler->AttributeInit = FAttributeInit();
-					}else
-					{
-						handler->AttributeInit = *row;
-					}
-					handler->TablePointer = table;
-					handler->CharacterPointer = target.GetDefaultObject();
-								
-					DetailsView_AttInit->SetObject(handler);
-				}
-			}
-			else
+				InitHandler->AttributeInit = FAttributeInit();
+			}else
 			{
-				if(auto handler = Cast<UAttributeInitHandler>(DetailsView_AttInit->GetObject()))
-				{
-					if(row==nullptr)
-					{
-						handler->AttributeInit = FAttributeInit();
-					}else
-					{
-						handler->AttributeInit = *row;
-					}
-					handler->TablePointer = table;
-					handler->CharacterPointer = target.GetDefaultObject();
-				}
+				InitHandler->AttributeInit = *row;
 			}
+			InitHandler->TablePointer = table;
+			InitHandler->CharacterPointer = target.GetDefaultObject();
 			
 		}
 	}
@@ -207,72 +199,102 @@ void UAttributeHandlerWidget::OnSelectionChanged(FString SelectedItem, ESelectIn
 
 void UAttributeHandlerWidget::OnClickedSaveAttInit()
 {
-	if(auto handler = Cast<UAttributeInitHandler>(DetailsView_AttInit->GetObject()))
+	if(InitHandler == nullptr)
 	{
-		if(auto table = handler->TablePointer)
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("InitHandler포인터가 유효하지 않습니다.")));
+		return;
+	}
+	
+	if(auto table =InitHandler->TablePointer)
+	{
+
+		FGameplayTag tag;
+		if(InitHandler->CharacterPointer->IsA<APlayerCharacter>())
 		{
-
-			FGameplayTag tag;
-			if(handler->CharacterPointer->IsA<APlayerCharacter>())
-			{
-				tag = Cast<APlayerCharacter>(handler->CharacterPointer)->GetCharacterTag();
-			}else
-			{
-				tag = Cast<ABaseMonster>(handler->CharacterPointer)->GetMonsterTag();
-			}
-			
-			if(!tag.IsValid())
-			{
-				FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("가져온 대상의 태그정보가 유효하지 않습니다.")));
-				return;
-			}
-			
-			if(auto row = table->FindRow<FAttributeInit>(tag.GetTagName(),""))
-			{
-				row->Override(handler->AttributeInit);
-			}
-			else{
-				table->AddRow(tag.GetTagName(),handler->AttributeInit);
-			}
-
-			if(table->MarkPackageDirty())
-			{
-				FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("성공적으로 반영되었습니다. 저장하지 않으면 날아갑니다.")));
-			}
+			tag = Cast<APlayerCharacter>(InitHandler->CharacterPointer)->GetCharacterTag();
+		}else
+		{
+			tag = Cast<ABaseMonster>(InitHandler->CharacterPointer)->GetMonsterTag();
 		}
-	}	
+			
+		if(!tag.IsValid())
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("가져온 대상의 태그정보가 유효하지 않습니다.")));
+			return;
+		}
+			
+		if(auto row = table->FindRow<FAttributeInit>(tag.GetTagName(),""))
+		{
+			row->Override(InitHandler->AttributeInit);
+		}
+		else{
+			table->AddRow(tag.GetTagName(),InitHandler->AttributeInit);
+		}
+
+		if(table->MarkPackageDirty())
+		{
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("성공적으로 반영되었습니다. 저장하지 않으면 날아갑니다.")));
+		}
+	}
 }
 
 void UAttributeHandlerWidget::OnClickedSaveAttPerPoint()
 {
+	if(PerPointHandler==nullptr)
+	{
+		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("InitHandler포인터가 유효하지 않습니다.")));
+		return;
+	}
+	
 	if(AttributePerPointTable)
 	{
-		if(auto attPerPoint = Cast<UAttributePerPointHandler>(DetailsView_AttPerPoint->GetObject()))
+		auto RowMap = AttributePerPointTable->GetRowMap();
+
+		// Iterate through the row map and remove all rows
+		for (auto& Pair : RowMap)
 		{
-			//ArmorTable->AddRow(info.Item_Tag.GetTagName(), info);
-			//ArmorTable->MarkPackageDirty();
-
-			auto RowMap = AttributePerPointTable->GetRowMap();
-
-			// Iterate through the row map and remove all rows
-			for (auto& Pair : RowMap)
+			uint8* RowData = Pair.Value;
+			if (RowData)
 			{
-				uint8* RowData = Pair.Value;
-				if (RowData)
-				{
-					// Mark row for deletion
-					AttributePerPointTable->RemoveRow(Pair.Key);
-				}
-			}
-		
-			AttributePerPointTable->AddRow("0",attPerPoint->AttributePerPoint);
-			if(AttributePerPointTable->MarkPackageDirty())
-			{
-				FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("성공적으로 반영되었습니다. 저장하지 않으면 날아갑니다.")));
+				// Mark row for deletion
+				AttributePerPointTable->RemoveRow(Pair.Key);
 			}
 		}
-	}else
+		
+		AttributePerPointTable->AddRow("0",PerPointHandler->AttributePerPoint);
+		if(AttributePerPointTable->MarkPackageDirty())
+		{
+			for(auto iter : BaseCharacters)
+			{
+				iter.Value.GetDefaultObject()->GetAttributeComponent()->InitAttributes();
+			}
+				
+				
+			FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("성공적으로 반영되었습니다. 저장하지 않으면 날아갑니다.")));
+		}
+	}
+}
+
+void UAttributeHandlerWidget::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+	if(DetailsView_AttInit)
 	{
-		FMessageDialog::Open(EAppMsgType::Ok, FText::FromString(TEXT("포인트당 어트리뷰트 테이블이 할당되지 않았습니다.")));
+		if(InitHandler == nullptr)
+		{
+			InitHandler = NewObject<UAttributeInitHandler>(GetTransientPackage());
+		}
+		
+		DetailsView_AttInit->SetObject(InitHandler.Get());
+		UE_LOGFMT(LogTemp,Log,"디테일뷰 재설정");
+	}
+
+	if(DetailsView_AttPerPoint)
+	{
+		if(PerPointHandler ==nullptr)
+		{
+			PerPointHandler =  NewObject<UAttributePerPointHandler>(GetTransientPackage());
+		}
+		DetailsView_AttPerPoint->SetObject(PerPointHandler.Get());
 	}
 }

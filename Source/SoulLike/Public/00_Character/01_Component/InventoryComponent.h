@@ -2,8 +2,6 @@
 
 #pragma once
 
-#include <vector>
-
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "04_Item/ItemActor.h"
@@ -91,8 +89,10 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRemoveItem, class ABaseCharacter
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnGetItem, TSoftObjectPtr<class UTexture2D>, Image, FText, Name,
                                                int32, Count);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnUpdateMainConsumeQuickSlot, const FInventoryItem&, Item, bool,
-                                               bRemove, int32, SlotIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUpdateItemQuickSlot, const class UItemData*,Data,int32,SlotIndex);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnRemoveItemQuickSlot, const class UItemData*,Data,int32,SlotIndex);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnChangeItemQuickSlot, const FInventoryItem&,Item,int32,SlotIndex);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnUpdateMainAbilityQuickSlot, const FGameplayTag&, Tag, bool, bRemove,
                                                int32, SlotIndex);
@@ -175,7 +175,7 @@ public:
 	//인벤토리 UI를 업데이트 하는 이벤트입니다.
 	UPROPERTY(BlueprintAssignable)
 	FOnInventoryWidgetUpdate OnInventoryWidgetUpdate;
-	//소비전용 퀵슬롯 UI를 업데이트 하는 이벤트입니다.
+	//소비전용 퀵슬롯 UI를 업데이트 하는 이벤트입니다. 아이템이 사용되면 호출됩니다.
 	UPROPERTY(BlueprintAssignable)
 	FOnItemQuickSlotUpdate OnItemQuickSlotUpdate;
 	//인벤토리에서 아이템이 제거될떄 호출되는 이벤트입니다.
@@ -267,14 +267,14 @@ protected:
 	/***********************퀵슬롯 관리*******************************/
 
 	//지금 표시중인 인덱스
-	UPROPERTY(VisibleAnywhere, meta=(ClampMin = 0, ClampMax = 9))
-	int32 CurConsumeQuickSlotIndex = 0;
-	UPROPERTY(VisibleAnywhere, meta=(ClampMin = 0, ClampMax = 9))
-	int32 CurAbilityQuickSlotIndex = 0;
+	UPROPERTY(VisibleAnywhere, meta=(ClampMin = -1, ClampMax = 9))
+	int32 CurItemQuickSlotIndex = -1;
+	UPROPERTY(VisibleAnywhere, meta=(ClampMin = -1, ClampMax = 9))
+	int32 CurAbilityQuickSlotIndex = -1;
 
 	//퀵슬롯에 저장된 아이템 유니크 아이디입니다.
 	UPROPERTY(VisibleAnywhere)
-	TArray<FGuid> ConsumeQuickSlotUniqueIDs = {
+	TArray<FGuid> ItemQuickSlotUniqueIDs = {
 		FGuid(), FGuid(), FGuid(), FGuid(), FGuid(), FGuid(), FGuid(), FGuid(), FGuid(), FGuid()
 	};
 	UPROPERTY(VisibleAnywhere)
@@ -286,14 +286,22 @@ protected:
 
 public:
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
-	FOnUpdateMainConsumeQuickSlot OnUpdateMainConsumeQuickSlot;
+	FOnUpdateItemQuickSlot OnFirstUpdateMainItemQuickSlot;
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnChangeItemQuickSlot OnChangeItemQuickSlot;
+	UPROPERTY(BlueprintAssignable,BlueprintCallable)
+	FOnRemoveItemQuickSlot OnRemoveItemQuickSlot;
+
+	
+	UPROPERTY(BlueprintAssignable, BlueprintCallable)
+	FOnUpdateItemQuickSlot OnAddItemQuickSlot;
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnUpdateMainAbilityQuickSlot OnUpdateMainAbilityQuickSlot;
 
-	void AddQuickSlotItem(class UInventoryData* Data, int32 Index);
+	void AddQuickSlotItem(UItemData* Data, int32 Index);
 	void AddQuickSlotAbility(class UInventoryData* Data, int32 Index);
 
-	void RemoveQuickSlotItem(class UInventoryData* Data, int32 Index);
+	void RemoveQuickSlotItem(UItemData* Data, int32 Index);
 	void RemoveQuickSlotAbility(class UInventoryData* Data, int32 Index);
 
 	void NextConsumeQuickSlot();
@@ -306,9 +314,7 @@ public:
 	void UseConsumeQuickSlot();
 	void UseAbilityQuickSlot();
 
-	TSet<FGuid> GetRegisteredConsumeQuickSlotItems();
-	TSet<FGameplayTag> GetRegisteredQuickSlotAbilities();
-
+	
 	//아이템 버튼이 아이템리스트에서 생성되면 호출됩니다.
 	UFUNCTION()
 	void OnItemButtonWidgetGeneratedEvent(UUserWidget* UserWidget);

@@ -21,22 +21,11 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterInformationUpdate);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUpdateEXP, float, addExp);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAddAttributeEffectAdditionalInformation, const FAttributeEffect&,
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnChangeAttributeEffectAdditionalInformation, const FAttributeEffect&,
                                                Effect, class UAbilityEffectAdditionalInformation*,
                                                AdditionalInformation, float, DeltaTime);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRemoveAttributeEffectAdditionalInformation, const FAttributeEffect&,
-                                               Effect, class UAbilityEffectAdditionalInformation*,
-                                               AdditionalInformation, float, DeltaTime);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnMultiplicationAttributeEffectAdditionalInformation,
-                                               const FAttributeEffect&, Effect,
-                                               class UAbilityEffectAdditionalInformation*, AdditionalInformation, float,
-                                               DeltaTime);
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnDivisionAttributeEffectAdditionalInformation, const FAttributeEffect&,
-                                               Effect, class UAbilityEffectAdditionalInformation*,
-                                               AdditionalInformation, float, DeltaTime);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnChangedMoveSpeedAttribute);
 
@@ -47,22 +36,22 @@ struct FAttributeInit : public FTableRowBase
 
 public:
 	UPROPERTY(EditAnywhere, Category=HP)
-	float HP = 0;
+	int32 HP = 0;
 
 	UPROPERTY(EditAnywhere, Category=SP)
-	float SP = 0;
+	int32 SP = 0;
 
 	UPROPERTY(EditAnywhere, Category=MP)
-	float MP = 0;
+	int32 MP = 0;
 
 	UPROPERTY(EditAnywhere, Category=HP)
-	float MaxHP = 0;
+	int32 MaxHP = 0;
 
 	UPROPERTY(EditAnywhere, Category=SP)
-	float MaxSP = 0;
+	int32 MaxSP = 0;
 
 	UPROPERTY(EditAnywhere, Category=MP)
-	float MaxMP = 0;
+	int32 MaxMP = 0;
 
 
 	//********************초당 회복량********************
@@ -93,49 +82,49 @@ public:
 
 	//********************행동속도********************
 	UPROPERTY(EditAnywhere, Category=ActionSpeed)
-	float ActionSpeed = 0;
+	float ActionSpeed = 1.f;
 
 
 	//********************강인도********************
 	UPROPERTY(EditAnywhere, Category=Endurance)
-	float Endurance = 0;
+	int32 Endurance = 0;
 
 
 	//********************레벨업시 투자 가능한 스텟*******************
 	UPROPERTY(EditAnywhere, Category=Investable)
-	float Strength = 0;
+	int32 Strength = 0;
 
 	UPROPERTY(EditAnywhere, Category=Investable)
-	float Dexterity = 0;
+	int32 Dexterity = 0;
 
 	UPROPERTY(EditAnywhere, Category=Investable)
-	float Intelligence = 0;
+	int32 Intelligence = 0;
 
 	UPROPERTY(EditAnywhere, Category=Investable)
-	float Willpower = 0;
+	int32 Willpower = 0;
 
 	UPROPERTY(EditAnywhere, Category=Investable)
-	float MaxHPPoint = 0;
+	int32 MaxHPPoint = 0;
 
 	UPROPERTY(EditAnywhere, Category=Investable)
-	float MaxSPPoint = 0;
+	int32 MaxSPPoint = 0;
 
 	UPROPERTY(EditAnywhere, Category=Investable)
-	float MaxMPPoint = 0;
+	int32 MaxMPPoint = 0;
 
 	//********************저항력*******************
 	UPROPERTY(EditAnywhere, Category="Resistance")
-	float PoisonResist = 0;
+	int32 PoisonResist = 0;
 	UPROPERTY(EditAnywhere, Category="Resistance")
-	float DeadlyPoisonResist = 0;
+	int32 DeadlyPoisonResist = 0;
 	UPROPERTY(EditAnywhere, Category="Resistance")
-	float BurnResist = 0;
+	int32 BurnResist = 0;
 	UPROPERTY(EditAnywhere, Category="Resistance")
-	float ChillResist = 0;
+	int32 ChillResist = 0;
 	UPROPERTY(EditAnywhere, Category="Resistance")
-	float BleedResist = 0;
+	int32 BleedResist = 0;
 	UPROPERTY(EditAnywhere, Category="Resistance")
-	float PetrifactionResist = 0;
+	int32 PetrifactionResist = 0;
 
 	//********************이동속도*******************
 	UPROPERTY(EditAnywhere, Category="MoveSpeed")
@@ -193,23 +182,13 @@ struct FAttributePerPoint : public FTableRowBase
 public:
 	/***********힘*************/
 	UPROPERTY(EditAnywhere, Category=Str)
-	float MaxHPPerStrength = 0;
-	/*UPROPERTY(EditAnywhere)
-	float RecoverHPPerStrength = 0;*/
-	UPROPERTY(EditAnywhere, Category=Str)
 	float PhysicalAttackPerStrength = 0;
 
 	/***********민*************/
 	UPROPERTY(EditAnywhere, Category=Dex)
-	float MaxHPPerDexterity = 0;
-	UPROPERTY(EditAnywhere, Category=Dex)
-	float MaxSPPerDexterity = 0;
-	UPROPERTY(EditAnywhere, Category=Dex)
 	float PhysicalAttackPerDexterity = 0;
 	UPROPERTY(EditAnywhere, Category=Dex)
 	float MagicalAttackPerDexterity = 0;
-	/*UPROPERTY(EditAnywhere)
-	float RecoverSPPerDexterity = 0;*/
 	UPROPERTY(EditAnywhere, Category=Dex)
 	float ActionSpeedPerDexterity = 0;
 
@@ -218,8 +197,6 @@ public:
 	float MaxMPPerIntelligence = 0;
 	UPROPERTY(EditAnywhere, Category=Int)
 	float MagicalAttackPerIntelligence = 0;
-	/*UPROPERTY(EditAnywhere)
-	float RecoverHitMPPerIntelligence = 0;*/
 
 	/***********의*************/
 	UPROPERTY(EditAnywhere, Category=Will)
@@ -228,13 +205,6 @@ public:
 	float MaxMPPerWillpower = 0;
 	UPROPERTY(EditAnywhere, Category=Will)
 	float MaxSPPerWillpower = 0;
-
-	/*UPROPERTY(EditAnywhere)
-	float RecoverHPPerWillpower = 0;
-	UPROPERTY(EditAnywhere)
-	float RecoverSPPerWillpower = 0;
-	UPROPERTY(EditAnywhere)
-	float RecoverHitMPPerWillpower = 0;*/
 
 	UPROPERTY(EditAnywhere, Category=Will)
 	float PhysicalDefensePerWillpower = 0;
@@ -425,7 +395,12 @@ public:
 	                                         bool ShouldUpdateProgressBar, bool bIsRespawn);
 	//레벨업 포인트를 복구합니다.
 	void LoadLevelUpPointAttributes(const TMap<EAttributeType, FAttribute>& LevelUpPoint);
+	//모든 상태이상을 제거하고, 누적수치를 초기화 합니다.
+	void ClearStatusEffect();
 
+	UFUNCTION(BlueprintCallable)
+	void RemoveStatusEffect(EStatusEffect StatusEffectToRemove);
+	
 protected:
 	//포인트당 속성 증가치를 가져옵니다.
 	void InitAttributePerPoint();
@@ -633,12 +608,13 @@ public:
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnChangedMoveSpeedAttribute OnChangedMoveSpeedAttribute;
 
-	FOnAddAttributeEffectAdditionalInformation OnAddAttributeEffectAdditionalInformation;
+	FOnChangeAttributeEffectAdditionalInformation OnAddAttributeEffectAdditionalInformation;
 	//어빌리티 이팩트가 적용되어 속성값이 제거될 때, 추가정보를 받은 경우 호출되는 이벤트입니다.
 	//주로 피격처리를 처리하기 위해 만들어졌습니다.
-	FOnRemoveAttributeEffectAdditionalInformation OnRemoveAttributeEffectAdditionalInformation;
-	FOnMultiplicationAttributeEffectAdditionalInformation OnMultiplicationAttributeEffectAdditionalInformation;
-	FOnDivisionAttributeEffectAdditionalInformation OnDivisionAttributeEffectAdditionalInformation;
+	FOnChangeAttributeEffectAdditionalInformation OnRemoveAttributeEffectAdditionalInformation;
+	FOnChangeAttributeEffectAdditionalInformation OnMultiplicationAttributeEffectAdditionalInformation;
+	FOnChangeAttributeEffectAdditionalInformation OnDivisionAttributeEffectAdditionalInformation;
+	FOnChangeAttributeEffectAdditionalInformation OnSetAttributeEffectAdditionalInformation;
 
 	void BroadcastHPEvent(float Damage = 0) const;
 	void BroadcastMPEvent() const;

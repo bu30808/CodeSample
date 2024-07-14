@@ -30,5 +30,11 @@ public:
 	//이 값이 참이면 밤낮 시뮬레이션을 돌립니다.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Replicated, Category="𝙱𝟷  ·  Animate Time Of Day")
 	bool bAnimateTimeOfDay;
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION(BlueprintImplementableEvent)
+	void SetWeather(class UDataAsset* Weather);
+	UFUNCTION(BlueprintImplementableEvent)
+	class UDataAsset* GetWeather();
 };

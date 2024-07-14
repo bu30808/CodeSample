@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "SkeletalMeshMerge.h"
 #include "00_Character/03_Monster/BaseMonster.h"
 #include "97_Interface/BossMonsterInterface.h"
 #include "Goblin.generated.h"
@@ -22,15 +23,18 @@ protected:
 	class USkeletalMeshComponent* HelmetComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class USkeletalMeshComponent* SkirtComponent;
+	/*
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class USkeletalMeshComponent* LegComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class USkeletalMeshComponent* BracerComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class USkeletalMeshComponent* BodyComponent;
+	*/
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class UStaticMeshComponent* WeaponComponent;
 
+	virtual void BeginPlay() override;
 	
 };
 
@@ -70,18 +74,9 @@ class SOULLIKE_API AGoblinCrystallized : public AGoblin
 public:
 	AGoblinCrystallized();
 protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	class USkeletalMeshComponent* CrystallizedArmComponent;
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	//class USkeletalMeshComponent* CrystallizedBodyComponent;
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	//class USkeletalMeshComponent* CrystallizedLegBottomComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	class USkeletalMeshComponent* CrystallizedLegTopComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	class USkeletalMeshComponent* CrystallizedHeadComponent;
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-//	class USkeletalMeshComponent* CrystallizedShoulderComponent;
+
+	
+
 };
 
 UCLASS()
@@ -94,12 +89,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class UStaticMeshComponent* StaffComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	class USkeletalMeshComponent* CrystallizedBodyComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	class USkeletalMeshComponent* CrystallizedLegBottomComponent;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	class USkeletalMeshComponent* CrystallizedShoulderComponent;
 public:
 	UFUNCTION(BlueprintCallable,BlueprintPure)
 	class UPrimitiveComponent* GetStaffComponent() const {return StaffComponent;}
@@ -139,7 +128,7 @@ public:
 	void SpawnGoblinElite();
 protected:
 	UFUNCTION()
-	void OnGoblinDeadEvent(AActor* Who, AActor* DeadBy);
+	void OnGoblinDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason);
 	
-	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy) override;
+	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason) override;
 };

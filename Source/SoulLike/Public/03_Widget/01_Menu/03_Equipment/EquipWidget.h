@@ -72,10 +72,12 @@ public:
 
 	TArray<class UWidget*> GetAllConsumeQuickSlots();
 	TArray<class UWidget*> GetAllAbilityQuickSlots();
-	void LoadConsumeQuickSlots(const TMap<int32, FGuid>& ConsumeQuick);
+	void LoadItemQuickSlots(const TMap<int32, FGuid>& QuickSlotItemSavedMap);
 	void LoadAbilityQuickSlots(const TMap<int32, FGameplayTag>& AbilityQuick);
 
 protected:
 	UFUNCTION(BlueprintCallable)
-	void OnRemoveAlreadyRegisteredSlotEvent(UInventoryData* Data);
+	int32 OnRemoveAlreadyRegisteredSlotItemEvent(class UItemData* Data);
+	UFUNCTION()
+	void OnRemoveAlreadyRegisteredSlotAbilityEvent(class UAbilityData* Data);
 };

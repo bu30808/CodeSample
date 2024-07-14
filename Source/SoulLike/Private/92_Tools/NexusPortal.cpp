@@ -8,10 +8,7 @@
 #include "92_Tools/WorldStreamingSourceActor.h"
 #include "96_Library/DataLayerHelperLibrary.h"
 #include "Components/BoxComponent.h"
-#include "Components/CapsuleComponent.h"
 #include "GameFramework/PlayerStart.h"
-#include "Kismet/GameplayStatics.h"
-#include "Logging/StructuredLog.h"
 #include "WorldPartition/DataLayer/DataLayerAsset.h"
 #include "WorldPartition/DataLayer/DataLayerSubsystem.h"
 
@@ -53,12 +50,12 @@ void ANexusPortal::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
 
-	OnActorBeginOverlap.AddUniqueDynamic(this, &ANexusPortal::OnActorBeginOverlapEvent);
+	//OnActorBeginOverlap.AddUniqueDynamic(this, &ANexusPortal::OnActorBeginOverlapEvent);
 
 	SetPortalMaterial();
 }
 
-void ANexusPortal::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* OtherActor)
+void ANexusPortal::StartTeleport(AActor* OtherActor)
 {
 	if (OtherActor->IsA<APlayerCharacter>())
 	{
@@ -73,6 +70,13 @@ void ANexusPortal::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* Oth
 
 			if(auto subsystem = UDataLayerManager::GetDataLayerManager(this))
 			{
+
+				for(auto iter : LayerToLoaded)
+				{
+					subsystem->SetDataLayerInstanceRuntimeState(subsystem->GetDataLayerInstance(iter), EDataLayerRuntimeState::Loaded);
+				}
+
+				
 				for (auto iter : LayerToActivate)
 				{
 					subsystem->SetDataLayerInstanceRuntimeState(subsystem->GetDataLayerInstance(iter), EDataLayerRuntimeState::Activated);
@@ -89,22 +93,6 @@ void ANexusPortal::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* Oth
 			}
 
 			
-			/*if (auto subsystem = UDataLayerHelperLibrary::GetDataLayerSubsystem(this))
-			{
-				for (auto iter : LayerToActivate)
-				{
-					subsystem->SetDataLayerInstanceRuntimeState(iter, EDataLayerRuntimeState::Activated);
-				}
-
-				if (auto streamingActor = UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(Player.Get()))
-				{
-					streamingActor->OnStreamingComplete.AddUniqueDynamic(this, &ANexusPortal::OnStreamingCompleteEvent);
-					streamingActor->OnAfterStreamingComplete.AddUniqueDynamic(
-						this, &ANexusPortal::OnAfterStreamingCompleteEvent);
-
-					streamingActor->StreamingStart(TeleportLocation->GetActorLocation());
-				}
-			}*/
 		}
 	}
 }
@@ -121,6 +109,9 @@ void ANexusPortal::OnAfterStreamingCompleteEvent()
 {
 	if (Player.IsValid())
 	{
+		Player->SetActorRotation(TeleportLocation->GetActorRotation());
+		Player->ResetCameraBoom();
 		Player->ShowLoadingScreen(false);
+		Player->GetController<APlayerController>()->SetViewTargetWithBlend(Player.Get());
 	}
 }

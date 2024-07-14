@@ -50,7 +50,7 @@ public:
 	void RespawnMonsters(class APlayerCharacter* Player);
 	//월드 파티션 환경에서 몬스터 사망시 휴식을 취하지 않아도 몬스터가 다시 로드될 때 되살아나는것을 막기 위해 상태저장을 위해 사용합니다.
 	UFUNCTION()
-	void OnDeadMonsterEvent(AActor* Who, AActor* DeadBy);
+	void OnDeadMonsterEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason);
 
 	//사망으로 기록된 몬스터의 상태를 사망으로 되돌립니다.
 	void RestoreMonsterState(class ABaseMonster* BaseMonster);
@@ -61,16 +61,18 @@ public:
 	UFUNCTION()
 	void ClearTemporarySavedMonsterData(APlayerCharacter* Player);
 
-	/*
-	private:
-		void Respawn(const UWorld* World, const FTransform& SpawnTr, TSubclassOf<AActor> MonsterClass, const TArray<TObjectPtr<const
-		             UDataLayerAsset>>& LayerInfo);*/
+	UFUNCTION(BlueprintCallable)
+	const TMap<FName, FCharacterSave>& GetSavedMonsterState(){return TemporarySavedMonsterState;}
+
+	void SaveMonsterState(class ABaseMonster* BaseMonster);
 };
 
-
+#if WITH_EDITOR
 //이 게임모드를 사용중일때는 저장기능이 동작하지 않습니다.
 UCLASS(minimalapi)
 class ATESTGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 };
+#endif
+

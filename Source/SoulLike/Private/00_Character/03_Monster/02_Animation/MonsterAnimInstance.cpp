@@ -42,6 +42,7 @@ void UMonsterAnimInstance::AnimNotify_OnHitEnter_Implementation()
 	Super::AnimNotify_OnHitEnter_Implementation();
 }
 
+/*
 void UMonsterAnimInstance::AnimNotify_OnHitExit_Implementation()
 {
 	Super::AnimNotify_OnHitExit_Implementation();
@@ -61,6 +62,7 @@ void UMonsterAnimInstance::AnimNotify_OnHitExit_Implementation()
 		}
 	}
 }
+*/
 
 void UMonsterAnimInstance::ChangeBoneTransform_Implementation(float DeltaTime)
 {

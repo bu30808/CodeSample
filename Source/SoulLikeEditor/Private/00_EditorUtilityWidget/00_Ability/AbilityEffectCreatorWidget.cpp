@@ -4,6 +4,7 @@
 #include "00_EditorUtilityWidget/00_Ability/AbilityEffectCreatorWidget.h"
 
 
+#include "SoulLikeEditor.h"
 #include "02_Library/BlueprintHelperLibrary.h"
 #include "Components/Button.h"
 #include "Components/CheckBox.h"
@@ -14,17 +15,59 @@
 #include "Logging/StructuredLog.h"
 
 
+ULinetraceEffectDetails::ULinetraceEffectDetails()
+{
+	if(Effect!=nullptr)
+	{
+		Effect->ConditionalBeginDestroy();
+	}
+	Effect = NewObject<UAbilityEffect_Linetrace>();
+}
+
 void UAbilityEffectCreatorWidget::OnSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType)
 {
 	SelectedType = SelectedItem;
 
 	if (SelectedItem.Equals(TEXT("일반")))
 	{
-		DetailsView_Effect->SetObject(NewObject<UNormalEffectInfo>());
+		if (EffectHandler != nullptr)
+		{
+			if(!EffectHandler->IsA<UAbilityEffectDetails>())
+			{
+				EffectHandler->ConditionalBeginDestroy();
+				EffectHandler = nullptr;
+				EffectHandler = NewObject<UAbilityEffectDetails>();
+							
+			}
+		}
+
+		if(EffectHandler ==nullptr)
+		{
+			EffectHandler = NewObject<UAbilityEffectDetails>();
+		}
+		
+		DetailsView_Effect->SetObject(EffectHandler);
 	}
 	else
 	{
-		DetailsView_Effect->SetObject(NewObject<ULinetraceEffectInfo>());
+		
+		if (EffectHandler != nullptr)
+		{
+			if(!EffectHandler->IsA<ULinetraceEffectDetails>())
+			{
+				EffectHandler->ConditionalBeginDestroy();
+				EffectHandler = nullptr;
+				EffectHandler = NewObject<ULinetraceEffectDetails>();
+							
+			}
+		}
+
+		if(EffectHandler ==nullptr)
+		{
+			EffectHandler = NewObject<ULinetraceEffectDetails>();
+		}
+		
+		DetailsView_Effect->SetObject(EffectHandler);
 	}
 }
 
@@ -56,7 +99,7 @@ void UAbilityEffectCreatorWidget::OnClicked()
 
 		if (SelectedType.Equals(TEXT("일반")))
 		{
-			auto normalInfo = Cast<UNormalEffectInfo>(data);
+			auto normalInfo = Cast<UAbilityEffectDetails>(data);
 
 			bp = UBlueprintHelperLibrary::CreateBlueprint(fullPath, normalInfo->Effect->GetClass(), bSucc, msg);
 			if (bSucc == false)
@@ -64,20 +107,22 @@ void UAbilityEffectCreatorWidget::OnClicked()
 				UBlueprintHelperLibrary::ShowAlertDialog(FText::FromString(msg));
 			}
 
-			Cast<UAbilityEffect>(bp->GeneratedClass.GetDefaultObject())->CopyValues(normalInfo->Effect);
+			CopyOriginalToTarget<UAbilityEffect>(normalInfo->Effect,Cast<UAbilityEffect>(bp->GeneratedClass.GetDefaultObject()));
 		}
 		else
 		{
-			auto linetraceInfo = Cast<ULinetraceEffectInfo>(data);
+			auto linetraceInfo = Cast<ULinetraceEffectDetails>(data);
 			bp = UBlueprintHelperLibrary::CreateBlueprint(fullPath, linetraceInfo->Effect->GetClass(), bSucc, msg);
 			if (bSucc == false)
 			{
 				UBlueprintHelperLibrary::ShowAlertDialog(FText::FromString(msg));
 			}
-			Cast<UAbilityEffect>(bp->GeneratedClass.GetDefaultObject())->CopyValues(linetraceInfo->Effect);
+			CopyOriginalToTarget<UAbilityEffect>(linetraceInfo->Effect,Cast<UAbilityEffect>(bp->GeneratedClass.GetDefaultObject()));
 		}
 
-		bp->MarkPackageDirty();
+		if(bp->MarkPackageDirty()){
+			UBlueprintHelperLibrary::ShowAlertDialog(FText::FromString(TEXT("생성 완료. 저장하지 않으면 날아갑니다.")));
+		}
 	}
 }
 

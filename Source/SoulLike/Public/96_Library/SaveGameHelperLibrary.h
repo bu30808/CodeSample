@@ -37,7 +37,7 @@ public:
 	static bool IsAlreadyReadTutorial(class ATutorialActor* TutorialActor);
 
 	UFUNCTION(BlueprintCallable)
-	static void SaveKillBoss(class ABaseMonster* BossMonster);
+	static void SaveKillBoss(class ABaseMonster* BossMonster, ABaseCharacter* DeadBy);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	static bool IsBossKilled(class UObject* WorldContext, FGameplayTag BossMonsterTag);

@@ -6,6 +6,7 @@
 #include "TimerManager.h"
 #include "02_Ability/AbilityBase.h"
 #include "02_Ability/AbilityEffect.h"
+#include "96_Library/AbilityHelperLibrary.h"
 #include "Logging/StructuredLog.h"
 
 DEFINE_LOG_CATEGORY(LogAbilityComponent)
@@ -476,6 +477,16 @@ void UAbilityComponent::ForceEndAllAbility()
 
 AAbilityCue* UAbilityComponent::ApplyCue(FAbilityCueInformation CueInformation)
 {
+
+	if(CueInformation.bIsHitEffectCue)
+	{
+		if(UAbilityHelperLibrary::IsInvincible(GetOwner()))
+		{
+			return nullptr;
+		}
+	}
+
+	
 	if (CueInformation.AbilityCueObject != nullptr/* && GetOwner<ABaseCharacter>()->IsDead() == false*/)
 	{
 		if (CueInformation.AbilityCueType == EAbilityCueType::AttachToTarget || CueInformation.AbilityCueType ==

@@ -42,7 +42,7 @@ protected:
 public:
 		
 	virtual void AnimNotify_OnHitEnter_Implementation() override;
-	virtual void AnimNotify_OnHitExit_Implementation() override;
+	/*virtual void AnimNotify_OnHitExit_Implementation() override;*/
 
 protected:
 	virtual void ChangeBoneTransform_Implementation(float DeltaTime) override;

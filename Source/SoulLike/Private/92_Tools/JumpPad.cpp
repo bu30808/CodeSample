@@ -22,6 +22,7 @@ AJumpPad::AJumpPad()
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
 
 	RootSceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 	RootComponent = RootSceneComponent;
@@ -56,7 +57,6 @@ AJumpPad::AJumpPad()
 void AJumpPad::BeginPlay()
 {
 	Super::BeginPlay();
-	SetActorTickEnabled(false);
 }
 
 void AJumpPad::PostInitializeComponents()

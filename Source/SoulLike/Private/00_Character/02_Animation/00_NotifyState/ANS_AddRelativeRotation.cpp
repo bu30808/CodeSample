@@ -42,6 +42,8 @@ void UANS_AddRelativeRotation::NotifyEnd(USkeletalMeshComponent* MeshComp, UAnim
 	Super::NotifyEnd(MeshComp, Animation, EventReference);
 	if (MeshComp)
 	{
-		MeshComp->SetRelativeRotation(OriginalRelativeRot);
+		if(bShouldRestoreWhenNotifyEnd){
+			MeshComp->SetRelativeRotation(OriginalRelativeRot);
+		}
 	}
 }

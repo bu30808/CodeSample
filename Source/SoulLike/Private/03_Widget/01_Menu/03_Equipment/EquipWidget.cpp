@@ -13,6 +13,7 @@
 #include "Components/UniformGridPanel.h"
 #include "Components/VerticalBox.h"
 #include "Logging/StructuredLog.h"
+#include "SoulLike/SoulLike.h"
 
 void UEquipWidget::NativePreConstruct()
 {
@@ -32,24 +33,24 @@ void UEquipWidget::NativePreConstruct()
 		}
 	}
 
-
 	for (auto i = 0; i < UniformGridPanel_Consume->GetChildrenCount(); i++)
 	{
-		if (auto widget = Cast<UQuickSlotButtonWidget>(UniformGridPanel_Consume->GetChildAt(i)))
+		if (auto widget = Cast<UItemQuickSlotButtonWidget>(UniformGridPanel_Consume->GetChildAt(i)))
 		{
+			widget->OnRemoveAlreadyRegisteredSlotItem.BindUObject(this, &UEquipWidget::OnRemoveAlreadyRegisteredSlotItemEvent);
 			widget->SetIndex(i);
-			widget->SetQuickSlotType(EQuickSlotType::CONSUME);
-			widget->OnRemoveAlreadyRegisteredSlot.AddUniqueDynamic(
-				this, &UEquipWidget::OnRemoveAlreadyRegisteredSlotEvent);
 		}
 	}
-
+	
 	for (auto i = 0; i < UniformGridPanel_Ability->GetChildrenCount(); i++)
 	{
-		Cast<UQuickSlotButtonWidget>(UniformGridPanel_Ability->GetChildAt(i))->SetIndex(i);
-		Cast<UQuickSlotButtonWidget>(UniformGridPanel_Ability->GetChildAt(i))->
-			SetQuickSlotType(EQuickSlotType::ABILITY);
+		if (auto widget = Cast<UAbilityQuickSlotButtonWidget>(UniformGridPanel_Consume->GetChildAt(i)))
+		{
+			widget->OnRemoveAlreadyRegisteredSlotAbility.AddUniqueDynamic(this,&UEquipWidget::OnRemoveAlreadyRegisteredSlotAbilityEvent);
+			widget->SetIndex(i);
+		}
 	}
+	
 
 	if (VerticalBox)
 	{
@@ -169,15 +170,7 @@ void UEquipWidget::RemoveRingSlot()
 			Cast<UEquipButtonWidget>(widget)->UnEquip();
 		}
 	}
-	/*if (AdditionalRingWidget.Num() > 0)
-	{
-		if (const auto button = AdditionalRingWidget[0])
-		{
-			button->UnEquip();
-			AdditionalRingWidget.RemoveAt(0);
-			button->RemoveFromParent();
-		}
-	}*/
+
 }
 
 int32 UEquipWidget::FindIndexByID(FGuid UniqueID)
@@ -249,41 +242,77 @@ TArray<UWidget*> UEquipWidget::GetAllAbilityQuickSlots()
 	return UniformGridPanel_Ability->GetAllChildren();
 }
 
-void UEquipWidget::LoadConsumeQuickSlots(const TMap<int32, FGuid>& ConsumeQuick)
+void UEquipWidget::LoadItemQuickSlots(const TMap<int32, FGuid>& QuickSlotItemSavedMap)
 {
-	for (auto iter : ConsumeQuick)
+	UE_LOGFMT(LogUMG,Log,"{0} {1} 퀵슬롯 정보를 불러와 복구합니다.",__FUNCTION__,__LINE__);
+	for (auto iter : QuickSlotItemSavedMap)
 	{
+		UE_LOGFMT(LogUMG,Log,"{0} {1} 읽어온 아이템 : {2} 슬롯, {3}",__FUNCTION__,__LINE__,iter.Value,iter.Key);
 		const auto& index = iter.Key;
-		Cast<UQuickSlotButtonWidget>(UniformGridPanel_Consume->GetChildAt(index))->RestoreSlotFromItemGUID(iter.Value);
+		const auto& itemID = iter.Value;
+		if(auto button = Cast<UItemQuickSlotButtonWidget>(UniformGridPanel_Consume->GetChildAt(index)))
+		{
+			button->RestoreSlotFromUniqueID(itemID);
+		}
 	}
 }
 
 void UEquipWidget::LoadAbilityQuickSlots(const TMap<int32, FGameplayTag>& AbilityQuick)
 {
-	for (auto iter : AbilityQuick)
+	UE_LOGFMT(LogUMG,Error,"LoadAbilityQuickSlots : 아직 작성되지 않은 부분입니다.");
+	/*for (auto iter : AbilityQuick)
 	{
 		const auto& index = iter.Key;
 		Cast<UQuickSlotButtonWidget>(UniformGridPanel_Ability->GetChildAt(index))->
 			RestoreSlotFromAbilityTag(iter.Value);
-	}
+	}*/
 }
 
-void UEquipWidget::OnRemoveAlreadyRegisteredSlotEvent(UInventoryData* Data)
+int32 UEquipWidget::OnRemoveAlreadyRegisteredSlotItemEvent(UItemData* Data)
 {
-	if (Data->IsA<UItemData>())
+	UE_LOGFMT(LogUMG,Log,"이미 다른 퀵슬롯에 등록된 아이템 정보를 찾아 제거합니다.");
+	if (Data->IsValidLowLevel())
 	{
 		auto c = UniformGridPanel_Consume->GetAllChildren();
 		for (auto w : c)
 		{
-			if (auto button = Cast<UQuickSlotButtonWidget>(w))
+			if (auto button = Cast<UItemQuickSlotButtonWidget>(w))
 			{
-				if (auto data = button->GetQuickSlotData())
+				if(auto otherButtonData = button->GetSlotData<UItemData>())
 				{
-					if (Cast<UItemData>(data)->InventoryItem.UniqueID == Cast<UItemData>(Data)->InventoryItem.UniqueID)
+					if(otherButtonData->InventoryItem.UniqueID == Data->InventoryItem.UniqueID)
 					{
-						button->Init(nullptr, true);
+						UE_LOGFMT(LogUMG,Log,"발견");
+						button->ClearSlot();
+						return button->GetIndex();
+					}
+				}
+			}
+		}
+	}
+
+	return -1;
+}
+
+void UEquipWidget::OnRemoveAlreadyRegisteredSlotAbilityEvent(UAbilityData* Data)
+{
+	UE_LOGFMT(LogUMG,Log,"이미 다른 퀵슬롯에 등록된 어빌리티 정보를 찾아 제거합니다.");
+	if (Data->IsValidLowLevel())
+	{
+		auto c = UniformGridPanel_Consume->GetAllChildren();
+		for (auto w : c)
+		{
+			if (auto button = Cast<UItemQuickSlotButtonWidget>(w))
+			{
+				if(auto otherButtonData = button->GetSlotData<UAbilityData>())
+				{
+					if(otherButtonData->AbilityInformation.AbilityTag.MatchesTagExact(Data->AbilityInformation.AbilityTag))
+					{
+						UE_LOGFMT(LogUMG,Log,"발견");
+						button->ClearSlot();
 						return;
 					}
+					
 				}
 			}
 		}

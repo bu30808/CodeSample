@@ -18,17 +18,19 @@ class SOULLIKE_API UGameplayTask_WaitKeyInput : public UGameplayTask
 	GENERATED_BODY()
 
 private:
-	UPROPERTY()
+	UPROPERTY(Transient)
 	FKeyPressedInfo WaitAction;
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TWeakObjectPtr<class APlayerController> PC;
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TWeakObjectPtr<class APlayerCharacter> PlayerCharacter;
 
 	bool bWaitCont = false;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TArray<FKey> Actionkeys;
+	UPROPERTY(Transient)
+	EInputType WaitInputType;
 
 	/*UPROPERTY()
 	TWeakObjectPtr<class UEnhancedInputLocalPlayerSubsystem> InputLocalPlayerSubsystem;*/
@@ -40,12 +42,13 @@ public:
 	 * @brief 플레이어의 특정 키 입력을 기다리는 태스크
 	 * @param playerCharacter 키를 기다리는 대상 
 	 * @param waitKey 어떤 키를 기다리는가?
+	 * @param InputType
 	 * @param bAutoTaskEnd 키를 받았다면 자동으로 종료할 것인가? 거짓이면 키 입력을 다시 기다리게 됩니다.
 	 * @return 
 	 */
 	UFUNCTION(BlueprintCallable)
 	static UGameplayTask_WaitKeyInput* WaitKeyInput(class APlayerCharacter* Player, const FKeyPressedInfo& ActionInfo,
-	                                                bool bAutoTaskEnd = true);
+	                                                EInputType InputType, bool bAutoTaskEnd = true);
 
 
 	virtual void Activate() override;
@@ -55,4 +58,6 @@ public:
 	//기다리던 키가 눌렸을 때, 호출되는 이벤트입니다.
 	UPROPERTY(BlueprintAssignable)
 	FOnKeyPressedWithAction OnKeyPressedWithAction;
+	UPROPERTY(BlueprintAssignable)
+	FOnKeyReleasedWithAction OnKeyReleasedWithAction;
 };

@@ -76,13 +76,8 @@ void ASoulTomb::Absorption(APlayerCharacter* PlayerCharacter)
 	if (auto attComp = PlayerCharacter->GetAttributeComponent())
 	{
 		attComp->SetEXP(attComp->GetEXP() + EXP);
+		attComp->OnUpdateExp.Broadcast(attComp->GetEXP());
 		attComp->OnCharacterInformationUpdate.Broadcast();
-
-		if (auto instance = UGameplayStatics::GetGameInstance(this))
-		{
-			Cast<USoulLikeInstance>(instance)->SaveAttribute(PlayerCharacter);
-		}
-
 		Destroy();
 	}
 }

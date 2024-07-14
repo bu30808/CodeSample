@@ -4,6 +4,7 @@
 #include "96_Library/LevelEventHelperLibrary.h"
 
 #include "00_Character/00_Player/PlayerCharacter.h"
+#include "00_Character/00_Player/01_Component/BossHelperComponent.h"
 #include "00_Character/03_Monster/BaseMonster.h"
 #include "96_Library/DataLayerHelperLibrary.h"
 #include "96_Library/SaveGameHelperLibrary.h"
@@ -12,11 +13,28 @@
 #include "WorldPartition/DataLayer/DataLayerAsset.h"
 #include "WorldPartition/DataLayer/DataLayerSubsystem.h"
 
-void AMainLevelScriptActor::OnDeadBossEvent_Implementation(AActor* Who, AActor* DeadBy)
+AMainLevelScriptActor::AMainLevelScriptActor()
+{
+	PrimaryActorTick.bCanEverTick = false;
+
+}
+
+void AMainLevelScriptActor::OnDeadBossEvent_Implementation(AActor* Who, AActor* DeadBy, EDeadReason DeadReason)
 {
 	Cast<ABaseMonster>(Who)->OnDead.RemoveAll(this);
 	Cast<ABaseMonster>(Who)->StopMusic(3.f);
-	ULevelEventHelperLibrary::ActiveBlockingActors(BlockingActors, false);
+
+
+	if(DeadBy->IsA<APlayerCharacter>()==false)
+	{
+		DeadBy = UGameplayStatics::GetPlayerCharacter(Who,0);
+	}
+
+	if(auto player = Cast<APlayerCharacter>(DeadBy))
+	{
+		player->GetBossHelperComponent()->DisableTrigger();
+		player->GetBossHelperComponent()->DisableMistBlock();
+	}
 }
 
 bool AMainLevelScriptActor::IsAlreadySet(AActor* Player, const TArray<UDataLayerAsset*>& LayerToActive,
@@ -155,6 +173,13 @@ ABaseMonster* ULevelEventHelperLibrary::SpawnBoss(AMainLevelScriptActor* ScriptA
 
 	//못 나가게 길에 블록을 활성화 합니다.
 	ActiveBlockingActors(BlockingActors, true);
+
+	//나중에 플레이어가 사망하면 초기상태로 되돌리기 위해 전달합니다.
+	if(auto player = Cast<APlayerCharacter>(OverlapActor))
+	{
+		player->GetBossHelperComponent()->AddTrigger(Trigger);
+		player->GetBossHelperComponent()->AddMistBlock(BlockingActors);
+	}
 
 	ScriptActor->BlockingActors = BlockingActors;
 

@@ -67,7 +67,7 @@ void UBonfireComponent::Rest(APlayerCharacter* Player)
 
 	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 	{
-		instance->SaveWithLastSavePoint(Player, this);
+		instance->SaveLastCheckpoint(Player, this);
 	}
 }
 

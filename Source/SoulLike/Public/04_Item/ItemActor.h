@@ -165,7 +165,7 @@ public:
 	FText Item_Name;
 
 	//아이템 설명(ex. 체력을 {0}만큼 회복합니다)
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,meta=(MultiLine = "true"))
 	FText Item_Description;
 
 	//아이템 가격

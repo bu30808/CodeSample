@@ -70,3 +70,14 @@ public:
 	virtual float ProcessAttributeEffect(class UAttributeComponent* AttributeComponent, const FAttributeEffect& Effect,
 	                                     float DeltaTime = 1, UObject* AdditionalInformation = nullptr) override;
 };
+
+UCLASS()
+class UAttributeProcessor_Set : public UAttributeProcessor
+{
+	GENERATED_BODY()
+
+public:
+	//적용된 값을 리턴합니다.
+	virtual float ProcessAttributeEffect(class UAttributeComponent* AttributeComponent, const FAttributeEffect& Effect,
+										 float DeltaTime = 1, UObject* AdditionalInformation = nullptr) override;
+};

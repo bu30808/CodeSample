@@ -171,6 +171,7 @@ float UAttributeProcessor_Add::ProcessAttributeEffect(class UAttributeComponent*
 			AttributeComponent->SetPetrifactionResist(FMath::Clamp(setValue, 0,INT_MAX));
 			break;
 		case EAttributeType::PoisonAcc:
+			UE_LOGFMT(LogTemp,Log,"독 누적치 갱신 : 현재값 {0}, 증가시킬 값 {1}, 누적값 : {2}",AttributeComponent->GetPoisonAcc(),Effect.ApplyValue * DeltaTime,AttributeComponent->GetPoisonAcc() + Effect.ApplyValue * DeltaTime);
 			setValue = AttributeComponent->GetPoisonAcc() + Effect.ApplyValue * DeltaTime;
 			AttributeComponent->SetPoisonAcc(FMath::Clamp(setValue, 0, AttributeComponent->GetPoisonResist()));
 			break;
@@ -780,6 +781,187 @@ float UAttributeProcessor_Division::ProcessAttributeEffect(UAttributeComponent* 
 	{
 		const auto addInfo = Cast<UAbilityEffectAdditionalInformation>(AdditionalInformation);
 		AttributeComponent->OnDivisionAttributeEffectAdditionalInformation.Broadcast(Effect, addInfo, DeltaTime);
+	}
+
+	return setValue;
+}
+
+float UAttributeProcessor_Set::ProcessAttributeEffect(UAttributeComponent* AttributeComponent,
+	const FAttributeEffect& Effect, float DeltaTime, UObject* AdditionalInformation)
+{
+	Super::ProcessAttributeEffect(AttributeComponent, Effect, DeltaTime, AdditionalInformation);
+
+	float setValue = 0;
+	if (AttributeComponent)
+	{
+		switch (Effect.Attribute)
+		{
+		case EAttributeType::NONE:
+			break;
+		case EAttributeType::HP:
+			setValue = FMath::Clamp(Effect.ApplyValue * DeltaTime, 0,
+			                        AttributeComponent->GetMaxHP());
+			AttributeComponent->SetHP(setValue);
+			AttributeComponent->BroadcastHPEvent(Effect.ApplyValue * DeltaTime);
+			break;
+		case EAttributeType::SP:
+			//UE_LOGFMT(LogTemp,Log,"초당 회복량 : {0}",Effect.ApplyValue);
+			setValue = FMath::Clamp(Effect.ApplyValue * DeltaTime, 0,
+			                        AttributeComponent->GetMaxSP());
+			AttributeComponent->SetSP(setValue);
+			AttributeComponent->BroadcastSPEvent();
+			break;
+		case EAttributeType::MP:
+			setValue = FMath::Clamp(Effect.ApplyValue * DeltaTime, 0,
+			                        AttributeComponent->GetMaxMP());
+			AttributeComponent->SetMP(setValue);
+			AttributeComponent->BroadcastMPEvent();
+			break;
+		case EAttributeType::MaxHP:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetMaxHP(setValue);
+			AttributeComponent->BroadcastMaxHPEvent();
+			AttributeComponent->BroadcastHPEvent(0);
+			break;
+		case EAttributeType::MaxSP:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetMaxSP(setValue);
+			AttributeComponent->BroadcastMaxSPEvent();
+			AttributeComponent->BroadcastSPEvent();
+			break;
+		case EAttributeType::MaxMP:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetMaxMP(setValue);
+			AttributeComponent->BroadcastMaxMPEvent();
+			AttributeComponent->BroadcastMPEvent();
+			break;
+		case EAttributeType::RecoverHP:
+			setValue =  Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetRecoverHP(setValue);
+			break;
+		case EAttributeType::RecoverSP:
+			setValue =  Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetRecoverSP(setValue);
+			break;
+		case EAttributeType::RecoverMP:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetRecoverHitMP(setValue);
+			break;
+		case EAttributeType::PhysicalAttack:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetPhysicalAttack(
+				setValue);
+			break;
+		case EAttributeType::MagicalAttack:
+			setValue =Effect.ApplyValue * DeltaTime;
+			AttributeComponent->
+				SetMagicalAttack(setValue);
+			break;
+		case EAttributeType::PhysicalDefense:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetPhysicalDefense(
+				setValue);
+			break;
+		case EAttributeType::MagicalDefense:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetMagicalDefense(
+				setValue);
+			break;
+		case EAttributeType::Endurance:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetEndurance(setValue);
+			break;
+		case EAttributeType::Strength:
+			setValue =Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetStrength(setValue);
+			break;
+		case EAttributeType::Dexterity:
+			setValue =  Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetDexterity(setValue);
+			break;
+		case EAttributeType::Intelligence:
+			setValue =  Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetIntelligence(setValue);
+			break;
+		case EAttributeType::Willpower:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetWillpower(setValue);
+			break;
+		case EAttributeType::ActionSpeed:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetActionSpeed(setValue);
+			break;
+		case EAttributeType::Level:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetLevel(setValue);
+			break;
+		case EAttributeType::EXP:
+			setValue =  Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetEXP(setValue);
+			break;
+		case EAttributeType::PoisonResist:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetPoisonResist(setValue);
+			break;
+		case EAttributeType::DeadlyPoisonResist:
+			setValue =  Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetDeadlyPoisonResist(setValue);
+			break;
+		case EAttributeType::BurnResist:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetBurnResist(setValue);
+			break;
+		case EAttributeType::ChillResist:
+			setValue =  Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetChillResist(setValue);
+			break;
+		case EAttributeType::BleedResist:
+			setValue =  Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetBleedResist(setValue);
+			break;
+		case EAttributeType::PetrifactionResist:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetPetrifactionResist(setValue);
+			break;
+		case EAttributeType::PoisonAcc:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetPoisonAcc(setValue);
+			break;
+		case EAttributeType::DeadlyPoisonAcc:
+			setValue =  Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetDeadlyPoisonAcc(setValue);
+			break;
+		case EAttributeType::BurnAcc:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetBurnAcc(setValue);
+			break;
+		case EAttributeType::ChillAcc:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetChillAcc(setValue);
+			break;
+		case EAttributeType::BleedAcc:
+			setValue = Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetBleedAcc(setValue);
+			break;
+		case EAttributeType::PetrifactionAcc:
+			setValue =  Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetPetrifactionAcc(setValue);
+			break;
+		case EAttributeType::MoveSpeed:
+			setValue =  Effect.ApplyValue * DeltaTime;
+			AttributeComponent->SetMoveSpeed(FMath::Clamp(setValue, 0,INT_MAX));
+			AttributeComponent->OnChangedMoveSpeedAttribute.Broadcast();
+			break;
+		case EAttributeType::MAX:
+			break;
+		default: ;
+		}
+	}
+	UpdateCharacterInfoToWidget(Effect, AttributeComponent);
+	if (AdditionalInformation != nullptr && AdditionalInformation->IsA<UAbilityEffectAdditionalInformation>())
+	{
+		const auto addInfo = Cast<UAbilityEffectAdditionalInformation>(AdditionalInformation);
+		AttributeComponent->OnSetAttributeEffectAdditionalInformation.Broadcast(Effect, addInfo, DeltaTime);
 	}
 
 	return setValue;

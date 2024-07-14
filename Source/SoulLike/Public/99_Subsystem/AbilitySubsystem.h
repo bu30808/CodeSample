@@ -11,6 +11,30 @@
  * 
  */
 
+USTRUCT()
+struct FAnimationNotifyEffects
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(Transient)
+	TArray<class UAbilityEffect*> Effects;
+
+	FAnimationNotifyEffects() {}
+	FAnimationNotifyEffects(const TArray<class UAbilityEffect*>& AppliedEffects): Effects(AppliedEffects)
+	{
+		
+	}
+};
+
+
+USTRUCT()
+struct FAnimationNotifyProjectiles
+{
+	GENERATED_BODY()
+public:
+	UPROPERTY(Transient)
+	TArray<class AProjectileActor*> Projectiles;
+};
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnSavedAbilityEvent);
 
 UCLASS()
@@ -19,24 +43,16 @@ class SOULLIKE_API UAbilitySubsystem : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 public:
-	//특정 어빌리티에 대한 이벤트를 저장합니다.
-	TMap<FGameplayTag, FOnSavedAbilityEvent> EventMap;
-
-	//특정 어빌리티에 대한 이벤트가 있다면 브로드케스트합니다.
-	UFUNCTION(BlueprintCallable)
-	void TriggerSavedEvent(FGameplayTag AbilityTag);
-
-	//특정 어빌리티에 대한 이벤트를 제거합니다.
-	UFUNCTION(BlueprintCallable)
-	void RemoveSavedEvent(FGameplayTag AbilityTag);
 
 	//애니메이션 노티파이의 ApplyEffect시 캐릭터별로 저장할 Effect배열입니다.
-	TMap<AActor*, TArray<class UAbilityEffect*>> AppliedEffectDuringAnimation;
+	UPROPERTY()
+	TMap<AActor*, FAnimationNotifyEffects> AppliedEffectDuringAnimation;
 
 	/********************************************************/
 
 	//애니메이션 노티파이에서 생성되는 발사체를 관리할 내용들
-	TMap<ABaseCharacter*, TArray<class AProjectileActor*>> Projectiles;
+	UPROPERTY()
+	TMap<AActor*, FAnimationNotifyProjectiles> Projectiles;
 
 	UFUNCTION(BlueprintCallable)
 	void AddProjectile(class ABaseCharacter* Owner, class AProjectileActor* Projectile);
@@ -44,5 +60,9 @@ public:
 	TArray<AProjectileActor*> GetProjectiles(ABaseCharacter* Owner);
 
 	UFUNCTION(BlueprintCallable)
-	void RemoveProjectiles(ABaseCharacter* Owner);
+	void ClearProjectiles(class ABaseCharacter* Owner);
+	UFUNCTION(BlueprintCallable)
+	void RemoveProjectile(class AProjectileActor* Projectile);
+	UFUNCTION()
+	void OnDestroyedProjectile(AActor* DestroyedActor);
 };

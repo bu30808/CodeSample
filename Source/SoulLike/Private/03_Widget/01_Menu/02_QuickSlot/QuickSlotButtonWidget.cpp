@@ -15,54 +15,14 @@
 #include "Components/TextBlock.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
-
-
-/*
-void UQuickSlotButtonWidget::LinkToMainWidgetSlot(bool bClear)
-{
-
-	if(InventoryData==nullptr)
-	{
-		return;
-	}
-	
-	//메인 위젯의 퀵슬롯과 연동해야 합니다.
-	if(auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
-	{
-		switch(QuickSlotType)
-		{
-		case EQuickSlotType::CONSUME:
-			if(bClear)
-			{
-				invenComp->RemoveQuickSlotItem(InventoryData,Index);
-			}else
-			{
-				invenComp->AddQuickSlotItem(InventoryData,Index);
-			}
-			break;
-		case EQuickSlotType::ABILITY:
-			if(bClear)
-			{
-				invenComp->RemoveQuickSlotAbility(InventoryData,Index);
-			}else
-			{
-				invenComp->AddQuickSlotAbility(InventoryData,Index);
-			}
-			break;
-		}
-	}
-
-}*/
-
-void UQuickSlotButtonWidget::SetQuickSlotType(EQuickSlotType NewType)
-{
-	QuickSlotType = NewType;
-}
+#include "SoulLike/SoulLike.h"
 
 void UQuickSlotButtonWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
-	TextBlock_Key->SetText(KeyText);
+	if(TextBlock_Key){
+		TextBlock_Key->SetText(KeyText);
+	}
 }
 
 void UQuickSlotButtonWidget::NativeConstruct()
@@ -75,157 +35,115 @@ void UQuickSlotButtonWidget::NativeConstruct()
 	{
 		MainQuickSlotWidget = Cast<UMainWidget>(
 			pc->GetWidgetManagerComponent()->GetWidget(FGameplayTag::RequestGameplayTag("Widget.Main")))->UMG_QuickSlot;
-	}
 
+		InventoryComponent = GetOwningPlayerPawn<APlayerCharacter>()->GetInventoryComponent();
+	}
+}
+
+void UQuickSlotButtonWidget::ClearSlot()
+{
+	UE_LOGFMT(LogUMG,Log,"이 슬롯을 클리어 합니다 : {0}",GetName());
+		
+	InventoryData = nullptr;
+	TextBlock_Count->SetText(FText::GetEmpty());
+	Image->SetBrushFromSoftTexture(DefaultImage);
+	Image->SetColorAndOpacity(FLinearColor(1,1,1,0.75));
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+void UItemQuickSlotButtonWidget::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+	QuickSlotType = EQuickSlotType::CONSUME;
+}
+
+void UItemQuickSlotButtonWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+	
 	if (auto player = GetOwningPlayerPawn<APlayerCharacter>())
 	{
 		if (QuickSlotType == EQuickSlotType::CONSUME)
 		{
 			player->GetInventoryComponent()->OnItemQuickSlotUpdate.AddUniqueDynamic(
-				this, &UQuickSlotButtonWidget::OnRefreshItemSlot);
+				this, &UItemQuickSlotButtonWidget::OnRefreshItemSlot);
 			player->GetInventoryComponent()->OnRemoveItem.AddUniqueDynamic(
-				this, &UQuickSlotButtonWidget::OnSlotItemRemoved);
+				this, &UItemQuickSlotButtonWidget::OnSlotItemRemoved);
+			
 		}
-		else
-		{
-			player->GetAbilityComponent()->OnRemoveAbility.AddUniqueDynamic(
-				this, &UQuickSlotButtonWidget::OnRemoveAbilityEvent);
-		}
+	
 
-		if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(player)))
-		{
-			OnRegisterItemOrAbility.AddUniqueDynamic(instance, &USoulLikeInstance::OnRegisterQuickSlotItemOrAbility);
-			OnUnRegisterItemOrAbility.
-				AddUniqueDynamic(instance, &USoulLikeInstance::OnUnRegisterQuickSlotItemOrAbility);
-		}
 	}
 }
 
-void UQuickSlotButtonWidget::Init(UInventoryData* Data, bool bShouldClearData, bool bFromMainQuickSlot)
-{
-	if (bFromMainQuickSlot == false)
-	{
-		//메인에 붙어있는 슬롯에서는 -1번이 옵니다. 주의하세요.
-		if (Index < 0)
-		{
-			UE_LOGFMT(LogTemp, Error, "퀵슬롯에 할당된 번호가 잘못되었습니다. : {0}", GetName());
-			return;
-		}
-	}
-
-	UE_LOGFMT(LogTemp, Log, "퀵슬롯 버튼 초기화 : {0}", Index);
-	if (bShouldClearData)
-	{
-		Image->SetBrushFromSoftTexture(DefaultImage);
-		TextBlock_Count->SetText(FText::GetEmpty());
-		InventoryData = nullptr;
-
-		if (bFromMainQuickSlot == false)
-		{
-			if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
-			{
-				switch (QuickSlotType)
-				{
-				case EQuickSlotType::CONSUME:
-					invenComp->RemoveQuickSlotItem(InventoryData, Index);
-					break;
-				case EQuickSlotType::ABILITY:
-					invenComp->RemoveQuickSlotAbility(InventoryData, Index);
-					break;
-				}
-			}
-		}
-		OnUnRegisterItemOrAbility.Broadcast(GetOwningPlayerPawn<APlayerCharacter>(), InventoryData, Index);
-		return;
-	}
-
-
-	if (Data->IsValidLowLevel())
-	{
-		InventoryData = Data;
-
-
-		if (Data->IsA<UItemData>())
-		{
-			auto item = Cast<UItemData>(Data);
-			//UKismetSystemLibrary::PrintString(this,TEXT("퀵슬롯 초기화 : ")+item->InventoryItem.GetItemInformation()->Item_Name);
-			TextBlock_Count->SetText(FText::AsNumber(item->InventoryItem.ItemCount));
-			Image->SetBrushFromSoftTexture(item->InventoryItem.GetItemInformation()->Item_Image);
-		}
-
-		if (Data->IsA<UAbilityData>())
-		{
-			TextBlock_Count->SetText(FText::GetEmpty());
-			Image->SetBrushFromSoftTexture(Cast<UAbilityData>(Data)->AbilityInformation.AbilityImage);
-		}
-
-		if (bFromMainQuickSlot == false)
-		{
-			if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
-			{
-				switch (QuickSlotType)
-				{
-				case EQuickSlotType::CONSUME:
-					invenComp->AddQuickSlotItem(InventoryData, Index);
-					break;
-				case EQuickSlotType::ABILITY:
-					invenComp->AddQuickSlotAbility(InventoryData, Index);
-					break;
-				}
-			}
-		}
-
-		OnRegisterItemOrAbility.Broadcast(GetOwningPlayerPawn<APlayerCharacter>(), InventoryData, Index);
-	}
-	else
-	{
-		UKismetSystemLibrary::PrintString(this,TEXT("가져온 데이터가 유효하지 않아 이 버튼정보를 초기화 할 수 없습니다."));
-	}
-}
-
-/*
-void UQuickSlotButtonWidget::Clean()
-{
-	LinkToMainWidgetSlot(true);
-	OnUnRegisterItemOrAbility.Broadcast(GetOwningPlayerPawn<APlayerCharacter>(),InventoryData,Index);
-	Image->SetBrushFromSoftTexture(DefaultImage);
-	TextBlock_Count->SetText(FText::GetEmpty());
-	InventoryData = nullptr;
-}*/
-
-void UQuickSlotButtonWidget::CleanMainQuickSlotButton()
-{
-	Image->SetBrushFromSoftTexture(DefaultImage);
-	TextBlock_Count->SetText(FText::GetEmpty());
-	InventoryData = nullptr;
-}
-
-bool UQuickSlotButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
-                                          UDragDropOperation* InOperation)
+bool UItemQuickSlotButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
+	UDragDropOperation* InOperation)
 {
 	if (auto oper = Cast<UDragAndDropOperation>(InOperation))
 	{
-		if (oper->DraggedWidget->IsA<UQuickSlotButtonWidget>())
+		if (oper->DraggedWidget->IsA<UItemButtonWidget>())
 		{
-			if (oper->DraggedWidget != this)
+			UE_LOGFMT(LogUMG, Log, "인벤토리버튼 드롭");
+			if (const auto button = Cast<UItemButtonWidget>(oper->DraggedWidget))
 			{
-				UE_LOGFMT(LogTemp, Log, "퀵 드롭");
-				const auto quick = Cast<UQuickSlotButtonWidget>(oper->DraggedWidget);
-				OnDropOtherQuickSlot(quick);
-			}
-			else
-			{
-				UKismetSystemLibrary::PrintString(this,TEXT("같은 슬롯 드롭됨."));
+				if (auto data = Cast<UItemData>(button->GetInventoryData()))
+				{
+					//소비아이템만 이 슬롯에 등록할 수 있습니다.
+					if (data->InventoryItem.GetItemInformation()->Item_Type ==
+						EItemType::CONSUME && QuickSlotType == EQuickSlotType::CONSUME)
+					{
+						UE_LOGFMT(LogUMG, Log, "인벤토리버튼 정보를 이 퀵슬롯에 등록합니다. : {0}",GetName());
+						button->SetEquipped(true);
+						//이미 퀵슬롯에 등록된 아이템인지 확인합니다.
+						if (IsAlreadyRegistered(data))
+						{
+							UE_LOGFMT(LogUMG, Log, "이미 다른 퀵슬롯에 등록되어진 아이템을 드롭했습니다.");
+							//이미 등록되어있을 경우, 해당 슬롯을 찾아 내용을 지웁니다.
+							if(OnRemoveAlreadyRegisteredSlotItem.IsBound())
+							{
+								const auto& removeIndex = OnRemoveAlreadyRegisteredSlotItem.Execute(data);
+								if(removeIndex!=-1){
+									InventoryComponent->RemoveQuickSlotItem(data,removeIndex);
+								}
+							}
+						}
+
+						Init(data);
+					}
+				}
+				
 			}
 		}
 
-		if (oper->DraggedWidget->IsA<UItemButtonWidget>())
+		if(oper->DraggedWidget->IsA<UItemQuickSlotButtonWidget>())
 		{
-			UE_LOGFMT(LogTemp, Log, "인벤토리버튼 드롭");
-			if (const auto button = Cast<UItemButtonWidget>(oper->DraggedWidget))
+			UE_LOGFMT(LogUMG,Log,"다른 아이템 퀵 슬롯 드롭");
+			if (const auto button = Cast<UItemQuickSlotButtonWidget>(oper->DraggedWidget))
 			{
-				OnDropConsumeItem(button);
-				OnDropAbility(button);
+				if (auto data = button->GetSlotData<UItemData>())
+				{
+					if(OnRemoveAlreadyRegisteredSlotItem.IsBound())
+					{
+						const auto& removeIndex = OnRemoveAlreadyRegisteredSlotItem.Execute(data);
+						if(removeIndex!=-1){
+							InventoryComponent->RemoveQuickSlotItem(data,removeIndex);
+						}
+					}
+					
+					//기존 슬롯을 비웁니다.
+					button->ClearSlot();
+					Init(data);
+				}
 			}
 		}
 
@@ -235,245 +153,328 @@ bool UQuickSlotButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDr
 		return true;
 	}
 
-	return Super::NativeOnDrop(InGeometry, InDragDropEvent, InOperation);
+	return false;
 }
 
-FReply UQuickSlotButtonWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+FReply UItemQuickSlotButtonWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
+	const FPointerEvent& InMouseEvent)
 {
 	//우클릭시 이 퀵슬롯 초기화.
 	if (InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
 	{
-		UE_LOGFMT(LogTemp, Warning, "버튼 초기화 : {0}", Index);
-		Init(nullptr, true);
+		UE_LOGFMT(LogUMG, Warning, "버튼 초기화 : {0}", GetName());
+		ClearSlot();
 	}
 
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
 
-FReply UQuickSlotButtonWidget::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+FReply UItemQuickSlotButtonWidget::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	return Super::NativeOnMouseButtonUp(InGeometry, InMouseEvent);
 }
 
-void UQuickSlotButtonWidget::SetIndex(int32 NewIndex)
+void UItemQuickSlotButtonWidget::OnRefreshItemSlot(const FGuid& ItemUniqueID, const int32& NewCount)
 {
-	Index = NewIndex;
-}
-
-void UQuickSlotButtonWidget::OnDropOtherQuickSlot(UQuickSlotButtonWidget* OtherQuickSlotButtonWidget)
-{
-	if (OtherQuickSlotButtonWidget && QuickSlotType == OtherQuickSlotButtonWidget->QuickSlotType)
+	if(InventoryData!=nullptr)
 	{
-		if (auto data = OtherQuickSlotButtonWidget->InventoryData.Get())
+		if(auto itemData = Cast<UItemData>(InventoryData))
 		{
-			//새 정보로 이 슬롯을 덮어씁니다.
-			Init(data, false);
-			//이전 슬롯을 비웁니다.
-			OtherQuickSlotButtonWidget->Init(nullptr, true);
+			if(itemData->InventoryItem.UniqueID != ItemUniqueID)
+			{
+				return;
+			}
+
+			TextBlock_Count->SetText(FText::AsNumber(NewCount));
 		}
 	}
 }
 
-void UQuickSlotButtonWidget::OnDropConsumeItem(UItemButtonWidget* InventoryButtonWidget)
+void UItemQuickSlotButtonWidget::OnSlotItemRemoved(ABaseCharacter* UsedBy, const FGuid& RemoveItemUniqueID)
 {
-	if (InventoryButtonWidget)
+	if(InventoryData!=nullptr)
 	{
-		if (InventoryButtonWidget->GetInventoryData()->IsA<UItemData>())
+		if(auto itemData = Cast<UItemData>(InventoryData))
 		{
-			if (auto data = Cast<UItemData>(InventoryButtonWidget->GetInventoryData()))
+			if(itemData->InventoryItem.UniqueID != RemoveItemUniqueID)
 			{
-				InventoryButtonWidget->SetEquipped(true);
-				//소비아이템만 이 슬롯에 등록할 수 있습니다.
-				if (data->InventoryItem.GetItemInformation()->Item_Type ==
-					EItemType::CONSUME && QuickSlotType == EQuickSlotType::CONSUME)
-				{
-					//이미 퀵슬롯에 등록된 아이템인지 확인합니다.
-					if (IsAlreadyRegistered(data))
-					{
-						//이미 등록되어있을 경우, 해당 슬롯을 찾아 내용을 지웁니다.
-						OnRemoveAlreadyRegisteredSlot.Broadcast(data);
-					}
+				return;
+			}
 
-					Init(data, false);
+			ClearSlot();
+		}
+	}
+}
+
+bool UItemQuickSlotButtonWidget::IsAlreadyRegistered(UItemData* Data) const
+{
+	if(Data->IsValidLowLevel())
+	{
+		if(auto player = GetOwningPlayerPawn<APlayerCharacter>())
+		{
+			return player->GetInventoryComponent()->IsRegistered(Data->InventoryItem.UniqueID);
+		}
+	}
+
+	return true;
+}
+
+void UItemQuickSlotButtonWidget::Init(UInventoryData* Data, bool bIsLoaded)
+{
+	if (Data->IsValidLowLevel())
+	{
+		if (Data->IsA<UItemData>())
+		{
+			UE_LOGFMT(LogUMG,Log,"퀵슬롯 버튼을 초기화 합니다 : {0}",GetName());
+			InventoryData = Data;
+			auto player = GetOwningPlayerPawn<APlayerCharacter>();
+			auto itemData = Cast<UItemData>(InventoryData);
+			
+			TextBlock_Count->SetText(FText::AsNumber(itemData->InventoryItem.ItemCount));
+			Image->SetBrushFromSoftTexture(itemData->InventoryItem.GetItemInformation()->Item_Image);
+			Image->SetColorAndOpacity(FLinearColor(1,1,1,1));
+
+			if(!bIsLoaded)
+			{
+				if (InventoryComponent)
+				{
+					InventoryComponent->AddQuickSlotItem(Cast<UItemData>(InventoryData), Index);
+					OnRegisterItem.Broadcast(player, itemData, Index);
 				}
 			}
 		}
-	}
-}
-
-void UQuickSlotButtonWidget::OnDropAbility(UItemButtonWidget* InventoryButtonWidget)
-{
-	if (InventoryButtonWidget)
+	}else
 	{
-		if (QuickSlotType == EQuickSlotType::ABILITY && InventoryButtonWidget->GetInventoryData()->IsA<UAbilityData>())
-		{
-			InventoryButtonWidget->SetEquipped(true);
-			if (auto data = Cast<UAbilityData>(InventoryButtonWidget->GetInventoryData()))
-			{
-				InventoryButtonWidget->SetEquipped(true);
-				//이미 퀵슬롯에 등록된 아이템인지 확인합니다.
-				if (IsAlreadyRegistered(data))
-				{
-					//이미 등록되어있을 경우, 해당 슬롯을 찾아 내용을 지웁니다.
-					OnRemoveAlreadyRegisteredSlot.Broadcast(data);
-				}
-
-				Init(data, false);
-			}
-		}
+		ClearSlot();
 	}
 }
 
-bool UQuickSlotButtonWidget::IsAlreadyRegistered(UItemData* Data) const
+void UItemQuickSlotButtonWidget::UseQuickSlot(UInputAction* InputAction)
 {
-	if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
-	{
-		return invenComp->IsRegistered(Data->InventoryItem.UniqueID);
-	}
-	return false;
-}
-
-bool UQuickSlotButtonWidget::IsAlreadyRegistered(UAbilityData* Data) const
-{
-	if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
-	{
-		return invenComp->IsRegistered(Data->AbilityInformation.AbilityTag);
-	}
-	return false;
-}
-
-void UQuickSlotButtonWidget::UseQuickSlot(UInputAction* InputAction)
-{
-	UE_LOGFMT(LogTemp, Log, "Call Use Quick Slot {0}", Index+1);
+	UE_LOGFMT(LogUMG, Log, "퀵슬롯 사용 요청 {0}", GetName());
 	if (InventoryData != nullptr)
 	{
 		if (auto player = GetOwningPlayerPawn<APlayerCharacter>())
 		{
-			switch (QuickSlotType)
-			{
-			case EQuickSlotType::CONSUME:
-				player->GetInventoryComponent()->UseItem(Cast<UItemData>(InventoryData)->InventoryItem.UniqueID);
-				break;
-			case EQuickSlotType::ABILITY:
-				player->GetAbilityComponent()->ActivateAbility(
-					Cast<UAbilityData>(InventoryData)->AbilityInformation.AbilityTag, player, InputAction);
-				break;
-			default: ;
-			}
+			player->GetInventoryComponent()->UseItem(Cast<UItemData>(InventoryData)->InventoryItem.UniqueID);
+		}
+	}
+}
+
+void UItemQuickSlotButtonWidget::ClearSlot()
+{
+	if(InventoryComponent)
+	{
+		InventoryComponent->RemoveQuickSlotItem(Cast<UItemData>(InventoryData),Index);
+	}
+	
+	Super::ClearSlot();
+}
+
+void UItemQuickSlotButtonWidget::RestoreSlotFromUniqueID(const FGuid& ItemID)
+{
+	if(InventoryComponent && InventoryComponent->IsItemContains(ItemID)){
+		
+		const auto& item = InventoryComponent->GetInventoryItem(ItemID);
+		if (auto newData = NewObject<UItemData>())
+		{
+			newData->InventoryItem = item;
+			Init(newData, true);
 		}
 	}
 }
 
 
-void UQuickSlotButtonWidget::OnRefreshItemSlot(const FGuid& ItemUniqueID, const int32& NewCount)
+void UMainItemQuickSlotButtonWidget::NativeConstruct()
 {
-	//UE_LOGFMT(LogTemp,Log,"퀵슬롯을 새로 고칩니다");
-	if (InventoryData != nullptr)
+	Super::NativeConstruct();
+
+	if(InventoryComponent==nullptr)
 	{
-		if (Cast<UItemData>(InventoryData)->InventoryItem.UniqueID == ItemUniqueID)
+		InventoryComponent = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent();
+	}
+
+	if(InventoryComponent)
+	{
+		InventoryComponent->OnFirstUpdateMainItemQuickSlot.AddUniqueDynamic(this,&UMainItemQuickSlotButtonWidget::OnFirstUpdateMainItemQuickSlotEvent);
+		InventoryComponent->OnChangeItemQuickSlot.AddUniqueDynamic(this,&UMainItemQuickSlotButtonWidget::OnChangeItemQuickSlotEvent);
+		InventoryComponent->OnItemQuickSlotUpdate.AddUniqueDynamic(this,&UMainItemQuickSlotButtonWidget::OnItemQuickSlotUpdateEvent);
+		InventoryComponent->OnRemoveItemQuickSlot.AddUniqueDynamic(this,&UMainItemQuickSlotButtonWidget::OnRemoveItemQuickSlotEvent);
+	}
+}
+
+void UMainItemQuickSlotButtonWidget::OnFirstUpdateMainItemQuickSlotEvent(const UItemData* Data, int32 SlotIndex)
+{
+	if(Data)
+	{
+		UE_LOGFMT(LogUMG,Log,"메인 퀵슬롯에 해당 아이템을 처음 등록합니다.");
+		MemorisedUniqueID = Data->InventoryItem.UniqueID;
+		TextBlock_Count->SetText(FText::AsNumber(Data->InventoryItem.ItemCount));
+		Image->SetBrushFromSoftTexture(Data->InventoryItem.GetItemInformation()->Item_Image);
+	}
+}
+
+void UMainItemQuickSlotButtonWidget::OnChangeItemQuickSlotEvent(const FInventoryItem& Item, int32 SlotIndex)
+{
+	if(auto itemData = Item.GetItemInformation())
+	{
+		MemorisedUniqueID = Item.UniqueID;
+		TextBlock_Count->SetText(FText::AsNumber(Item.ItemCount));
+		Image->SetBrushFromSoftTexture(itemData->Item_Image);
+	}
+}
+
+void UMainItemQuickSlotButtonWidget::OnItemQuickSlotUpdateEvent(const FGuid& ItemUniqueID, const int32& NewCount)
+{
+	if(MemorisedUniqueID == ItemUniqueID)
+	{
+		TextBlock_Count->SetText(FText::AsNumber(NewCount));
+	}
+}
+
+void UMainItemQuickSlotButtonWidget::OnRemoveItemQuickSlotEvent(const UItemData* Data, int32 SlotIndex)
+{
+	if(MemorisedUniqueID == Data->InventoryItem.UniqueID)
+	{
+		ClearSlot();
+	}
+}
+
+void UMainItemQuickSlotButtonWidget::ClearSlot()
+{
+	Super::ClearSlot();
+
+	MemorisedUniqueID = FGuid();
+}
+
+
+void UAbilityQuickSlotButtonWidget::NativePreConstruct()
+{
+	Super::NativePreConstruct();
+	QuickSlotType = EQuickSlotType::ABILITY;
+}
+
+void UAbilityQuickSlotButtonWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+	
+}
+
+bool UAbilityQuickSlotButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
+	UDragDropOperation* InOperation)
+{
+	if (auto oper = Cast<UDragAndDropOperation>(InOperation))
+	{
+		if (oper->DraggedWidget->IsA<UItemButtonWidget>())
 		{
-			if (NewCount <= 0)
+			UE_LOGFMT(LogUMG, Log, "인벤토리버튼 드롭");
+			if (const auto button = Cast<UItemButtonWidget>(oper->DraggedWidget))
 			{
-				UE_LOGFMT(LogTemp, Log, "퀵슬롯에 업데이트 되는 대상의 카운트가 0 이하입니다.");
-				//아이템 갯수가 0이하인 경우
-				//업데이트 된 아이템 정보가 인벤토리 내부에 더 이상 남아있지 않은지 확인합니다.
-				if (auto invenComp = GetOwningPlayerPawn<APlayerCharacter>()->GetInventoryComponent())
+				if (auto data = Cast<UAbilityData>(button->GetInventoryData()))
 				{
-					if (!invenComp->K2_HasItemByID(ItemUniqueID))
-					{
-						UE_LOGFMT(LogTemp, Log, "아이템 정보가 인벤토리에서 제거됐으니 슬롯 정보를 초기화 합니다.");
-						Init(nullptr, true);
-						invenComp->NextConsumeQuickSlot();
-						return;
-					}
+						UE_LOGFMT(LogUMG, Log, "인벤토리버튼 정보를 이 퀵슬롯에 등록합니다. : {0}",GetName());
+						button->SetEquipped(true);
+						//이미 퀵슬롯에 등록된 아이템인지 확인합니다.
+						if (IsAlreadyRegistered(data))
+						{
+							UE_LOGFMT(LogUMG, Log, "이미 다른 퀵슬롯에 등록되어진 아이템을 드롭했습니다.");
+							//이미 등록되어있을 경우, 해당 슬롯을 찾아 내용을 지웁니다.
+							OnRemoveAlreadyRegisteredSlotAbility.Broadcast(data);
+						}
+						Init(data);
+					
+				}
+				
+			}
+		}
+
+		if(oper->DraggedWidget->IsA<UAbilityQuickSlotButtonWidget>())
+		{
+			UE_LOGFMT(LogUMG,Log,"다른 어빌리티 퀵 슬롯 드롭");
+			if (const auto button = Cast<UAbilityQuickSlotButtonWidget>(oper->DraggedWidget))
+			{
+				if (auto data = button->GetSlotData<UAbilityData>())
+				{
+					//기존 슬롯을 비웁니다.
+					button->ClearSlot();
+					Init(data);
 				}
 			}
-			UE_LOGFMT(LogTemp, Log, "퀵슬롯을 새로 고칩니다 : 업데이트된 갯수 : {0}", NewCount);
-			Cast<UItemData>(InventoryData)->InventoryItem.ItemCount = NewCount;
-			Init(InventoryData.Get(), false);
 		}
+
+		oper->DraggedWidget->SetRenderOpacity(oper->OriginalOpacity);
+		oper->DraggedWidget->SetVisibility(ESlateVisibility::Visible);
+
+		return true;
 	}
-	else
-	{
-		//UE_LOGFMT(LogTemp,Log,"퀵슬롯을 새로 고치려 했으나, 해당 슬롯의 데이터가 비었습니다.");
-	}
+
+	return false;
 }
 
-
-void UQuickSlotButtonWidget::OnSlotItemRemoved(ABaseCharacter* Player, const FGuid& ItemUniqueID)
+FReply UAbilityQuickSlotButtonWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry,
+	const FPointerEvent& InMouseEvent)
 {
-	if (InventoryData != nullptr)
+	//우클릭시 이 퀵슬롯 초기화.
+	if (InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
 	{
-		if (Cast<UItemData>(InventoryData)->InventoryItem.UniqueID == ItemUniqueID)
-		{
-			//갯수를 0개로 표시합니다.
-			TextBlock_Count->SetText(FText::AsNumber(0));
-		}
+		UE_LOGFMT(LogUMG, Warning, "버튼 초기화 : {0}", GetName());
+		ClearSlot();
 	}
+
+	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
 }
 
-void UQuickSlotButtonWidget::OnRemoveAbilityEvent(const FGameplayTag& AbilityTag)
+FReply UAbilityQuickSlotButtonWidget::NativeOnMouseButtonUp(const FGeometry& InGeometry,
+	const FPointerEvent& InMouseEvent)
 {
-	if (InventoryData != nullptr)
-	{
-		if (Cast<UAbilityData>(InventoryData)->AbilityInformation.AbilityTag.MatchesTagExact(AbilityTag))
-		{
-			Init(nullptr, true);
-		}
-	}
+	return Super::NativeOnMouseButtonUp(InGeometry, InMouseEvent);
 }
 
-FGuid UQuickSlotButtonWidget::GetSlotItemUniqueID()
+void UAbilityQuickSlotButtonWidget::OnSlotAbilityRemoved(ABaseCharacter* UsedBy, const FGameplayTag& AbilityTag)
 {
-	if (InventoryData != nullptr)
-	{
-		if (InventoryData->IsA<UItemData>())
-		{
-			return Cast<UItemData>(InventoryData)->InventoryItem.UniqueID;
-		}
-	}
-	return FGuid();
 }
 
-FGameplayTag UQuickSlotButtonWidget::GetSlotAbilityTag()
+bool UAbilityQuickSlotButtonWidget::IsAlreadyRegistered(UAbilityData* Data) const
 {
-	if (InventoryData != nullptr)
+	if(Data->IsValidLowLevel())
 	{
-		if (InventoryData->IsA<UAbilityData>())
+		if(auto player = GetOwningPlayerPawn<APlayerCharacter>())
 		{
-			return Cast<UAbilityData>(InventoryData)->AbilityInformation.AbilityTag;
+			return player->GetInventoryComponent()->IsRegistered(Data->AbilityInformation.AbilityTag);
 		}
 	}
-	return FGameplayTag::EmptyTag;
+
+	return true;
 }
 
-void UQuickSlotButtonWidget::RestoreSlotFromItemGUID(const FGuid& ItemID)
+void UAbilityQuickSlotButtonWidget::Init(UInventoryData* Data, bool bIsLoaded)
 {
-	if (auto invenComp = GetOwningPlayerPawn<APlayerCharacter>()->GetInventoryComponent())
+	if (Data->IsValidLowLevel())
 	{
-		if (invenComp->IsItemContains(ItemID))
+		if (Data->IsA<UItemData>())
 		{
-			const auto item = invenComp->GetInventoryItem(ItemID);
-			if (auto newData = NewObject<UItemData>())
+			UE_LOGFMT(LogUMG,Log,"퀵슬롯 버튼을 초기화 합니다 : {0}",GetName());
+			InventoryData = Data;
+			auto player = GetOwningPlayerPawn<APlayerCharacter>();
+			auto abilityData = Cast<UAbilityData>(InventoryData);
+			
+			TextBlock_Count->SetText(FText::GetEmpty());
+			Image->SetBrushFromSoftTexture(abilityData->AbilityInformation.AbilityImage);
+			Image->SetColorAndOpacity(FLinearColor(1,1,1,1));
+			
+			if (auto invenComp = player->GetInventoryComponent())
 			{
-				newData->InventoryItem = item;
-				Init(newData, false);
+				invenComp->AddQuickSlotAbility(InventoryData, Index);
+				OnRegisterAbility.Broadcast(player, abilityData, Index);
 			}
 		}
+	}else
+	{
+		ClearSlot();
 	}
 }
 
-void UQuickSlotButtonWidget::RestoreSlotFromAbilityTag(const FGameplayTag& AbilityTag)
+void UAbilityQuickSlotButtonWidget::UseQuickSlot(UInputAction* InputAction)
 {
-	if (auto abComp = GetOwningPlayerPawn<APlayerCharacter>()->GetAbilityComponent())
-	{
-		if (abComp->HasAbility(AbilityTag))
-		{
-			if (auto newData = NewObject<UAbilityData>())
-			{
-				newData->AbilityInformation = abComp->GetAbilityByTag(AbilityTag)->GetAbilityInformation();
-				Init(newData, false);
-			}
-		}
-	}
+	Super::UseQuickSlot(InputAction);
 }

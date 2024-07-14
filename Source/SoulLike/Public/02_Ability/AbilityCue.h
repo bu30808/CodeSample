@@ -41,6 +41,10 @@ public:
 		meta=(EditCondition = "AbilityCueType == EAbilityCueType::AttachToSocket"))
 	FName SocketName;
 
+	//이 값이 참이면, 무적상태인 경우 이 큐를 적용하지 않습니다.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsHitEffectCue = false;
+
 	UPROPERTY(BlueprintReadWrite)
 	FVector SpawnLocation = FVector::ZeroVector;
 

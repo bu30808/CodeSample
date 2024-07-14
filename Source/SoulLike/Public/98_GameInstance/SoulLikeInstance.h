@@ -3,8 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "00_Character/01_Component/AttributeComponent.h"
 #include "03_Widget/01_Menu/00_Inventory/ItemListWidget.h"
 #include "92_Tools/TutorialActor.h"
+#include "93_SaveGame/SoulLikeSaveGame.h"
 #include "Engine/GameInstance.h"
 #include "SoulLikeInstance.generated.h"
 
@@ -49,13 +51,17 @@ private:
 	//dataLayerSubsystem->GetDataLayerInstanceFromAssetName가 패키징하면 레이어를 못 찾는 문제가 있어서, 데이터테이블에 우겨넣고 씁니다.
 	UPROPERTY()
 	class UDataTable* DataLayerTable;
+
+	UPROPERTY(Transient)
+	TObjectPtr<class ASoulTomb> CreatedTomb;
+
 protected:
 	//볼륨조절을 위한 클래스 포인터
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
 	class USoundClass* BGMClass;
 	UPROPERTY(EditAnywhere,BlueprintReadOnly)
 	class USoundClass* SFXClass;
-
+public:
 	UFUNCTION(BlueprintCallable,BlueprintPure)
 	float GetBGMVolume();
 	UFUNCTION(BlueprintCallable,BlueprintPure)
@@ -68,7 +74,7 @@ protected:
 public:
 
 	void SetPlayer(APlayerCharacter* PlayerCharacter){CurrentPlayer = PlayerCharacter;}
-	
+
 
 	UPROPERTY()
 	int32 SaveIndex = 0;
@@ -77,6 +83,10 @@ public:
 	//GetSaveGameInstance함수를 통해서 불러오세요.
 	UPROPERTY()
 	class USoulLikeSaveGame* SaveGameInstance;
+	//이 변수를 직접 사용하지 마세요.
+	//GetSaveGameInstance함수를 통해서 불러오세요.
+	UPROPERTY()
+	class USoulLikeOptionSaveGame* OptionSaveGameInstance;
 
 	//이 값이 참인동안에는 저장이 되지 않습니다. 로드중에 참이 됩니다.
 	UPROPERTY(Transient)
@@ -105,7 +115,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void LoadGame();
-
+	
 	//필드 아이템 상황을 복구합니다.
 	UFUNCTION()
 	void RestoreFieldItemState();
@@ -118,33 +128,36 @@ public:
 
 	//EGameLoadType::NORMAL일때 사용됩니다.
 	void NormalLoad();
+	void RestoreBeforeDead();
 
 	//EGameLoadType::RESPAWN 이거나 EGameLoadType::TELEPORT_TO_LAST_SAVEPOINT일때 사용됩니다.
-	void RespawnOrLastSavePointLoad();
+	UFUNCTION()
+	void DeadRespawn();
+	//게임을 종료했다 다시 시작하면 호출됩니다.
+	//EGameLoadType::RESTART
+	UFUNCTION()
+	void Restart();
 
+	
 	//EGameLoadType::TELEPORT_TO_OTHER_BONFIRE일때 사용됩니다.
 	void TeleportToOtherBonfireLoad();
 
-	//리스폰 후 회복약 재충전
-	UFUNCTION()
-	void PotionReplenishment();
-
+	void LoadBonfireSetting(const FBonfireInformation& BonfireInformation);
+	
 	//화톳불이 속한 레이어를 복구합니다.
 	void LoadBonfireLayer(const FBonfireInformation& BonfireInformation);
 
 	//레이어를 복구합니다.
 	void LoadLayer();
-	void LoadLayers(const TArray<FName>& LayerRowNames);
-	void LoadLayer(const FName& LayerRowName);
-
+	void LoadLayers(const TArray<TSoftObjectPtr<class UDataLayerAsset>>& Layers) const;
+	
 	//화톳불에 저장된 시간으로 되돌립니다.
 	UFUNCTION()
-	void LoadSkyFromBonfire();
-	//마지막 하늘 시간으로 되돌립니다.
-	UFUNCTION()
+	void LoadSkyFromBonfire(const FBonfireInformation& BonfireInformation) const;
+
 	void LoadSky();
-	UFUNCTION()
-	void LoadSkyFromValue(float NewSkyTime);
+	void LoadTransform();
+	void LoadLastMonsterState();
 
 	/*void LoadPlayerLocation(class APlayerCharacter* Player, AWorldStreamingSourceActor* StreamingActor);*/
 
@@ -158,30 +171,34 @@ public:
 
 	UPROPERTY()
 	FTimerHandle LoadFinishTimerHandle;
+
+	UFUNCTION()
+	void OnTryRestartLoadFinish();
 	UFUNCTION()
 	void TryLoadFinish();
 	UFUNCTION()
 	void LoadFinish();
 
-	//퀵슬롯에 선택된 인덱스 번호를 저장하기 위한 이벤트입니다.
-	UFUNCTION()
-	void OnUpdateMainAbilityQuickSlotEvent(const FGameplayTag& Tag, bool bRemove, int32 SlotIndex);
-	UFUNCTION()
-	void OnUpdateMainConsumeQuickSlotEvent(const FInventoryItem& Item, bool bRemove, int32 SlotIndex);
 
+	UFUNCTION()
+	void OnAddItemQuickSlotEvent(const class UItemData* Data, int32 SlotIndex);
+	UFUNCTION()
+	void OnRemoveItemQuickSlotEvent(const class UItemData* Data, int32 SlotIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void ClearSave();
 	UFUNCTION(BlueprintCallable)
 	void TeleportToLastSavePoint(class APlayerCharacter* Player);
-
+	//게임을 종료했을 때, 상태를 저장합니다.
+	void SaveWhenEndPlay(APlayerCharacter* PlayerCharacter);
 
 	//저장후 호출되는 콜백
 	void OnSaved(const FString& SlotName, const int32 UserIndex, bool bSucc);
 
 	class USoulLikeSaveGame* GetSaveGameInstance(const FString& SlotName = "SaveFile");
 	void SaveGameInstanceToSlot(class USoulLikeSaveGame* SaveInstance, const FString& SlotName = "SaveFile");
-
+	class USoulLikeOptionSaveGame* GetOptionSaveGameInstance(const FString& SlotName = "OptionSaveFile");
+	void SaveGameInstanceToSlot(class USoulLikeOptionSaveGame* SaveInstance, const FString& SlotName = "OptionSaveFile");
 
 	//필드에 배치된 아이템을 획득하면 상태를 저장하기 위해 호출됩니다.
 	UFUNCTION()
@@ -209,24 +226,19 @@ public:
 	void OnNPCBuyItemFromPlayerEvent(class APlayerCharacter* InteractPlayer, const FGuid& ItemID);
 	//체크포인트에서 체크포인트 정보를 저장하는 기능을 합니다.
 	UFUNCTION()
-	void SaveWithLastSavePoint(APlayerCharacter* Player, UBonfireComponent* BonfireComponent);
+	void SaveLastCheckpoint(APlayerCharacter* Player, UBonfireComponent* BonfireComponent);
 	//아이템이 인벤토리에서 삭제될 떄 호출됩니다.
 	UFUNCTION()
 	void OnRemoveItemEvent(class ABaseCharacter* UsedBy, const FGuid& RemoveItemUniqueID);
-	//퀵슬롯에 아이템이 등록되면 호출됩니다.
-	UFUNCTION()
-	void OnRegisterQuickSlotItemOrAbility(APlayerCharacter* Player, class UInventoryData* Data, int32 Index);
-	//퀵슬롯에 아이템이 해제되면 호출됩니다.
-	UFUNCTION()
-	void OnUnRegisterQuickSlotItemOrAbility(APlayerCharacter* Player, UInventoryData* Data, int32 Index);
+
 
 	//사망시 호출됩니다.
 	UFUNCTION()
-	void OnDeadPlayer(APlayerCharacter* PlayerCharacter);
+	void OnDeadPlayer(APlayerCharacter* Player);
 
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-	bool ExistSaveFile();
+	bool ExistSaveFile(FString SlotName = "SaveFile");
 
 	//활성화된 화톳불을 저장합니다.
 	UFUNCTION()
@@ -264,7 +276,7 @@ public:
 	 * @param Chest 열거나 아이템을 획득한 상자
 	 * @param bEaredChestItem 상자 내부 아이템을 획득하면 참을 주세요.
 	 */
-	void SaveChest(AChest* Chest, bool bEaredChestItem);
+	void SaveChest(class AChest* Chest, bool bEaredChestItem);
 
 
 	/**
@@ -304,5 +316,12 @@ protected:
 	bool IsOpenedChest(const class AChest* Chest);
 	//이미 이 상자의 아이템을 획득했는지 확인합니다.
 	bool IsAlreadyGetChestItem(class AChest* Chest);
+
+public:
+	//저장된 게임옵션을 불러옵니다.
+	FGameOption LoadGameOption(bool& bSucc);
 	
+	void SaveBGMVolume(float Vol);
+	void SaveSFXVolume(float Vol);
+	void SaveTextureStreamingPool(int32 TextureStreamingPool);
 };

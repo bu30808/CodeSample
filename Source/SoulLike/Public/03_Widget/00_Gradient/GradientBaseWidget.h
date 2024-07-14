@@ -36,10 +36,11 @@ protected:
 
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
+	virtual void UpdateProgressToMaterial(float InDeltaTime);
 
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
-	void SetDynamicMaterial();
+	virtual void SetDynamicMaterial();
 
 public:
 	//주어진 값을 가지고 프로그래스를 업데이트 합니다.

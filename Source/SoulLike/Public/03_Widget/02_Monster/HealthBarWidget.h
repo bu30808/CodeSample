@@ -26,7 +26,8 @@ protected:
 	UPROPERTY(Transient)
 	int32 AccDamage;
 
-
+	virtual void SetDynamicMaterial() override;
+	
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 

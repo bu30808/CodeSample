@@ -57,3 +57,17 @@ void AConsumeItemActor::OnEndAbilityEvent_Implementation()
 {
 	Super::OnEndAbilityEvent_Implementation();
 }
+
+void ASoulItemActor::OnOverrideSelfEffectEvent_Implementation(const TArray<UAbilityEffect*>& SelfEffect, AActor* Target)
+{
+
+	TArray<FAttributeEffect> newEffect;
+	newEffect.Add(FAttributeEffect(EAttributeType::EXP,EAttributeApplyMethod::ADD,GetEffectValue()));
+	SelfEffect[0]->AttributeEffects = newEffect;
+	
+}
+
+FText ASoulItemActor::GetFormattedDescription_Implementation()
+{
+	return FText::Format(GetNotFormattedDescription(),GetEffectValue());
+}

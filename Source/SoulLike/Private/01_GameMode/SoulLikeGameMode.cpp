@@ -17,6 +17,7 @@ DEFINE_LOG_CATEGORY(LogSoulLikeGameMode)
 
 ASoulLikeGameMode::ASoulLikeGameMode()
 {
+	PrimaryActorTick.bCanEverTick = false;
 }
 
 void ASoulLikeGameMode::AddToRespawnMonster(ABaseMonster* BaseMonster)
@@ -93,7 +94,7 @@ void ASoulLikeGameMode::RespawnMonsters(class APlayerCharacter* Player)
 	}
 }
 
-void ASoulLikeGameMode::OnDeadMonsterEvent(AActor* Who, AActor* DeadBy)
+void ASoulLikeGameMode::OnDeadMonsterEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason)
 {
 	if (Who)
 	{
@@ -182,6 +183,29 @@ bool ASoulLikeGameMode::IsContainDeadList(const ABaseMonster* BaseMonster)
 void ASoulLikeGameMode::ClearTemporarySavedMonsterData(APlayerCharacter* Player)
 {
 	TemporarySavedMonsterState.Empty();
+}
+
+void ASoulLikeGameMode::SaveMonsterState(ABaseMonster* BaseMonster)
+{
+	const auto& safeName = FName(GetNameSafe(BaseMonster));
+
+	if (!TemporarySavedMonsterState.Contains(safeName))
+	{
+		if (auto character = Cast<ABaseCharacter>(BaseMonster))
+		{
+			UE_LOGFMT(LogSave, Error, "몬스터의 상태를 저장합니다 : {0}", safeName);
+			auto attComp = character->GetAttributeComponent();
+			TemporarySavedMonsterState.Add(safeName, FCharacterSave(BaseMonster, safeName, BaseMonster->GetClass(),
+																	BaseMonster->GetActorTransform(),
+																	attComp->
+																	GetAllAttributeNotIncludeLevelUpPoint(),
+																	character->GetCharacterState()));
+		}
+	}
+	else
+	{
+		UE_LOGFMT(LogSave, Error, "이미 해당 몬스터의 상태정보가 저장되어 있습니다. : {0}", safeName);
+	}
 }
 
 /*

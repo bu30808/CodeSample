@@ -23,6 +23,7 @@ void UAttributeProcessSubsystem::Initialize(FSubsystemCollectionBase& Collection
 	Processor.Emplace(EAttributeApplyMethod::REMOVE, NewObject<UAttributeProcessor_Remove>(this));
 	Processor.Emplace(EAttributeApplyMethod::MULT, NewObject<UAttributeProcessor_Multiplication>(this));
 	Processor.Emplace(EAttributeApplyMethod::DIV, NewObject<UAttributeProcessor_Division>(this));
+	Processor.Emplace(EAttributeApplyMethod::SET, NewObject<UAttributeProcessor_Set>(this));
 }
 
 UAttributeProcessor* UAttributeProcessSubsystem::GetProcessor(EAttributeApplyMethod Method)

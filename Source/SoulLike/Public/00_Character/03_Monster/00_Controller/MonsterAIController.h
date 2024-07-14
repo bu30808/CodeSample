@@ -39,7 +39,7 @@ public:
 	void OnTargetPerceptionForgottenEvent(AActor* Target);
 
 	UFUNCTION()
-	void OnDeadEvent(AActor* Who, AActor* DeadBy);
+	void OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason);
 
 	virtual void OnPossess(APawn* InPawn) override;
 

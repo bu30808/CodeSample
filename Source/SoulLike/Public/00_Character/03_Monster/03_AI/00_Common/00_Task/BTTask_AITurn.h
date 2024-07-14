@@ -28,7 +28,9 @@ enum class EAITaskTurnType :uint8
 	//몽타주를 이용하지만, 루트모션이 없어서 틱으로 회전합니다.
 	MontageWithTick,
 	//몽타주를 사용하지 않고 그냥 틱으로만 회전합니다.
-	TickWithoutMontage
+	TickWithoutMontage,
+	//루트 몽타주를 이용해서 회전하다, StopYaw값 이하로 가까워지면 Tick을 이용한 회전으로 전환합니다.
+	TickAfterRootMontage
 };
 
 UENUM(BlueprintType)
@@ -56,7 +58,10 @@ protected:
 	TObjectPtr<class UAnimMontage> TurnRightMontage;
 	UPROPERTY(EditAnywhere, meta=(EditCondition= "TurnType != EAITaskTurnType::TickWithoutMontage"), Category="Montage")
 	TObjectPtr<class UAnimMontage> TurnLeftMontage;
-
+	UPROPERTY(EditAnywhere, meta=(EditCondition= "TurnType != EAITaskTurnType::TickWithoutMontage"), Category="Montage")
+	TObjectPtr<class UAnimMontage> TurnRight180Montage;
+	UPROPERTY(EditAnywhere, meta=(EditCondition= "TurnType != EAITaskTurnType::TickWithoutMontage"), Category="Montage")
+	TObjectPtr<class UAnimMontage> TurnLeft180Montage;
 	FTurnMontageBlendOut OnMontageBlendOut;
 
 	//이 각도 안으로 들어오면 멈춥니다.
@@ -75,7 +80,7 @@ protected:
 	UPROPERTY(VisibleAnywhere)
 	uint8 CurTryCount = 0;
 	//이 값이 참이면 전방으로 라인트레이스를 그리고, 라인트레이스에 타겟이 걸리면 완료한것으로 처리합니다.
-	UPROPERTY(EditAnywhere, Category="Option")
+	UPROPERTY(EditAnywhere, Category="Option",meta=(EditCondition = "TurnType != EAITaskTurnType::RootMontage"))
 	bool bUseStopTrace = false;
 	
 	//이 값이 참이면 컨트롤러 회전의 전방으로 트레이스를 그립니다.
@@ -84,6 +89,9 @@ protected:
 	EStopTraceType StopTraceType;
 	UPROPERTY(EditAnywhere, meta=(EditCondition="bUseStopTrace"), Category="Option")
 	FVector StopTraceBoxHalfExtent = FVector(10,10,500);
+	//이 값만큼 앞에서부터 트레이스를 생성합니다.
+	UPROPERTY(EditAnywhere, meta=(EditCondition="bUseStopTrace&& StopTraceType!=EStopTraceType::ControlDirection "), Category="Option")
+	float ForwardOffset = 50.f;
 	
 	//메시 전방을 사용하려면 소켓의 이름이 필요합니다. 머리나 눈같은 소켓이름을 주세요.
 	UPROPERTY(EditAnywhere, meta=(EditCondition="bUseStopTrace && StopTraceType == EStopTraceType::PawnMeshForward || StopTraceType == EStopTraceType::UseOtherMeshComponentForward"),
@@ -95,12 +103,14 @@ protected:
 	//Simple Parallel노드의 부 노드로 사용할때 사용하는 변수입니다. 먼저 테스크가 종료되지 못 하도록 합니다.
 	UPROPERTY(EditAnywhere, meta=(EditCondition= "TurnType != EAITaskTurnType::RootMontage"))
 	bool bShouldManualFinish = false;
-	UPROPERTY()
+	UPROPERTY(Transient)
 	class AAIController* OwnersAIController;
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TObjectPtr<class UAnimMontage> CurSelectedMontage;
-	UPROPERTY()
+	UPROPERTY(Transient)
 	bool bUseTick;
+	UPROPERTY(Transient)
+	bool bTickAfterMontage;
 
 	UBTTask_AITurn();
 

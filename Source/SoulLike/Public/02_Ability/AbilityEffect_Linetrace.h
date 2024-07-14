@@ -41,11 +41,11 @@ public:
 protected:
 	//라인트레이스를 생성할 컴포넌트. 스태틱 or 스캘레톤
 	//기존 메시가 변경될때마다 같이 수정해야 합니다.
-	UPROPERTY()
+	UPROPERTY(Transient)
 	class UPrimitiveComponent* MeshComponent;
 
 	//이 컴포넌트에 할당된 메시의 모든 소캣
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category="SocketSetting",Transient)
 	TArray<FName> Sockets;
 
 public:
@@ -65,9 +65,9 @@ public:
 	UPROPERTY(EditAnywhere, Category="NiagaraTraceSetting", meta=(EditCondition="bSpawnNiagaraWhenHitNonCharacter"))
 	class UNiagaraSystem* NiagaraEmitter;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TWeakObjectPtr<class UGameplayTask_LaunchEvent> EffectSpawnTickTask;
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TWeakObjectPtr<class AActor> NiagaraSpawnTarget;
 
 	//체널을 기준으로 트레이스 할 것인지, 오브젝트를 기준으로 트레이스 할 것인지 정합니다.s
@@ -87,7 +87,7 @@ public:
 		meta = (Tooltip =
 			"복잡한 형태의 콜리전에 대해 검사할 것인가?, 성능에 영향을 줄 수 있습니다. 또한 Mesh의 PerCollision을 감지하려는 경우, 이 값이 참이면 아무것도 감지하지 못합니다."))
 	bool bTraceComplex = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TraceSetting", meta = (Tooltip = "무시할 대상"))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TraceSetting", meta = (Tooltip = "무시할 대상"),Transient)
 	TArray<AActor*> IgnoreActors;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "TraceSetting")
 	bool bIgnoreSelf = true;
@@ -131,12 +131,12 @@ public:
 
 protected:
 	//트레이스에 감지된 대상들을 저장하는 배열입니다.
-	UPROPERTY(BlueprintReadWrite, Category="TraceResult")
+	UPROPERTY(BlueprintReadWrite, Category="TraceResult",Transient)
 	TArray<FHitResult> HitActors;
 
 
 	//히트가 감지되면 호출되는 이벤트입니다.
-	UPROPERTY(BlueprintAssignable)
+	UPROPERTY(BlueprintAssignable,Transient)
 	FOnHitActor OnHitActor;
 	/**
 	 * 히트가 감지되면 호출되는 함수입니다. 필요하다면 블루프린트에서 덮어쓰세요.
@@ -148,7 +148,7 @@ protected:
 
 
 	//소켓의 이전 프레임의 위치를 기억하는 맵입니다.
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TMap<FName, FVector> LastKnownSocketLocation;
 
 	//이 소켓 이름이 본 이름인지 확인합니다(스켈레탈 메시인 경우만)
@@ -157,22 +157,18 @@ protected:
 	void UpdateLastSocketLocation();
 
 	//소켓이름을 정해주려면 참으로 주세요.
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category="SocketSetting")
 	bool bUseWithCustomSockets;
 
-	UPROPERTY(EditAnywhere, meta=(EditCondition = "bUseWithCustomSockets"))
+	UPROPERTY(EditAnywhere,Category="SocketSetting", meta=(EditCondition = "bUseWithCustomSockets"))
 	TArray<FName> CustomSockets;
 
 	//타겟의 mesh 이외에 다른 메시 컴포넌트를 사용하려면 설정하세요.
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category="SocketSetting")
 	bool bUseOtherMeshComponent;
-
-	//델타타임마다 피해를 쪼개서 주려면 참을 주세요
-	UPROPERTY(EditAnywhere)
-	bool bSplitDamageOverTime = false;
-
+	
 	//같은 팀(아군)인 경우에도 피해를 줄 것인가 결정합니다.
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Category="OnHit")
 	bool bIgnoreAlly = true;
 
 public:
@@ -188,17 +184,11 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ActivateTrace(bool bActive, class ABaseCharacter* Target);
 
-#if WITH_EDITOR
-	virtual void CopyValues(UAbilityEffect* Effect) override;
-#endif
-
-protected:
 	/*/**
 	 * 어트리뷰트값이 적용된 수치를 계산된 이후 호출됩니다.
 	 * 위 결과를 가지고 특성을 적용한 값을 계산합니다.
 	 * @param Target 이팩트가 적용중인 대상
 	 * @param DamagedCharacter 피해를 입어야 할 대상
-	 #1#
 	void ApplyAbilityDamageTalent(ABaseCharacter* Target, ABaseCharacter* DamagedCharacter);
 
 	/*
@@ -230,7 +220,7 @@ public:
 
 protected:
 	//소켓의 이전 프레임의 위치를 기억하는 맵입니다.
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TMap<FName, FVector> LastKnownNiagaraSpawnSocketLocation;
 
 	void ActivateNiagaraSpawnTrace(AActor* Target);
@@ -270,4 +260,8 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void ApplyKnockDown(const FHitResult& Hit, class ABaseCharacter* EffectedBy, FGameplayTag KnockdownTag,
 	                    bool bRotationToHitPoint, bool bReset);
+
+
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	class ABaseCharacter* HitActorFromHitResult(const FHitResult& Hit);
 };

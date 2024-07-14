@@ -32,6 +32,7 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISense_Damage.h"
 
+
 #define ExecuteEffectTag FGameplayTag::RequestGameplayTag("Common.Active.Execute.Effect")
 DEFINE_LOG_CATEGORY(LogMonster)
 
@@ -40,14 +41,14 @@ ABaseMonster::ABaseMonster()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
+	PrimaryActorTick.TickInterval = 0.1f;
 	
 	GetCapsuleComponent()->SetCollisionProfileName("Pawn");
 	GetMesh()->SetCollisionProfileName("MonsterMesh");
 	GetMesh()->SetBodyNotifyRigidBodyCollision(true);
 	GetMesh()->SetGenerateOverlapEvents(true);
 	GetMesh()->VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::OnlyTickMontagesWhenNotRendered;
-
-	SetAllCurDistance();
+	
 
 	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidgetComponent"));
 	HealthBarWidgetComponent->SetupAttachment(GetMesh(), "HealthBar");
@@ -67,6 +68,7 @@ ABaseMonster::ABaseMonster()
 	{
 		HealthBarWidgetComponent->SetWidgetClass(widget.Class);
 	}
+	HealthBarWidgetComponent->SetCollisionProfileName("NoCollision");
 
 	SET_LDMaxDrawDistance(HealthBarWidgetComponent,3500.f);
 	
@@ -85,9 +87,20 @@ ABaseMonster::ABaseMonster()
 
 	bEnableAutoLODGeneration = false;
 #if WITH_EDITOR
-	RuntimeGrid = "MonsterGrid";
+	//RuntimeGrid = "MonsterGrid";
 #endif
 
+	
+	{
+		static ConstructorHelpers::FClassFinder<UAbilityBase> mighty(TEXT(
+		"/Script/Engine.Blueprint'/Game/Blueprints/00_Character/02_CommonAbility/Mighty/A_Mighty.A_Mighty_C'"));
+		if (widget.Succeeded())
+		{
+			DefaultAbility.AddUnique(mighty.Class);
+		}
+	}
+	/*DefaultAbility.Emplace()*/
+	
 	/*GetArrowComponent()->ArrowColor = FColor::Blue;
 	GetArrowComponent()->ArrowSize = 5.f;*/
 }
@@ -95,7 +108,7 @@ ABaseMonster::ABaseMonster()
 
 void ABaseMonster::SetAllCurDistance()
 {
-	SET_LDMaxDrawDistance(GetMesh(),4000.f);
+	SET_LDMaxDrawDistance(GetMesh(),7500.f);
 	
 	TArray<USceneComponent*> children;
 	GetMesh()->GetChildrenComponents(true,children);
@@ -103,7 +116,7 @@ void ABaseMonster::SetAllCurDistance()
 	{
 		if(c->IsA<UPrimitiveComponent>())
 		{
-			SET_LDMaxDrawDistance(Cast<UPrimitiveComponent>(c),5000.f);
+			SET_LDMaxDrawDistance(Cast<UPrimitiveComponent>(c),7500.f);
 		}
 	}
 }
@@ -238,6 +251,8 @@ void ABaseMonster::PostInitializeComponents()
 		DefaultMeshTr = GetMesh()->GetRelativeTransform();
 	}
 	InitTransform = GetActorTransform();
+
+	SetAllCurDistance();
 }
 
 void ABaseMonster::Tick(float DeltaSeconds)
@@ -300,6 +315,22 @@ void ABaseMonster::OnDestroyedEvent(AActor* DestroyedActor)
 	if (UKismetSystemLibrary::DoesImplementInterface(this, UBossMonsterInterface::StaticClass()))
 	{
 		IBossMonsterInterface::Execute_RemoveBossWidget(this, this, UGameplayStatics::GetPlayerCharacter(this, 0));
+	}
+}
+
+void ABaseMonster::RestoreSavedState(const FCharacterSave& SavedState)
+{
+	AttributeComponent->LoadAttributeNotIncludeLevelUpPoint(SavedState.Attributes,false,false);
+	SetCharacterState(SavedState.CharacterState);
+
+	if(SavedState.CharacterState== ECharacterState::DEAD)
+	{
+			DeadPresetting();
+			if (AnimationHelperComponent->CanApplyRagdoll())
+			{
+				EnableRagdoll();
+				RunDeactivateTimer();
+			}
 	}
 }
 
@@ -528,9 +559,9 @@ void ABaseMonster::OnTriggerHitAnimationEnterEvent(ABaseCharacter* DamagedCharac
 	}
 }
 
-void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy)
+void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason)
 {
-	Super::OnDeadEvent(Who, DeadBy);
+	Super::OnDeadEvent(Who, DeadBy, DeadReason);
 
 	if (auto aiCon = GetController<AMonsterAIController>())
 	{
@@ -539,7 +570,7 @@ void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy)
 
 
 	/*UE_LOGFMT(LogMonster, Warning, "몬스터 사망 이벤트 호출 : {0}", GetNameSafe(this));*/
-	UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 몬스터 사망"), *GetNameSafe(this)));
+	//UKismetSystemLibrary::PrintString(this, FString::Printf(TEXT("%s : 몬스터 사망"), *GetNameSafe(this)));
 	if (ItemDropComponent)
 	{
 		if (DeadBy != nullptr)
@@ -568,20 +599,21 @@ void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy)
 			if (AnimationHelperComponent->CanApplyRagdoll())
 			{
 				EnableRagdoll();
-				RunDeactivateTimer();
 			}
+			
+			RunDeactivateTimer();
 		}
 	}
 }
 
-void ABaseMonster::OnDeadBossEvent(AActor* Who, AActor* DeadBy)
+void ABaseMonster::OnDeadBossEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason)
 {
 	if (UKismetSystemLibrary::DoesImplementInterface(this, UBossMonsterInterface::StaticClass()))
 	{
 		IBossMonsterInterface::Execute_RemoveBossWidget(this, this, DeadBy);
 		UAIConHelperLibrary::ChangePlayerState(Who, DeadBy, EPlayerCharacterState::Peaceful);
 		ItemDropComponent->BossDropItem(Cast<ABaseCharacter>(DeadBy));
-		USaveGameHelperLibrary::SaveKillBoss(this);
+		USaveGameHelperLibrary::SaveKillBoss(this, Cast<ABaseCharacter>(DeadBy));
 
 		//5초있다 디졸브 실행함.
 		FTimerHandle dissolveTimerHandle;
@@ -591,6 +623,14 @@ void ABaseMonster::OnDeadBossEvent(AActor* Who, AActor* DeadBy)
 		});
 
 		GetWorldTimerManager().SetTimer(dissolveTimerHandle, dissolveTimerDel, 5.f, false);
+	}
+}
+
+void ABaseMonster::OnFinishDissolveTimeLine()
+{
+	if(auto gameMode = GetWorld()->GetAuthGameMode<ASoulLikeGameMode>())
+	{
+		gameMode->SaveMonsterState(this);
 	}
 }
 
@@ -728,7 +768,7 @@ void ABaseMonster::OnRemoveAttributeEffectAdditionalInformationEvent_Implementat
 				if (IsDead() == false)
 				{
 					/*CharacterState = ECharacterState::DEAD;*/
-					OnDead.Broadcast(this, AdditionalInformation->HitBy.Get());
+					OnDead.Broadcast(this, AdditionalInformation->HitBy.Get(),EDeadReason::DiedFromHPDepletion);
 				}
 				return;
 			}
@@ -804,5 +844,13 @@ void ABaseMonster::StopMusic(float AdjustVolumeDuration)
 			MusicComponent, &UAudioComponent::DestroyComponent, false);
 		FTimerHandle destroyTimerHandle;
 		GetWorldTimerManager().SetTimer(destroyTimerHandle, destroyDel, AdjustVolumeDuration, false);
+	}
+}
+
+void ABaseMonster::DoMergeSkeletalMesh()
+{
+	if(auto mergedMesh = USkeletalMergingLibrary::MergeMeshes(SkeletalMeshMergeParam))
+	{
+		GetMesh()->SetSkeletalMeshAsset(mergedMesh);
 	}
 }

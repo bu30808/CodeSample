@@ -11,6 +11,7 @@
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "Components/AudioComponent.h"
 #include "Components/BillboardComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "WorldPartition/DataLayer/DataLayerSubsystem.h"
 
@@ -38,6 +39,8 @@ ABonfire::ABonfire()
 
 	SpawnPointBillboardComponent = CreateDefaultSubobject<UBillboardComponent>(TEXT("SpawnPointBillboardComponent"));
 	SpawnPointBillboardComponent->SetupAttachment(RootComponent);
+
+	GetCharacterMovement()->GravityScale= 0;
 }
 
 void ABonfire::PostInitializeComponents()
@@ -88,8 +91,6 @@ void ABonfire::AddBonfireInToDataTable()
 		BonfireInformation.OwnersSafeName = GetNameSafe(this);
 		BonfireInformation.LevelName = UGameplayStatics::GetCurrentLevelName(this);
 		BonfireInformation.Location = SpawnPointBillboardComponent->GetComponentLocation();
-		BonfireInformation.SkyTime = SkyTime;
-		
 		
 		if (safeName.IsEmpty() == false)
 		{
@@ -100,6 +101,21 @@ void ABonfire::AddBonfireInToDataTable()
 	else
 	{
 		UE_LOGFMT(LogTemp, Error, "화톳불 테이블을 찾을 수 없습니다.");
+	}
+#endif
+}
+
+void ABonfire::LoadBonfireInfoFromTable()
+{
+#if WITH_EDITOR
+	if (BonfireTable != nullptr)
+	{
+		if(auto find = BonfireTable->FindRow<FBonfireInformation>(FName(GetNameSafe(this)),"")){
+			BonfireInformation = *find;
+		}else
+		{
+			UE_LOGFMT(LogTemp,Error,"해당 화톳불 정보를 테이블에서 찾을 수 없습니다");
+		}
 	}
 #endif
 }
@@ -147,13 +163,12 @@ void ABonfire::ActivateBonfire(APlayerCharacter* Player)
 	SetActivate();
 
 	Player->OnChangePlayerState.AddUniqueDynamic(this, &ABonfire::OnChangePlayerStateEvent);
-
-
+	
 	//이 화톳불이 활성화 되었다고 저장합니다.
 	if (auto instance = Cast<USoulLikeInstance>(GetGameInstance()))
 	{
 		instance->SaveBonfire(this);
-		instance->SaveWithLastSavePoint(Player, GetComponentByClass<UBonfireComponent>());
+		instance->SaveLastCheckpoint(Player, GetComponentByClass<UBonfireComponent>());
 	}
 }
 
@@ -187,4 +202,13 @@ const FBonfireInformation& ABonfire::GetBonfireInformation()
 bool ABonfire::ShowInteractionWidgetDirectly_Implementation()
 {
 	return bCanUseBonfire;
+}
+
+void ABonfire::Interaction_Implementation(ABaseCharacter* Start)
+{
+	Super::Interaction_Implementation(Start);
+
+	if(Start){
+		BonfireComponent->Rest(Cast<APlayerCharacter>(Start));
+	}
 }

@@ -15,19 +15,21 @@ AWorldStreamingSourceActor::AWorldStreamingSourceActor()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
+	PrimaryActorTick.TickInterval = 0.1f;
 
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 
 	WorldPartitionStreamingSource = CreateDefaultSubobject<UWorldPartitionStreamingSourceComponent>(
 		TEXT("WorldPartitionStreamingSource"));
-	WorldPartitionStreamingSource->Priority = EStreamingSourcePriority::Highest;
-	WorldPartitionStreamingSource->TargetGrids.Emplace("MainGrid");
+	WorldPartitionStreamingSource->Priority = EStreamingSourcePriority::Default;
+	
+	/*WorldPartitionStreamingSource->TargetGrids.Emplace("MainGrid");*/
 
-	FStreamingSourceShape Shape;
+	/*FStreamingSourceShape Shape;
 	Shape.bUseGridLoadingRange = true;
 	Shape.LoadingRangeScale = 0.5f;
 	Shape.bIsSector = true;
-	WorldPartitionStreamingSource->Shapes.Emplace(Shape);
+	WorldPartitionStreamingSource->Shapes.Emplace(Shape);*/
 }
 
 // Called when the game starts or when spawned
@@ -62,43 +64,42 @@ void AWorldStreamingSourceActor::Tick(float DeltaTime)
 		{
 			if(WorldPartitionSubsystem->IsAllStreamingCompleted())
 			{
+				UE_LOGFMT(LogTemp, Warning, "스트리밍이 완료되었습니다!!");
 				K2_OnStreamingComplete.ExecuteIfBound();
 				OnStreamingComplete.Broadcast();
 				
-				/*FHitResult hit;
-				TArray<AActor*> ignoreActors;
-				ignoreActors.Emplace(GetOwner());
-				if(UKismetSystemLibrary::LineTraceSingle(this,GetActorLocation(),GetActorLocation() + GetActorUpVector() * -2000.f,UEngineTypes::ConvertToTraceType(ECC_WorldStatic),false,ignoreActors,EDrawDebugTrace::ForOneFrame,hit,true,FLinearColor::Blue,FLinearColor::Green))
-				{
-					UKismetSystemLibrary::PrintString(this,FString::Printf(TEXT("아래에 오브젝트(%s)를 감지했습니다. 스트리밍 완료 처리합니다"),*hit.GetActor()->GetName()));
-					K2_OnStreamingComplete.ExecuteIfBound();
-					OnStreamingComplete.Broadcast();
-				}else
-				{
-					UKismetSystemLibrary::PrintString(this,FString::Printf(TEXT("아래에 걸리는 오브젝트가 없습니다!!")));
-				}*/
 			}
 		}
 		
 	}
 }
 
-void AWorldStreamingSourceActor::OnStreamingCompleteEvent()
+void AWorldStreamingSourceActor::FinishStreamingEvent()
 {
-	
-	UE_LOGFMT(LogTemp, Warning, "스트리밍이 완료되었습니다..");
-	SetActorTickEnabled(false);
-
-	if (Owner->IsA<ABaseCharacter>())
+	if (Owner!=nullptr && Owner->IsA<ABaseCharacter>())
 	{
 		Owner->SetActorLocation(GetActorLocation());
 	}
-	
-	WorldPartitionStreamingSource->DisableStreamingSource();
-	K2_OnAfterStreamingComplete.ExecuteIfBound();
-	OnAfterStreamingComplete.Broadcast();
-	
+}
 
+void AWorldStreamingSourceActor::OnStreamingCompleteEvent()
+{
+	if(Owner->IsValidLowLevel())
+	{
+		UE_LOGFMT(LogTemp, Warning, "스트리밍이 완료되었습니다.");
+		SetActorTickEnabled(false);
+	
+		if (Owner->IsA<ABaseCharacter>())
+		{
+			Owner->SetActorLocation(GetActorLocation());
+		}
+	
+		WorldPartitionStreamingSource->DisableStreamingSource();
+		K2_OnAfterStreamingComplete.ExecuteIfBound();
+		OnAfterStreamingComplete.Broadcast();
+	}
+
+	
 	if (bShouldDestroy)
 	{
 		Destroy();
@@ -118,8 +119,8 @@ void AWorldStreamingSourceActor::StreamingStart(FVector StreamingLocation)
 		UE_LOGFMT(LogTemp, Log, "스트리밍을 시작합니다 : {0}",StreamingLocation.ToString());
 		
 		GetWorldTimerManager().ClearTimer(DisableTimerHandle);
-		SetActorLocation(StreamingLocation);
 		WorldPartitionStreamingSource->EnableStreamingSource();
+		SetActorLocation(StreamingLocation);
 		SetActorTickEnabled(true);
 	}
 	else

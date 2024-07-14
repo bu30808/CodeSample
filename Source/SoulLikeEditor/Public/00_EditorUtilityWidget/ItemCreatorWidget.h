@@ -11,7 +11,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "ItemCreatorWidget.generated.h"
 
-UCLASS()
+UCLASS(Transient)
 class SOULLIKEEDITOR_API UItemInformationBase : public UObject
 {
 	GENERATED_BODY()
@@ -20,75 +20,75 @@ public:
 	virtual FGameplayTag GetItemTag() { return FGameplayTag::EmptyTag; }
 };
 
-UCLASS()
+UCLASS(Transient)
 class UCommonInfo : public UItemInformationBase
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Transient)
 	FItemInformation ItemInformation;
 
 	virtual FGameplayTag GetItemTag() override { return ItemInformation.Item_Tag; }
 };
 
 
-UCLASS()
+UCLASS(Transient)
 class USpiritInfo : public UItemInformationBase
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Transient)
 	FWeaponInformation WeaponInformation;
 
 	virtual FGameplayTag GetItemTag() override { return WeaponInformation.Item_Tag; }
 };
 
-UCLASS()
+UCLASS(Transient)
 class UEquipInfo : public UItemInformationBase
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Transient)
 	FEquipmentInformation EquipInformation;
 
 	virtual FGameplayTag GetItemTag() override { return EquipInformation.Item_Tag; }
 };
 
-UCLASS()
+UCLASS(Transient)
 class UConsumeInfo : public UItemInformationBase
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Transient)
 	FConsumeInformation ConsumeInformation;
 
 	virtual FGameplayTag GetItemTag() override { return ConsumeInformation.Item_Tag; }
 };
 
 
-UCLASS()
+UCLASS(Transient)
 class UCoreInfo : public UItemInformationBase
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Transient)
 	FOrbCoreInformation OrbCoreInformation;
 
 	virtual FGameplayTag GetItemTag() override { return OrbCoreInformation.Item_Tag; }
 };
 
-UCLASS()
+UCLASS(Transient)
 class UFragmentInfo : public UItemInformationBase
 {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Transient)
 	FOrbFragmentInformation OrbFragmentInformation;
 
 	virtual FGameplayTag GetItemTag() override { return OrbFragmentInformation.Item_Tag; }
@@ -136,7 +136,23 @@ protected:
 	UDataTable* EnhancementItemTable;
 
 
+	UPROPERTY(Transient)
 	FString SelectedClassName;
+	
+	UPROPERTY(Transient)
+	TObjectPtr<USpiritInfo> SpiritHandler;
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipInfo> ArmorHandler;
+	UPROPERTY(Transient)
+	TObjectPtr<UEquipInfo> RingHandler;
+	UPROPERTY(Transient)
+	TObjectPtr<UCoreInfo> CoreHandler;
+	UPROPERTY(Transient)
+	TObjectPtr<UFragmentInfo> FragmentHandler;
+	UPROPERTY(Transient)
+	TObjectPtr<UConsumeInfo> ConsumeHandler;
+	UPROPERTY(Transient)
+	TObjectPtr<UCommonInfo> CommonHandler;
 
 public:
 	UPROPERTY(meta=(BindWidget))
@@ -156,11 +172,7 @@ public:
 
 	UPROPERTY(meta=(BindWidget))
 	class UButton* Button_Create;
-
-	UPROPERTY()
-	UItemInformationBase* ItemInformation;
-
-
+	
 	//이 아이템을 사용했을 때, 바로 사용할 어빌리티
 	UPROPERTY(EditAnywhere)
 	TArray<TSubclassOf<class UAbilityBase>> Abilities;
@@ -200,4 +212,5 @@ public:
 	FName Section;
 	/*UFUNCTION(BlueprintCallable)
 	void HookToolBar();*/
+	void DestroyAllHandler();
 };

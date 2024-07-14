@@ -60,6 +60,7 @@ void UWidgetInteractionSubsystem::CloseWidgetSetting(APlayerController* PC, bool
 			}
 			else
 			{
+				UE_LOGFMT(LogCharacter, Log, "마우스 포인터를 제거하고, 게임에 인풋을 고정합니다.");
 				UWidgetBlueprintLibrary::SetInputMode_GameOnly(PC);
 				PC->bShowMouseCursor = false;
 			}

@@ -1,7 +1,45 @@
 ﻿#pragma once
 
 #include "CoreMinimal.h"
+#include "IDetailCustomization.h"
+#include "Logging/StructuredLog.h"
 #include "Modules/ModuleManager.h"
+
+
+
+template <typename A>
+static void CopyOriginalToTarget(A* Original, A* Target)
+{
+	if (!Original || !Target)
+	{
+		return;
+	}
+
+	UClass* sourceClass = Original->GetClass();
+
+	for (TFieldIterator<FProperty> iter(sourceClass); iter; ++iter)
+	{
+		//가져온 UPROPERTY변수
+		FProperty* property = *iter;
+
+		//임시변수인 경우 굳이 복사할 필요가 없어요
+		if (property->HasAnyPropertyFlags(CPF_Transient))
+		{
+			continue;
+		}
+
+		UE_LOGFMT(LogTemp,Log,"다음 프로퍼티를 복사합니다 : {0}",iter->NamePrivate.ToString());
+		auto originalValue = property->ContainerPtrToValuePtr<void>(Original);
+		auto targetValue = property->ContainerPtrToValuePtr<void>(Target);
+
+		if (originalValue && targetValue)
+		{
+			property->CopyCompleteValue(targetValue, originalValue);
+		}
+	}
+}
+
+
 
 class FSoulLikeEditorModule : public IModuleInterface
 {

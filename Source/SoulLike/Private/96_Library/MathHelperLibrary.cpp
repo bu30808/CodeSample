@@ -89,9 +89,9 @@ FVector UMathHelperLibrary::GetControllerInputDir(FRotator ControlRotation, FVec
 {
 	const auto& rot = FRotator(0, ControlRotation.Yaw, 0);
 	const auto& rightDir = UKismetMathLibrary::GetRightVector(rot) * MovementInputVector.X;
-	const auto& leftDir = UKismetMathLibrary::GetForwardVector(rot) * MovementInputVector.Y;
+	const auto& forwardDir = UKismetMathLibrary::GetForwardVector(rot) * MovementInputVector.Y;
 
-	return (rightDir + leftDir).GetSafeNormal();
+	return (rightDir + forwardDir).GetSafeNormal();
 }
 
 bool UMathHelperLibrary::SameDirection(FVector A_ForwardVector, FVector B_ForwardVector, float Threshold)

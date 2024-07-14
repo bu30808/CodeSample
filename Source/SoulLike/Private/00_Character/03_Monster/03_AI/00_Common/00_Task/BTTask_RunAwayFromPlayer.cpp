@@ -123,6 +123,7 @@ EBTNodeResult::Type UBTTask_RunAwayFromPlayer::ExecuteTask(UBehaviorTreeComponen
 	FVector RunAwayLocation = GetRunAwayLocation(AIPawn, PlayerActor);
 	if (RunAwayLocation == FVector::ZeroVector)
 	{
+		UE_LOGFMT(LogAICon,Error,"{0} : 도주할 좌표를 찾을 수 없습니다",AIPawn->GetName());
 		return EBTNodeResult::Failed;
 	}
 

@@ -26,6 +26,8 @@ ABaseCharacter::ABaseCharacter()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+	PrimaryActorTick.TickInterval = 0.1f;
 
 	AttributeComponent = CreateDefaultSubobject<UAttributeComponent>(TEXT("AttributeComponent"));
 	AbilityComponent = CreateDefaultSubobject<UAbilityComponent>(TEXT("AbilityComponent"));
@@ -98,12 +100,11 @@ void ABaseCharacter::CheckFallDeath()
 		{
 			UE_LOGFMT(LogCharacter, Warning, "아래 착지할 곳이 없습니다!! 사망처리 합니다.");
 			AttributeComponent->SetHP(0);
-			OnDead.Broadcast(this, this);
+			OnDead.Broadcast(this, this,EDeadReason::DiedFromFalling);
 		}
 		else
 		{
-			UE_LOGFMT(LogCharacter, Log, "발 아래 : {0}", hit.GetActor()->GetActorNameOrLabel());
-
+		
 			if (bStartFallDamageProcess == false)
 			{
 				bStartFallDamageProcess = true;
@@ -281,7 +282,7 @@ void ABaseCharacter::OnRemoveAttributeEffectAdditionalInformationEvent_Implement
 			{
 				if (IsDead() == false)
 				{
-					OnDead.Broadcast(this, AdditionalInformation->HitBy.Get());
+					OnDead.Broadcast(this, AdditionalInformation->HitBy.Get(),EDeadReason::DiedFromHPDepletion);
 					/*CharacterState = ECharacterState::DEAD;*/
 				}
 				UE_LOGFMT(LogTemp, Log, "체력이 0 이하라 다음 코드를 스킵합니다.");
@@ -350,6 +351,19 @@ void ABaseCharacter::OnUpdateDeadDissolveTimeLine(float Value)
 
 void ABaseCharacter::OnFinishDissolveTimeLine()
 {
+	
+}
+
+void ABaseCharacter::StopDeadDissolve()
+{
+	UE_LOGFMT(LogCharacter,Log,"사망 디졸브 제거");
+	const FName& param = "Percent";
+	for (auto iter : BodyMaterialInstance)
+	{
+		iter->SetScalarParameterValue(param, 1);
+	}
+
+	AnimationHelperComponent->DestroyDissolveParticle();
 }
 
 void ABaseCharacter::PlayDeadAnimationSequence()
@@ -358,25 +372,18 @@ void ABaseCharacter::PlayDeadAnimationSequence()
 }
 
 
-void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
+void ABaseCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason)
 {
 	UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 호출", GetActorNameOrLabel());
 	if (CharacterState != ECharacterState::DEAD)
 	{
 		UGameplayStatics::PlaySoundAtLocation(this, DeadCue, Who->GetActorLocation());
-		UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 / 정보 설정", GetActorNameOrLabel());
 		SetCharacterState(ECharacterState::DEAD);
 		GetCapsuleComponent()->SetCollisionProfileName("Spectator");
 		GetMesh()->SetCollisionProfileName("Spectator");
 
-		AnimationHelperComponent->PlayDeadAnimationByMode();
-
-
-		if (AbilityComponent)
-		{
-			AbilityComponent->ClearReusableCue();
-		}
-
+		UE_LOGFMT(LogTemp, Log, "{0} 사망 이벤트 / 정보 설정 / 사망 원인 {1}", GetActorNameOrLabel(),StaticEnum<EDeadReason>()->GetValueAsString(DeadReason));
+		AnimationHelperComponent->PlayDeadAnimationByMode(DeadReason);
 		AnimationHelperComponent->StartDeadDissolve();
 	}
 }
@@ -415,7 +422,7 @@ void ABaseCharacter::ChangeMovementState(EMovementState Type, float Multiplier)
 		break;
 	case EMovementState::Run:
 		GetCharacterMovement()->MaxWalkSpeed = AttributeComponent->GetMoveSpeed() * Multiplier;
-		UE_LOGFMT(LogCharacter, Log, "뛰기로 변경 : {0}", GetCharacterMovement()->MaxWalkSpeed);
+		UE_LOGFMT(LogCharacter, Log, "뛰기로 변경 : {0} {1}", GetCharacterMovement()->MaxWalkSpeed,GetName());
 		break;
 	default: ;
 	}
@@ -628,6 +635,18 @@ void ABaseCharacter::ClearLookInputForGameplayTag(AActor* AccruedBy, FGameplayTa
 			GetController()->SetIgnoreLookInput(false);
 		}
 	}
+}
+
+void ABaseCharacter::ClearLookInput()
+{
+	IgnoreLookInputStacks.Empty();
+	GetController()->SetIgnoreLookInput(false);
+}
+
+void ABaseCharacter::ClearMoveInput()
+{
+	IgnoreMoveInputStacks.Empty();
+	GetController()->SetIgnoreMoveInput(false);
 }
 
 void ABaseCharacter::ChangeStatusEffectMaterial(EStatusEffect EffectType)

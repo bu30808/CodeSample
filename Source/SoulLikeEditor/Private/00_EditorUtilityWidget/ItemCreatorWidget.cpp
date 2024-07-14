@@ -13,7 +13,6 @@
 #include "04_Item/01_Equipment/03_Orb/EquipmentItemActor_OrbCore.h"
 #include "04_Item/01_Equipment/03_Orb/EquipmentItemActor_OrbFragment.h"
 #include "04_Item/02_Enhancement/EnhancementItemActor.h"
-#include "AssetRegistry/AssetRegistryModule.h"
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
 #include "Components/DetailsView.h"
@@ -134,39 +133,112 @@ void UItemCreatorWidget::OnSelectionChanged(FString SelectedItem, ESelectInfo::T
 	{
 		SelectedClassName = SelectedItem;
 
+		DestroyAllHandler();
+
 		if (CreatableItemActorMap[SelectedItem] == AEquipmentItemActor_Spirit::StaticClass())
 		{
-			DetailsView_Item->SetObject(NewObject<USpiritInfo>());
+			if(SpiritHandler != nullptr)
+			{
+				SpiritHandler->ConditionalBeginDestroy();
+			}
+			
+			if(SpiritHandler == nullptr)
+			{
+				SpiritHandler = NewObject<USpiritInfo>();
+			}
+			DetailsView_Item->SetObject(SpiritHandler);
 		}
 
 		if (CreatableItemActorMap[SelectedItem] == AEquipmentItemActor_Armor::StaticClass())
 		{
+			if(ArmorHandler != nullptr)
+			{
+				ArmorHandler->ConditionalBeginDestroy();
+			}
+			
+			if(ArmorHandler == nullptr)
+			{
+				ArmorHandler = NewObject<UEquipInfo>();
+			}
+			
 			DetailsView_Item->SetObject(NewObject<UEquipInfo>());
 		}
 
 		if (CreatableItemActorMap[SelectedItem] == AEquipmentItemActor_Ring::StaticClass())
 		{
-			DetailsView_Item->SetObject(NewObject<UEquipInfo>());
+			if(RingHandler != nullptr)
+			{
+				RingHandler->ConditionalBeginDestroy();
+			}
+			
+			if(RingHandler ==nullptr)
+			{
+				RingHandler = NewObject<UEquipInfo>();
+			}
+			
+			DetailsView_Item->SetObject(RingHandler);
 		}
 
 		if (CreatableItemActorMap[SelectedItem] == AEquipmentItemActor_OrbCore::StaticClass())
 		{
-			DetailsView_Item->SetObject(NewObject<UCoreInfo>());
+
+			if(CoreHandler != nullptr)
+			{
+				CoreHandler->ConditionalBeginDestroy();
+			}
+			
+			if(CoreHandler ==nullptr)
+			{
+				CoreHandler = NewObject<UCoreInfo>();
+			}
+
+			
+			DetailsView_Item->SetObject(CoreHandler);
 		}
 
 		if (CreatableItemActorMap[SelectedItem] == AEquipmentItemActor_OrbFragment::StaticClass())
 		{
-			DetailsView_Item->SetObject(NewObject<UFragmentInfo>());
+			if(FragmentHandler != nullptr)
+			{
+				FragmentHandler->ConditionalBeginDestroy();
+			}
+			
+			if(FragmentHandler ==nullptr)
+			{
+				FragmentHandler = NewObject<UFragmentInfo>();
+			}
+			
+			DetailsView_Item->SetObject(FragmentHandler);
 		}
 
 		if (CreatableItemActorMap[SelectedItem] == AConsumeItemActor::StaticClass())
 		{
-			DetailsView_Item->SetObject(NewObject<UConsumeInfo>());
+			if(ConsumeHandler != nullptr)
+			{
+				ConsumeHandler->ConditionalBeginDestroy();
+			}
+			
+			if(ConsumeHandler ==nullptr)
+			{
+				ConsumeHandler = NewObject<UConsumeInfo>();
+			}
+			
+			DetailsView_Item->SetObject(ConsumeHandler);
 		}
 
 		if (CreatableItemActorMap[SelectedItem] == AEnhancementItemActor::StaticClass())
 		{
-			DetailsView_Item->SetObject(NewObject<UCommonInfo>());
+			if(CommonHandler != nullptr)
+			{
+				CommonHandler->ConditionalBeginDestroy();
+			}
+			
+			if(CommonHandler ==nullptr)
+			{
+				CommonHandler = NewObject<UCommonInfo>();
+			}
+			
+			DetailsView_Item->SetObject(CommonHandler);
 		}
 	}
 	else
@@ -363,6 +435,18 @@ void UItemCreatorWidget::NativeConstruct()
 	{
 		Button_Create->OnClicked.AddUniqueDynamic(this, &UItemCreatorWidget::OnClickedCreateButton);
 	}
+}
+
+#define DESTROY_HANDLER(handlerName) handlerName->ConditionalBeginDestroy(); handlerName = nullptr;
+void UItemCreatorWidget::DestroyAllHandler()
+{
+	DESTROY_HANDLER(SpiritHandler);
+	DESTROY_HANDLER(ArmorHandler);
+	DESTROY_HANDLER(RingHandler);
+	DESTROY_HANDLER(CoreHandler);
+	DESTROY_HANDLER(FragmentHandler);
+	DESTROY_HANDLER(ConsumeHandler);
+	DESTROY_HANDLER(CommonHandler);
 }
 
 /*

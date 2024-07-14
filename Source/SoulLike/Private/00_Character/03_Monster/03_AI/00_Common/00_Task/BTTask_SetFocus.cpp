@@ -30,6 +30,8 @@ EBTNodeResult::Type UBTTask_SetFocus::ExecuteTask(UBehaviorTreeComponent& OwnerC
 			pawn->GetCharacterMovement()->bUseControllerDesiredRotation = bUseControllerRotationYaw;
 			pawn->GetCharacterMovement()->bOrientRotationToMovement = !bUseControllerRotationYaw;
 
+			aiCon->SetActorTickEnabled(true);
+			
 			switch (AIFocusType)
 			{
 			case EAIFocusType::Target:

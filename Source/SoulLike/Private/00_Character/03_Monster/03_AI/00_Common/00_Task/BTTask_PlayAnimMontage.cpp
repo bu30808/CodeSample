@@ -11,8 +11,6 @@
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "Logging/StructuredLog.h"
 
-//가끔 탈출하지 못함
-
 UBTTask_PlayAnimMontage::UBTTask_PlayAnimMontage()
 {
 	bCreateNodeInstance = true;
@@ -62,6 +60,12 @@ EBTNodeResult::Type UBTTask_PlayAnimMontage::ExecuteTask(UBehaviorTreeComponent&
 
 				if (bNonBlocking)
 				{
+					if(playSpeed <=0.f)
+					{
+						UE_LOGFMT(LogAICon,Error,"{0}의 행동속도가 0이라 몽타주를 재생할 수 없습니다. 어트리뷰트 설정을 확인하세요.",monster->GetName());
+						return EBTNodeResult::Failed;
+					}
+					
 					instance->Montage_Play(MontageToPlay, playSpeed);
 					return EBTNodeResult::Succeeded;
 				}

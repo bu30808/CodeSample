@@ -26,7 +26,7 @@ void UAnimNotifyState_WaitKeyPress::BranchingPointNotifyBegin(FBranchingPointNot
 		{
 			if (auto pc = character->GetController<AUserController>())
 			{
-				pc->GetInputHandlerComponent()->StartWaitAction(WaitAction, bTriggerImmediately);
+				pc->GetInputHandlerComponent()->StartWaitAction(WaitAction, InputType, bTriggerImmediately);
 			}
 		}
 	}
@@ -43,7 +43,7 @@ void UAnimNotifyState_WaitKeyPress::BranchingPointNotifyEnd(FBranchingPointNotif
 			{
 				//UE_LOGFMT(LogTemp,Error,"{0} {1}",__FUNCTION__,__LINE__);
 
-				pc->GetInputHandlerComponent()->EndWaitAction(WaitAction);
+				pc->GetInputHandlerComponent()->EndWaitAction(WaitAction,InputType);
 			}
 		}
 	}

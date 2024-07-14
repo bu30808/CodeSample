@@ -18,6 +18,9 @@ protected:
 	//노티파이 구간동안 더하고 싶은 총 상대 로테이션
 	UPROPERTY(EditAnywhere)
 	FRotator RelativeRotationToWantTotalAdd;
+	//이 값이 참이면 노티파이가 끝날때 원래 로테이션으로 되돌립니다.
+	UPROPERTY(EditAnywhere)
+	bool bShouldRestoreWhenNotifyEnd = false;
 
 	UPROPERTY()
 	float TotalNotifyTime;

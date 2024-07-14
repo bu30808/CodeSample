@@ -10,7 +10,6 @@
 #include "04_Item/ItemActor.h"
 #include "93_SaveGame/SoulLikeSaveGame.h"
 #include "96_Library/AbilityHelperLibrary.h"
-#include "96_Library/DataLayerHelperLibrary.h"
 #include "96_Library/ItemHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "Kismet/GameplayStatics.h"
@@ -164,8 +163,8 @@ void UInventoryComponent::BeginPlay()
 		OnRemoveItem.AddUniqueDynamic(instance, &USoulLikeInstance::OnRemoveItemEvent);
 		OnUseItem.AddUniqueDynamic(instance, &USoulLikeInstance::OnUseItemEvent);
 		OnUnEquipItem.AddUniqueDynamic(instance, &USoulLikeInstance::OnUnEquipItemEvent);
-		OnUpdateMainAbilityQuickSlot.AddUniqueDynamic(instance, &USoulLikeInstance::OnUpdateMainAbilityQuickSlotEvent);
-		OnUpdateMainConsumeQuickSlot.AddUniqueDynamic(instance, &USoulLikeInstance::OnUpdateMainConsumeQuickSlotEvent);
+		OnAddItemQuickSlot.AddUniqueDynamic(instance, &USoulLikeInstance::OnAddItemQuickSlotEvent);
+		OnRemoveItemQuickSlot.AddUniqueDynamic(instance, &USoulLikeInstance::OnRemoveItemQuickSlotEvent);
 	}
 }
 
@@ -211,6 +210,7 @@ FGuid UInventoryComponent::AddItem(AItemActor* ItemActor, bool bShowPickUpWidget
 
 		if (const auto info = ItemActor->GetItemInformation())
 		{
+			UE_LOGFMT(LogInventory, Log, "{0} {1}, 아이템 추가 : {2}",__FUNCTION__,__LINE__,info->Item_Name.ToString());
 			FGuid guid;
 			const int32& itemCount = ItemActor->GetItemCount();
 
@@ -253,9 +253,8 @@ FGuid UInventoryComponent::AddItem(AItemActor* ItemActor, bool bShowPickUpWidget
 				{
 					OnGetItem.Broadcast(info->Item_Image, info->Item_Name, itemCount);
 				}
-
-				/*UE_LOGFMT(LogActorComponent, Log, "아이템 추가 : {0} {1}", guid.ToString(),
-				          Inventory[guid].GetItemInformation()->Item_Tag.ToString());*/
+				
+				
 				OnInventoryWidgetUpdate.Broadcast(guid, Inventory[guid].ItemCount);
 				OnItemQuickSlotUpdate.Broadcast(guid, Inventory[guid].ItemCount);
 			}
@@ -274,7 +273,7 @@ FGuid UInventoryComponent::AddItem(AItemActor* ItemActor, bool bShowPickUpWidget
 
 			return guid;
 		}
-		UE_LOGFMT(LogTemp, Error, "가져온 아이템 정보가 유효하지 않습니다.");
+		UE_LOGFMT(LogInventory, Error, "가져온 아이템 정보가 유효하지 않습니다.");
 	}
 
 	return FGuid();
@@ -311,7 +310,7 @@ void UInventoryComponent::UseItem(FGuid ItemUniqueID)
 	{
 		if (Inventory[ItemUniqueID].ItemCount > 0)
 		{
-			UE_LOGFMT(LogActorComponent, Log, "다음 아이템을 사용 시도 합니다 : {0} ,{1}",
+			UE_LOGFMT(LogInventory, Log, "다음 아이템을 사용 시도 합니다 : {0} ,{1}",
 			          Inventory[ItemUniqueID].GetItemInformation()->Item_Name.ToString(), ItemUniqueID);
 			const auto& item = Inventory[ItemUniqueID];
 			bool bSccUse = item.Use(GetOwner());
@@ -333,7 +332,6 @@ void UInventoryComponent::UseItem(FGuid ItemUniqueID)
 						}
 					}
 					//아이템 사용 후 해야할 행동을 합니다.
-
 					OnUseItem.Broadcast(GetOwner<ABaseCharacter>(), item);
 					OnItemQuickSlotUpdate.Broadcast(ItemUniqueID, item.ItemCount);
 				}
@@ -341,6 +339,9 @@ void UInventoryComponent::UseItem(FGuid ItemUniqueID)
 				{
 					OnItemQuickSlotUpdate.Broadcast(ItemUniqueID, 0);
 				}
+			}else
+			{
+				UE_LOGFMT(LogInventory,Error,"아이템 사용에 실패했습니다 : {0}",item.GetItemInformation()->Item_Name.ToString());
 			}
 		}
 		return;
@@ -568,16 +569,32 @@ const FGuid UInventoryComponent::AddNewItemToInventory(const FItemInformation* I
 	return newID;
 }
 
-void UInventoryComponent::AddQuickSlotItem(UInventoryData* Data, int32 Index)
+
+
+
+
+
+
+
+
+
+
+
+void UInventoryComponent::AddQuickSlotItem(UItemData* Data, int32 Index)
 {
 	if (Data != nullptr)
 	{
-		if (Data->IsA<UItemData>())
+		ItemQuickSlotUniqueIDs[Index] = Cast<UItemData>(Data)->InventoryItem.UniqueID;
+
+		//빈 퀵슬롯에 처음 등록했을 때,
+		if(CurItemQuickSlotIndex == -1)
 		{
-			ConsumeQuickSlotUniqueIDs[Index] = Cast<UItemData>(Data)->InventoryItem.UniqueID;
-			CurConsumeQuickSlotIndex = Index;
-			OnUpdateMainConsumeQuickSlot.Broadcast(GetInventoryItem(ConsumeQuickSlotUniqueIDs[Index]), false, Index);
+			CurItemQuickSlotIndex = Index;
+			//메인위젯의 퀵슬롯을 이 번호 아이템을 표시하도록 업데이트 합니다.
+			OnFirstUpdateMainItemQuickSlot.Broadcast(Data,Index);
 		}
+		//세이브 파일에 퀵슬롯 상태를 저장합니다.
+		OnAddItemQuickSlot.Broadcast(Data,Index);
 	}
 	else
 	{
@@ -595,26 +612,22 @@ void UInventoryComponent::AddQuickSlotAbility(UInventoryData* Data, int32 Index)
 	}
 }
 
-void UInventoryComponent::RemoveQuickSlotItem(UInventoryData* Data, int32 Index)
+void UInventoryComponent::RemoveQuickSlotItem(UItemData* Data, int32 Index)
 {
-	if (Data->IsA<UItemData>())
+	UE_LOGFMT(LogInventory,Log,"퀵슬롯 제거 함수 호출");
+	if (Data->IsValidLowLevel())
 	{
-		if (Index == CurConsumeQuickSlotIndex)
+		if (Index == CurItemQuickSlotIndex)
 		{
-			if (K2_HasItemByID(ConsumeQuickSlotUniqueIDs[Index]))
-			{
-				OnUpdateMainConsumeQuickSlot.Broadcast(GetInventoryItem(ConsumeQuickSlotUniqueIDs[Index]), true, Index);
-			}
-			else
-			{
-				UKismetSystemLibrary::PrintString(
-					this,TEXT("이 아이템 정보를 찾을 수 없습니다 : ") + ConsumeQuickSlotUniqueIDs[Index].ToString());
-			}
+			UE_LOGFMT(LogInventory,Log,"설정된 인덱스와 제거하려는 인덱스가 같습니다");
+			//OnRemoveItemQuickSlot.Broadcast(Data,Index);
 		}
-
-		if (ConsumeQuickSlotUniqueIDs.IsValidIndex(Index))
+		
+		//슬롯 클리어 및 저장
+		OnRemoveItemQuickSlot.Broadcast(Data,Index);
+		if (ItemQuickSlotUniqueIDs.IsValidIndex(Index))
 		{
-			ConsumeQuickSlotUniqueIDs[Index] = FGuid();
+			ItemQuickSlotUniqueIDs[Index] = FGuid();
 		}
 	}
 }
@@ -634,36 +647,35 @@ void UInventoryComponent::RemoveQuickSlotAbility(UInventoryData* Data, int32 Ind
 
 void UInventoryComponent::NextConsumeQuickSlot()
 {
-	//UKismetSystemLibrary::PrintString(this,TEXT("NextConsumeQuickSlot"));
 	UE_LOGFMT(LogInventory, Log, "다음 퀵슬롯으로 전환시도");
 
 
 	//빈 슬롯이 아닐 때까지 인덱스를 늘립니다.
-	for (auto i = CurConsumeQuickSlotIndex + 1; i < 10; i++)
+	for (auto i = CurItemQuickSlotIndex + 1; i < 10; i++)
 	{
-		if (ConsumeQuickSlotUniqueIDs[i] != FGuid())
+		if (ItemQuickSlotUniqueIDs[i] != FGuid())
 		{
-			CurConsumeQuickSlotIndex = i;
-			if (K2_HasItemByID(ConsumeQuickSlotUniqueIDs[CurConsumeQuickSlotIndex]))
+			CurItemQuickSlotIndex = i;
+			if (K2_HasItemByID(ItemQuickSlotUniqueIDs[CurItemQuickSlotIndex]))
 			{
-				const auto& item = GetInventoryItem(ConsumeQuickSlotUniqueIDs[CurConsumeQuickSlotIndex]);
+				const auto& item = GetInventoryItem(ItemQuickSlotUniqueIDs[CurItemQuickSlotIndex]);
 				UE_LOGFMT(LogInventory, Log, "다음 퀵슬롯 타겟 발견 : {0}", item.GetItemInformation()->Item_Name.ToString());
-				OnUpdateMainConsumeQuickSlot.Broadcast(item, false, CurConsumeQuickSlotIndex);
+				OnChangeItemQuickSlot.Broadcast(item, CurItemQuickSlotIndex);
 			}
 			return;
 		}
 	}
 
-	for (auto i = 0; i < CurConsumeQuickSlotIndex; i++)
+	for (auto i = 0; i < CurItemQuickSlotIndex; i++)
 	{
-		if (ConsumeQuickSlotUniqueIDs[i] != FGuid())
+		if (ItemQuickSlotUniqueIDs[i] != FGuid())
 		{
-			CurConsumeQuickSlotIndex = i;
-			if (K2_HasItemByID(ConsumeQuickSlotUniqueIDs[CurConsumeQuickSlotIndex]))
+			CurItemQuickSlotIndex = i;
+			if (K2_HasItemByID(ItemQuickSlotUniqueIDs[CurItemQuickSlotIndex]))
 			{
-				const auto& item = GetInventoryItem(ConsumeQuickSlotUniqueIDs[CurConsumeQuickSlotIndex]);
+				const auto& item = GetInventoryItem(ItemQuickSlotUniqueIDs[CurItemQuickSlotIndex]);
 				UE_LOGFMT(LogInventory, Log, "다음 퀵슬롯 타겟 발견 : {0}", item.GetItemInformation()->Item_Name.ToString());
-				OnUpdateMainConsumeQuickSlot.Broadcast(item, false, CurConsumeQuickSlotIndex);
+				OnChangeItemQuickSlot.Broadcast(item, CurItemQuickSlotIndex);
 			}
 			return;
 		}
@@ -700,7 +712,7 @@ void UInventoryComponent::NextAbilityQuickSlot()
 
 bool UInventoryComponent::IsRegistered(const FGuid& ID) const
 {
-	return ConsumeQuickSlotUniqueIDs.Contains(ID);
+	return ItemQuickSlotUniqueIDs.Contains(ID);
 }
 
 bool UInventoryComponent::IsRegistered(const FGameplayTag& Tag) const
@@ -710,41 +722,18 @@ bool UInventoryComponent::IsRegistered(const FGameplayTag& Tag) const
 
 void UInventoryComponent::UseConsumeQuickSlot()
 {
-	UseItem(ConsumeQuickSlotUniqueIDs[CurConsumeQuickSlotIndex]);
+	if(ItemQuickSlotUniqueIDs.IsValidIndex(CurItemQuickSlotIndex)){
+		UseItem(ItemQuickSlotUniqueIDs[CurItemQuickSlotIndex]);
+	}
 }
 
 void UInventoryComponent::UseAbilityQuickSlot()
 {
-	GetOwner<ABaseCharacter>()->GetAbilityComponent()->ActivateAbility(AbilityQuickSlotTags[CurAbilityQuickSlotIndex],
-	                                                                   GetOwner());
-}
-
-TSet<FGuid> UInventoryComponent::GetRegisteredConsumeQuickSlotItems()
-{
-	TSet<FGuid> out;
-	for (auto iter : ConsumeQuickSlotUniqueIDs)
+	if(AbilityQuickSlotTags.IsValidIndex(CurAbilityQuickSlotIndex))
 	{
-		if (iter != FGuid())
-		{
-			out.Emplace(iter);
-		}
+		GetOwner<ABaseCharacter>()->GetAbilityComponent()->ActivateAbility(AbilityQuickSlotTags[CurAbilityQuickSlotIndex],
+																		   GetOwner());
 	}
-
-	return out;
-}
-
-TSet<FGameplayTag> UInventoryComponent::GetRegisteredQuickSlotAbilities()
-{
-	TSet<FGameplayTag> out;
-	for (auto iter : AbilityQuickSlotTags)
-	{
-		if (iter.IsValid())
-		{
-			out.Emplace(iter);
-		}
-	}
-
-	return out;
 }
 
 void UInventoryComponent::OnItemButtonWidgetGeneratedEvent(UUserWidget* UserWidget)
@@ -785,6 +774,14 @@ void UInventoryComponent::OnItemButtonWidgetGeneratedEvent(UUserWidget* UserWidg
 		}
 	}
 }
+
+
+
+
+
+
+
+
 
 bool UInventoryComponent::HasKey(const FGameplayTag KeyTag)
 {

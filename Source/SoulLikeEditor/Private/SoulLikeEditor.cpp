@@ -13,6 +13,9 @@ TSharedPtr<FSlateStyleSet> FSoulLikeEditorModule::abilityEffectIconInstance = nu
 TSharedPtr<FSlateStyleSet> FSoulLikeEditorModule::abilityRequirementIconInstance = nullptr;
 TSharedPtr<FSlateStyleSet> FSoulLikeEditorModule::itemIconInstance = nullptr;
 
+
+
+
 void FSoulLikeEditorModule::StartupModule()
 {
 	SetAbilityIcon();
@@ -30,10 +33,14 @@ void FSoulLikeEditorModule::StartupModule()
 		TEXT("OrbMatrix"), FText::FromString(TEXT("신력구슬 메트릭스")));
 
 	Tool.RegisterAssetTypeActions(MakeShareable(new FOrbMatrixAssetActions(Category)));
+
+
 }
 
 void FSoulLikeEditorModule::ShutdownModule()
 {
+
+
 	if (abilityIconInstance.IsValid())
 	{
 		FSlateStyleRegistry::UnRegisterSlateStyle(*abilityIconInstance.Get());

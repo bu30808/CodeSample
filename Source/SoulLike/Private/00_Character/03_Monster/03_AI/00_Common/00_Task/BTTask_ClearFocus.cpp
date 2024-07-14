@@ -25,6 +25,8 @@ EBTNodeResult::Type UBTTask_ClearFocus::ExecuteTask(UBehaviorTreeComponent& Owne
 			pawn->GetCharacterMovement()->bOrientRotationToMovement = true;
 			pawn->GetAnimationHelperComponent()->bModifySkeletonTransform = false;
 			aiCon->K2_ClearFocus();
+			aiCon->SetActorTickEnabled(false);
+			
 			return EBTNodeResult::Succeeded;
 		}
 	}

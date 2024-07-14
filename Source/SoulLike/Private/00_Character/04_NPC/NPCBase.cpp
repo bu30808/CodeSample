@@ -17,6 +17,7 @@
 
 #include "00_Character/00_Player/00_Controller/00_Component/WidgetManagerComponent.h"
 #include "00_Character/01_Component/AbilityComponent.h"
+#include "00_Character/04_NPC/NPCAIController.h"
 #include "96_Library/WidgetHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "Components/ArrowComponent.h"
@@ -47,9 +48,10 @@ ANPCBase::ANPCBase()
 	GetCapsuleComponent()->SetCollisionProfileName("NPC");
 	GetMesh()->SetCollisionProfileName("NoCollision");
 
+	AIControllerClass = ANPCAIController::StaticClass();
 	bEnableAutoLODGeneration = false;
 #if WITH_EDITOR
-	RuntimeGrid = "NPCGrid";
+	//RuntimeGrid = "NPCGrid";
 #endif
 	//MerchantComponent = CreateDefaultSubobject<UMerchantComponent>("MerchantComponent");
 }
@@ -113,8 +115,6 @@ void ANPCBase::BeginPlay()
 void ANPCBase::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-
-	GetArrowComponent()->SetVisibility(false);
 	
 	for (auto iter : NPCActions)
 	{

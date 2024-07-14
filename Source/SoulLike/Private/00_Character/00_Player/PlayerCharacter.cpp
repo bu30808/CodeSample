@@ -45,6 +45,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "FurComponent.h"
 #include "00_Character/00_Player/OrbBackgroundActor.h"
+#include "00_Character/00_Player/01_Component/BossHelperComponent.h"
 #include "00_Character/00_Player/01_Component/JumpMovementComponent.h"
 #include "00_Character/00_Player/01_Component/LadderMovementComponent.h"
 #include "00_Character/00_Player/01_Component/TeleportBonfireComponent.h"
@@ -72,6 +73,7 @@ APlayerCharacter::APlayerCharacter()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = false;
+	PrimaryActorTick.TickInterval = 0.1f;
 
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
@@ -103,12 +105,20 @@ APlayerCharacter::APlayerCharacter()
 	CameraBoom->bEnableCameraLag = true;
 	CameraBoom->bEnableCameraRotationLag = true;
 	CameraBoom->CameraRotationLagSpeed = 30.f;
+	CameraBoom->SetRelativeLocation(FVector(0,0,60.f));
+	OriginalCameraBoomLocation = CameraBoom->GetRelativeLocation();
+	
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	// Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	DeathCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("DeathCamera"));
+	DeathCamera->SetupAttachment(RootComponent);
+	DeathCamera->SetRelativeLocation(FVector(0,0,500));
+	DeathCamera->SetRelativeRotation(FRotator(90,0,0));
+	DeathCamera->SetAutoActivate(false);
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
@@ -144,6 +154,7 @@ APlayerCharacter::APlayerCharacter()
 	LadderMovementComponent = CreateDefaultSubobject<ULadderMovementComponent>(TEXT("LadderMovementComponent"));
 	JumpMovementComponent = CreateDefaultSubobject<UJumpMovementComponent>(TEXT("JumpMovementComponent"));
 	TeleportBonfireComponent = CreateDefaultSubobject<UTeleportBonfireComponent>(TEXT("TeleportBonfireComponent"));
+	BossHelperComponent = CreateDefaultSubobject<UBossHelperComponent>(TEXT("BossHelperComponent"));
 }
 
 void APlayerCharacter::OnActorBeginOverlapEvent(AActor* OverlappedActor, AActor* OtherActor)
@@ -209,11 +220,12 @@ void APlayerCharacter::PostInitializeComponents()
 	SceneCaptureComponent2D->SetActive(false);
 
 	OriginalFurMaterial = FurComponent->GetMaterial(0);
-
+	
 	CreateBodyMaterialInstance();
 
 	CameraBoom->bEnableCameraLag = false;
 	CameraBoom->bEnableCameraRotationLag = false;
+	
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController)
@@ -260,7 +272,7 @@ void APlayerCharacter::LoadStartLayer()
 	
 	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 	{
-		instance->LoadLayers(StartLayerRowNames);
+		instance->LoadLayers(StartLayers);
 		//시작지점 스트리밍
 		if (const auto streamingSource = UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(this))
 		{
@@ -273,13 +285,14 @@ void APlayerCharacter::LoadStartLayer()
 
 void APlayerCharacter::CreateSoulTomb()
 {
-	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
+	if (auto instance = GetGameInstance<USoulLikeInstance>())
 	{
 		if (instance->IsUseGameSave())
 		{
 			if (instance->ExistSaveFile())
 			{
 				instance->CreateSoulTomb(this);
+				AttributeComponent->OnCharacterInformationUpdate.Broadcast();
 			}
 		}
 	}
@@ -287,7 +300,7 @@ void APlayerCharacter::CreateSoulTomb()
 
 void APlayerCharacter::OnAfterLoadStartLayerEvent()
 {
-	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
+	if (auto instance = GetGameInstance<USoulLikeInstance>())
 	{
 		//기본 코어 장착
 		EquipDefaultCore();
@@ -316,8 +329,8 @@ void APlayerCharacter::LoadGame()
 	{
 		if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 		{
-
-
+			instance->OnFinishLoadGame.AddUniqueDynamic(this, &APlayerCharacter::OnFinishLoadGame);
+			
 			SetGravityAroundPlayer(false);
 			instance->SetPlayer(this);
 			if (instance->IsUseGameSave())
@@ -330,7 +343,6 @@ void APlayerCharacter::LoadGame()
 				}
 				else
 				{
-					instance->OnFinishLoadGame.AddUniqueDynamic(this, &APlayerCharacter::OnFinishLoadGame);
 					instance->LoadGame();
 				}
 			}
@@ -366,6 +378,7 @@ void APlayerCharacter::SetGravityAroundPlayer(bool bActivate)
 
 void APlayerCharacter::OnFinishLoadGame()
 {
+	UE_LOGFMT(LogSave,Warning,"APlayerCharacter::OnFinishLoadGame");
 	if (auto pc = GetController<AUserController>())
 	{		
 		UE_LOGFMT(LogCharacter,Log,"로드 완료");
@@ -400,10 +413,10 @@ void APlayerCharacter::OnFinishLoadGame()
 		SetGravityAroundPlayer(true);
 		ShowLoadingScreen(false);
 		
-		
-		//딜레이를 안 주면 중간에 사라지기 때문에 어쩔수 없다.
+		CreateSoulTomb();
+		/*//딜레이를 안 주면 중간에 사라지기 때문에 어쩔수 없다.
 		FTimerHandle tombTimerHandle;
-		GetWorldTimerManager().SetTimer(tombTimerHandle,this,&APlayerCharacter::CreateSoulTomb,3.f,false);
+		GetWorldTimerManager().SetTimer(tombTimerHandle,this,&APlayerCharacter::CreateSoulTomb,3.f,false);*/
 	}
 }
 
@@ -429,6 +442,22 @@ void APlayerCharacter::EndLoadingCameraFade()
 	UE_LOGFMT(LogCharacter,Log,"EndLoadingCameraFade");
 	auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
 	cameraManager->StartCameraFade(1,0,2.f,FColor::Black,true);
+}
+
+void APlayerCharacter::ResetCameraBoom()
+{
+	CameraBoom->SetRelativeLocation(OriginalCameraBoomLocation);
+	CameraBoom->SetRelativeRotation(FRotator::ZeroRotator);
+}
+
+void APlayerCharacter::ResetCamera()
+{
+	FollowCamera->Activate();
+	DeathCamera->Deactivate();
+	DeathCamera->AttachToComponent(RootComponent,FAttachmentTransformRules::KeepWorldTransform);
+	DeathCamera->SetRelativeLocation(FVector(0,0,500));
+	DeathCamera->SetRelativeRotation(FRotator(90,0,0));
+	GetController<APlayerController>()->SetViewTargetWithBlend(this,0.1f);
 }
 
 void APlayerCharacter::PauseFindInteractionTarget()
@@ -514,7 +543,7 @@ void APlayerCharacter::BeginPlay()
 		ShowLoadingScreen(true);
 
 		Super::BeginPlay();
-		/*LoadGame();*/
+		LoadGame();
 		
 		/*
 		//일단 플레이어의 주변이 스트리밍이 끝난 후에, 로드에 필요한 행동을 합니다.
@@ -530,6 +559,17 @@ void APlayerCharacter::BeginPlay()
 
 void APlayerCharacter::OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayReason)
 {
+	UE_LOGFMT(LogCharacter,Log,"다음의 이유로 플레이어가 종료되었습니다 : {0}",StaticEnum<EEndPlayReason::Type>()->GetValueAsString(EndPlayReason));
+	
+	if (!IsDead())
+	{
+		//종료시점의 상태를 저장하도록 합니다.
+		if(auto instance = GetGameInstance<USoulLikeInstance>())
+		{
+			instance->SaveWhenEndPlay(this);
+		}
+	}
+	
 	if (EndPlayReason == EEndPlayReason::Destroyed)
 	{
 		if (IsDead())
@@ -575,6 +615,9 @@ void APlayerCharacter::Tick(float DeltaTime)
 		DrawDebugDirectionalArrow(GetWorld(), GetActorLocation(), GetActorLocation() + dirVector, 50.f, FColor::Cyan,
 		                          false, -1, 0, 5.f);
 	}
+
+	// 락온 타겟 변경 간격 시간 경과 추적
+	TimeSinceLastTargetChange += DeltaTime;
 }
 
 void APlayerCharacter::PressMove()
@@ -622,10 +665,10 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		//락온
 		EnhancedInputComponent->BindAction(InputDataAsset->LockOnAction, ETriggerEvent::Triggered, this,
 		                                   &APlayerCharacter::LockOn);
-		EnhancedInputComponent->BindAction(InputDataAsset->ChangeNextLockOnTargetAction, ETriggerEvent::Triggered, this,
+		/*EnhancedInputComponent->BindAction(InputDataAsset->ChangeNextLockOnTargetAction, ETriggerEvent::Triggered, this,
 		                                   &APlayerCharacter::NextLockOnTarget);
 		EnhancedInputComponent->BindAction(InputDataAsset->ChangePreLockOnTargetAction, ETriggerEvent::Triggered, this,
-		                                   &APlayerCharacter::PreLockOnTarget);
+		                                   &APlayerCharacter::PreLockOnTarget);*/
 
 
 		//메뉴 및 팝업처리
@@ -1159,15 +1202,37 @@ EDirection APlayerCharacter::GetPlayerMoveDirection(bool bControllerDirection)
 {
 	if (!bPressMove)
 	{
+		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : bPressMove가 거짓입니다.");
 		return EDirection::Back;
 	}
 
 	float dir = 0;
 	if (bControllerDirection)
 	{
-		const auto& point = UMathHelperLibrary::GetControllerInputDir(GetControlRotation(), MovementInputVector) * 200.f
+		FVector inputDir = UMathHelperLibrary::GetControllerInputDir(GetControlRotation(), MovementInputVector);
+		inputDir.Z = 0;
+		inputDir.Normalize();
+		
+		FVector forwardVector = GetActorForwardVector();
+		forwardVector.Z = 0;
+		forwardVector.Normalize();
+
+		float angle = FMath::Acos(FVector::DotProduct(forwardVector,inputDir));
+		angle = FMath::RadiansToDegrees(angle);
+
+		FVector crossProduct = FVector::CrossProduct(forwardVector,inputDir);
+
+		if(crossProduct.Z<0)
+		{
+			angle = -angle;
+		}
+
+		dir = angle;
+		
+		
+		/*const auto& point = UMathHelperLibrary::GetControllerInputDir(GetControlRotation(), MovementInputVector) * 200.f
 			+ GetActorLocation();
-		dir = UMathHelperLibrary::CalculateDegree(this, point);
+		dir = UMathHelperLibrary::CalculateDegree(this, point);*/
 	}
 	else
 	{
@@ -1179,52 +1244,60 @@ EDirection APlayerCharacter::GetPlayerMoveDirection(bool bControllerDirection)
 	//전
 	if (-22.5f < dir && dir <= 22.5f)
 	{
+		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 전");
 		return EDirection::Front;
 	}
 
 	//전&우
 	if (22.5f < dir && dir <= 67.5f)
 	{
+		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 전우");
 		return EDirection::FrontRight;
 	}
 
 	//우
 	if (67.5f < dir && dir <= 112.5f)
 	{
+		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 우");
 		return EDirection::Right;
 	}
 
 	//후&우
 	if (112.5f < dir && dir <= 157.5f)
 	{
+		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 :우후");
 		return EDirection::BackRight;
 	}
 
 	//후
 	if (157.5f < dir && dir <= 180 || -157.5f >= dir && dir > 112.5f)
 	{
+		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 후");
 		return EDirection::Back;
 	}
 
 	//후 & 좌
 	if (-112.5f >= dir && dir > -157.5f)
 	{
+		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 좌후");
 		return EDirection::BackLeft;
 	}
 
 	//좌
 	if (-67.5f >= dir && dir > -112.5f)
 	{
+		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 좌");
 		return EDirection::Left;
 	}
 
 	//전 & 좌
 	if (-22.5f >= dir && dir > -67.5f)
 	{
+		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 전좌");
 		return EDirection::FrontLeft;
 	}
 
-
+	UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 후");
 	return EDirection::Back;
 }
 
@@ -1496,14 +1569,24 @@ void APlayerCharacter::OnChangedMoveSpeedAttributeEvent()
 	}
 }
 
-void APlayerCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy)
+void APlayerCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason)
 {
 	if (CharacterState != ECharacterState::DEAD)
 	{
-		Super::OnDeadEvent(Who, DeadBy);
+		Super::OnDeadEvent(Who, DeadBy, DeadReason);
+
+		if(DeadReason == EDeadReason::DiedFromFalling)
+		{
+			UE_LOGFMT(LogCharacter,Log,"추락사");
+			FollowCamera->Deactivate();
+			DeathCamera->Activate();
+			DeathCamera->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld,false));
+			GetController<APlayerController>()->SetViewTargetWithBlend(this,0.3f);
+		}
+		
 
 		DisableInput(GetController<APlayerController>());
-		LockOnComponent->End();
+		LockOnComponent->End();		
 		//사망상태 저장
 		if (auto instance = GetGameInstance<USoulLikeInstance>())
 		{
@@ -1532,7 +1615,6 @@ void APlayerCharacter::RestoreStatusEffectMaterial()
 	FurComponent->SetMaterial(0, OriginalFurMaterial);
 }
 
-
 void APlayerCharacter::ForceEndDodge()
 {
 	const auto& dodgeTag = UAbilityHelperLibrary::GetDodgeTag(InventoryComponent);
@@ -1554,8 +1636,13 @@ void APlayerCharacter::OnUpdateDeadDissolveTimeLine(float Value)
 
 void APlayerCharacter::OnFinishDissolveTimeLine()
 {
-	UE_LOGFMT(LogCharacter, Warning, "사망 디졸브가 끝났습니다. 레벨을 다시 로드합니다.");
-	UGameplayStatics::OpenLevel(this, FName(UGameplayStatics::GetCurrentLevelName(this)));
+	UE_LOGFMT(LogCharacter, Warning, "사망 디졸브가 끝났습니다. 리셋합니다.");
+	if(auto instance = GetGameInstance<USoulLikeInstance>())
+	{
+		ShowLoadingScreen(true);
+		instance->DeadRespawn();
+	}
+	//UGameplayStatics::OpenLevel(this, FName(UGameplayStatics::GetCurrentLevelName(this)));
 }
 
 void APlayerCharacter::OnTriggerHitAnimationEnterEvent(ABaseCharacter* DamagedCharacter, AActor* HitBy)
@@ -1630,6 +1717,27 @@ void APlayerCharacter::Look(const FInputActionValue& Value)
 void APlayerCharacter::AddControllerYawInput(float Val)
 {
 	Super::AddControllerYawInput(Val);
+	//인풋값이 양수인 경우 -> 오른쪽
+	if(Val > 0)
+	{
+		if (FMath::Abs(Val) >= TargetChangeSensitivity && TimeSinceLastTargetChange >= TargetChangeCooldown)
+		{
+			NextLockOnTarget();
+			TimeSinceLastTargetChange = 0.0f; // 타겟 변경 후 시간 초기화
+		}
+		return;
+	}
+	
+	//음수인경우 -> 왼쪽
+	if(Val < 0)
+	{
+		if (FMath::Abs(Val) >= TargetChangeSensitivity && TimeSinceLastTargetChange >= TargetChangeCooldown)
+		{
+			PreLockOnTarget();
+			TimeSinceLastTargetChange = 0.0f; // 타겟 변경 후 시간 초기화
+		}
+		return;
+	}
 }
 
 void APlayerCharacter::AddControllerPitchInput(float Val)

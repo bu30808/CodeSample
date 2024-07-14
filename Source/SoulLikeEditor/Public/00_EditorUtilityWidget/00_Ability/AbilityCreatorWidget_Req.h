@@ -9,7 +9,7 @@
 #include "Components/TextBlock.h"
 #include "AbilityCreatorWidget_Req.generated.h"
 
-UCLASS()
+UCLASS(Transient)
 class SOULLIKEEDITOR_API UCostCreateInfo : public UObject
 {
 	GENERATED_BODY()
@@ -26,7 +26,7 @@ public:
 	FGameplayTag EffectTag;
 };
 
-UCLASS()
+UCLASS(Transient)
 class SOULLIKEEDITOR_API UCooldownCreateInfo : public UObject
 {
 	GENERATED_BODY()
@@ -41,7 +41,7 @@ public:
 };
 
 
-UCLASS()
+UCLASS(Transient)
 class SOULLIKEEDITOR_API UReqTagInfo : public UObject
 {
 	GENERATED_BODY()
@@ -56,7 +56,7 @@ public:
 	FGameplayTagContainer NotNeedEffectTags;
 };
 
-UCLASS()
+UCLASS(Transient)
 class SOULLIKEEDITOR_API UReqAbilityTagInfo : public UObject
 {
 	GENERATED_BODY()
@@ -104,6 +104,15 @@ public:
 
 	UPROPERTY(meta=(BindWidget))
 	class UDetailsView* DetailsView_AbilityTag;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UCostCreateInfo> CostHandler;
+	UPROPERTY(Transient)
+	TObjectPtr<UCooldownCreateInfo> CooldownHandler;
+	UPROPERTY(Transient)
+	TObjectPtr<UReqTagInfo> ReqTagHandler;
+	UPROPERTY(Transient)
+	TObjectPtr<UReqAbilityTagInfo> ReqAbilityTagHandler;
 
 	UFUNCTION()
 	void OnClicked();

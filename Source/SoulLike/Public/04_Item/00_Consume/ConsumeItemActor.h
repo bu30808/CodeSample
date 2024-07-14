@@ -25,3 +25,13 @@ public:
 	virtual bool UseItem_Implementation(AActor* Target, const FGuid& ThisItemsUniqueID) override;
 	virtual void OnEndAbilityEvent_Implementation() override;
 };
+
+UCLASS()
+class SOULLIKE_API ASoulItemActor : public AConsumeItemActor
+{
+	GENERATED_BODY()
+
+public:
+	virtual void OnOverrideSelfEffectEvent_Implementation(const TArray<UAbilityEffect*>& SelfEffect, AActor* Target) override;
+	virtual FText GetFormattedDescription_Implementation() override;
+};

@@ -538,7 +538,6 @@ void UAbilityBase::TryActivateAbility_Implementation(UObject* AdditionalInfo)
 		ApplyCooldown();
 		BindMontageEvent();
 		BindActionEvent();
-		SaveAbilityEvent();
 		RegisterAbilityTag();
 		ApplyEffect();
 		ApplyCues();
@@ -596,7 +595,6 @@ void UAbilityBase::EndAbility_Implementation()
 	UE_LOGFMT(LogAbility, Warning, "어빌리티 종료 : {0}", AbilityTag.ToString());
 
 	UnBindDeadEvent();
-	RemoveAbilityEvent();
 	MontageIndex = 0;
 	UnBindMontageEvent();
 	UnBindActionEvent();
@@ -827,22 +825,6 @@ void UAbilityBase::BindActionEvent()
 	{
 		if (auto pc = AbilityOwner->GetController<AUserController>())
 		{
-			/*
-			//이 어빌리티를 발동한 액션을 키로 해서 바인드 합니다.
-			if (AbilityInputAction.IsValid())
-			{
-				//UE_LOGFMT(LogAbility, Error, "{0} {1}", __FUNCTION__, __LINE__);
-				UE_LOGFMT(LogAbility, Warning, "키 이벤트 바인드 : {0}", AbilityTag.ToString());
-				//UE_LOGFMT(LogAbility, Error, "{0} {1}", __FUNCTION__, __LINE__);
-				FOnKeyPressedWithAction OnKeyPressed;
-				OnKeyPressed.AddUniqueDynamic(this, &UAbilityBase::OnPressedActionKey);
-
-				//키가 눌리지 않았을 때, 할 행동
-				FOnKeyNotPressed OnNotKeyPressed;
-				OnNotKeyPressed.AddUniqueDynamic(this, &UAbilityBase::EndAbility);
-				pc->GetInputHandlerComponent()->BindEvent(FKeyPressedInfo(AbilityInputAction.Get(),AbilityTag), OnKeyPressed, OnNotKeyPressed);
-			}
-			*/
 
 			//이 어빌리티 중간에 다른 키 입력으로 액션을 연계하기 위해 바인드 합니다.
 			for (auto action : WaitInputAction)
@@ -856,12 +838,15 @@ void UAbilityBase::BindActionEvent()
 				//UE_LOGFMT(LogAbility, Error, "{0} {1}", __FUNCTION__, __LINE__);
 				FOnKeyPressedWithAction OnKeyPressed;
 				OnKeyPressed.AddUniqueDynamic(this, &UAbilityBase::OnPressedActionKey);
+				
+				FOnKeyReleasedWithAction OnKeyReleased;
+				OnKeyReleased.AddUniqueDynamic(this, &UAbilityBase::OnReleasedActionKey);
 
 				//키가 눌리지 않았을 때, 할 행동
-				FOnKeyNotPressed OnNotKeyPressed;
+				FNoKeyInput OnNotKeyPressed;
 				//OnNotKeyPressed.AddUniqueDynamic(this, &UAbilityBase::EndAbility);
 				OnNotKeyPressed.AddUniqueDynamic(this, &UAbilityBase::OnNotKeyPressed);
-				pc->GetInputHandlerComponent()->BindEvent(FKeyPressedInfo(action, AbilityTag), OnKeyPressed,
+				pc->GetInputHandlerComponent()->BindEvent(FKeyPressedInfo(action, AbilityTag), OnKeyPressed,OnKeyReleased,
 				                                          OnNotKeyPressed);
 			}
 		}
@@ -947,7 +932,7 @@ void UAbilityBase::UnBindDeadEvent()
 	}
 }
 
-void UAbilityBase::OnAbilityOwnerDeadEvent_Implementation(AActor* Who, AActor* DeadBy)
+void UAbilityBase::OnAbilityOwnerDeadEvent_Implementation(AActor* Who, AActor* DeadBy, EDeadReason DeadReason)
 {
 	CancelAbility();
 }
@@ -1001,42 +986,6 @@ bool UAbilityBase::IsCostEnough()
 	}
 
 	return true;
-}
-
-void UAbilityBase::SaveAbilityEvent()
-{
-	if (AbilityOwner.IsValid() && AbilityOwner->IsA<APlayerCharacter>())
-	{
-		UE_LOGFMT(LogAbility, Log, "{0} {1} : {2}", __FUNCTION__, __LINE__, AbilityTag.ToString());
-		if (const auto abilitySubsystem = UGameplayStatics::GetGameInstance(AbilityOwner.Get())->GetSubsystem<
-			UAbilitySubsystem>())
-		{
-			UE_LOGFMT(LogAbility, Log, "{0} {1} {2}", AbilityTag.ToString(), __FUNCTION__, __LINE__);
-			abilitySubsystem->EventMap.Add(AbilityTag, OnSavedAbilityEvent);
-		}
-		else
-		{
-			UE_LOGFMT(LogAbility, Error, "{0} {1}", __FUNCTION__, __LINE__);
-		}
-	}
-	else
-	{
-		UE_LOGFMT(LogAbility, Error, "{0} {1}", __FUNCTION__, __LINE__);
-	}
-}
-
-void UAbilityBase::RemoveAbilityEvent()
-{
-	OnSavedAbilityEvent.RemoveAll(this);
-
-	if (AbilityOwner.IsValid() && AbilityOwner->IsA<APlayerCharacter>())
-	{
-		if (auto abilitySubsystem = UGameplayStatics::GetGameInstance(AbilityOwner.Get())->GetSubsystem<
-			UAbilitySubsystem>())
-		{
-			abilitySubsystem->EventMap.Remove(AbilityTag);
-		}
-	}
 }
 
 AActor* UAbilityBase::SpawnActor(TSubclassOf<AActor> ActorObject)

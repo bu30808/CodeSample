@@ -111,6 +111,7 @@ void UBaseAnimInstance::AnimNotify_OnHitEnter_Implementation()
 }
 
 
+
 void UBaseAnimInstance::AnimNotify_OnHitExit_Implementation()
 {
 	if (Character.IsValid())
@@ -123,3 +124,4 @@ void UBaseAnimInstance::AnimNotify_OnHitExit_Implementation()
 		}
 	}
 }
+

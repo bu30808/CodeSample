@@ -14,6 +14,7 @@
 #include "00_Character/03_Monster/ExpOrb.h"
 #include "96_Library/WidgetHelperLibrary.h"
 #include "97_Interface/BossMonsterInterface.h"
+#include "98_GameInstance/SoulLikeInstance.h"
 #include "Components/SphereComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
@@ -211,6 +212,7 @@ void UItemDropComponent::GiveExp(ABaseCharacter* DropBy)
 			{
 				UE_LOGFMT(LogCharacter, Warning, "보스 처치 보상 즉시 지급");
 				attComp->SetEXP(attComp->GetEXP() + Exp);
+				DropBy->GetGameInstance<USoulLikeInstance>()->SaveAttributeExp(DropBy->GetAttributeComponent()->GetEXPAttribute());
 				attComp->OnCharacterInformationUpdate.Broadcast();
 			}
 			return;

@@ -342,6 +342,7 @@ void UAnimationHelperComponent::OnHitMontageBlendOut(UAnimMontage* Montage, bool
 			{
 				if (IsHitMontage(Montage) || IsGuradHitMontage(Montage))
 				{
+					ComponentOwnerCharacter->SetCharacterState(ECharacterState::NORMAL);
 					if (bUseHitMighty)
 					{
 						UE_LOGFMT(LogTemp, Log, "슈퍼아머 부여");
@@ -361,11 +362,11 @@ void UAnimationHelperComponent::StartDeadDissolve()
 		if (DissolveParticle)
 		{
 			UE_LOGFMT(LogCharacter, Log, "사망 파티클 생성");
-			const auto comp = UNiagaraFunctionLibrary::SpawnSystemAttached(
+			DissolveNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(
 				DissolveParticle, ComponentOwnerCharacter->GetRootComponent(), NAME_None, FVector::ZeroVector,
 				FRotator::ZeroRotator,
 				EAttachLocation::SnapToTargetIncludingScale, false);
-			comp->SetColorParameter("Color", DissolveColor);
+			DissolveNiagaraComponent->SetColorParameter("Color", DissolveColor);
 		}
 
 		auto dissolveComp = ComponentOwnerCharacter->GetDeadDissolveTimeLineComponent();
@@ -375,8 +376,34 @@ void UAnimationHelperComponent::StartDeadDissolve()
 	}
 }
 
-void UAnimationHelperComponent::PlayDeadAnimationByMode()
+void UAnimationHelperComponent::DestroyDissolveParticle()
 {
+	if (DissolveNiagaraComponent)
+	{
+		DissolveNiagaraComponent->Deactivate();
+		DissolveNiagaraComponent->DestroyComponent();
+	}
+}
+
+void UAnimationHelperComponent::PlayDeadAnimationByMode(EDeadReason DeadReason)
+{
+	//추락해서 사망하는거면 아무것도 안 합니다. 다른 부분에서 연출합니다.
+	if (DeadReason == EDeadReason::DiedFromFalling)
+	{
+		return;
+	}
+
+	//석화상태로 사망하면 아무것도 안 합니다.
+	if (DeadReason == EDeadReason::DiedFromPetrifaction)
+	{
+		return;
+	}
+
+	/*if(ComponentOwnerCharacter->GetAbilityComponent()->HasEffectTag(FGameplayTag::RequestGameplayTag("Common.StatusEffect.Petrifaction.Effect")))
+	{
+		return;
+	}*/
+
 	switch (DeadAnimationPlayMode)
 	{
 	case EDeadAnimationPlayMode::Sequence:
@@ -393,6 +420,7 @@ void UAnimationHelperComponent::PlayDeadAnimationByMode()
 
 void UAnimationHelperComponent::PlayDeadAnimationSequence()
 {
+	UE_LOGFMT(LogTemp,Log,"사망 애니메이션 시퀀스 설정");
 	if (ComponentOwnerCharacter)
 	{
 		ComponentOwnerCharacter->GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
@@ -400,7 +428,13 @@ void UAnimationHelperComponent::PlayDeadAnimationSequence()
 		if (DeadAnimations.IsValidIndex(randIndex))
 		{
 			ComponentOwnerCharacter->GetMesh()->PlayAnimation(DeadAnimations[randIndex], false);
+		}else
+		{
+			UE_LOGFMT(LogTemp,Error,"재생할 인덱스 번호가 유효하지 않음");	
 		}
+	}else
+	{
+		UE_LOGFMT(LogTemp,Error,"컴포넌트 오너가 유효하지 않음.");	
 	}
 }
 

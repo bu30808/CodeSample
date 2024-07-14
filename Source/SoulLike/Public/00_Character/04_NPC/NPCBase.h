@@ -214,5 +214,6 @@ public:
 	virtual UMerchantComponent* GetMerchantComponent() override;
 
 	virtual void SetActorHiddenInGame(bool bNewHidden) override;
+
 	
 };

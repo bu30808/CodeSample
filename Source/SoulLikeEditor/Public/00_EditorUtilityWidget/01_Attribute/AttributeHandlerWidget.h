@@ -14,9 +14,10 @@ class UAttributePerPointHandler : public UObject
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Transient)
 	FAttributePerPoint AttributePerPoint;
 };
+
 
 UCLASS()
 class UAttributeInitHandler : public UObject
@@ -24,7 +25,7 @@ class UAttributeInitHandler : public UObject
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere,Transient)
 	FAttributeInit AttributeInit;
 	UPROPERTY()
 	class UDataTable* TablePointer;
@@ -44,6 +45,12 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	class UDataTable* AttributePerPointTable;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UAttributeInitHandler> InitHandler;
+	UPROPERTY(Transient)
+	TObjectPtr<UAttributePerPointHandler> PerPointHandler;
+
 	
 	UPROPERTY()
 	TMap<FString,TSubclassOf<class ABaseCharacter>> BaseCharacters;
@@ -81,4 +88,6 @@ public:
 	void OnClickedSaveAttInit();
 	UFUNCTION()
 	void OnClickedSaveAttPerPoint();
+
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
 };

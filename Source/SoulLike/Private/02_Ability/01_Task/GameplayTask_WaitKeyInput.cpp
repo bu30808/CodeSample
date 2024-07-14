@@ -17,7 +17,7 @@ UGameplayTask_WaitKeyInput::UGameplayTask_WaitKeyInput(const FObjectInitializer&
 
 UGameplayTask_WaitKeyInput* UGameplayTask_WaitKeyInput::WaitKeyInput(APlayerCharacter* Player,
                                                                      const FKeyPressedInfo& ActionInfo,
-                                                                     bool bAutoTaskEnd)
+                                                                     EInputType InputType, bool bAutoTaskEnd)
 {
 	if (Player == nullptr)
 	{
@@ -46,6 +46,7 @@ UGameplayTask_WaitKeyInput* UGameplayTask_WaitKeyInput::WaitKeyInput(APlayerChar
 	newTask->PlayerCharacter = Player;
 	newTask->WaitAction = ActionInfo;
 	newTask->bWaitCont = !bAutoTaskEnd;
+	newTask->WaitInputType = InputType;
 
 	return newTask;
 }
@@ -85,24 +86,69 @@ void UGameplayTask_WaitKeyInput::TickTask(float DeltaTime)
 	Super::TickTask(DeltaTime);
 	if (PC.IsValid() && Actionkeys.IsValidIndex(0))
 	{
-		if (PC->IsInputKeyDown(Actionkeys[0]))
-		{
-			UE_LOGFMT(LogTemp, Warning, "Get Press Key!! : {0}", Actionkeys[0].ToString());
+		switch (WaitInputType) {
+		case EInputType::PRESS:
+			if (PC->WasInputKeyJustPressed(Actionkeys[0]))
+			{
+				if (OnKeyPressedWithAction.IsBound())
+				{
+					UE_LOGFMT(LogTemp, Warning, "Get Press Key!! : {0}", Actionkeys[0].ToString());
+					OnKeyPressedWithAction.Broadcast(WaitAction);
+				}
+				else
+				{
+					UE_LOGFMT(LogTemp, Error, "눌림 키 이벤트가 바인드되지 않았습니다 : {0}", Actionkeys[0].ToString());
+				}
 
-			if (OnKeyPressedWithAction.IsBound())
-			{
-				OnKeyPressedWithAction.Broadcast(WaitAction);
+				//계속 기다리는것이 아니라면 종료시킵니다.
+				if (!bWaitCont)
+				{
+					EndTask();
+				}
 			}
-			else
+			break;
+		case EInputType::HELD_DOWN:
+			if (PC->IsInputKeyDown(Actionkeys[0]))
 			{
-				UE_LOGFMT(LogTemp, Error, "키 이벤트가 바인드되지 않았습니다.", Actionkeys[0].ToString());
-			}
+				if (OnKeyPressedWithAction.IsBound())
+				{
+					UE_LOGFMT(LogTemp, Warning, "Get held down  Key!! : {0}", Actionkeys[0].ToString());
+					OnKeyPressedWithAction.Broadcast(WaitAction);
+				}
+				else
+				{
+					UE_LOGFMT(LogTemp, Error, "눌림 키 이벤트가 바인드되지 않았습니다 : {0}", Actionkeys[0].ToString());
+				}
 
-			//계속 기다리는것이 아니라면 종료시킵니다.
-			if (!bWaitCont)
-			{
-				EndTask();
+				//계속 기다리는것이 아니라면 종료시킵니다.
+				if (!bWaitCont)
+				{
+					EndTask();
+				}
 			}
+			break;
+		case EInputType::RELEASE:
+			if(PC->WasInputKeyJustReleased(Actionkeys[0]))
+			{
+
+				if (OnKeyReleasedWithAction.IsBound())
+				{
+					UE_LOGFMT(LogTemp, Warning, "Get Release Key!! : {0}", Actionkeys[0].ToString());
+					OnKeyReleasedWithAction.Broadcast(WaitAction);
+				}
+				else
+				{
+					UE_LOGFMT(LogTemp, Error, "땜 키 이벤트가 바인드되지 않았습니다  : {0}", Actionkeys[0].ToString());
+				}
+
+				//계속 기다리는것이 아니라면 종료시킵니다.
+				if (!bWaitCont)
+				{
+					EndTask();
+				}
+			}
+			break;
 		}
+		
 	}
 }

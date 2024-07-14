@@ -88,18 +88,8 @@ void UAbilityEffect_Linetrace::OnHitActorEvent_Implementation(const FHitResult& 
 				addInfo->HitBy = Target;
 				addInfo->bTriggerHitAnimation = bTriggerHitAnimation;
 
-				bool bSucc = false;
 
-				if (bSplitDamageOverTime)
-				{
-					bSucc = ApplyInstantEffect(character, addInfo, GetDeltaTime());
-				}
-				else
-				{
-					bSucc = ApplyInstantEffect(character, addInfo);
-				}
-
-				if (bSucc)
+				if (bool bSucc = ApplyInstantEffect(character, addInfo))
 				{
 					//피해를 입은 대상에서 impact 큐를 생성해 적용합니다.
 					character->ShowGotHitCue(Hit.Location);
@@ -240,37 +230,7 @@ void UAbilityEffect_Linetrace::ActivateTrace(bool bActive, class ABaseCharacter*
 		}
 	}
 }
-#if WITH_EDITOR
-void UAbilityEffect_Linetrace::CopyValues(UAbilityEffect* Effect)
-{
-	Super::CopyValues(Effect);
-	auto linetraceData = Cast<UAbilityEffect_Linetrace>(Effect);
 
-	bUseWithCustomSockets = linetraceData->bUseWithCustomSockets;
-	CustomSockets = linetraceData->CustomSockets;
-
-	bTraceOtherSocketsAtSameTime = linetraceData->bTraceOtherSocketsAtSameTime;
-	bTraceOtherSocketsAtDifferentTime = linetraceData->bTraceOtherSocketsAtDifferentTime;
-	TraceType = linetraceData->TraceType;
-	TraceChannel = linetraceData->TraceChannel;
-	ObjectTypes = linetraceData->ObjectTypes;
-	bTraceComplex = linetraceData->bTraceComplex;
-	IgnoreActors = linetraceData->IgnoreActors;
-	bIgnoreSelf = linetraceData->bIgnoreSelf;
-	IgnoreSockets = linetraceData->IgnoreSockets;
-	TraceColor = linetraceData->TraceColor;
-	TraceHitColor = linetraceData->TraceHitColor;
-	DrawDebugType = linetraceData->DrawDebugType;
-	DrawTime = linetraceData->DrawTime;
-	TraceShapeType = linetraceData->TraceShapeType;
-	BoxHalfSize = linetraceData->BoxHalfSize;
-	BoxOrientation = linetraceData->BoxOrientation;
-	CapsuleRadius = linetraceData->CapsuleRadius;
-	CapsuleHalfHeight = linetraceData->CapsuleHalfHeight;
-	SphereRadius = linetraceData->SphereRadius;
-}
-
-#endif
 
 /*
 void UAbilityEffect_Linetrace::ApplyAbilityDamageTalent(ABaseCharacter* Target, ABaseCharacter* DamagedCharacter)
@@ -383,19 +343,19 @@ void UAbilityEffect_Linetrace::AddHitActors(TArray<FHitResult> HitArray, ABaseCh
 {
 	for (const auto& Hit : HitArray)
 	{
-	
 		if (Hit.GetActor()!=nullptr && Hit.GetActor()->IsA<ABaseCharacter>())
 		{
+			
 			if (!HitActors.ContainsByPredicate([&](const FHitResult& Inner)
-			{
-				return Inner.GetActor() == Hit.GetActor();
-			}))
+				{
+					return Inner.GetActor() == Hit.GetActor();
+				}))
 			{
 				UKismetSystemLibrary::PrintString(
-					Target, FString::Printf(TEXT("히트 액터 추가됨 : %s"), *Hit.GetActor()->GetActorNameOrLabel()));
-				HitActors.Add(Hit);
+						Target, FString::Printf(TEXT("히트 액터 추가됨 : %s"), *Hit.GetActor()->GetActorNameOrLabel()));HitActors.Add(Hit);
 				OnHitActor.Broadcast(Hit, Target);
 			}
+			
 		}
 		else
 		{
@@ -404,6 +364,7 @@ void UAbilityEffect_Linetrace::AddHitActors(TArray<FHitResult> HitArray, ABaseCh
 				SpawnStaticHitParticle(Target, Hit.Location, Hit.ImpactNormal);
 			}
 		}
+		
 	}
 }
 
@@ -1130,4 +1091,13 @@ void UAbilityEffect_Linetrace::ApplyKnockDown(const FHitResult& Hit, class ABase
 			}
 		}
 	}
+}
+
+ABaseCharacter* UAbilityEffect_Linetrace::HitActorFromHitResult(const FHitResult& Hit)
+{
+	if(Hit.GetActor()!=nullptr)
+	{
+		return Cast<ABaseCharacter>(Hit.GetActor());
+	}
+	return nullptr;
 }

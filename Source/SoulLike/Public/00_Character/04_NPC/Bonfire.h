@@ -48,8 +48,10 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Default")
 	FLinearColor CombatColor = FLinearColor(20.f, 0.776941f, 0.f, 1.f);
 	//이 화톳불이 위치하는 곳의 하늘 시간입니다.
-	UPROPERTY(EditAnywhere, Category="Default")
+	UPROPERTY(EditAnywhere, Category="Sky")
 	float SkyTime;
+	UPROPERTY(EditAnywhere, Category="Sky")
+	class UDataAsset* Weather;
 	UPROPERTY(EditAnywhere, Category="Default")
 	float MonsterCheckRadius = 500.f;
 	UPROPERTY(Transient,VisibleAnywhere,BlueprintReadWrite)
@@ -63,6 +65,9 @@ protected:
 	//이 화톳불의 위치정보를 테이블에 추가합니다.
 	UFUNCTION(BlueprintCallable, CallInEditor, DisplayName= "테이블 업데이트")
 	void AddBonfireInToDataTable();
+	UFUNCTION(BlueprintCallable, CallInEditor, DisplayName= "정보 불러오기")
+	void LoadBonfireInfoFromTable();
+	
 	void SetActivate();
 
 public:
@@ -79,4 +84,5 @@ public:
 	const FBonfireInformation& GetBonfireInformation();
 
 	virtual bool ShowInteractionWidgetDirectly_Implementation() override;
+	virtual void Interaction_Implementation(ABaseCharacter* Start) override;
 };

@@ -3,8 +3,28 @@
 
 #include "03_Widget/02_Monster/HealthBarWidget.h"
 
+#include "Components/Image.h"
 #include "Components/TextBlock.h"
+#include "Kismet/KismetMaterialLibrary.h"
 #include "Logging/StructuredLog.h"
+
+
+void UHealthBarWidget::SetDynamicMaterial()
+{
+	if (GradientBarMaterial)
+	{
+		DynamicMat = UKismetMaterialLibrary::CreateDynamicMaterialInstance(GetWorld(), GradientBarMaterial);
+		if (DynamicMat)
+		{
+			DynamicMat->SetVectorParameterValue("ProgressColor1", Color);
+			if (ParentImage != nullptr)
+			{
+				ParentImage->SetBrushFromMaterial(DynamicMat);
+				//DynamicMat->SetScalarParameterValue(ProgressParamName, 0.5f);
+			}
+		}
+	}
+}
 
 
 void UHealthBarWidget::NativePreConstruct()

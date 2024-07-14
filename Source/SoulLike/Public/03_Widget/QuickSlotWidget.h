@@ -17,19 +17,11 @@ class SOULLIKE_API UQuickSlotWidget : public UDraggableWidget
 
 protected:
 	UPROPERTY(meta=(BindWidget))
-	class UQuickSlotButtonWidget* UMG_QuickSlotButton;
+	class UMainItemQuickSlotButtonWidget* UMG_ItemQuickSlotButton;
 	UPROPERTY(meta=(BindWidget))
 	class UQuickSlotButtonWidget* UMG_AbilitySlotButton;
 
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
-	UFUNCTION()
-	void OnUpdateCurAbilityQuickSlotEvent(const FGameplayTag& Tag, bool bRemove, int32 SelectedIndex);
-	UFUNCTION()
-	void OnUpdateCurConsumeQuickSlotEvent(const FInventoryItem& Item, bool bRemove, int32 SelectedIndex);
-
-public:
-	void LoadSelectedConsumeQuickSlot(const FInventoryItem& InventoryItem);
-	void LoadSelectedAbilityQuickSlot(class UAbilityBase* Ability);
 };

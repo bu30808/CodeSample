@@ -7,7 +7,6 @@
 #include "GameplayTagContainer.h"
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/00_Player/01_Component/AbilityTalentComponent.h"
-#include "99_Subsystem/AbilitySubsystem.h"
 #include "Engine/DataTable.h"
 #include "AbilityBase.generated.h"
 
@@ -459,12 +458,7 @@ public:
 	UFUNCTION(BlueprintImplementableEvent)
 	void OnExpiredTargetEffect();
 
-
-	//이벤트를 도중에 저장했다가 특정 타이밍에 호출해야 하는경우 사용하세요.
-	//이 이벤트는 어빌리티 서브시스템이 기억하고 있다가 특정 타이밍에 브로드캐스트됩니다.
-	//예시) 포션을 마시는 어빌리티 사용시, 애니메이션 중간에 이팩트 적용
-	UPROPERTY(BlueprintAssignable)
-	FOnSavedAbilityEvent OnSavedAbilityEvent;
+	
 
 	//외부에서 어빌리티가 종료될 때 무언가 하고싶다면 사용하세요.
 	UPROPERTY(BlueprintAssignable)
@@ -645,6 +639,14 @@ protected:
 	{
 	}
 
+	//어빌리티를 발동한 키를 땠을 때, 무엇인가 하려면 덮어쓰세요.
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void OnReleasedActionKey(const FKeyPressedInfo& Action);
+
+	virtual void OnReleasedActionKey_Implementation(const FKeyPressedInfo& Action)
+	{
+	}
+
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void OnNotKeyPressed();
 	virtual void OnNotKeyPressed_Implementation();
@@ -672,8 +674,8 @@ protected:
 	//코드상으로는 이 어빌리티를 취소하게 되어있습니다.
 	//어빌리티를 종료하지 않기를 원한다면, 덮어쓰세요.
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void OnAbilityOwnerDeadEvent(AActor* Who, AActor* DeadBy);
-	virtual void OnAbilityOwnerDeadEvent_Implementation(AActor* Who, AActor* DeadBy);
+	void OnAbilityOwnerDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason);
+	virtual void OnAbilityOwnerDeadEvent_Implementation(AActor* Who, AActor* DeadBy, EDeadReason DeadReason);
 
 	//몽타주에 필요한 설정을 합니다
 	//ex) 이벤트 바인딩
@@ -700,12 +702,7 @@ protected:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool IsCostEnough();
-
-	//OnSavedAbilityEvent에 저장된 행동들을 서브시스템에 저장합니다.
-	UFUNCTION(BlueprintCallable)
-	void SaveAbilityEvent();
-	UFUNCTION(BlueprintCallable)
-	void RemoveAbilityEvent();
+	
 
 	UFUNCTION(BlueprintCallable)
 	AActor* SpawnActor(TSubclassOf<class AActor> ActorObject);

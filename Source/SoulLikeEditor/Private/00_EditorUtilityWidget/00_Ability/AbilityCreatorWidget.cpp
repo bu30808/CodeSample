@@ -154,7 +154,11 @@ void UAbilityCreatorWidget::NativePreConstruct()
 	Super::NativePreConstruct();
 	if (DetailsView_AbilityInfo)
 	{
-		DetailsView_AbilityInfo->SetObject(NewObject<UAbilityTableInfo>());
+		if(AbilityInfoHandler == nullptr)
+		{
+			AbilityInfoHandler = NewObject<UAbilityTableInfo>();
+		}
+		DetailsView_AbilityInfo->SetObject(AbilityInfoHandler);
 	}
 
 	if (ComboBoxString_Class)

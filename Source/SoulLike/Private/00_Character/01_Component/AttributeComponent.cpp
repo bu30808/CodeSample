@@ -263,6 +263,60 @@ void UAttributeComponent::LoadLevelUpPointAttributes(const TMap<EAttributeType, 
 	}
 }
 
+void UAttributeComponent::ClearStatusEffect()
+{
+	for(auto i=0;i< static_cast<int>(EStatusEffect::MAX);i++)
+	{
+		RemoveStatusEffect(static_cast<EStatusEffect>(i));
+	}
+}
+
+void UAttributeComponent::RemoveStatusEffect(EStatusEffect StatusEffectToRemove)
+{
+	if(auto owner = GetOwner<ABaseCharacter>())
+	{
+		switch (StatusEffectToRemove) {
+		case EStatusEffect::POISON:
+			SetPoisonAcc(0);
+			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.Poison.Effect"));
+			break;
+		case EStatusEffect::DEADLY_POISON:
+			SetDeadlyPoisonAcc(0);
+			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.DeadlyPoison.Effect"));
+			break;
+		case EStatusEffect::BURN:
+			SetBurnAcc(0);
+			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.Burn.Effect"));
+			break;
+		case EStatusEffect::CHILL:
+		case EStatusEffect::FREEZE:
+			SetChillAcc(0);
+			owner->GetMesh()->bPauseAnims = false;
+			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.Freeze.Effect"));
+			owner->RestoreStatusEffectMaterial();
+			owner->ClearLookInput();
+			owner->ClearMoveInput();
+			owner->GetMesh()->ResumeClothingSimulation();
+			break;
+		case EStatusEffect::BLEED:
+			SetBleedAcc(0);
+			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.Bleed.Effect"));
+			break;
+		case EStatusEffect::PETRIFACTION:
+			SetPetrifactionAcc(0);
+			owner->GetMesh()->bPauseAnims = false;
+			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.Petrifaction.Effect"));
+			owner->RestoreStatusEffectMaterial();
+			owner->ClearLookInput();
+			owner->ClearMoveInput();
+			owner->GetMesh()->ResumeClothingSimulation();
+			break;
+		case EStatusEffect::MAX:
+			break;
+		}
+	}
+}
+
 void UAttributeComponent::InitAttributePerPoint()
 {
 	if (AttributePerPointDefineTable)
@@ -271,7 +325,7 @@ void UAttributeComponent::InitAttributePerPoint()
 			FString contextString;
 
 			const FAttributePerPoint* attPerPoint = nullptr;
-			attPerPoint = AttributePerPointDefineTable->FindRow<FAttributePerPoint>("1", contextString);
+			attPerPoint = AttributePerPointDefineTable->FindRow<FAttributePerPoint>("0", contextString);
 			/*if (GetOwner()->IsA<APlayerCharacter>())
 			{
 				attPerPoint = AttributePerPointDefineTable->FindRow<FAttributePerPoint>("1", contextString);
@@ -284,7 +338,7 @@ void UAttributeComponent::InitAttributePerPoint()
 
 			if (attPerPoint == nullptr)
 			{
-				UE_LOGFMT(LogActorComponent, Error, "{0} : 포인트당 증가 스텟을 가져오지 못했습니다.", GetOwner()->GetActorNameOrLabel());
+				//UE_LOGFMT(LogActorComponent, Error, "{0} : 포인트당 증가 스텟을 가져오지 못했습니다.", GetOwner()->GetActorNameOrLabel());
 				return;
 			}
 
@@ -297,10 +351,7 @@ void UAttributeComponent::InitAttributePerPoint()
 
 			AttributePerPointMap[EAttributeType::Strength].Add(
 				TPair<EAttributeType, float>(EAttributeType::Strength, 1));
-			AttributePerPointMap[EAttributeType::Strength].Add(
-				TPair<EAttributeType, float>(EAttributeType::MaxHP, AttributePerPoint.MaxHPPerStrength));
-			/*AttributePerPointMap[EAttributeType::Strength].Add(
-				TPair<EAttributeType, float>(EAttributeType::RecoverHP, AttributePerPoint.RecoverHPPerStrength));*/
+		
 			AttributePerPointMap[EAttributeType::Strength].Add(
 				TPair<EAttributeType, float>(EAttributeType::PhysicalAttack,
 				                             AttributePerPoint.PhysicalAttackPerStrength));
@@ -308,17 +359,11 @@ void UAttributeComponent::InitAttributePerPoint()
 			AttributePerPointMap[EAttributeType::Dexterity].Add(
 				TPair<EAttributeType, float>(EAttributeType::Dexterity, 1));
 			AttributePerPointMap[EAttributeType::Dexterity].Add(
-				TPair<EAttributeType, float>(EAttributeType::MaxHP, AttributePerPoint.MaxHPPerDexterity));
-			AttributePerPointMap[EAttributeType::Dexterity].Add(
-				TPair<EAttributeType, float>(EAttributeType::MaxSP, AttributePerPoint.MaxSPPerDexterity));
-			AttributePerPointMap[EAttributeType::Dexterity].Add(
 				TPair<EAttributeType, float>(EAttributeType::PhysicalAttack,
 				                             AttributePerPoint.PhysicalAttackPerDexterity));
 			AttributePerPointMap[EAttributeType::Dexterity].Add(
 				TPair<EAttributeType, float>(EAttributeType::MagicalAttack,
 				                             AttributePerPoint.MagicalAttackPerDexterity));
-			/*AttributePerPointMap[EAttributeType::Dexterity].Add(
-				TPair<EAttributeType, float>(EAttributeType::RecoverSP, AttributePerPoint.RecoverSPPerDexterity));*/
 			AttributePerPointMap[EAttributeType::Dexterity].Add(
 				TPair<EAttributeType, float>(EAttributeType::ActionSpeed,
 				                             AttributePerPoint.ActionSpeedPerDexterity));
@@ -434,13 +479,12 @@ void UAttributeComponent::InitDefaultAttribute()
 
 
 		InitMaxHP(
-			init->MaxHP + (GetStrength() * AttributePerPoint.MaxHPPerStrength) + (GetDexterity() *
-				AttributePerPoint.MaxHPPerDexterity) + (GetWillpower() * AttributePerPoint.MaxHPPerWillpower));
+			init->MaxHP + GetStrength() + GetDexterity() + (GetWillpower() * AttributePerPoint.MaxHPPerWillpower));
 		InitMaxMP(
 			init->MaxMP + (GetIntelligence() * AttributePerPoint.MaxMPPerIntelligence) + (GetWillpower() *
 				AttributePerPoint.MaxMPPerWillpower));
 		InitMaxSP(
-			init->MaxSP + (GetDexterity() * AttributePerPoint.MaxSPPerDexterity) + (GetWillpower() *
+			init->MaxSP + GetDexterity() + (GetWillpower() *
 				AttributePerPoint.MaxSPPerWillpower));
 
 
@@ -506,14 +550,11 @@ void UAttributeComponent::AddLevelUpPoint(EAttributePointType AttributePointType
 			case EAttributePointType::STR:
 				StrengthPoint.Init(StrengthPoint.GetBase() + Point);
 				Strength.LevelUp(Point);
-				MaxHP.LevelUp(AttributePerPoint.MaxHPPerStrength * Point);
 				PhysicalAttack.LevelUp(AttributePerPoint.PhysicalAttackPerStrength * Point);
 				break;
 			case EAttributePointType::DEX:
 				DexterityPoint.Init(DexterityPoint.GetBase() + Point);
 				Dexterity.LevelUp(Point);
-				MaxHP.LevelUp(AttributePerPoint.MaxHPPerDexterity * Point);
-				MaxSP.LevelUp(AttributePerPoint.MaxSPPerDexterity * Point);
 				ActionSpeed.LevelUp(AttributePerPoint.ActionSpeedPerDexterity * Point);
 				PhysicalAttack.LevelUp(AttributePerPoint.PhysicalAttackPerDexterity * Point);
 				MagicalAttack.LevelUp(AttributePerPoint.MagicalAttackPerDexterity * Point);

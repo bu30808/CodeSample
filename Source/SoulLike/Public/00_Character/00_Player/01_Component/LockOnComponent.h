@@ -20,6 +20,14 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLockOnTargetChangeNext);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLockOnTargetChangePre);
 
+UENUM(BlueprintType)
+enum class ELockOnTraceType : uint8
+{
+	OBJECT,
+	PROFILE,
+	CHANNEL
+};
+
 
 /*
  * 특정 부위를 락온하기 위해 사용되는 액터입니다.
@@ -65,13 +73,17 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Options")
 	float Distance = 1200;
 
+	UPROPERTY(EditAnywhere, Category="Options")
+	ELockOnTraceType LockOnTraceType;
+	UPROPERTY(EditAnywhere, Category="Options",meta=(EditCondition = "LockOnTraceType == ELockOnTraceType::CHANNEL"))
+	TEnumAsByte<ETraceTypeQuery> TraceChannel;
 
 	/**
 	 * 트레이스로 사용되는 박스의 크기
 	 */
 	UPROPERTY(EditAnywhere, Category="Options")
 	FVector BoxHalfSize;
-	UPROPERTY(EditAnywhere, Category="Options")
+	UPROPERTY(EditAnywhere, Category="Options",meta=(EditCondition = "LockOnTraceType == ELockOnTraceType::OBJECT"))
 	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectTypes;
 	UPROPERTY(EditAnywhere, Category="Options")
 	bool bTraceComplex;

@@ -25,11 +25,12 @@ bool UBTDecorator_IsInAttackRange::CalculateRawConditionValue(UBehaviorTreeCompo
 		
 
 
+		/*
 		if(OffsetDistance >= 0)
 		{
 			UE_LOGFMT(LogTemp, Log, "읽어온 공격 범위 : {0}, 확인할 범위 : {1} >= {2} ", attackRange,  attackRange - OffsetDistance, distanceToTarget);
 			return attackRange - OffsetDistance >= distanceToTarget;
-		}
+		}*/
 		UE_LOGFMT(LogTemp, Log, "읽어온 공격 범위 : {0}, 확인할 범위 : {1} >= {2} ", attackRange,  attackRange + OffsetDistance, distanceToTarget);
 		return attackRange + OffsetDistance >= distanceToTarget;
 	}

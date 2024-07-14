@@ -71,7 +71,7 @@ bool USaveGameHelperLibrary::IsAlreadyReadTutorial(ATutorialActor* TutorialActor
 	return false;
 }
 
-void USaveGameHelperLibrary::SaveKillBoss(ABaseMonster* BossMonster)
+void USaveGameHelperLibrary::SaveKillBoss(ABaseMonster* BossMonster, ABaseCharacter* DeadBy)
 {
 	if (BossMonster)
 	{
@@ -126,7 +126,6 @@ void USaveGameHelperLibrary::SaveAttributes(AActor* Player)
 
 bool USaveGameHelperLibrary::IsAlreadyOpenChest(AChest* Chest)
 {
-
 	if(Chest)
 	{
 		if(IsSavableGameMode(Chest))
@@ -137,7 +136,6 @@ bool USaveGameHelperLibrary::IsAlreadyOpenChest(AChest* Chest)
 			}
 		}
 	}
-	
 	return false;
 }
 

@@ -29,6 +29,9 @@ DEFINE_LOG_CATEGORY(LogAICon)
 
 AMonsterAIController::AMonsterAIController()
 {
+	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bStartWithTickEnabled = false;
+	
 	bAttachToPawn = true;
 
 	PerceptionComponent = CreateDefaultSubobject<UMonsterAIPerceptionComponent>(TEXT("AIPerceptionComponent"));
@@ -101,7 +104,8 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 			if (Target != nullptr && Target->IsA<ABaseCharacter>())
 			{
 				// 같은 팀일 경우 감지를 무시함
-				if (GetTeamAttitudeTowards(*Target) == ETeamAttitude::Friendly)
+				const auto targetsTeam = GetTeamAttitudeTowards(*Target);
+				if (targetsTeam == ETeamAttitude::Friendly || targetsTeam == ETeamAttitude::Neutral)
 				{
 					return;
 				}
@@ -166,7 +170,7 @@ void AMonsterAIController::OnTargetPerceptionForgottenEvent(AActor* Target)
 	}
 }
 
-void AMonsterAIController::OnDeadEvent(AActor* Who, AActor* DeadBy)
+void AMonsterAIController::OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason)
 {
 	PerceptionComponent->ForgetAll();
 

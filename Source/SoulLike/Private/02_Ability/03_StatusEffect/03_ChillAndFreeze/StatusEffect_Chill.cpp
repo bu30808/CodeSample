@@ -121,6 +121,7 @@ void UStatusEffect_Freeze::ProcessEffect_Implementation(ABaseCharacter* Target, 
 	{
 		instance->Montage_Pause();
 		Target->GetMesh()->bPauseAnims = true;
+		Target->GetMesh()->SuspendClothingSimulation();
 	}
 	Target->ChangeStatusEffectMaterial(EStatusEffect::FREEZE);
 }
@@ -132,6 +133,7 @@ void UStatusEffect_Freeze::EndEffect_Implementation(ABaseCharacter* Target)
 	{
 		instance->Montage_Resume(nullptr);
 		Target->GetMesh()->bPauseAnims = false;
+		Target->GetMesh()->ResumeClothingSimulation();
 	}
 	if (auto attComp = Target->GetAttributeComponent())
 	{

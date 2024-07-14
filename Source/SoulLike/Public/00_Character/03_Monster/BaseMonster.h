@@ -5,12 +5,15 @@
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
 #include "00_Character/BaseCharacter.h"
-#include "97_Interface/BoneTransformInterface.h"
+#include "93_SaveGame/SoulLikeSaveGame.h"
+#include "SkeletalMergingLibrary.h"
 #include "97_Interface/LockOnInterface.h"
 #include "97_Interface/01_Monster/AIInterface.h"
 #include "BehaviorTree/BehaviorTreeTypes.h"
 #include "Engine/DataAsset.h"
 #include "BaseMonster.generated.h"
+
+#define MONSTER_CHANNEL ECC_GameTraceChannel1
 
 DECLARE_LOG_CATEGORY_EXTERN(LogMonster, Log, All);
 
@@ -163,6 +166,9 @@ public:
 	
 	class UWidgetComponent* GetHealthBarWidgetComponent() const { return HealthBarWidgetComponent; }
 
+	//게임을 불러왔을 때, 마지막 상태로 복구합니다.
+	void RestoreSavedState(const FCharacterSave& SavedState);
+
 protected:
 	FTimerHandle HealthBarVisibleTimerHandle;
 
@@ -308,10 +314,11 @@ protected:
 	UPROPERTY()
 	class UAnimMontage* SelectedDeadMontageToPlay;
 	
-	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy) override;
+	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason) override;
 	UFUNCTION()
-	void OnDeadBossEvent(AActor* Who, AActor* DeadBy);
-
+	void OnDeadBossEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason);
+	virtual void OnFinishDissolveTimeLine() override;
+	
 public:
 	virtual void PlayDeadAnimationSequence() override;
 	virtual void PlayDeadAnimationMontage() override;
@@ -346,5 +353,13 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void StopMusic(float AdjustVolumeDuration);
 
-	
+
+
+protected:
+	/**********************************************스켈레탈메시 병합*********************************************************/
+	UPROPERTY(EditAnywhere,BlueprintReadWrite)
+	FSkeletalMeshMergeParams SkeletalMeshMergeParam;
+
+	UFUNCTION(BlueprintCallable)
+	void DoMergeSkeletalMesh();
 };

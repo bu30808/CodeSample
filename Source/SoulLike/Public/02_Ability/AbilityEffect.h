@@ -9,6 +9,7 @@
 #include "UObject/NoExportTypes.h"
 #include "AbilityEffect.generated.h"
 
+class ABaseCharacter;
 DECLARE_LOG_CATEGORY_EXTERN(LogEffect, Log, All);
 DECLARE_LOG_CATEGORY_EXTERN(LogTalent, Log, All);
 
@@ -111,7 +112,8 @@ enum class EAttributeApplyMethod : uint8
 	ADD,
 	REMOVE,
 	MULT,
-	DIV
+	DIV,
+	SET
 };
 
 //영향을 줄 속성을 정의하는 구조체입니다.
@@ -222,6 +224,7 @@ class SOULLIKE_API UAbilityEffect : public UObject
 
 	friend class UAbilityComponent;
 	friend class AEquipmentItemActor;
+	friend class ASoulItemActor;
 #if WITH_EDITOR
 	friend class UAbilityCreatorWidget_Req;
 	friend class UAbilityEffectCreatorWidget;
@@ -273,7 +276,7 @@ protected:
 	TArray<FAttributeEffect> AttributeEffectsAffectedByOwnersAttribute;
 
 	//위 배열이 업데이트 되고 난 이후 갱신된 값이 저장되는 배열입니다.
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TArray<FAttributeEffect> UpdatedAttributeEffectsAffectedByOwnersAttribute;
 
 	//이 값이 참이라면, 엔드이팩트때 변경한 속성값을 되돌립니다
@@ -282,10 +285,10 @@ protected:
 	bool bRestoreAttributeOnEnd = false;
 
 	//AttributeEffects로 변경된 수치가 저장될 맵입니다.
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TMap<EAttributeType, FAttributeRestoreData> AffectedValueFromAttributeEffects;
 	//AttributeEffectsAffectedByOwnersAttribute로 변경될 수치가 저장될 맵입니다.
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TMap<EAttributeType, FAttributeRestoreData> AffectedValueAttributeEffectsAffectedByOwnersAttribute;
 
 
@@ -331,7 +334,7 @@ protected:
 	TArray<FAbilityCueInformation> InstanceEndAbilityCues;
 
 	//틱마다 사용되는 태스크 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TWeakObjectPtr<class UGameplayTask_LaunchEvent> TickTask;
 
 	//이 값이 참이라면, 어빌리티와 관계없이 배율 시스템을 적용합니다.
@@ -372,21 +375,21 @@ protected:
 
 	//이팩트 내부에서 셀프로 종료되었을 때, 호출되는 델리게이트입니다.
 	//보통 어빌리티 내부에서 바인드 됩니다.
-	UPROPERTY()
+	UPROPERTY(Transient)
 	FOnEffectExpired OnEffectExpired;
 
 	//이 이팩트로 생성된 큐를 저장하는 변수
 	//재 사용 가능한 큐도 저장됩니다.
 	//주로 일회성 큐를 즉시 제거하기 위해 사용합니다.
 	//필요하다면 RemoveAppliedCue 함수를 호출해서 수동으로 제거하세요.
-	UPROPERTY(BlueprintReadWrite)
+	UPROPERTY(BlueprintReadWrite,Transient)
 	TArray<class AAbilityCue*> AppliedCues;
 
 	//틱 이팩트인 경우, 델타타임이 외부에서 필요한 경우 사용하세요.
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly,Transient)
 	float TickEffectDeltaTime;
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TObjectPtr<class UAbilityBase> CauseFromThisAbility;
 
 public:
@@ -400,11 +403,6 @@ public:
 
 	//이 이팩트가 적용하려고 하는 속성정보 리스트를 가져옵니다.
 	const TArray<FAttributeEffect>& GetAttributeEffects() { return AttributeEffects; }
-#if WITH_EDITOR
-	//이팩트 생성 에디터 위젯에서 사용합니다.
-	virtual void CopyValues(UAbilityEffect* Effect);
-#endif
-
 	void SetExpiredDelegate(const FOnEffectExpired& OnEffectExpiredDel);
 
 protected:
@@ -508,7 +506,7 @@ protected:
 
 	//누적된 스택 수치를 저장할 스텍입니다
 	//내부 값과 관계 없이 그냥 갯수만 확인하면 됩니다.
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere,Transient)
 	TArray<bool> Stack;
 	//스택을 쌓습니다.
 	void AddStack(UAbilityBase* From);
@@ -562,7 +560,7 @@ protected:
 	}
 
 	//틱을 사용할때만 사용할 변수입니다.
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly,Transient)
 	TWeakObjectPtr<ABaseCharacter> TickOwner;
 	//틱 태스크에서 틱마다 호출될 이벤트입니다.
 	UFUNCTION(BlueprintNativeEvent)
@@ -596,7 +594,7 @@ protected:
 	void ResetDurationTimer(ABaseCharacter* Target);
 
 
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TObjectPtr<UWorld> World;
 
 	virtual void BeginDestroy() override;

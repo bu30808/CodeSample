@@ -6,7 +6,7 @@
 
 #include "02_Ability/AbilityEffect.h"
 #include "03_Widget/01_Menu/05_Orb/OrbMatrixElementWidget.h"
-
+DECLARE_LOG_CATEGORY_EXTERN(LogUMG, Log, All);
 
 //AI테스크 사용
 DECLARE_DELEGATE(FAITaskFinishDelegate);

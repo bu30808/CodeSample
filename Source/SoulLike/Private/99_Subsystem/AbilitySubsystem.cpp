@@ -4,41 +4,18 @@
 #include "99_Subsystem/AbilitySubsystem.h"
 
 #include "02_Ability/02_Projectile/ProjectileActor.h"
-#include "Logging/StructuredLog.h"
 
-void UAbilitySubsystem::TriggerSavedEvent(FGameplayTag AbilityTag)
-{
-	UE_LOGFMT(LogTemp, Log, "TriggerSavedEvent {0} {1}", __FUNCTION__, __LINE__);
-	if (EventMap.Contains(AbilityTag))
-	{
-		EventMap[AbilityTag].Broadcast();
-	}
-	else
-	{
-		UE_LOGFMT(LogTemp, Error, "TriggerSavedEvent Error {0} : {1} {2}", AbilityTag.ToString(), __FUNCTION__,
-		          __LINE__);
-	}
-}
-
-void UAbilitySubsystem::RemoveSavedEvent(FGameplayTag AbilityTag)
-{
-	UE_LOGFMT(LogTemp, Log, "RemoveSavedEvent {0} {1}", __FUNCTION__, __LINE__);
-	if (EventMap.Contains(AbilityTag))
-	{
-		EventMap.Remove(AbilityTag);
-	}
-}
 
 void UAbilitySubsystem::AddProjectile(ABaseCharacter* Owner, AProjectileActor* Projectile)
 {
 	if (Projectiles.Contains(Owner))
 	{
-		Projectiles[Owner].Emplace(Projectile);
+		Projectiles[Owner].Projectiles.Emplace(Projectile);
 	}
 	else
 	{
-		Projectiles.Add(Owner, TArray<AProjectileActor*>());
-		Projectiles[Owner].Emplace(Projectile);
+		Projectiles.Add(Owner, FAnimationNotifyProjectiles());
+		Projectiles[Owner].Projectiles.Emplace(Projectile);
 	}
 }
 
@@ -46,25 +23,38 @@ TArray<AProjectileActor*> UAbilitySubsystem::GetProjectiles(ABaseCharacter* Owne
 {
 	if (Projectiles.Contains(Owner))
 	{
-		auto copy = Projectiles[Owner];
-		Projectiles[Owner].Empty();
+		auto copy = Projectiles[Owner].Projectiles;
+		Projectiles[Owner].Projectiles.Empty();
 		return copy;
 	}
 
 	return TArray<AProjectileActor*>();
 }
 
-void UAbilitySubsystem::RemoveProjectiles(ABaseCharacter* Owner)
+void UAbilitySubsystem::ClearProjectiles(ABaseCharacter* Owner)
 {
 	if (Projectiles.Contains(Owner))
 	{
-		for (auto iter : Projectiles)
+		for (auto iter : Projectiles[Owner].Projectiles)
 		{
-			for (auto p : iter.Value)
-			{
-				p->Destroy();
-			}
+			iter->Destroy();
 		}
 		Projectiles.Remove(Owner);
 	}
+}
+
+void UAbilitySubsystem::RemoveProjectile(AProjectileActor* Projectile)
+{
+	if(Projectile){
+		auto owner = Projectile->GetOwner();
+		if (Projectiles.Contains(owner))
+		{
+			Projectiles[owner].Projectiles.Remove(Projectile);
+		}
+	}
+}
+
+void UAbilitySubsystem::OnDestroyedProjectile(AActor* DestroyedActor)
+{
+	RemoveProjectile(Cast<AProjectileActor>(DestroyedActor));	
 }

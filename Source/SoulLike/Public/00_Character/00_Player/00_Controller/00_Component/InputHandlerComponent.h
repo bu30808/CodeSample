@@ -9,7 +9,13 @@
 #include "Components/ActorComponent.h"
 #include "InputHandlerComponent.generated.h"
 
-
+UENUM(BlueprintType)
+enum class EInputType : uint8
+{
+	PRESS, //눌렀을 때
+	RELEASE, // 떘을 때
+	HELD_DOWN // 누르고 있을 때
+};
 /**
  * 특정 어빌리티에서 기다리는 키가 눌렸는지 확인하기 위한 정보를 저장하는 구조체입니다.
  */
@@ -46,10 +52,10 @@ struct FKeyPressedInfo
 };
 
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnKeyNotPressed);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FNoKeyInput);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnKeyPressedWithAction, const FKeyPressedInfo&, ActionInfo);
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnKeyReleasedWithAction, const FKeyPressedInfo&, ActionInfo);
 /*
  *	키 입력 대기를 처리하는 컴포넌트입니다.
  */
@@ -86,42 +92,46 @@ protected:
 	 */
 	UPROPERTY()
 	TMap<FKeyPressedInfo, bool> PressedActionMap;
+	//특정 키를 땠는지 확인할 맵
+	UPROPERTY()
+	TMap<FKeyPressedInfo, bool> ReleasedActionMap;
 
 	/**
 	 * 특정 행동에 대한 키가 입력되었을 때, 할 행동을 저장하는 맵
 	 */
 	UPROPERTY()
 	TMap<FKeyPressedInfo, FOnKeyPressedWithAction> InputPressedActionMap;
+	UPROPERTY()
+	TMap<FKeyPressedInfo, FOnKeyReleasedWithAction> InputReleasedActionMap;
 
 	/**
 	 * 특정 행동에 대한 키가 입력되지 않았을 때 할 행동을 저장하는 맵
 	 */
 	UPROPERTY()
-	TMap<FKeyPressedInfo, FOnKeyNotPressed> InputNotPressedMap;
+	TMap<FKeyPressedInfo, FNoKeyInput> NoKeyInputMap;
 	bool bObserveTrigger;
 
 public:
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType,
-	                           FActorComponentTickFunction* ThisTickFunction) override;
 
-
+	
 	/**
 	 * 해당 액션에 대한 키를 눌렀는가 대기를 시작합니다.
 	 * @param WaitAction 기다리는 액션
+	 * @param InputType
 	 * @param bTriggerImmediately 참이면 감지되면 즉시 트리거합니다.
 	 */
-	void StartWaitAction(const TArray<FKeyPressedInfo>& WaitAction, bool bTriggerImmediately = false);
+	void StartWaitAction(const TArray<FKeyPressedInfo>& WaitAction, EInputType InputType, bool bTriggerImmediately = false);
 
 	/**
 	 * 해당 액션에 대한 대기를 종료하고, 만약 키 입력이 있던적이 있었다면, 해당 키 이벤트를 찾아 실행합니다.
 	 * @param WaitAction 기다리는 액션
+	 * @param InputType
 	 */
-	void EndWaitAction(const TArray<FKeyPressedInfo>& WaitAction);
+	void EndWaitAction(const TArray<FKeyPressedInfo>& WaitAction, EInputType InputType);
 
 
 	void BindEvent(const FKeyPressedInfo& ActionInfo, const FOnKeyPressedWithAction& OnKeyPressed,
-	               const FOnKeyNotPressed& OnKeyNotPressed);
+	               const FOnKeyReleasedWithAction& OnKeyReleased, const FNoKeyInput& NoKeyInput);
 
 
 	DECLARE_DYNAMIC_DELEGATE_OneParam(FOnKeyPressedWithActionBP, class UInputAction*, Action);
@@ -136,14 +146,17 @@ public:
 	 * @param Action 입력된액션
 	 */
 	void BroadcastPressedEvent(const FKeyPressedInfo& Action);
+	void BroadcastReleasedEvent(const FKeyPressedInfo& Action);
 
 	/**
 	 * 해당 액션에 대한 키가 눌리지 않을 때 무엇인가 합니다.
 	 * @param WaitAction 기다렸던 액션
 	 */
-	void BroadcastNotPressedEvent(const FKeyPressedInfo& WaitAction);
+	void BroadcastNoInputEvent(const FKeyPressedInfo& WaitAction);
 
 private:
 	UFUNCTION()
 	void OnPressedKeyDown(const FKeyPressedInfo& Action);
+	UFUNCTION()
+	void OnPressedKeyUp(const FKeyPressedInfo& Action);
 };

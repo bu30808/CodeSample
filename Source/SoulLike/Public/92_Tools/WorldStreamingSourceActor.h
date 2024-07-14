@@ -32,6 +32,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UPROPERTY(Transient)
+	FTimerHandle FinishTimerHandle;
+	UFUNCTION()
+	void FinishStreamingEvent();
 	UFUNCTION()
 	void OnStreamingCompleteEvent();
 

@@ -61,8 +61,11 @@ protected:
 	//이 배열에 있는 어빌리티를 넉다운 적용 직전 전부 종료시킵니다.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="KnockDown")
 	TArray<FGameplayTag> KnockDownForceEndAbilityTags;
-	
-	
+
+	UPROPERTY(Transient)
+	TObjectPtr<UNiagaraComponent> DissolveNiagaraComponent;
+
+
 	/**************************피격처리*************************/
 public:
 	UPROPERTY(BlueprintAssignable, Category="Hit")
@@ -151,6 +154,7 @@ public:
 	void SetIsTriggeredHitAnimationExitEvent(bool newVal){bIsTriggeredHitAnimationExitEvent = newVal;}
 
 	void StartDeadDissolve();
+	void DestroyDissolveParticle();
 
 
 	/**************************사망처리*************************/
@@ -167,7 +171,7 @@ public:
 
 	//플레이 모드에 따라 사망 애니메이션을 재생합니다.
 	UFUNCTION()
-	void PlayDeadAnimationByMode();
+	void PlayDeadAnimationByMode(EDeadReason DeadReason);
 
 	void PlayDeadAnimationSequence();
 	UAnimMontage* GetRandomDeadAnimationMontage();

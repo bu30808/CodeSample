@@ -9,7 +9,6 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "00_Character/BaseCharacter.h"
 #include "00_Controller/UserController.h"
-#include "93_SaveGame/SoulLikeSaveGame.h"
 #include "PlayerCharacter.generated.h"
 
 #define ECC_Monster ECC_GameTraceChannel1
@@ -107,8 +106,8 @@ protected:
 	
 	//세이브 파일 없이 첫 시작시 불러올 테이블에 저장된 레이어 행 이름입니다.
 	UPROPERTY(EditAnywhere)
-	TArray<FName> StartLayerRowNames = {"/Game/DataLayer/Runtime/WaterFallLayer.WaterFallLayer","/Game/DataLayer/Runtime/WaterFall_NS_Layer.WaterFall_NS_Layer"};
-	
+	TArray<TSoftObjectPtr<UDataLayerAsset>> StartLayers = {};
+
 	virtual void CreateBodyMaterialInstance() override;
 
 	UPROPERTY(BlueprintCallable,BlueprintAssignable)
@@ -132,6 +131,15 @@ public:
 	void StartLoadingCameraFade(bool bManual = false, float FadeTime = 2.f);
 	UFUNCTION()
 	void EndLoadingCameraFade();
+
+
+	UPROPERTY(Transient)
+	FVector OriginalCameraBoomLocation;
+	
+	UFUNCTION(BlueprintCallable)
+	void ResetCameraBoom();
+	
+	void ResetCamera();
 protected:
 	UFUNCTION(BlueprintCallable)
 	void CreateSoulTomb();
@@ -178,11 +186,13 @@ public:
 
 	/**********************************************컴포넌트*********************************************************/
 protected:
-	UPROPERTY(VisibleAnywhere, Category=Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* FollowCamera;
-	UPROPERTY(VisibleAnywhere, Category=Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera, meta = (AllowPrivateAccess = "true"))
+	class UCameraComponent* DeathCamera;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* SceneCaptureCameraBoom;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera, meta = (AllowPrivateAccess = "true"))
 	class USceneCaptureComponent2D* SceneCaptureComponent2D;
@@ -198,6 +208,8 @@ protected:
 	class UJumpMovementComponent* JumpMovementComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UTeleportBonfireComponent* TeleportBonfireComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	class UBossHelperComponent* BossHelperComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UGFurComponent* FurComponent;
@@ -209,6 +221,7 @@ protected:
 	TObjectPtr<class UTextureRenderTarget2D> RenderTextureTarget;
 
 public:
+	FORCEINLINE class UBossHelperComponent* GetBossHelperComponent() const {return BossHelperComponent;};
 	FORCEINLINE class UJumpMovementComponent* GetJumpMovementComponent() const { return JumpMovementComponent; };
 	FORCEINLINE class ULadderMovementComponent* GetLadderMovementComponent() const { return LadderMovementComponent; };
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
@@ -266,7 +279,7 @@ protected:
 
 public:
 	//좌 우 입력에 대한 입력값을 방향백터로 변경한 변수입니다.
-	UPROPERTY(BlueprintReadOnly)
+	UPROPERTY(BlueprintReadOnly,Transient)
 	FVector MovementInputVector;
 	/**********************************************액션 입력 처리*********************************************************/
 protected:
@@ -289,8 +302,19 @@ protected:
 	void LockOn();
 	void Run();
 	void StopRun();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LockOn")
+	float TargetChangeSensitivity = 0.5f; // 마우스 이동 민감도
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "LockOn")
+	float TargetChangeCooldown = 0.25f; // 타겟 변경 간격 (초)
+	UPROPERTY(Transient)
+	float TimeSinceLastTargetChange = 0.0f; // 마지막 타겟 변경 이후 경과 시간
+	
+	
 	void PreLockOnTarget();
 	void NextLockOnTarget();
+
+	
 	void OpenNavigationOrClosePopUp();
 	void PickUp();
 
@@ -529,7 +553,7 @@ public:
 	UFUNCTION()
 	void OnChangedMoveSpeedAttributeEvent();
 
-	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy) override;
+	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason) override;
 	
 
 

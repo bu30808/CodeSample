@@ -8,7 +8,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "AbilityCreatorWidget.generated.h"
 
-UCLASS()
+UCLASS(Transient)
 class SOULLIKEEDITOR_API UAbilityTableInfo : public UObject
 {
 	GENERATED_BODY()
@@ -79,6 +79,8 @@ public:
 	UDataTable* CoreTable;
 	UPROPERTY()
 	UDataTable* FragmentTable;
+	UPROPERTY(Transient)
+	TObjectPtr<UAbilityTableInfo> AbilityInfoHandler;
 
 	UFUNCTION()
 	void OnSelectionChanged(FString SelectedItem, ESelectInfo::Type SelectionType);

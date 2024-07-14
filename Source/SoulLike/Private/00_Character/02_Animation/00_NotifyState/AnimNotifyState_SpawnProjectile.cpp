@@ -50,6 +50,7 @@ void UAnimNotifyState_SpawnProjectile::NotifyBegin(USkeletalMeshComponent* MeshC
 						if (const auto system = UGameplayStatics::GetGameInstance(projectile)->GetSubsystem<
 							UAbilitySubsystem>())
 						{
+							projectile->OnDestroyed.AddUniqueDynamic(system,&UAbilitySubsystem::OnDestroyedProjectile);
 							system->AddProjectile(character, projectile);
 							projectile->AttachToComponent(MeshComp,
 							                              FAttachmentTransformRules(AttachmentRule, true), SocketName);

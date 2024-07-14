@@ -20,7 +20,7 @@ protected:
 	UPROPERTY(EditAnywhere)
 	FBlackboardKeySelector AttackRangeKey;
 
-	//이 값만큼 더 가까이 있는지 확인합니다. 음수일경우 더 멀리있는지 확인합니다
+	//이 값만큼 기본 공격범위에 더해서 확인합니다.
 	UPROPERTY(EditAnywhere)
 	float OffsetDistance = 100.f;
 	

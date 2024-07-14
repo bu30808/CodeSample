@@ -35,16 +35,11 @@ void UInputHandlerComponent::BeginPlay()
 }
 
 
-// Called every frame
-void UInputHandlerComponent::TickComponent(float DeltaTime, ELevelTick TickType,
-                                           FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-}
 
-void UInputHandlerComponent::StartWaitAction(const TArray<FKeyPressedInfo>& WaitAction, bool bTriggerImmediately)
+void UInputHandlerComponent::StartWaitAction(const TArray<FKeyPressedInfo>& WaitAction, EInputType InputType, bool bTriggerImmediately)
 {
-	PressedActionMap.Empty();
+	/*PressedActionMap.Empty();
+	ReleasedActionMap.Empty();*/
 
 	if (PC.IsValid())
 	{
@@ -61,37 +56,66 @@ void UInputHandlerComponent::StartWaitAction(const TArray<FKeyPressedInfo>& Wait
 				WaitActionTasks.Remove(info);
 			}
 
-			if (auto task = UGameplayTask_WaitKeyInput::WaitKeyInput(PC->GetPawn<APlayerCharacter>(), info, true))
+			if (auto task = UGameplayTask_WaitKeyInput::WaitKeyInput(PC->GetPawn<APlayerCharacter>(), info, InputType, true))
 			{
 				WaitActionTasks.Add(info, task);
-				task->OnKeyPressedWithAction.AddUniqueDynamic(this, &UInputHandlerComponent::OnPressedKeyDown);
+				switch(InputType)
+				{
+				case EInputType::PRESS:
+				case EInputType::HELD_DOWN:
+					task->OnKeyPressedWithAction.AddUniqueDynamic(this, &UInputHandlerComponent::OnPressedKeyDown);
+					break;
+				case EInputType::RELEASE:
+					task->OnKeyReleasedWithAction.AddUniqueDynamic(this, &UInputHandlerComponent::OnPressedKeyUp);
+					break;
+	
+				}
 				task->ReadyForActivation();
 			}
 		}
 	}
 }
 
-void UInputHandlerComponent::EndWaitAction(const TArray<FKeyPressedInfo>& WaitAction)
+void UInputHandlerComponent::EndWaitAction(const TArray<FKeyPressedInfo>& WaitAction, EInputType InputType)
 {
 	bObserveTrigger = false;
 
 	UE_LOGFMT(LogTemp, Log, "{0} {1} : 키 대기 구간을 종료하고, 입력이 있었다면 실행합니다.", __FUNCTION__, __LINE__);
-	//UKismetSystemLibrary::PrintString(this,TEXT("키 대기 종료"),true,true,FColor::Cyan,100.f);
-
 	//입력이 있었습니까?
 	bool bIsPressed = false;
 	for (auto action : WaitAction)
 	{
-		if (PressedActionMap.Contains(action))
-		{
-			if (PressedActionMap[action] == true)
+		switch (InputType) {
+		case EInputType::PRESS:
+		case EInputType::HELD_DOWN:
+			if (PressedActionMap.Contains(action))
 			{
-				UKismetSystemLibrary::PrintString(this,TEXT("키 입력 액션 실행 : ") + action.AbilityTag.ToString(), true, true,
-				                                  FColor::Cyan, 100.f);
-				BroadcastPressedEvent(action);
-				bIsPressed = true;
-				break;
+				if (PressedActionMap[action] == true)
+				{
+					UKismetSystemLibrary::PrintString(this,TEXT("키 입력 액션 실행 : ") + action.AbilityTag.ToString(), true, true,
+													  FColor::Cyan, 100.f);
+					BroadcastPressedEvent(action);
+					PressedActionMap.Remove(action);
+					bIsPressed = true;
+					break;
+				}
 			}
+			break;
+		case EInputType::RELEASE:
+			if (ReleasedActionMap.Contains(action))
+			{
+				if (ReleasedActionMap[action] == true)
+				{
+					UKismetSystemLibrary::PrintString(this,TEXT("키 입력 액션 실행 : ") + action.AbilityTag.ToString(), true, true,
+													  FColor::Cyan, 100.f);
+					BroadcastReleasedEvent(action);
+					ReleasedActionMap.Remove(action);
+					bIsPressed = true;
+					break;
+				}
+			}
+			break;
+	
 		}
 	}
 
@@ -117,7 +141,7 @@ void UInputHandlerComponent::EndWaitAction(const TArray<FKeyPressedInfo>& WaitAc
 
 		if (WaitAction.Num() > 0)
 		{
-			BroadcastNotPressedEvent(WaitAction[0]);
+			BroadcastNoInputEvent(WaitAction[0]);
 		}
 	}
 
@@ -131,12 +155,13 @@ void UInputHandlerComponent::EndWaitAction(const TArray<FKeyPressedInfo>& WaitAc
 }
 
 void UInputHandlerComponent::BindEvent(const FKeyPressedInfo& ActionInfo, const FOnKeyPressedWithAction& OnKeyPressed,
-                                       const FOnKeyNotPressed& OnKeyNotPressed)
+                                       const FOnKeyReleasedWithAction& OnKeyReleased, const FNoKeyInput& NoKeyInput)
 {
 	const auto& key = InputLocalPlayerSubsystem->QueryKeysMappedToAction(ActionInfo.InputAction);
 	UE_LOGFMT(LogInput, Error, "{0} {1} : {2} 키 대기 이벤트 바인드", __FUNCTION__, __LINE__, key[0].ToString());
 	InputPressedActionMap.Add(ActionInfo, OnKeyPressed);
-	InputNotPressedMap.Add(ActionInfo, OnKeyNotPressed);
+	InputReleasedActionMap.Add(ActionInfo,OnKeyReleased);
+	NoKeyInputMap.Add(ActionInfo, NoKeyInput);
 }
 
 
@@ -154,9 +179,14 @@ void UInputHandlerComponent::UnBindEvent(const FKeyPressedInfo& ActionInfo)
 				InputPressedActionMap.Remove(ActionInfo);
 			}
 
-			if (InputNotPressedMap.Contains(ActionInfo))
+			if(InputReleasedActionMap.Contains(ActionInfo))
 			{
-				InputNotPressedMap.Remove(ActionInfo);
+				InputReleasedActionMap.Remove(ActionInfo);
+			}
+
+			if (NoKeyInputMap.Contains(ActionInfo))
+			{
+				NoKeyInputMap.Remove(ActionInfo);
 			}
 		}
 	}
@@ -177,12 +207,27 @@ void UInputHandlerComponent::BroadcastPressedEvent(const FKeyPressedInfo& Action
 	}
 }
 
-void UInputHandlerComponent::BroadcastNotPressedEvent(const FKeyPressedInfo& WaitAction)
+void UInputHandlerComponent::BroadcastReleasedEvent(const FKeyPressedInfo& Action)
 {
-	if (InputNotPressedMap.Contains(WaitAction))
+	if (InputReleasedActionMap.Contains(Action))
 	{
-		InputNotPressedMap[WaitAction].Broadcast();
-		InputNotPressedMap.Empty();
+		UE_LOGFMT(LogInput, Warning, "{0} {1}", __FUNCTION__, __LINE__);
+		InputReleasedActionMap[Action].Broadcast(Action);
+	}
+	else
+	{
+		auto key = InputLocalPlayerSubsystem->QueryKeysMappedToAction(Action.InputAction);
+		UE_LOGFMT(LogInput, Error, "{0} {1} {2} : {3}키를 땠을 때, 행동할 맵에 저장된 함수가 없습니다.", __FUNCTION__, __LINE__,
+				  Action.AbilityTag.ToString(), key[0].ToString());
+	}
+}
+
+void UInputHandlerComponent::BroadcastNoInputEvent(const FKeyPressedInfo& WaitAction)
+{
+	if (NoKeyInputMap.Contains(WaitAction))
+	{
+		NoKeyInputMap[WaitAction].Broadcast();
+		NoKeyInputMap.Empty();
 	}
 }
 
@@ -197,4 +242,17 @@ void UInputHandlerComponent::OnPressedKeyDown(const FKeyPressedInfo& Action)
 		return;
 	}
 	PressedActionMap.Add(Action, true);
+}
+
+void UInputHandlerComponent::OnPressedKeyUp(const FKeyPressedInfo& Action)
+{
+	auto key = InputLocalPlayerSubsystem->QueryKeysMappedToAction(Action.InputAction);
+	UKismetSystemLibrary::PrintString(this,TEXT("키 입력 감지됨 : ") + Action.InputAction->GetName());
+	UE_LOGFMT(LogTemp, Error, "{0} {1} : {2} 키 입력 확인됨.", __FUNCTION__, __LINE__, key[0].ToString());
+	if (bObserveTrigger)
+	{
+		BroadcastReleasedEvent(Action);
+		return;
+	}
+	ReleasedActionMap.Add(Action, true);
 }
