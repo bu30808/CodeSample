@@ -28,9 +28,6 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsDead = false;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EMonsterState MonsterState;
-
 	//ChangeBoneTransform함수 내부에서 변경됩니다.
 	//AI타겟을 바라보는데 사용됩니다.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

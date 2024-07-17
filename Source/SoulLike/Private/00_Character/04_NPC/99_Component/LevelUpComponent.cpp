@@ -65,7 +65,6 @@ void ULevelUpComponent::CreateLevelUpWidget()
 void ULevelUpComponent::ShowLevelUpWidget()
 {
 	CreateLevelUpWidget();
-
 	if (LevelUpWidget->IsInViewport() == false)
 	{
 		LevelUpWidget->AddToViewport();

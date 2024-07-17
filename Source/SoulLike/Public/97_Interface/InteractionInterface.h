@@ -58,4 +58,9 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	FText GetActionName();
 	virtual FText GetActionName_Implementation() { return FText::FromString("Missing interface implementation."); }
+
+
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	bool CanInteraction();
+	virtual bool CanInteraction_Implementation(){return true;}
 };

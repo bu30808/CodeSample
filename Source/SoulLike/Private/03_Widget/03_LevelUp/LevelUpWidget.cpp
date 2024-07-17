@@ -99,6 +99,7 @@ void ULevelUpWidget::NativeConstruct()
 {
 	bUseAsPopUp = true;
 	bRemovable = true;
+	
 	Super::NativeConstruct();
 
 	SetUp();

@@ -88,6 +88,11 @@ FText FMerchandiseAbility::GetAbilityDescription() const
 	return GetAbilityInformation()->AbilityDescription;
 }
 
+FText FMerchandiseAbility::GetAbilityReqDescription() const
+{
+	return GetAbilityInformation()->GetAbilityReqDescription();
+}
+
 UMerchantComponent::UMerchantComponent()
 {
 	static ConstructorHelpers::FClassFinder<UMerchantWidget> widget(TEXT(
@@ -193,7 +198,6 @@ void UMerchantComponent::ShowMerchantWidget(const ABaseCharacter* InteractPlayer
 {
 	CreateMerchantWidget(InteractPlayer);
 	if(MerchantWidget.IsValid()){
-		UE_LOGFMT(LogTemp, Log, "상점 아이템 리스트 생성");
 		MerchantWidget->CreateMerchandiseList(this);
 	}
 }
@@ -221,7 +225,7 @@ void UMerchantComponent::AddMerchandise(const FMerchandiseAbilityData& Ability)
 	{
 		if (auto ab = Ability.AbilityObject.LoadSynchronous())
 		{
-			ab->GetDefaultObject<UAbilityBase>()->GetAbilityTag();
+			UE_LOGFMT(LogTemp, Log, "상점 아이템 어빌리티 추가 : {0} {1} ",ab->GetDefaultObject<UAbilityBase>()->GetAbilityTag().ToString(),ab->GetDefaultObject<UAbilityBase>()->GetAbilityInformation().GetAbilityReqDescription().ToString());
 			MerchandiseAbility.Add(ab->GetDefaultObject<UAbilityBase>()->GetAbilityTag(),
 			                       FMerchandiseAbility(GetOwner<ANPCBase>(), Ability));
 		}

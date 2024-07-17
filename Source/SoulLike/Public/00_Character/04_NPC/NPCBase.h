@@ -3,11 +3,16 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "NavigationInvokerComponent.h"
 #include "00_Character/BaseCharacter.h"
+#include "00_Character/01_Component/UROComponent.h"
+#include "97_Interface/HostileInterface.h"
 #include "97_Interface/InteractionInterface.h"
+#include "97_Interface/LockOnInterface.h"
 #include "97_Interface/00_NPC/MerchantInterface.h"
 #include "NPCBase.generated.h"
 
+#define ECC_NPC ECC_GameTraceChannel3
 
 
 //NPC의 상태를 저장하는 구조체
@@ -56,7 +61,8 @@ enum class ENPCActionType : uint8
 	PotionEnhancement,
 	MatrixSlotOpen,
 	TeleportBonfire,
-	Chest
+	Chest,
+	RegisterAbility
 };
 
 UENUM(BlueprintType)
@@ -66,13 +72,15 @@ enum class EEnhancementType :uint8
 	Orb
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangedHostile,class ABaseCharacter*,HostileBy);
+
 /**
  * NPC의 기본 클래스입니다.
  * 상호작용을 위해 인터렉션 인터페이스를 상속받고 있습니다.
  * 필요에 따라 블루프린트로 상속받아 구현하는것을 추천합니다.
  */
 UCLASS()
-class SOULLIKE_API ANPCBase : public ABaseCharacter, public IInteractionInterface, public IMerchantInterface
+class SOULLIKE_API ANPCBase : public ABaseCharacter, public IInteractionInterface, public IMerchantInterface, public ILockOnInterface,public IHostileInterface
 {
 	GENERATED_BODY()
 
@@ -91,6 +99,13 @@ protected:
 	class UBonfireComponent* BonfireComponent;
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 	class UMatrixSlotOpenComponent* MatrixSlotOpenComponent;
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
+	TObjectPtr<class URegisterAbilityComponent> RegisterAbilityComponent;
+	
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<class UUROComponent> UROComponent;
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<class UNavigationInvokerComponent> NavigationInvokerComponent;
 
 	//이 변수에 담긴 행동들을 할 수 있다고 가정합니다.
 	UPROPERTY(EditAnywhere, Category="NPC|Common")
@@ -120,8 +135,8 @@ protected:
 	TSoftObjectPtr<class UDataTable> MerchantItemPath;
 	UPROPERTY(EditAnywhere, Category="NPC|Common|Merchant")
 	TSoftObjectPtr<class UDataTable> MerchantAbilityPath;
-
 	
+
 public:
 	//NPC의 상태가 로드되었을 때 할 행동을 정의합니다.
 	//각 NPC마다 상황이 다르기 때문에 따로 정의하세요.
@@ -192,6 +207,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void BonfireEvent();
 	virtual void BonfireEvent_Implementation();
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void RegisterAbilityEvent();
+	virtual void RegisterAbilityEvent_Implementation();
+
 	
 	UFUNCTION(BlueprintCallable,BlueprintPure)
 	FString GetSafeName() const {return GetNameSafe(this);}
@@ -202,7 +221,7 @@ private:
 	void OnLoadedAbilityList(UObject* AbilityTable);
 
 	virtual void OnRemoveAttributeEffectAdditionalInformationEvent_Implementation(const FAttributeEffect& Effect, UAbilityEffectAdditionalInformation* AdditionalInformation, float DeltaTime) override;
-
+	virtual void OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason) override;
 
 public:
 	//인터페이스
@@ -215,5 +234,53 @@ public:
 
 	virtual void SetActorHiddenInGame(bool bNewHidden) override;
 
+
 	
+	//피격시 적대적으로 변하는 부분
+	//이 값이 참이면, 피격조건을 만족하면 적대적이 됩니다.
+	UPROPERTY(EditAnywhere, Category="NPC|Common")
+	bool bCanHostile = false;
+	//피해를 입었을 때, 출력할 다이얼로그
+	UPROPERTY(EditAnywhere, Category="NPC|Common",meta=(EditCondition = "bCanHostile"))
+	class UDialogue* DialogueGotHit;
+public:
+	//피해를 몇번이나 입었나요? MaxHitCount번이상이면 적대적이 됩니다.
+	UPROPERTY(EditAnywhere, Category="NPC|Common",Transient,BlueprintReadOnly,meta=(EditCondition = "bCanHostile"))
+	int32 GotHitCount = 0;
+	UPROPERTY(EditAnywhere, Category="NPC|Common",Transient,BlueprintReadOnly,meta=(EditCondition = "bCanHostile"))
+	int32 MaxHitCount = 3;
+	//이 대상이 적대되었을때, 주변 NPC들을 적대로 만듭니다.
+	UPROPERTY(EditAnywhere, Category="NPC|Common",Transient,BlueprintReadOnly,meta=(EditCondition = "bCanHostile"))
+	bool bSetAroundNPCToHostileWhenBeHostile = false;
+	UPROPERTY(EditAnywhere, Category="NPC|Common",Transient,BlueprintReadOnly,meta=(EditCondition = "bSetAroundNPCToHostileWhenBeHostile == true && bCanHostile"))
+	float SetAroundNPCToHostileRadius = 2000.f;
+protected:
+	UPROPERTY(EditAnywhere, Category="NPC|Common",meta=(EditCondition = "bCanHostile"))
+	class UBehaviorTree* HostileBehaviorTree;
+
+
+	UPROPERTY(BlueprintAssignable)
+	FOnChangedHostile OnChangedHostile;
+	
+private:
+	UPROPERTY(Transient)
+	bool bLockOnAble = false;
+public:
+	virtual bool IsLockOnAble_Implementation() override;
+	virtual void SetLockOnAble_Implementation(bool newVal) override;
+
+	virtual class UBehaviorTree* GetHostileBehaviorTree_Implementation() override{return HostileBehaviorTree;}
+	virtual class UDialogue* GetGotHitDialog_Implementation() override{return DialogueGotHit;}
+	virtual void SetHostile_Implementation(ABaseCharacter* HostileBy) override;
+	virtual bool IsHostile_Implementation() const override;
+
+private:
+	UPROPERTY(Transient)
+	bool bCanInteraction = true;
+public:
+	virtual bool CanInteraction_Implementation() override;
+protected:
+	//주변 NPC들을 전부 적대상태로 바꿉니다.
+	UFUNCTION(BlueprintCallable)
+	void ChangeHostileAround(ABaseCharacter* HostileBy);
 };

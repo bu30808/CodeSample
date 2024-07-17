@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameplayTagContainer.h"
-#include "04_Item/ItemActor.h"
+#include "04_Item/05_Ability/AbilityItemActor.h"
 #include "Components/ActorComponent.h"
 #include "InventoryComponent.generated.h"
 
@@ -73,6 +73,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnItemQuickSlotUpdate, const FGuid
 //누가 획득했는가 / 획득한 아이템 / 획득된 아이템 액터
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAddItem, class ABaseCharacter*, GetBy, const FInventoryItem&,
                                                ItemInfo, class AItemActor*, ItemActor);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnAddAbilityItem, class ABaseCharacter*, GetBy, const FAbilityInformation&,
+											   AbilityItemInfo, class AItemActor*, ItemActor);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUseItem, class ABaseCharacter*, UsedBy, const FInventoryItem&, ItemInfo)
 ;
@@ -166,6 +169,10 @@ public:
 	//아이템이 추가되었을 때 호출되는 이벤트입니다.
 	UPROPERTY(BlueprintAssignable)
 	FOnAddItem OnAddItem;
+	UPROPERTY(BlueprintAssignable)
+	FOnAddAbilityItem OnAddAbilityItem;
+
+	
 	//필드 아이템 상황을 저장하는 이벤트입니다.
 	UPROPERTY(BlueprintAssignable)
 	FOnSaveFieldItemState OnSaveFieldItemState;
@@ -196,7 +203,7 @@ public:
 	 * 아이템을 추가할 때 마다, 저장합니다.
 	 * @param ItemActor 아이템 정보를 가지고 있는 아이템 액터
 	 * @param bShowPickUpWidget 아이템 획득을 화면에 표시할 것인가?
-	 * @return 추가한 아이템의 유니크 아이디
+	 * @return 추가한 아이템의 유니크 아이디, 어빌리티가 추가된 경우는 빈 Guid가 리턴됩니다.
 	 */
 	UFUNCTION(BlueprintCallable)
 	FGuid AddItem(AItemActor* ItemActor, bool bShowPickUpWidget = true);
@@ -269,19 +276,12 @@ protected:
 	//지금 표시중인 인덱스
 	UPROPERTY(VisibleAnywhere, meta=(ClampMin = -1, ClampMax = 9))
 	int32 CurItemQuickSlotIndex = -1;
-	UPROPERTY(VisibleAnywhere, meta=(ClampMin = -1, ClampMax = 9))
-	int32 CurAbilityQuickSlotIndex = -1;
+
 
 	//퀵슬롯에 저장된 아이템 유니크 아이디입니다.
 	UPROPERTY(VisibleAnywhere)
 	TArray<FGuid> ItemQuickSlotUniqueIDs = {
 		FGuid(), FGuid(), FGuid(), FGuid(), FGuid(), FGuid(), FGuid(), FGuid(), FGuid(), FGuid()
-	};
-	UPROPERTY(VisibleAnywhere)
-	TArray<FGameplayTag> AbilityQuickSlotTags = {
-		FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag,
-		FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag,
-		FGameplayTag::EmptyTag, FGameplayTag::EmptyTag
 	};
 
 public:
@@ -295,24 +295,13 @@ public:
 	
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnUpdateItemQuickSlot OnAddItemQuickSlot;
-	UPROPERTY(BlueprintAssignable, BlueprintCallable)
-	FOnUpdateMainAbilityQuickSlot OnUpdateMainAbilityQuickSlot;
 
 	void AddQuickSlotItem(UItemData* Data, int32 Index);
-	void AddQuickSlotAbility(class UInventoryData* Data, int32 Index);
-
 	void RemoveQuickSlotItem(UItemData* Data, int32 Index);
-	void RemoveQuickSlotAbility(class UInventoryData* Data, int32 Index);
-
 	void NextConsumeQuickSlot();
-	void NextAbilityQuickSlot();
-
 	bool IsRegistered(const FGuid& ID) const;
-	bool IsRegistered(const FGameplayTag& Tag) const;
-
-
 	void UseConsumeQuickSlot();
-	void UseAbilityQuickSlot();
+
 
 	
 	//아이템 버튼이 아이템리스트에서 생성되면 호출됩니다.

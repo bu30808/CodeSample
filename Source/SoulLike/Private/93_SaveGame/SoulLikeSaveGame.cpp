@@ -147,7 +147,6 @@ void UGameLoadHandler::RestoreQuickSlotState(const TObjectPtr<APlayerCharacter>&
 			if (auto mainWidget = Player->GetMainWidget())
 			{
 				mainWidget->UMG_Equipment->LoadItemQuickSlots(InventoryData.ItemQuickSlotMap);
-				mainWidget->UMG_Equipment->LoadAbilityQuickSlots(InventoryData.AbilityQuickSlotMap);
 
 				for(const auto& iter : InventoryData.ItemQuickSlotMap)
 				{

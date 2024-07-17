@@ -13,6 +13,7 @@
 #include "00_Character/01_Component/AttributeComponent.h"
 #include "00_Character/04_NPC/NPCBase.h"
 #include "97_Interface/00_NPC/MerchantInterface.h"
+#include "Components/Button.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Logging/StructuredLog.h"
 
@@ -78,10 +79,7 @@ void UMerchantWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponen
 		                   AddUniqueDynamic(UMG_MerchantList, &UMerchantListWidget::OnBuyItemFromPlayerEvent);
 		MerchantComponent->OnSellItemToPlayer.AddUniqueDynamic(UMG_MerchantList,
 		                                                       &UMerchantListWidget::OnSellItemToPlayerEvent);
-
-
-		MerchantComponent->OnBuyAbilityFromPlayer.AddUniqueDynamic(UMG_MerchantList,
-		                                                           &UMerchantListWidget::OnBuyAbilityFromPlayerEvent);
+		
 		MerchantComponent->OnSellAbilityToPlayer.AddUniqueDynamic(UMG_MerchantList,
 		                                                          &UMerchantListWidget::OnSellAbilityToPlayerEvent);
 

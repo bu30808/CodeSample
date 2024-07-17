@@ -4,9 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "04_Item/ItemActor.h"
-#include "04_Item/00_Consume/00_Potion/PotionItemActor.h"
-#include "04_Item/02_Enhancement/EnhancementItemActor.h"
-#include "04_Item/04_Stuff/StuffItemActor.h"
+#include "04_Item/05_Ability/AbilityItemActor.h"
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "Subsystems/LocalPlayerSubsystem.h"
 #include "ItemManagerSubsystem.generated.h"
@@ -42,8 +40,8 @@ private:
 	class UDataTable* FragmentSlotOpenMaterialTable;
 	UPROPERTY(EditAnywhere)
 	class UDataTable* StuffItemTable;
-
-	
+	UPROPERTY(EditAnywhere)
+	class UDataTable* AbilityItemTable;
 	
 public:
 	UItemManagerSubsystem();
@@ -61,4 +59,5 @@ public:
 	const FItemInformation* GetKeyItemInformation(FGameplayTag ItemTag) const;
 	const FItemInformation* GetFragmentSlotOpenMaterialItemInformation(FGameplayTag ItemTag) const;
 	const FItemInformation* GetStuffItemInformation(FGameplayTag ItemTag) const;
+	const FAbilityItemInformation* GetAbilityInformation(FGameplayTag ItemTag) const;
 };

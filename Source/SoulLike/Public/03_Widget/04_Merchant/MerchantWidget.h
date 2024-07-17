@@ -16,7 +16,7 @@ class UBaseMerchandiseListData : public UObject
 	GENERATED_BODY()
 
 public:
-	UPROPERTY()
+	UPROPERTY(Transient)
 	TWeakObjectPtr<class UMerchantListWidget> MerchantListWidget;
 };
 
@@ -26,7 +26,7 @@ class UMerchandiseItemListData : public UBaseMerchandiseListData
 	GENERATED_BODY()
 
 public:
-	UPROPERTY()
+	UPROPERTY(Transient)
 	FMerchandiseItem MerchandiseItem;
 };
 
@@ -36,7 +36,7 @@ class UMerchandiseAbilityListData : public UBaseMerchandiseListData
 	GENERATED_BODY()
 
 public:
-	UPROPERTY()
+	UPROPERTY(Transient)
 	FMerchandiseAbility MerchandiseAbility;
 };
 

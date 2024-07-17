@@ -3,6 +3,8 @@
 
 #include "00_Character/04_NPC/NPCBase.h"
 
+#include "BrainComponent.h"
+#include "NavigationInvokerComponent.h"
 #include "00_Character/00_Player/PlayerCharacter.h"
 #include "00_Character/04_NPC/99_Component/BonfireComponent.h"
 #include "00_Character/04_NPC/99_Component/EnhancementComponent.h"
@@ -17,10 +19,17 @@
 
 #include "00_Character/00_Player/00_Controller/00_Component/WidgetManagerComponent.h"
 #include "00_Character/01_Component/AbilityComponent.h"
+#include "00_Character/01_Component/UROComponent.h"
+#include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "00_Character/04_NPC/NPCAIController.h"
+#include "00_Character/04_NPC/99_Component/RegisterAbilityComponent.h"
 #include "96_Library/WidgetHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
-#include "Components/ArrowComponent.h"
+#include "BehaviorTree/BehaviorTreeComponent.h"
+#include "BehaviorTree/BlackboardComponent.h"
+#include "Components/WidgetComponent.h"
+#include "Perception/AIPerceptionComponent.h"
+#include "Perception/AISense_Damage.h"
 
 
 FNPCState::FNPCState(ANPCBase* NPC)
@@ -50,6 +59,29 @@ ANPCBase::ANPCBase()
 
 	AIControllerClass = ANPCAIController::StaticClass();
 	bEnableAutoLODGeneration = false;
+
+	HealthBarWidgetComponent = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidgetComponent"));
+	HealthBarWidgetComponent->SetupAttachment(GetMesh(), "HealthBar");
+
+	HealthBarWidgetComponent->SetWidgetSpace(EWidgetSpace::Screen);
+	HealthBarWidgetComponent->SetDrawSize(FVector2D(150, 5));
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> widget(TEXT(
+	"/Script/UMGEditor.WidgetBlueprint'/Game/Blueprints/02_Widget/UMG_HealthBar.UMG_HealthBar_C'"));
+	if (widget.Succeeded())
+	{
+		HealthBarWidgetComponent->SetWidgetClass(widget.Class);
+	}
+	HealthBarWidgetComponent->SetCollisionProfileName("NoCollision");
+
+	SET_LDMaxDrawDistance(HealthBarWidgetComponent,3500.f);
+
+	NavigationInvokerComponent = CreateDefaultSubobject<UNavigationInvokerComponent>(TEXT("NavInvoker"));
+	NavigationInvokerComponent->SetGenerationRadii(5000.f, 7000.f);
+	
+
+	UROComponent = CreateDefaultSubobject<UUROComponent>(TEXT("UROComponent"));
+	
 #if WITH_EDITOR
 	//RuntimeGrid = "NPCGrid";
 #endif
@@ -115,6 +147,7 @@ void ANPCBase::BeginPlay()
 void ANPCBase::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+
 	
 	for (auto iter : NPCActions)
 	{
@@ -132,16 +165,6 @@ void ANPCBase::PostInitializeComponents()
 
 				OnLoadedItemList(MerchantItemPath.LoadSynchronous());
 				OnLoadedAbilityList(MerchantAbilityPath.LoadSynchronous());
-				/*{
-					auto task = UGameplayTask_LoadAsync::LoadSoftObject(this, MerchantItemPath);
-					task->OnLoadCompleted.AddUniqueDynamic(this, &ANPCBase::OnLoadedItemList);
-					task->ReadyForActivation();
-				}
-				{
-					auto task = UGameplayTask_LoadAsync::LoadSoftObject(this, MerchantAbilityPath);
-					task->OnLoadCompleted.AddUniqueDynamic(this, &ANPCBase::OnLoadedAbilityList);
-					task->ReadyForActivation();
-				}*/
 			}
 			break;
 		case ENPCActionType::LevelUp:
@@ -175,7 +198,6 @@ void ANPCBase::PostInitializeComponents()
 				MatrixSlotOpenComponent = UComponentHelperLibrary::CreateActorComponent<UMatrixSlotOpenComponent>(
 					this, TEXT("MatrixSlotOpenComponent"));
 			}
-
 			break;
 		case ENPCActionType::TeleportBonfire:
 			if (BonfireComponent == nullptr)
@@ -188,9 +210,45 @@ void ANPCBase::PostInitializeComponents()
 		case ENPCActionType::Chest:
 			//상자 액터 내부에서 생성됨.
 			break;
+		case ENPCActionType::RegisterAbility:
+			if(RegisterAbilityComponent == nullptr)
+			{
+				RegisterAbilityComponent = UComponentHelperLibrary::CreateActorComponent<URegisterAbilityComponent>(
+						this, TEXT("RegisterAbilityComponent"));
+			}
+			break;
 		default: ;
 		}
 	}
+
+
+	if(bCanHostile)
+	{
+		if (HealthBarWidgetComponent)
+		{
+			HealthBarWidgetComponent->InitWidget();
+			if (HealthBarWidgetComponent->GetUserWidgetObject())
+			{
+				HealthBarWidgetComponent->GetUserWidgetObject()->SetVisibility(ESlateVisibility::Collapsed);
+			}
+
+			HealthBarWidgetComponent->AttachToComponent(
+				GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), "HealthBar");
+		
+		}
+		AttributeComponent->OnChangeHPValue.AddUniqueDynamic(this, &ABaseCharacter::UpdateHealthBar);
+		AttributeComponent->OnDamagedHP.AddUniqueDynamic(this,&ABaseCharacter::UpdateDamagedHealthBar);
+		
+		if(bSetAroundNPCToHostileWhenBeHostile)
+		{
+			OnChangedHostile.AddUniqueDynamic(this,&ANPCBase::ChangeHostileAround);
+		}
+		
+	}else
+	{
+		HealthBarWidgetComponent->DestroyComponent();
+	}
+	
 }
 
 void ANPCBase::Interaction_Implementation(ABaseCharacter* Start)
@@ -258,7 +316,6 @@ void ANPCBase::FinishInteraction_Implementation()
 		}
 		
 	}
-	//IInteractionInterface::FinishInteraction_Implementation();
 
 	/*
 	if (InteractionActor.IsValid())
@@ -294,6 +351,7 @@ void ANPCBase::MerchantEvent_Implementation()
 	}
 
 	MerchantComponent->ShowMerchantWidget(InteractionActor.Get());
+	Execute_FinishInteraction(this);
 }
 
 void ANPCBase::LevelUpEvent_Implementation()
@@ -321,6 +379,7 @@ void ANPCBase::EnhancementEvent_Implementation(EEnhancementType EnhancementType)
 	}
 
 	EnhancementComponent->AddEnhancementWidget(InteractionActor.Get(),EnhancementType);
+	Execute_FinishInteraction(this);
 }
 
 void ANPCBase::PotionEnhancementEvent_Implementation()
@@ -333,6 +392,7 @@ void ANPCBase::PotionEnhancementEvent_Implementation()
 			this, TEXT("PotionEnhancementComponent"));
 	}
 	PotionEnhancementComponent->AddPotionEnhancementWidget(InteractionActor.Get());
+	Execute_FinishInteraction(this);
 }
 
 void ANPCBase::MatrixSlotOpenEvent_Implementation()
@@ -346,6 +406,7 @@ void ANPCBase::MatrixSlotOpenEvent_Implementation()
 	}
 
 	MatrixSlotOpenComponent->AddOrbMatrixSlotOpenWidget(InteractionActor.Get());
+	Execute_FinishInteraction(this);
 }
 
 void ANPCBase::OnTeleportWidgetOpenEvent_Implementation()
@@ -364,7 +425,6 @@ void ANPCBase::OnTeleportWidgetOpenEvent_Implementation()
 void ANPCBase::BonfireEvent_Implementation()
 
 {
-
 	if (BonfireComponent == nullptr)
 	{
 		// 액터에 커스텀 액터 컴포넌트 생성
@@ -373,6 +433,17 @@ void ANPCBase::BonfireEvent_Implementation()
 	}
 
 	BonfireComponent->Rest(Cast<APlayerCharacter>(InteractionActor.Get()));
+}
+
+void ANPCBase::RegisterAbilityEvent_Implementation()
+{
+	if(RegisterAbilityComponent == nullptr)
+	{
+		RegisterAbilityComponent = UComponentHelperLibrary::CreateActorComponent<URegisterAbilityComponent>(
+				this, TEXT("RegisterAbilityComponent"));
+	}
+
+	RegisterAbilityComponent->AddRegisterAbilityWidget(Cast<APlayerCharacter>(InteractionActor.Get()));
 }
 
 void ANPCBase::OnLoadedItemList(UObject* ItemTable)
@@ -394,12 +465,47 @@ void ANPCBase::OnLoadedAbilityList(UObject* AbilityTable)
 void ANPCBase::OnRemoveAttributeEffectAdditionalInformationEvent_Implementation(const FAttributeEffect& Effect,
 	UAbilityEffectAdditionalInformation* AdditionalInformation, float DeltaTime)
 {
-	//아무것도안함.
+	if(bCanHostile)
+	{
+		if(Execute_IsHostile(this) == false)
+		{
+			if (Effect.Attribute == EAttributeType::HP)
+			{
+				if (auto aiCon = GetController<ANPCAIController>())
+				{
+					UE_LOGFMT(LogTemp,Log,"피해 리포트");
+					UAISense_Damage::ReportDamageEvent(this, this, AdditionalInformation->HitBy.Get(), 1,
+													   GetActorLocation(), AdditionalInformation->Hit.Location);
+				}
+			}
+		}else{
+			UE_LOGFMT(LogTemp,Log,"적대적입니다. 피해를 줍니다.!!!!");
+			Super::OnRemoveAttributeEffectAdditionalInformationEvent_Implementation(Effect,AdditionalInformation,DeltaTime);
+		}
+	}
+}
+
+void ANPCBase::OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason)
+{
+	UE_LOGFMT(LogTemp,Log,"NPC 사망");
+	Super::OnDeadEvent(Who, DeadBy, DeadReason);
+	bCanInteraction = false;
+	if(auto aiCon = GetController<AAIController>())
+	{
+		SetCharacterState(ECharacterState::DEAD);
+		if(auto btComp = Cast<UBehaviorTreeComponent>(aiCon->GetBrainComponent()))
+		{
+			aiCon->GetBlackboardComponent()->ClearValue("Target");
+			btComp->StopTree(EBTStopMode::Forced);
+			btComp->Cleanup();
+			aiCon->GetPerceptionComponent()->ForgetAll();
+		}
+	}
 }
 
 
 void ANPCBase::BuyItemFromPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter, FGuid ItemUniqueID,
-                                           int32 BuyCount)
+                                 int32 BuyCount)
 {
 	if (auto invenComp = PlayerCharacter->GetInventoryComponent())
 	{
@@ -621,3 +727,67 @@ void ANPCBase::SetActorHiddenInGame(bool bNewHidden)
 	SetActorEnableCollision(!bNewHidden);
 }
 
+bool ANPCBase::IsLockOnAble_Implementation()
+{
+	return bLockOnAble;
+}
+
+void ANPCBase::SetLockOnAble_Implementation(bool newVal)
+{
+	bLockOnAble = newVal;
+}
+
+void ANPCBase::SetHostile_Implementation(ABaseCharacter* HostileBy)
+{
+	UE_LOGFMT(LogTemp,Log,"적대적으로 변경 : {0}", GetName());
+	if(auto aiCon= GetController<ANPCAIController>())
+	{
+		bCanInteraction = false;
+		aiCon->SetGenericTeamId(FGenericTeamId(static_cast<uint8>(ETeam::Monster)));
+		if(UKismetSystemLibrary::DoesImplementInterface(this,ULockOnInterface::StaticClass()))
+		{
+			Execute_SetLockOnAble(this,true);
+		}
+		
+		GetCapsuleComponent()->SetCollisionProfileName("Pawn");
+		GetMesh()->SetCollisionProfileName("Monster");
+		
+		aiCon->RunBehaviorTree(Execute_GetHostileBehaviorTree(this));
+		if(auto bbComp = aiCon->GetBlackboardComponent()){
+			bbComp->SetValueAsObject("Target",HostileBy);
+		}
+	}
+
+	OnChangedHostile.Broadcast(HostileBy);
+}
+
+bool ANPCBase::IsHostile_Implementation() const
+{
+	return GetController<AAIController>()->GetGenericTeamId() != static_cast<uint8>(ETeam::Player);
+}
+
+bool ANPCBase::CanInteraction_Implementation()
+{
+	return bCanInteraction;
+}
+
+void ANPCBase::ChangeHostileAround(ABaseCharacter* HostileBy)
+{
+	TArray<TEnumAsByte<EObjectTypeQuery>> objTypes;
+	objTypes.Emplace(UEngineTypes::ConvertToObjectType(ECC_NPC));
+	
+	TArray<FHitResult> hits;
+	if(UKismetSystemLibrary::SphereTraceMultiForObjects(this,GetActorLocation(),GetActorLocation(),SetAroundNPCToHostileRadius,objTypes,false,TArray<AActor*>(),EDrawDebugTrace::ForOneFrame,hits,true))
+	{
+		for(const auto& hit : hits)
+		{
+			if(UKismetSystemLibrary::DoesImplementInterface(hit.GetActor(),UHostileInterface::StaticClass()))
+			{
+				if(!Execute_IsHostile(hit.GetActor()))
+				{
+					Execute_SetHostile(hit.GetActor(),HostileBy);
+				}
+			}
+		}
+	}
+}

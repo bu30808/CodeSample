@@ -16,7 +16,7 @@ UBTTask_ChangeCharacterState::UBTTask_ChangeCharacterState()
 EBTNodeResult::Type UBTTask_ChangeCharacterState::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 
-	if(auto pawn = OwnerComp.GetAIOwner()->GetPawn<ABaseMonster>())
+	if(auto pawn = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
 	{
 		pawn->SetCharacterState(NewState);
 		return EBTNodeResult::Succeeded;

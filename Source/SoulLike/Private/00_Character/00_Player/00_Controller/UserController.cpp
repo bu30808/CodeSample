@@ -111,7 +111,6 @@ void AUserController::AddDialogWidget(AActor* NPC, UDialogue* InDialogue)
 			dialogue->NPCActor = NPC;
 			dialogue->SetDialogue(InDialogue);
 			dialogue->AddToViewport(1);
-			
 		}
 	}
 	

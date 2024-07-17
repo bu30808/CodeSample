@@ -3,7 +3,6 @@
 
 #include "00_Character/03_Monster/03_AI/00_Common/00_Task/BTTask_AITurn.h"
 
-#include "00_Character/03_Monster/BaseMonster.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/Tasks/BTTask_MoveTo.h"
@@ -36,14 +35,14 @@ EBTNodeResult::Type UBTTask_AITurn::ExecuteTask(UBehaviorTreeComponent& OwnerCom
 	{
 	case EAITaskTurnType::RootMontage:
 	case EAITaskTurnType::TickAfterRootMontage:
-		if (auto instance = OwnersAIController->GetPawn<ABaseMonster>()->GetMesh()->GetAnimInstance())
+		if (auto instance = OwnersAIController->GetPawn<ABaseCharacter>()->GetMesh()->GetAnimInstance())
 		{
 			instance->OnMontageBlendingOut.AddUniqueDynamic(this, &UBTTask_AITurn::OnTurnMontageBlendOutEvent);
 		}
 		Turn();
 		break;
 	case EAITaskTurnType::MontageWithTick:
-		if (auto instance = OwnersAIController->GetPawn<ABaseMonster>()->GetMesh()->GetAnimInstance())
+		if (auto instance = OwnersAIController->GetPawn<ABaseCharacter>()->GetMesh()->GetAnimInstance())
 		{
 			instance->OnMontageBlendingOut.AddUniqueDynamic(this, &UBTTask_AITurn::OnTurnMontageBlendOutEvent);
 		}
@@ -219,7 +218,7 @@ void UBTTask_AITurn::OnTaskFinished(UBehaviorTreeComponent& OwnerComp, uint8* No
                                     EBTNodeResult::Type TaskResult)
 {
 	UE_LOGFMT(LogAICon, Log, "{0}의 회전 테스크 종료!", OwnerComp.GetAIOwner()->GetActorNameOrLabel());
-	if (auto pawn = OwnersAIController->GetPawn<ABaseMonster>())
+	if (auto pawn = OwnersAIController->GetPawn<ABaseCharacter>())
 	{
 		if (auto instance = pawn->GetMesh()->GetAnimInstance())
 		{

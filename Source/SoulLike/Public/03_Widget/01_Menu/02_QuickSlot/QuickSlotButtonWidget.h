@@ -21,12 +21,12 @@ struct FInventoryItem;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRegisterItem, class APlayerCharacter*, Player,
 											   class UItemData*, Data, int32, Index);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRegisterAbility, class APlayerCharacter*, Player,
-											   class UAbilityData*, Data, int32, Index);
-
 
 DECLARE_DELEGATE_RetVal_OneParam(int32,FOnRemoveAlreadyRegisteredSlotItem, class UItemData* Data);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRemoveAlreadyRegisteredSlotAbility, class UAbilityData*, Data);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAlreadyRegisteredAbilityDropped, const FGameplayTag&,AbilityTag);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDroppedAbility, const FGameplayTag&,AbilityTag);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnClearSlot, const FGameplayTag&,AbilityTag);
 /**
  * 
  */
@@ -58,7 +58,8 @@ protected:
 	TObjectPtr<class UInventoryData> InventoryData;
 	UPROPERTY(Transient)
 	TObjectPtr<class UInventoryComponent> InventoryComponent;
-	
+	UPROPERTY(Transient)
+	TObjectPtr<class UAbilityComponent> AbilityComponent;
 	//이 슬롯의 위치정보
 	UPROPERTY(VisibleAnywhere)
 	int32 Index = 0;
@@ -163,18 +164,38 @@ protected:
 };
 
 UCLASS()
-class SOULLIKE_API UAbilityQuickSlotButtonWidget : public UQuickSlotButtonWidget
+class SOULLIKE_API UMainAbilityQuickSlotButtonWidget : public UQuickSlotButtonWidget
 {
 	GENERATED_BODY()
 
 protected:
+	virtual void NativeConstruct() override;
+	
+	UFUNCTION()
+	void OnFirstUpdateMainAbilityQuickSlotEvent(const FAbilityInformation& AbilityInformation);
+	UFUNCTION()
+	void OnChangeAbilityQuickSlotEvent(const FAbilityInformation& AbilityInformation);
+	
+	//이 슬롯이 표시중인 어빌리티 태그
+	UPROPERTY(Transient)
+	FGameplayTag MemorisedTag;
 
+	virtual void ClearSlot() override;
+	
+};
 
-	UPROPERTY(Blueprintable)
-	FOnRegisterAbility OnRegisterAbility;
+UCLASS()
+class SOULLIKE_API UAbilityQuickSlotButtonWidget : public UQuickSlotButtonWidget
+{
+	GENERATED_BODY()
+
 public:
 	UPROPERTY(BlueprintAssignable)
-	FOnRemoveAlreadyRegisteredSlotAbility OnRemoveAlreadyRegisteredSlotAbility;
+	FOnAlreadyRegisteredAbilityDropped OnAlreadyRegisteredAbilityDropped;
+	UPROPERTY(BlueprintAssignable)
+	FOnDroppedAbility OnDroppedAbility;
+	UPROPERTY(BlueprintAssignable)
+	FOnClearSlot OnClearSlot;
 protected:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
@@ -190,8 +211,12 @@ protected:
 
 	//이미 다른 슬롯에 등록되어진 어빌리티인지 확인합니다.
 	bool IsAlreadyRegistered(UAbilityData* Data) const;
+	bool IsAlreadyRegistered(const FAbilityInformation& Data) const;
 	
 	virtual void Init(UInventoryData* Data, bool bIsLoaded = false) override;
 	virtual void UseQuickSlot(UInputAction* InputAction) override;
-
+	virtual void ClearSlot() override;
+public:
+	void SlotClear(bool bCallEvent = false);
+	void OverrideData(class UAbilityData* AbilityData);
 };

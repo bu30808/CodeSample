@@ -28,6 +28,11 @@ struct FAbilityInformation : public FTableRowBase
 	GENERATED_BODY()
 
 public:
+
+	//어빌리티 클래스
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UAbilityBase> AbilityClass;
+	
 	//어빌리티 이름
 	UPROPERTY(EditAnywhere)
 	FText AbilityName;
@@ -51,6 +56,10 @@ public:
 	//이 값이 참이어야 인벤토리의 기술목록에 나타납니다.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	bool bRegisterInventory = false;
+	
+	FText GetAbilityReqDescription() const;
+	//사용가능한 능력치를 가지고 있는지 확인함.
+	bool IsAttributeEnough(class AActor* Owner) const;
 };
 
 

@@ -83,6 +83,14 @@ UItemManagerSubsystem::UItemManagerSubsystem()
 	{
 		StuffItemTable = stuffItemTable.Object;
 	}
+	///Script/Engine.DataTable'/Game/Blueprints/04_Item/Ability/DT_AbilityItem.DT_AbilityItem'
+
+	static ConstructorHelpers::FObjectFinder<UDataTable> abilityItemTable(TEXT(
+	"Script/Engine.DataTable'/Game/Blueprints/04_Item/Ability/DT_AbilityItem.DT_AbilityItem'"));
+	if (abilityItemTable.Succeeded())
+	{
+		AbilityItemTable = abilityItemTable.Object;
+	}
 }
 
 
@@ -224,6 +232,19 @@ const FItemInformation* UItemManagerSubsystem::GetStuffItemInformation(FGameplay
 	if (StuffItemTable)
 	{
 		if (const auto info = StuffItemTable->FindRow<FItemInformation>(ItemTag.GetTagName(), ""))
+		{
+			return info;
+		}
+	}
+
+	return nullptr;
+}
+
+const FAbilityItemInformation* UItemManagerSubsystem::GetAbilityInformation(FGameplayTag ItemTag) const
+{
+	if (AbilityItemTable)
+	{
+		if (const auto info = AbilityItemTable->FindRow<FAbilityItemInformation>(ItemTag.GetTagName(), ""))
 		{
 			return info;
 		}

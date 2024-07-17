@@ -110,5 +110,5 @@ protected:
 	void OnTriggerIgnoreMoveInputEvent(const TMap<FIgnoreInputHandler, uint8>& IgnoreMoveInputMap);
 
 	UFUNCTION()
-	void OnChangePlayerStateEvent(EPlayerCharacterState State);
+	void OnChangePlayerStateEvent(ECombatState State);
 };

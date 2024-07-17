@@ -16,7 +16,7 @@ void UAbilityDebugWidget::NativeConstruct()
 #ifdef WITH_EDITOR
 	if (auto abComp = GetOwningPlayerPawn<ABaseCharacter>()->GetAbilityComponent())
 	{
-		abComp->OnAddAbility.AddUniqueDynamic(this, &UAbilityDebugWidget::OnAddAbilityEvent);
+		//abComp->OnAddAbility.AddUniqueDynamic(this, &UAbilityDebugWidget::OnAddAbilityEvent);
 		abComp->OnRemoveAbility.AddUniqueDynamic(this, &UAbilityDebugWidget::OnRemoveAbilityEvent);
 
 		abComp->OnActivatedAbility.AddUniqueDynamic(this, &UAbilityDebugWidget::OnActivatedAbilityEvent);
@@ -38,14 +38,14 @@ void UAbilityDebugWidget::NativeConstruct()
 
 void UAbilityDebugWidget::OnAddAbilityEvent(const FAbilityInformation& AbilityInformation)
 {
-	if (AvailableAbilitiesList)
+	/*if (AvailableAbilitiesList)
 	{
 		auto data = NewObject<UAbilityDebuggingData>();
 		data->AbilityInformation = AbilityInformation;
 
 		AvailableAbilitiesList->AddItem(data);
 		AvailableAbilities.Add(AbilityInformation.AbilityTag, data);
-	}
+	}*/
 }
 
 void UAbilityDebugWidget::OnRemoveAbilityEvent(const FGameplayTag& AbilityTag)
@@ -170,7 +170,7 @@ void UAbilityDebugWidget::OnTriggerIgnoreMoveInputEvent(const TMap<FIgnoreInputH
 	}
 }
 
-void UAbilityDebugWidget::OnChangePlayerStateEvent(EPlayerCharacterState State)
+void UAbilityDebugWidget::OnChangePlayerStateEvent(ECombatState State)
 {
-	TextBlock_PlayerState->SetText(FText::FromString(StaticEnum<EPlayerCharacterState>()->GetValueAsString(State)));
+	TextBlock_PlayerState->SetText(FText::FromString(StaticEnum<ECombatState>()->GetValueAsString(State)));
 }

@@ -605,7 +605,7 @@ AActor* ULockOnComponent::GetNearestTarget()
 
 		for (const auto& hit : HitActors)
 		{
-			if (hit.GetActor() && hit.GetActor()->IsA<ABaseMonster>())
+			if (hit.GetActor() && hit.GetActor()->IsA<ABaseCharacter>())
 			{
 				const float distance = FVector::Distance(hit.GetActor()->GetActorLocation(), Owner->GetActorLocation());
 

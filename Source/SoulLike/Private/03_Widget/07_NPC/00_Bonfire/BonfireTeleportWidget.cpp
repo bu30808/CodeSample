@@ -18,6 +18,7 @@ void UBonfireTeleportWidget::NativeConstruct()
 {
 	bUseAsPopUp = true;
 	bRemovable = true;
+
 	Super::NativeConstruct();
 
 	Button_OK->OnClicked.AddUniqueDynamic(this, &UBonfireTeleportWidget::OnClickedOKEvent);

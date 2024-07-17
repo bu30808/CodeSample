@@ -49,6 +49,7 @@
 #include "00_Character/00_Player/01_Component/JumpMovementComponent.h"
 #include "00_Character/00_Player/01_Component/LadderMovementComponent.h"
 #include "00_Character/00_Player/01_Component/TeleportBonfireComponent.h"
+#include "04_Item/05_Ability/AbilityItemActor.h"
 #include "91_Sky/DynamicSkyActor.h"
 #include "92_Tools/WorldStreamingSourceActor.h"
 #include "96_Library/DataLayerHelperLibrary.h"
@@ -105,9 +106,9 @@ APlayerCharacter::APlayerCharacter()
 	CameraBoom->bEnableCameraLag = true;
 	CameraBoom->bEnableCameraRotationLag = true;
 	CameraBoom->CameraRotationLagSpeed = 30.f;
-	CameraBoom->SetRelativeLocation(FVector(0,0,60.f));
+	CameraBoom->SetRelativeLocation(FVector(0, 0, 60.f));
 	OriginalCameraBoomLocation = CameraBoom->GetRelativeLocation();
-	
+
 	// Create a follow camera
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
@@ -116,8 +117,8 @@ APlayerCharacter::APlayerCharacter()
 
 	DeathCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("DeathCamera"));
 	DeathCamera->SetupAttachment(RootComponent);
-	DeathCamera->SetRelativeLocation(FVector(0,0,500));
-	DeathCamera->SetRelativeRotation(FRotator(90,0,0));
+	DeathCamera->SetRelativeLocation(FVector(0, 0, 500));
+	DeathCamera->SetRelativeRotation(FRotator(90, 0, 0));
 	DeathCamera->SetAutoActivate(false);
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
@@ -149,7 +150,7 @@ APlayerCharacter::APlayerCharacter()
 
 
 	LockOnComponent = CreateDefaultSubobject<ULockOnComponent>(TEXT("LockOnComponent"));
-	
+
 
 	LadderMovementComponent = CreateDefaultSubobject<ULadderMovementComponent>(TEXT("LadderMovementComponent"));
 	JumpMovementComponent = CreateDefaultSubobject<UJumpMovementComponent>(TEXT("JumpMovementComponent"));
@@ -220,12 +221,11 @@ void APlayerCharacter::PostInitializeComponents()
 	SceneCaptureComponent2D->SetActive(false);
 
 	OriginalFurMaterial = FurComponent->GetMaterial(0);
-	
+
 	CreateBodyMaterialInstance();
 
 	CameraBoom->bEnableCameraLag = false;
 	CameraBoom->bEnableCameraRotationLag = false;
-	
 }
 
 void APlayerCharacter::PossessedBy(AController* NewController)
@@ -248,7 +248,7 @@ void APlayerCharacter::CreateBodyMaterialInstance()
 {
 	BodyMaterialInstance.Empty();
 
-	if(!FurComponent->GetMaterial(0)->IsA<UMaterialInstanceDynamic>())
+	if (!FurComponent->GetMaterial(0)->IsA<UMaterialInstanceDynamic>())
 	{
 		BodyMaterialInstance.Add(FurComponent->CreateDynamicMaterialInstance(0));
 	}
@@ -261,7 +261,7 @@ void APlayerCharacter::CreateBodyMaterialInstance()
 
 void APlayerCharacter::KneelStart()
 {
-	if(USaveGameHelperLibrary::IsUseSave(this))
+	if (USaveGameHelperLibrary::IsUseSave(this))
 	{
 		PlayAnimMontage(StartKneelMontage);
 	}
@@ -269,17 +269,16 @@ void APlayerCharacter::KneelStart()
 
 void APlayerCharacter::LoadStartLayer()
 {
-	
 	if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 	{
 		instance->LoadLayers(StartLayers);
 		//시작지점 스트리밍
 		if (const auto streamingSource = UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(this))
 		{
-			streamingSource->OnAfterStreamingComplete.AddUniqueDynamic(this,&APlayerCharacter::OnAfterLoadStartLayerEvent);
+			streamingSource->OnAfterStreamingComplete.AddUniqueDynamic(
+				this, &APlayerCharacter::OnAfterLoadStartLayerEvent);
 			streamingSource->StreamingStart(GetActorLocation());
 		}
-		
 	}
 }
 
@@ -312,7 +311,7 @@ void APlayerCharacter::OnAfterLoadStartLayerEvent()
 		instance->SaveSky(this);
 		instance->SaveDataLayer(this);
 		KneelStart();
-				
+
 		AttributeComponent->SetHP(AttributeComponent->GetMaxHP());
 		AttributeComponent->SetMP(AttributeComponent->GetMaxMP());
 		AttributeComponent->BroadcastHPEvent(0);
@@ -330,7 +329,7 @@ void APlayerCharacter::LoadGame()
 		if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 		{
 			instance->OnFinishLoadGame.AddUniqueDynamic(this, &APlayerCharacter::OnFinishLoadGame);
-			
+
 			SetGravityAroundPlayer(false);
 			instance->SetPlayer(this);
 			if (instance->IsUseGameSave())
@@ -357,19 +356,19 @@ void APlayerCharacter::LoadGame()
 
 void APlayerCharacter::SetGravityAroundPlayer(bool bActivate)
 {
-	
 	const auto worldSetting = GetWorldSettings();
-	if(worldSetting)
+	if (worldSetting)
 	{
 		GetCapsuleComponent()->SetEnableGravity(!bActivate);
-		if(!bActivate)
+		if (!bActivate)
 		{
-			UE_LOGFMT(LogCharacter,Log,"중력 0으로 설정함.");
+			UE_LOGFMT(LogCharacter, Log, "중력 0으로 설정함.");
 			//worldSetting->GlobalGravityZ = 0;
 			worldSetting->bGlobalGravitySet = true;
-		}else
+		}
+		else
 		{
-			UE_LOGFMT(LogCharacter,Log,"중력 기본값으로 설정함.");
+			UE_LOGFMT(LogCharacter, Log, "중력 기본값으로 설정함.");
 			//worldSetting->GlobalGravityZ = DEFAULT_GRAVITY;
 			worldSetting->bGlobalGravitySet = false;
 		}
@@ -378,11 +377,11 @@ void APlayerCharacter::SetGravityAroundPlayer(bool bActivate)
 
 void APlayerCharacter::OnFinishLoadGame()
 {
-	UE_LOGFMT(LogSave,Warning,"APlayerCharacter::OnFinishLoadGame");
+	UE_LOGFMT(LogSave, Warning, "APlayerCharacter::OnFinishLoadGame");
 	if (auto pc = GetController<AUserController>())
-	{		
-		UE_LOGFMT(LogCharacter,Log,"로드 완료");
-	
+	{
+		UE_LOGFMT(LogCharacter, Log, "로드 완료");
+
 		CameraBoom->bEnableCameraLag = true;
 		CameraBoom->bEnableCameraRotationLag = true;
 
@@ -392,7 +391,7 @@ void APlayerCharacter::OnFinishLoadGame()
 		//오브 배경 스폰
 		if (OrbBackgroundActorObject)
 		{
-			if(OrbBackgroundActor==nullptr)
+			if (OrbBackgroundActor == nullptr)
 			{
 				OrbBackgroundActor = GetWorld()->SpawnActor<AOrbBackgroundActor>(OrbBackgroundActorObject);
 				OrbBackgroundActor->ShowRender(false);
@@ -402,17 +401,17 @@ void APlayerCharacter::OnFinishLoadGame()
 
 		//서브시스템은 게임이 종료될때까지 유지되는 것이므로, 레벨을 새로 로드 한 후에 초기화를 해 줘야 합니다.
 		pc->GetLocalPlayer()->GetSubsystem<UWidgetInteractionSubsystem>()->InitSubsystem();
-		
+
 		//n초마다 마지막으로 밟은 땅의 좌표를 기억합니다. 이 좌표에다 영혼무덤을 생성할 것입니다.
 		LastGroundedLocation = GetActorLocation();
-		if(GetWorldTimerManager().IsTimerActive(GroundLocationSaveTimerHandle)==false)
+		if (GetWorldTimerManager().IsTimerActive(GroundLocationSaveTimerHandle) == false)
 		{
 			GetWorldTimerManager().SetTimer(GroundLocationSaveTimerHandle, this,
-											&APlayerCharacter::SaveLastGroundedLocation, 1.f, true);
+			                                &APlayerCharacter::SaveLastGroundedLocation, 1.f, true);
 		}
 		SetGravityAroundPlayer(true);
 		ShowLoadingScreen(false);
-		
+
 		CreateSoulTomb();
 		/*//딜레이를 안 주면 중간에 사라지기 때문에 어쩔수 없다.
 		FTimerHandle tombTimerHandle;
@@ -422,9 +421,9 @@ void APlayerCharacter::OnFinishLoadGame()
 
 void APlayerCharacter::StartLoadingCameraFade(bool bManual, float FadeTime)
 {
-	UE_LOGFMT(LogCharacter,Log,"StartLoadingCameraFade");
+	UE_LOGFMT(LogCharacter, Log, "StartLoadingCameraFade");
 #if WITH_EDITOR
-	
+
 #else
 	auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
 	if(!bManual){
@@ -434,14 +433,13 @@ void APlayerCharacter::StartLoadingCameraFade(bool bManual, float FadeTime)
 		cameraManager->SetManualCameraFade(1,FLinearColor::Black,true);
 	}
 #endif
-	
 }
 
 void APlayerCharacter::EndLoadingCameraFade()
 {
-	UE_LOGFMT(LogCharacter,Log,"EndLoadingCameraFade");
+	UE_LOGFMT(LogCharacter, Log, "EndLoadingCameraFade");
 	auto cameraManager = UGameplayStatics::GetPlayerCameraManager(this, 0);
-	cameraManager->StartCameraFade(1,0,2.f,FColor::Black,true);
+	cameraManager->StartCameraFade(1, 0, 2.f, FColor::Black, true);
 }
 
 void APlayerCharacter::ResetCameraBoom()
@@ -454,15 +452,15 @@ void APlayerCharacter::ResetCamera()
 {
 	FollowCamera->Activate();
 	DeathCamera->Deactivate();
-	DeathCamera->AttachToComponent(RootComponent,FAttachmentTransformRules::KeepWorldTransform);
-	DeathCamera->SetRelativeLocation(FVector(0,0,500));
-	DeathCamera->SetRelativeRotation(FRotator(90,0,0));
-	GetController<APlayerController>()->SetViewTargetWithBlend(this,0.1f);
+	DeathCamera->AttachToComponent(RootComponent, FAttachmentTransformRules::KeepWorldTransform);
+	DeathCamera->SetRelativeLocation(FVector(0, 0, 500));
+	DeathCamera->SetRelativeRotation(FRotator(90, 0, 0));
+	GetController<APlayerController>()->SetViewTargetWithBlend(this, 0.1f);
 }
 
 void APlayerCharacter::PauseFindInteractionTarget()
 {
-	bTryFindInteractionActor= false;
+	bTryFindInteractionActor = false;
 }
 
 void APlayerCharacter::ResumeFindInteractionTarget()
@@ -482,43 +480,42 @@ void APlayerCharacter::SaveLastGroundedLocation()
 }
 
 
-
 void APlayerCharacter::ShowLoadingScreen(bool bShow)
 {
-	UE_LOGFMT(LogCharacter,Warning,"로딩 스크린 생성");
+	UE_LOGFMT(LogCharacter, Warning, "로딩 스크린 생성");
 	if (auto pc = GetController<AUserController>())
 	{
-		if(bShow){
+		if (bShow)
+		{
 			pc->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("Widget.Loading"));
 			//초기화가 끝날때까지 입력 막음
 			DisableInput(pc);
-		
 
-			if(MainWidget!=nullptr)
+
+			if (MainWidget != nullptr)
 			{
 				MainWidget->SetVisibility(ESlateVisibility::Collapsed);
 			}
 
 			StartLoadingCameraFade(true);
-
-		}else
+		}
+		else
 		{
 			EndLoadingCameraFade();
-			
+
 			pc->GetWidgetManagerComponent()->RemoveWidget(FGameplayTag::RequestGameplayTag("Widget.Loading"));
-			
+
 			UWidgetBlueprintLibrary::SetInputMode_GameOnly(pc);
 
 			//초기화가 끝날때까지 입력 막음
 			EnableInput(pc);
-		
+
 			SetBlockedShowInteraction(false);
 
-			if(MainWidget!=nullptr)
+			if (MainWidget != nullptr)
 			{
 				MainWidget->SetVisibility(ESlateVisibility::Visible);
 			}
-
 		}
 
 		SetActorTickEnabled(!bShow);
@@ -530,8 +527,6 @@ void APlayerCharacter::BeginPlay()
 {
 	if (auto pc = GetController<AUserController>())
 	{
-
-		
 		DynamicSkyActor = Cast<ADynamicSkyActor>(
 			UGameplayStatics::GetActorOfClass(this, ADynamicSkyActor::StaticClass()));
 
@@ -539,12 +534,12 @@ void APlayerCharacter::BeginPlay()
 		pc->GetWidgetManagerComponent()->AddWidget(FGameplayTag::RequestGameplayTag("widget.main"));
 		//메인메뉴 포인터 저장
 		SetMainWidget();
-		
+
 		ShowLoadingScreen(true);
 
 		Super::BeginPlay();
 		LoadGame();
-		
+
 		/*
 		//일단 플레이어의 주변이 스트리밍이 끝난 후에, 로드에 필요한 행동을 합니다.
 		if (const auto streamingSource = UDataLayerHelperLibrary::SpawnWorldStreamingSourceActor(this))
@@ -553,23 +548,23 @@ void APlayerCharacter::BeginPlay()
 			streamingSource->StreamingStart(GetActorLocation());
 			
 		}*/
-		
 	}
 }
 
 void APlayerCharacter::OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayReason)
 {
-	UE_LOGFMT(LogCharacter,Log,"다음의 이유로 플레이어가 종료되었습니다 : {0}",StaticEnum<EEndPlayReason::Type>()->GetValueAsString(EndPlayReason));
-	
+	UE_LOGFMT(LogCharacter, Log, "다음의 이유로 플레이어가 종료되었습니다 : {0}",
+	          StaticEnum<EEndPlayReason::Type>()->GetValueAsString(EndPlayReason));
+
 	if (!IsDead())
 	{
 		//종료시점의 상태를 저장하도록 합니다.
-		if(auto instance = GetGameInstance<USoulLikeInstance>())
+		if (auto instance = GetGameInstance<USoulLikeInstance>())
 		{
 			instance->SaveWhenEndPlay(this);
 		}
 	}
-	
+
 	if (EndPlayReason == EEndPlayReason::Destroyed)
 	{
 		if (IsDead())
@@ -694,8 +689,8 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		                                   InventoryComponent,
 		                                   &UInventoryComponent::UseConsumeQuickSlot);
 		EnhancedInputComponent->BindAction(InputDataAsset->AbilityQuickSlotAction, ETriggerEvent::Triggered,
-		                                   InventoryComponent,
-		                                   &UInventoryComponent::UseAbilityQuickSlot);
+		                                   AbilityComponent,
+		                                   &UAbilityComponent::UseAbilityQuickSlot);
 
 
 		//상호작용
@@ -832,7 +827,7 @@ void APlayerCharacter::ChangeConsumeQuickSlot()
 
 void APlayerCharacter::ChangeAbilityQuickSlot()
 {
-	InventoryComponent->NextAbilityQuickSlot();
+	AbilityComponent->NextAbilityQuickSlot();
 }
 
 void APlayerCharacter::Interaction()
@@ -979,11 +974,11 @@ void APlayerCharacter::SetMainWidget()
 
 void APlayerCharacter::FindInteractActor()
 {
-	if(bTryFindInteractionActor==false)
+	if (bTryFindInteractionActor == false)
 	{
 		return;
 	}
-	
+
 	/*//평화상태가 아니면 찾을 필요가 없습니다.
 	if (IsPeaceState() == false)
 	{
@@ -1011,6 +1006,12 @@ void APlayerCharacter::FindInteractActor()
 			if (hit.GetActor()->IsValidLowLevel() && UKismetSystemLibrary::DoesImplementInterface(
 				hit.GetActor(), UInteractionInterface::StaticClass()))
 			{
+				if(!IInteractionInterface::Execute_CanInteraction(hit.GetActor()))
+				{
+					continue;
+				}
+
+
 				InteractableActor = hit.GetActor();
 				if (IInteractionInterface::Execute_ShowInteractionWidgetDirectly(InteractableActor.Get()))
 				{
@@ -1023,7 +1024,6 @@ void APlayerCharacter::FindInteractActor()
 	}
 	else
 	{
-
 		//찾은게 없다면 발 아래 사다리가 있는지 찾습니다.
 		if (!FindLadder())
 		{
@@ -1069,14 +1069,13 @@ bool APlayerCharacter::FindLadder()
 UWidgetComponent* APlayerCharacter::ShowInteractionWidget(const AActor* Target, const UInputAction* Action,
                                                           const FText& ActionName)
 {
-
-	if(bBlockedShowInteraction)
+	if (bBlockedShowInteraction)
 	{
 		return nullptr;
 	}
 
 	//UE_LOGFMT(LogCharacter,Log,"{0}를 대상으로 인터렉션 위젯을 보여줍니다",Target->GetName());
-	
+
 	if (ActionName.IsEmpty())
 	{
 		UE_LOGFMT(LogTemp, Error, "인터렉션 위젯의 액션이름이 비었습니다.");
@@ -1138,10 +1137,11 @@ UWidgetComponent* APlayerCharacter::GetInteractionWidget(const AActor* Target, c
 
 void APlayerCharacter::HideInteractionWidget()
 {
-	UE_LOGFMT(LogCharacter,Log,"인터렉션 위젯 숨김 처리");
 	if (auto widget = GetPressKeyWidget("", FText::GetEmpty()))
 	{
-		widget->SetVisibility(false);
+		if(widget->IsVisible()){
+			widget->SetVisibility(false);
+		}
 	}
 }
 
@@ -1202,7 +1202,7 @@ EDirection APlayerCharacter::GetPlayerMoveDirection(bool bControllerDirection)
 {
 	if (!bPressMove)
 	{
-		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : bPressMove가 거짓입니다.");
+		UE_LOGFMT(LogTemp, Log, "회피 방향 입력 : bPressMove가 거짓입니다.");
 		return EDirection::Back;
 	}
 
@@ -1212,24 +1212,24 @@ EDirection APlayerCharacter::GetPlayerMoveDirection(bool bControllerDirection)
 		FVector inputDir = UMathHelperLibrary::GetControllerInputDir(GetControlRotation(), MovementInputVector);
 		inputDir.Z = 0;
 		inputDir.Normalize();
-		
+
 		FVector forwardVector = GetActorForwardVector();
 		forwardVector.Z = 0;
 		forwardVector.Normalize();
 
-		float angle = FMath::Acos(FVector::DotProduct(forwardVector,inputDir));
+		float angle = FMath::Acos(FVector::DotProduct(forwardVector, inputDir));
 		angle = FMath::RadiansToDegrees(angle);
 
-		FVector crossProduct = FVector::CrossProduct(forwardVector,inputDir);
+		FVector crossProduct = FVector::CrossProduct(forwardVector, inputDir);
 
-		if(crossProduct.Z<0)
+		if (crossProduct.Z < 0)
 		{
 			angle = -angle;
 		}
 
 		dir = angle;
-		
-		
+
+
 		/*const auto& point = UMathHelperLibrary::GetControllerInputDir(GetControlRotation(), MovementInputVector) * 200.f
 			+ GetActorLocation();
 		dir = UMathHelperLibrary::CalculateDegree(this, point);*/
@@ -1244,60 +1244,60 @@ EDirection APlayerCharacter::GetPlayerMoveDirection(bool bControllerDirection)
 	//전
 	if (-22.5f < dir && dir <= 22.5f)
 	{
-		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 전");
+		UE_LOGFMT(LogTemp, Log, "회피 방향 입력 : 전");
 		return EDirection::Front;
 	}
 
 	//전&우
 	if (22.5f < dir && dir <= 67.5f)
 	{
-		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 전우");
+		UE_LOGFMT(LogTemp, Log, "회피 방향 입력 : 전우");
 		return EDirection::FrontRight;
 	}
 
 	//우
 	if (67.5f < dir && dir <= 112.5f)
 	{
-		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 우");
+		UE_LOGFMT(LogTemp, Log, "회피 방향 입력 : 우");
 		return EDirection::Right;
 	}
 
 	//후&우
 	if (112.5f < dir && dir <= 157.5f)
 	{
-		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 :우후");
+		UE_LOGFMT(LogTemp, Log, "회피 방향 입력 :우후");
 		return EDirection::BackRight;
 	}
 
 	//후
 	if (157.5f < dir && dir <= 180 || -157.5f >= dir && dir > 112.5f)
 	{
-		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 후");
+		UE_LOGFMT(LogTemp, Log, "회피 방향 입력 : 후");
 		return EDirection::Back;
 	}
 
 	//후 & 좌
 	if (-112.5f >= dir && dir > -157.5f)
 	{
-		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 좌후");
+		UE_LOGFMT(LogTemp, Log, "회피 방향 입력 : 좌후");
 		return EDirection::BackLeft;
 	}
 
 	//좌
 	if (-67.5f >= dir && dir > -112.5f)
 	{
-		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 좌");
+		UE_LOGFMT(LogTemp, Log, "회피 방향 입력 : 좌");
 		return EDirection::Left;
 	}
 
 	//전 & 좌
 	if (-22.5f >= dir && dir > -67.5f)
 	{
-		UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 전좌");
+		UE_LOGFMT(LogTemp, Log, "회피 방향 입력 : 전좌");
 		return EDirection::FrontLeft;
 	}
 
-	UE_LOGFMT(LogTemp,Log,"회피 방향 입력 : 후");
+	UE_LOGFMT(LogTemp, Log, "회피 방향 입력 : 후");
 	return EDirection::Back;
 }
 
@@ -1437,51 +1437,33 @@ void APlayerCharacter::CheckAroundExistMonster()
 	{
 		UE_LOGFMT(LogCharacter, Log, "평화상태로 강제전환을 시도합니다.");
 		ChangeCombatStateFrom.Empty();
-		SetPlayerState(EPlayerCharacterState::Peaceful);
-	}else
-	{
-		UE_LOGFMT(LogCharacter, Log, "CheckAroundExistMonster : {0}",GetNameSafe(hit.GetActor()));
-	}
-}
-
-void APlayerCharacter::SetPlayerState(EPlayerCharacterState NewState)
-{
-	CurrentState = NewState;
-	/*if (CurrentState == EPlayerCharacterState::Combat)
-	{
-		if (GetWorldTimerManager().TimerExists(PeaceTimerHandle))
-		{
-			GetWorldTimerManager().ClearTimer(PeaceTimerHandle);
-		}
-		//주변에 적이 있는가 계속 검사합니다.
-		//없다면 평화로 전환합니다.
-		GetWorldTimerManager().SetTimer(PeaceTimerHandle, this, &APlayerCharacter::CheckAroundExistMonster,
-		                                PeaceCheckTime, true);
+		SetCombatState(ECombatState::Peaceful);
 	}
 	else
 	{
-		if (GetWorldTimerManager().TimerExists(PeaceTimerHandle))
-		{
-			GetWorldTimerManager().ClearTimer(PeaceTimerHandle);
-		}
-	}*/
+		UE_LOGFMT(LogCharacter, Log, "CheckAroundExistMonster : {0}", GetNameSafe(hit.GetActor()));
+	}
+}
 
+void APlayerCharacter::SetCombatState(ECombatState NewState)
+{
+	Super::SetCombatState(NewState);
 	OnChangePlayerState.Broadcast(CurrentState);
 }
 
-void APlayerCharacter::SetPlayerStateBy(EPlayerCharacterState NewState, AActor* By)
+void APlayerCharacter::SetPlayerStateBy(ECombatState NewState, AActor* By)
 {
-	if(!IsValidLowLevel())
+	if (!IsValidLowLevel())
 	{
 		return;
 	}
-	
-	if(IsDead())
+
+	if (IsDead())
 	{
 		return;
 	}
-	
-	if (NewState == EPlayerCharacterState::Combat)
+
+	if (NewState == ECombatState::Combat)
 	{
 		CurrentState = NewState;
 		ChangeCombatStateFrom.Emplace(By);
@@ -1546,13 +1528,13 @@ bool APlayerCharacter::IsPeaceState()
 
 		if (ChangeCombatStateFrom.Num() == 0)
 		{
-			CurrentState = EPlayerCharacterState::Peaceful;
+			CurrentState = ECombatState::Peaceful;
 			OnChangePlayerState.Broadcast(CurrentState);
 		}
 	}
 
 
-	return CurrentState == EPlayerCharacterState::Peaceful;
+	return CurrentState == ECombatState::Peaceful;
 }
 
 void APlayerCharacter::OnChangedMoveSpeedAttributeEvent()
@@ -1575,18 +1557,18 @@ void APlayerCharacter::OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason Dead
 	{
 		Super::OnDeadEvent(Who, DeadBy, DeadReason);
 
-		if(DeadReason == EDeadReason::DiedFromFalling)
+		if (DeadReason == EDeadReason::DiedFromFalling)
 		{
-			UE_LOGFMT(LogCharacter,Log,"추락사");
+			UE_LOGFMT(LogCharacter, Log, "추락사");
 			FollowCamera->Deactivate();
 			DeathCamera->Activate();
-			DeathCamera->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld,false));
-			GetController<APlayerController>()->SetViewTargetWithBlend(this,0.3f);
+			DeathCamera->DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepWorld, false));
+			GetController<APlayerController>()->SetViewTargetWithBlend(this, 0.3f);
 		}
-		
+
 
 		DisableInput(GetController<APlayerController>());
-		LockOnComponent->End();		
+		LockOnComponent->End();
 		//사망상태 저장
 		if (auto instance = GetGameInstance<USoulLikeInstance>())
 		{
@@ -1637,7 +1619,7 @@ void APlayerCharacter::OnUpdateDeadDissolveTimeLine(float Value)
 void APlayerCharacter::OnFinishDissolveTimeLine()
 {
 	UE_LOGFMT(LogCharacter, Warning, "사망 디졸브가 끝났습니다. 리셋합니다.");
-	if(auto instance = GetGameInstance<USoulLikeInstance>())
+	if (auto instance = GetGameInstance<USoulLikeInstance>())
 	{
 		ShowLoadingScreen(true);
 		instance->DeadRespawn();
@@ -1718,7 +1700,7 @@ void APlayerCharacter::AddControllerYawInput(float Val)
 {
 	Super::AddControllerYawInput(Val);
 	//인풋값이 양수인 경우 -> 오른쪽
-	if(Val > 0)
+	if (Val > 0)
 	{
 		if (FMath::Abs(Val) >= TargetChangeSensitivity && TimeSinceLastTargetChange >= TargetChangeCooldown)
 		{
@@ -1727,9 +1709,9 @@ void APlayerCharacter::AddControllerYawInput(float Val)
 		}
 		return;
 	}
-	
+
 	//음수인경우 -> 왼쪽
-	if(Val < 0)
+	if (Val < 0)
 	{
 		if (FMath::Abs(Val) >= TargetChangeSensitivity && TimeSinceLastTargetChange >= TargetChangeCooldown)
 		{
@@ -1815,19 +1797,20 @@ void APlayerCharacter::OnLevelUpEvent()
 #if WITH_EDITOR
 void APlayerCharacter::CheatPower(bool bActive)
 {
-	if(bActive)
+	if (bActive)
 	{
 		OriginalPhysicPower = AttributeComponent->GetPhysicalAttack();
 		OriginalMagicPower = AttributeComponent->GetMagicalAttack();
-		
+
 		AttributeComponent->SetPhysicalAttack(static_cast<float>(INT_MAX));
 		AttributeComponent->SetMagicalAttack(static_cast<float>(INT_MAX));
-	}else
+	}
+	else
 	{
 		AttributeComponent->SetPhysicalAttack(OriginalPhysicPower);
 		AttributeComponent->SetMagicalAttack(OriginalMagicPower);
 	}
-	
+
 	AttributeComponent->OnCharacterInformationUpdate.Broadcast();
 }
 
@@ -1839,10 +1822,11 @@ void APlayerCharacter::CheatMoney()
 
 void APlayerCharacter::CheatInvincible(bool bActive)
 {
-	if(bActive)
+	if (bActive)
 	{
-		AbilityComponent->K2_ApplyEffect(InvincibleEffectObject,this,FOnEffectExpired(),nullptr);
-	}else
+		AbilityComponent->K2_ApplyEffect(InvincibleEffectObject, this, FOnEffectExpired(), nullptr);
+	}
+	else
 	{
 		AbilityComponent->EndEffectByTag(INVINCIBILITY_TAG);
 	}
@@ -1850,15 +1834,16 @@ void APlayerCharacter::CheatInvincible(bool bActive)
 
 void APlayerCharacter::CheatSP(bool bActive)
 {
-	if(bActive)
+	if (bActive)
 	{
 		OriginalSP = AttributeComponent->GetMaxSP();
-	
+
 		AttributeComponent->SetMaxSP(static_cast<float>(INT_MAX));
 		AttributeComponent->SetSP(static_cast<float>(INT_MAX));
 
-		UE_LOGFMT(LogCharacter,Log,"플레이어의 SP 치트 설정됨 : {0}",AttributeComponent->GetMaxSP());
-	}else
+		UE_LOGFMT(LogCharacter, Log, "플레이어의 SP 치트 설정됨 : {0}", AttributeComponent->GetMaxSP());
+	}
+	else
 	{
 		AttributeComponent->SetMaxSP(OriginalSP);
 		AttributeComponent->SetSP(AttributeComponent->GetMaxSP());

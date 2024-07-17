@@ -32,11 +32,11 @@ public:
 	bool ShouldForceCombatState();
 	//대상을 감지했을 떄 호출됨.
 	UFUNCTION()
-	void OnTargetPerceptionUpdatedEvent(AActor* Target, FAIStimulus Stimulus);
+	virtual void OnTargetPerceptionUpdatedEvent(AActor* Target, FAIStimulus Stimulus);
 
 	//대상을 잊었을 때 호출됨
 	UFUNCTION()
-	void OnTargetPerceptionForgottenEvent(AActor* Target);
+	virtual void OnTargetPerceptionForgottenEvent(AActor* Target);
 
 	UFUNCTION()
 	void OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReason);

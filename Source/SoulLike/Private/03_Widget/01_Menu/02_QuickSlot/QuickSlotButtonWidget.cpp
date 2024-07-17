@@ -6,10 +6,13 @@
 #include "00_Character/00_Player/00_Controller/UserController.h"
 #include "00_Character/00_Player/00_Controller/00_Component/WidgetManagerComponent.h"
 #include "00_Character/01_Component/AbilityComponent.h"
+#include "02_Ability/AbilityRequirement.h"
 #include "03_Widget/MainWidget.h"
 #include "03_Widget/QuickSlotWidget.h"
 #include "03_Widget/01_Menu/00_Inventory/ItemButtonWidget.h"
+#include "03_Widget/07_NPC/00_Bonfire/AbilityButtonWidget.h"
 #include "04_Item/ItemActor.h"
+#include "96_Library/WidgetHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
@@ -289,7 +292,7 @@ void UMainItemQuickSlotButtonWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if(InventoryComponent==nullptr)
+	if(InventoryComponent == nullptr)
 	{
 		InventoryComponent = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent();
 	}
@@ -301,6 +304,11 @@ void UMainItemQuickSlotButtonWidget::NativeConstruct()
 		InventoryComponent->OnItemQuickSlotUpdate.AddUniqueDynamic(this,&UMainItemQuickSlotButtonWidget::OnItemQuickSlotUpdateEvent);
 		InventoryComponent->OnRemoveItemQuickSlot.AddUniqueDynamic(this,&UMainItemQuickSlotButtonWidget::OnRemoveItemQuickSlotEvent);
 	}
+
+	/*if(auto abComp = GetOwningPlayerPawn<ABaseCharacter>()->GetAbilityComponent())
+	{
+		abComp->OnChangeAbilityQuickSlot.AddUniqueDynamic(this,&UMainItem)
+	}*/
 }
 
 void UMainItemQuickSlotButtonWidget::OnFirstUpdateMainItemQuickSlotEvent(const UItemData* Data, int32 SlotIndex)
@@ -348,6 +356,55 @@ void UMainItemQuickSlotButtonWidget::ClearSlot()
 }
 
 
+
+void UMainAbilityQuickSlotButtonWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if(AbilityComponent == nullptr)
+	{
+		AbilityComponent = GetOwningPlayerPawn<ABaseCharacter>()->GetAbilityComponent();
+	}
+
+	if(AbilityComponent)
+	{
+		AbilityComponent->OnFirstUpdateMainAbilityQuickSlot.AddUniqueDynamic(this,&UMainAbilityQuickSlotButtonWidget::OnFirstUpdateMainAbilityQuickSlotEvent);
+		AbilityComponent->OnChangeAbilityQuickSlot.AddUniqueDynamic(this,&UMainAbilityQuickSlotButtonWidget::OnChangeAbilityQuickSlotEvent);
+	}
+}
+
+void UMainAbilityQuickSlotButtonWidget::OnFirstUpdateMainAbilityQuickSlotEvent(
+	const FAbilityInformation& AbilityInformation)
+{
+	UE_LOGFMT(LogUMG,Log,"메인 퀵슬롯에 해당 아이템을 처음 등록합니다.");
+	MemorisedTag = AbilityInformation.AbilityTag;
+	Image->SetBrushFromSoftTexture(AbilityInformation.AbilityImage);
+}
+
+
+void UMainAbilityQuickSlotButtonWidget::OnChangeAbilityQuickSlotEvent(const FAbilityInformation& AbilityInformation)
+{
+
+	if(!AbilityInformation.AbilityTag.IsValid())
+	{
+		ClearSlot();
+		return;
+	}
+	
+	MemorisedTag = AbilityInformation.AbilityTag;
+	Image->SetBrushFromSoftTexture(AbilityInformation.AbilityImage);
+}
+
+
+void UMainAbilityQuickSlotButtonWidget::ClearSlot()
+{
+	Super::ClearSlot();
+
+	MemorisedTag = FGameplayTag::EmptyTag;
+}
+
+
+
 void UAbilityQuickSlotButtonWidget::NativePreConstruct()
 {
 	Super::NativePreConstruct();
@@ -363,41 +420,35 @@ void UAbilityQuickSlotButtonWidget::NativeConstruct()
 bool UAbilityQuickSlotButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	UDragDropOperation* InOperation)
 {
+	//UAbilityButtonWidget에 대해서 처리해야 합니다.
 	if (auto oper = Cast<UDragAndDropOperation>(InOperation))
 	{
-		if (oper->DraggedWidget->IsA<UItemButtonWidget>())
+		if(oper->DraggedWidget->IsA<UAbilityButtonWidget>())
 		{
-			UE_LOGFMT(LogUMG, Log, "인벤토리버튼 드롭");
-			if (const auto button = Cast<UItemButtonWidget>(oper->DraggedWidget))
+			if (const auto button = Cast<UAbilityButtonWidget>(oper->DraggedWidget))
 			{
-				if (auto data = Cast<UAbilityData>(button->GetInventoryData()))
+				if(button->GetAbilityData().IsAttributeEnough(GetOwningPlayerPawn()))
 				{
-						UE_LOGFMT(LogUMG, Log, "인벤토리버튼 정보를 이 퀵슬롯에 등록합니다. : {0}",GetName());
-						button->SetEquipped(true);
-						//이미 퀵슬롯에 등록된 아이템인지 확인합니다.
-						if (IsAlreadyRegistered(data))
-						{
-							UE_LOGFMT(LogUMG, Log, "이미 다른 퀵슬롯에 등록되어진 아이템을 드롭했습니다.");
-							//이미 등록되어있을 경우, 해당 슬롯을 찾아 내용을 지웁니다.
-							OnRemoveAlreadyRegisteredSlotAbility.Broadcast(data);
-						}
-						Init(data);
-					
-				}
+					UE_LOGFMT(LogUMG,Log,"어빌리티 버튼을 드롭했습니다.");
+					button->SetEquipped(true);
 				
-			}
-		}
-
-		if(oper->DraggedWidget->IsA<UAbilityQuickSlotButtonWidget>())
-		{
-			UE_LOGFMT(LogUMG,Log,"다른 어빌리티 퀵 슬롯 드롭");
-			if (const auto button = Cast<UAbilityQuickSlotButtonWidget>(oper->DraggedWidget))
-			{
-				if (auto data = button->GetSlotData<UAbilityData>())
+					//이미 등록되어있을 경우, 해당 슬롯을 찾아 내용을 지웁니다.
+					if (IsAlreadyRegistered(button->GetAbilityData()))
+					{
+						UE_LOGFMT(LogUMG, Log, "이미 다른 퀵슬롯에 등록되어진 아이템을 드롭했습니다.");
+						OnAlreadyRegisteredAbilityDropped.Broadcast(button->GetAbilityData().AbilityTag);
+					}
+					auto newData = NewObject<UAbilityData>();
+					newData->OwnItemButtonWidget = button;
+					newData->AbilityInformation = button->GetAbilityData();
+					Init(newData);
+				
+					//어빌리티 퀵슬롯에서 비어있지 않은 가장 첫 슬롯을 찾아 할당해야 합니다.
+					OnDroppedAbility.Broadcast(button->GetAbilityData().AbilityTag);
+				}else
 				{
-					//기존 슬롯을 비웁니다.
-					button->ClearSlot();
-					Init(data);
+					FText msg = FText::FromString(TEXT("이 기술을 사용하기 위한 능력치가 모자랍니다."));
+					UWidgetHelperLibrary::ShowAlertMsg(GetOwningPlayer<AUserController>(),EAlertMsgType::Warning,msg,FOnButtonClicked());
 				}
 			}
 		}
@@ -407,6 +458,7 @@ bool UAbilityQuickSlotButtonWidget::NativeOnDrop(const FGeometry& InGeometry, co
 
 		return true;
 	}
+
 
 	return false;
 }
@@ -418,7 +470,7 @@ FReply UAbilityQuickSlotButtonWidget::NativeOnMouseButtonDown(const FGeometry& I
 	if (InMouseEvent.IsMouseButtonDown(EKeys::RightMouseButton))
 	{
 		UE_LOGFMT(LogUMG, Warning, "버튼 초기화 : {0}", GetName());
-		ClearSlot();
+		SlotClear(true);
 	}
 
 	return Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
@@ -440,10 +492,19 @@ bool UAbilityQuickSlotButtonWidget::IsAlreadyRegistered(UAbilityData* Data) cons
 	{
 		if(auto player = GetOwningPlayerPawn<APlayerCharacter>())
 		{
-			return player->GetInventoryComponent()->IsRegistered(Data->AbilityInformation.AbilityTag);
+			return player->GetAbilityComponent()->IsRegistered(Data->AbilityInformation.AbilityTag);
 		}
 	}
 
+	return true;
+}
+
+bool UAbilityQuickSlotButtonWidget::IsAlreadyRegistered(const FAbilityInformation& Data) const
+{
+	if(auto player = GetOwningPlayerPawn<APlayerCharacter>())
+	{
+		return player->GetAbilityComponent()->IsRegistered(Data.AbilityTag);
+	}
 	return true;
 }
 
@@ -451,7 +512,7 @@ void UAbilityQuickSlotButtonWidget::Init(UInventoryData* Data, bool bIsLoaded)
 {
 	if (Data->IsValidLowLevel())
 	{
-		if (Data->IsA<UItemData>())
+		if (Data->IsA<UAbilityData>())
 		{
 			UE_LOGFMT(LogUMG,Log,"퀵슬롯 버튼을 초기화 합니다 : {0}",GetName());
 			InventoryData = Data;
@@ -461,12 +522,30 @@ void UAbilityQuickSlotButtonWidget::Init(UInventoryData* Data, bool bIsLoaded)
 			TextBlock_Count->SetText(FText::GetEmpty());
 			Image->SetBrushFromSoftTexture(abilityData->AbilityInformation.AbilityImage);
 			Image->SetColorAndOpacity(FLinearColor(1,1,1,1));
-			
-			if (auto invenComp = player->GetInventoryComponent())
+			return;
+		}
+	}
+
+	ClearSlot();
+	
+}
+
+void UAbilityQuickSlotButtonWidget::SlotClear(bool bCallEvent)
+{
+	if(bCallEvent)
+	{
+		if(auto data = GetSlotData<UAbilityData>())
+		{
+			if(InventoryData)
 			{
-				invenComp->AddQuickSlotAbility(InventoryData, Index);
-				OnRegisterAbility.Broadcast(player, abilityData, Index);
+				if(InventoryData->OwnItemButtonWidget!=nullptr)
+				{
+					Cast<UAbilityButtonWidget>(InventoryData->OwnItemButtonWidget)->SetEquipped(false);
+				}
 			}
+			
+            	
+			OnClearSlot.Broadcast(data->AbilityInformation.AbilityTag);
 		}
 	}else
 	{
@@ -477,4 +556,15 @@ void UAbilityQuickSlotButtonWidget::Init(UInventoryData* Data, bool bIsLoaded)
 void UAbilityQuickSlotButtonWidget::UseQuickSlot(UInputAction* InputAction)
 {
 	Super::UseQuickSlot(InputAction);
+}
+
+void UAbilityQuickSlotButtonWidget::ClearSlot()
+{
+	Super::ClearSlot();
+}
+
+void UAbilityQuickSlotButtonWidget::OverrideData(UAbilityData* AbilityData)
+{
+	UE_LOGFMT(LogUMG,Log,"이 슬롯 데이터를 덮어씁니다 : {0}",GetName());
+	Init(AbilityData);
 }

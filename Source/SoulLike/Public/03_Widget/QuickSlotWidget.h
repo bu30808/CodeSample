@@ -19,7 +19,7 @@ protected:
 	UPROPERTY(meta=(BindWidget))
 	class UMainItemQuickSlotButtonWidget* UMG_ItemQuickSlotButton;
 	UPROPERTY(meta=(BindWidget))
-	class UQuickSlotButtonWidget* UMG_AbilitySlotButton;
+	class UMainAbilityQuickSlotButtonWidget* UMG_AbilitySlotButton;
 
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;

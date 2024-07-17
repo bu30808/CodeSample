@@ -77,7 +77,6 @@ void UWidgetHelperLibrary::OpenWidgetSetting(APlayerController* PC, UUserWidget*
 			                         FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Widget"));
 			pawn->SetIgnoreMoveInput(true, PC->GetPawn(),
 			                         FGameplayTag::RequestGameplayTag("Common.Passive.IgnoreMoveInput.Widget"));
-			PC->SetShowMouseCursor(true);
 			PC->GetLocalPlayer()->GetSubsystem<UWidgetInteractionSubsystem>()->OpenWidgetSetting(
 				PC, OpenWidget);
 		}

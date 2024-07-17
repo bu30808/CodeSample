@@ -8,11 +8,50 @@
 #include "00_Character/01_Component/AttributeComponent.h"
 #include "02_Ability/AbilityEffect.h"
 #include "Logging/StructuredLog.h"
+#include "SoulLike/SoulLike.h"
+
+UAbilityRequirement::UAbilityRequirement()
+{
+	const EAttributeType str = EAttributeType::Strength;
+	NeedAttribute.Add(str,0);
+	const EAttributeType dex = EAttributeType::Dexterity;
+	NeedAttribute.Add(dex,0);
+	const EAttributeType intell = EAttributeType::Intelligence;
+	NeedAttribute.Add(intell,0);
+	const EAttributeType will = EAttributeType::Willpower;
+	NeedAttribute.Add(will,0);
+}
+
+bool UAbilityRequirement::CheckAttribute(ABaseCharacter* AbilityOwner)
+{
+	if(auto attComp = AbilityOwner->GetAttributeComponent())
+	{
+		for(auto iter : NeedAttribute)
+		{
+			const auto& att =  attComp->GetAttributeByType(iter.Key)->GetBase();
+			if(att < iter.Value)
+			{
+				return false;
+			}
+		}
+	}
+	
+	return true;
+}
 
 bool UAbilityRequirement::IsActivateAbility(const FGameplayTag& AbilityTag, ABaseCharacter* AbilityOwner,
                                             UAbilityBase* Ability)
 {
-	bool bCanActivate = IsCostEnough(AbilityOwner);
+
+	bool bCanActivate = CheckAttribute(AbilityOwner);
+	if (bCanActivate == false)
+	{
+		UE_LOGFMT(LogTemp, Error, "{0} : 사용하기 능력치가 충분하지 않습니다.", AbilityTag.ToString());
+		Ability->OnCommitFailedByCost.Broadcast();
+		return bCanActivate;
+	}
+
+	bCanActivate &= IsCostEnough(AbilityOwner);
 	if (bCanActivate == false)
 	{
 		UE_LOGFMT(LogTemp, Error, "{0} : 사용하기 위한 코스트가 충분하지 않습니다.", AbilityTag.ToString());
@@ -190,4 +229,18 @@ void UAbilityRequirement::ApplyCooldown(ABaseCharacter* AbilityOwner)
 UAbilityComponent* UAbilityRequirement::GetAbilityComponent(ABaseCharacter* AbilityOwner)
 {
 	return AbilityOwner->GetAbilityComponent();
+}
+
+FString UAbilityRequirement::GetNeedAttributeToString()
+{
+	FString FormatString = TEXT("필요능력치\n{0} {1}\t{2} {3}\t{4} {5}\t{6} {7}");
+	TArray<FStringFormatArg> Args;
+	
+	for(auto iter : NeedAttribute)
+	{
+		Args.Emplace(AttributeTypeToImageString(iter.Key));
+		Args.Emplace(iter.Value);
+	}
+
+	return FString::Format(*FormatString,Args);
 }

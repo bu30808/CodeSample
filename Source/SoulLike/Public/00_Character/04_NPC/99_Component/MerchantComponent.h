@@ -153,6 +153,7 @@ public:
 
 	const FAbilityInformation* GetAbilityInformation() const;
 	FText GetAbilityDescription() const;
+	FText GetAbilityReqDescription() const;
 };
 
 /**

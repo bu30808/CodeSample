@@ -74,18 +74,10 @@ public:
 	class UInputAction* InventoryAction;
 };
 
-UENUM(BlueprintType)
-enum class EPlayerCharacterState : uint8
-{
-	Peaceful,
-	Combat,
-	// ... 다른 상태들 추가
-};
-
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnUseQuickSlot, class UInputAction*, InputAction);
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangePlayerState, EPlayerCharacterState, State);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangePlayerState, ECombatState, State);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnGameLoadingCompleted);
 
@@ -517,7 +509,7 @@ public:
 	/**********************************************플레이어 상태 정의*********************************************************/
 private:
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"), Transient)
-	EPlayerCharacterState CurrentState = EPlayerCharacterState::Peaceful;
+	ECombatState CurrentState = ECombatState::Peaceful;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta = (AllowPrivateAccess = "true"))
 	float PeaceCheckTime = 5.f;
@@ -530,20 +522,20 @@ private:
 public:
 
 	UFUNCTION(BlueprintPure,BlueprintCallable)
-	EPlayerCharacterState GetPlayerCurrentState(){return CurrentState;}
+	ECombatState GetPlayerCurrentState(){return CurrentState;}
 	
 	UPROPERTY(BlueprintAssignable, BlueprintCallable)
 	FOnChangePlayerState OnChangePlayerState;
 
 	//주기적으로 주변에 몬스터가 있는지 확인해서 평화상태로 되돌리는 기능을 할 함수입니다.
 	void CheckAroundExistMonster();
-	UFUNCTION(BlueprintCallable)
-	void SetPlayerState(EPlayerCharacterState NewState);
+
+	virtual void SetCombatState(ECombatState NewState) override;
 
 	UPROPERTY(Transient, VisibleAnywhere,BlueprintReadOnly)
 	TSet<AActor*> ChangeCombatStateFrom;
 	UFUNCTION(BlueprintCallable)
-	void SetPlayerStateBy(EPlayerCharacterState NewState, AActor* By);
+	void SetPlayerStateBy(ECombatState NewState, AActor* By);
 
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)

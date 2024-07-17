@@ -13,7 +13,7 @@ UBTTask_ChangeMovementState::UBTTask_ChangeMovementState()
 
 EBTNodeResult::Type UBTTask_ChangeMovementState::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
-	if (auto character = OwnerComp.GetAIOwner()->GetPawn<ABaseMonster>())
+	if (auto character = OwnerComp.GetAIOwner()->GetPawn<ABaseCharacter>())
 	{
 		if (!bChangeSpeedMultiplier)
 		{

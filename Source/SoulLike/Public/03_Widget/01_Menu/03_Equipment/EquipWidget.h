@@ -46,8 +46,6 @@ protected:
 
 	UPROPERTY(meta=(BindWidget))
 	class UUniformGridPanel* UniformGridPanel_Consume;
-	UPROPERTY(meta=(BindWidget))
-	class UUniformGridPanel* UniformGridPanel_Ability;
 
 
 	virtual void NativePreConstruct() override;
@@ -71,13 +69,9 @@ public:
 	class UEquipButtonWidget* GetRingSlotByUniqueID(const FGuid& UniqueID, int32& OutIndex);
 
 	TArray<class UWidget*> GetAllConsumeQuickSlots();
-	TArray<class UWidget*> GetAllAbilityQuickSlots();
 	void LoadItemQuickSlots(const TMap<int32, FGuid>& QuickSlotItemSavedMap);
-	void LoadAbilityQuickSlots(const TMap<int32, FGameplayTag>& AbilityQuick);
 
 protected:
 	UFUNCTION(BlueprintCallable)
 	int32 OnRemoveAlreadyRegisteredSlotItemEvent(class UItemData* Data);
-	UFUNCTION()
-	void OnRemoveAlreadyRegisteredSlotAbilityEvent(class UAbilityData* Data);
 };

@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "BaseAnimInstance.generated.h"
 
+enum class ECombatState : uint8;
 enum class ECharacterState : uint8;
 /**
  * 가장 기본이 되는 애니메이션 인스턴스.
@@ -63,6 +64,8 @@ protected:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly)
 	bool bMirrorAnimation = false;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	ECombatState CombatState;
 public:
 	bool IsMirrorAnimation() const {return bMirrorAnimation;}
 	UFUNCTION(BlueprintCallable)

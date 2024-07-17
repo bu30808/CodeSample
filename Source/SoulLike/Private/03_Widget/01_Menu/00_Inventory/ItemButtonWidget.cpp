@@ -6,6 +6,7 @@
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
 #include "00_Character/BaseCharacter.h"
+#include "00_Character/01_Component/AbilityComponent.h"
 #include "00_Character/01_Component/InventoryComponent.h"
 #include "03_Widget/SimpleToolTipWidget.h"
 #include "03_Widget/01_Menu/00_Inventory/ItemListWidget.h"
@@ -220,9 +221,9 @@ void UItemButtonWidget::ProcessAbilityData(UObject* ListItemObject)
 
 		UWidgetHelperLibrary::SetToolTipWidget(this, info.AbilityDescription);
 
-		if (auto invenComp = GetOwningPlayerPawn<ABaseCharacter>()->GetInventoryComponent())
+		if (auto abComp = GetOwningPlayerPawn<ABaseCharacter>()->GetAbilityComponent())
 		{
-			SetEquipped(invenComp->IsRegistered(data->AbilityInformation.AbilityTag));
+			SetEquipped(abComp->IsRegistered(data->AbilityInformation.AbilityTag));
 		}
 	}
 }

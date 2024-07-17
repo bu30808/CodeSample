@@ -129,16 +129,16 @@ void ABonfire::SetActivate()
 	NiagaraComponent->Activate();
 }
 
-void ABonfire::OnChangePlayerStateEvent(EPlayerCharacterState State)
+void ABonfire::OnChangePlayerStateEvent(ECombatState State)
 {
 	if (bIsActivate)
 	{
 		switch (State)
 		{
-		case EPlayerCharacterState::Peaceful:
+		case ECombatState::Peaceful:
 			NiagaraComponent->SetColorParameter("Color", PeaceColor);
 			break;
-		case EPlayerCharacterState::Combat:
+		case ECombatState::Combat:
 			NiagaraComponent->SetColorParameter("Color", CombatColor);
 			break;
 		}
@@ -147,10 +147,10 @@ void ABonfire::OnChangePlayerStateEvent(EPlayerCharacterState State)
 	{
 		switch (State)
 		{
-		case EPlayerCharacterState::Peaceful:
+		case ECombatState::Peaceful:
 			CannotActivate_NiagaraComponent->Deactivate();
 			break;
-		case EPlayerCharacterState::Combat:
+		case ECombatState::Combat:
 			CannotActivate_NiagaraComponent->Activate();
 			break;
 		}

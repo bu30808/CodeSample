@@ -36,12 +36,12 @@ void UStatusEffectValueHandler::ReduceAccValue(float DeltaTime)
 {
 	if (AttributeComponent)
 	{
-
 		float curValue = 0;
 		float resistValue = 0;
 		const float reducePerSec = ReduceValueDefineMap[TargetStatusEffect];
 
-		UE_LOGFMT(LogTemp, Log, "{0}누적치를 {1}만큼 감소시킵니다", StaticEnum<EStatusEffect>()->GetValueAsString(TargetStatusEffect),reducePerSec);
+		UE_LOGFMT(LogTemp, Log, "{0}누적치를 {1}만큼 감소시킵니다",
+		          StaticEnum<EStatusEffect>()->GetValueAsString(TargetStatusEffect), reducePerSec);
 
 		switch (TargetStatusEffect)
 		{
@@ -124,11 +124,10 @@ UAttributeComponent::UAttributeComponent()
 	}
 
 	{
-
-		if(GetOwner() && GetOwner()->IsA<ABaseMonster>())
+		if (GetOwner() && GetOwner()->IsA<ABaseMonster>())
 		{
 			static ConstructorHelpers::FObjectFinder<UDataTable> table(TEXT(
-			"/Script/Engine.DataTable'/Game/Blueprints/03_Monster/DT_MonsterAttributeInit.DT_MonsterAttributeInit'"));
+				"/Script/Engine.DataTable'/Game/Blueprints/03_Monster/DT_MonsterAttributeInit.DT_MonsterAttributeInit'"));
 			if (table.Succeeded())
 			{
 				AttributeInitTable = table.Object;
@@ -219,8 +218,6 @@ void UAttributeComponent::PostEditChangeProperty(FPropertyChangedEvent& Property
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
 	InitAttributes();
-
-	
 }
 #endif
 
@@ -240,7 +237,8 @@ void UAttributeComponent::LoadAttributeNotIncludeLevelUpPoint(const TMap<EAttrib
 	{
 		AttributesNotIncludeLevelUpPoint[iter.Key]->Load(iter.Value);
 
-		UE_LOGFMT(LogSave,Log,"어트리뷰트 로드 : {0}, {1}",StaticEnum<EAttributeType>()->GetValueAsString(iter.Key),AttributesNotIncludeLevelUpPoint[iter.Key]->GetCurrent());
+		UE_LOGFMT(LogSave, Log, "어트리뷰트 로드 : {0}, {1}", StaticEnum<EAttributeType>()->GetValueAsString(iter.Key),
+		          AttributesNotIncludeLevelUpPoint[iter.Key]->GetCurrent());
 	}
 
 	if (bIsRespawn)
@@ -265,7 +263,7 @@ void UAttributeComponent::LoadLevelUpPointAttributes(const TMap<EAttributeType, 
 
 void UAttributeComponent::ClearStatusEffect()
 {
-	for(auto i=0;i< static_cast<int>(EStatusEffect::MAX);i++)
+	for (auto i = 0; i < static_cast<int>(EStatusEffect::MAX); i++)
 	{
 		RemoveStatusEffect(static_cast<EStatusEffect>(i));
 	}
@@ -273,26 +271,31 @@ void UAttributeComponent::ClearStatusEffect()
 
 void UAttributeComponent::RemoveStatusEffect(EStatusEffect StatusEffectToRemove)
 {
-	if(auto owner = GetOwner<ABaseCharacter>())
+	if (auto owner = GetOwner<ABaseCharacter>())
 	{
-		switch (StatusEffectToRemove) {
+		switch (StatusEffectToRemove)
+		{
 		case EStatusEffect::POISON:
 			SetPoisonAcc(0);
-			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.Poison.Effect"));
+			owner->GetAbilityComponent()->ForceEndAbility(
+				FGameplayTag::RequestGameplayTag("Common.StatusEffect.Poison.Effect"));
 			break;
 		case EStatusEffect::DEADLY_POISON:
 			SetDeadlyPoisonAcc(0);
-			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.DeadlyPoison.Effect"));
+			owner->GetAbilityComponent()->ForceEndAbility(
+				FGameplayTag::RequestGameplayTag("Common.StatusEffect.DeadlyPoison.Effect"));
 			break;
 		case EStatusEffect::BURN:
 			SetBurnAcc(0);
-			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.Burn.Effect"));
+			owner->GetAbilityComponent()->ForceEndAbility(
+				FGameplayTag::RequestGameplayTag("Common.StatusEffect.Burn.Effect"));
 			break;
 		case EStatusEffect::CHILL:
 		case EStatusEffect::FREEZE:
 			SetChillAcc(0);
 			owner->GetMesh()->bPauseAnims = false;
-			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.Freeze.Effect"));
+			owner->GetAbilityComponent()->ForceEndAbility(
+				FGameplayTag::RequestGameplayTag("Common.StatusEffect.Freeze.Effect"));
 			owner->RestoreStatusEffectMaterial();
 			owner->ClearLookInput();
 			owner->ClearMoveInput();
@@ -300,12 +303,14 @@ void UAttributeComponent::RemoveStatusEffect(EStatusEffect StatusEffectToRemove)
 			break;
 		case EStatusEffect::BLEED:
 			SetBleedAcc(0);
-			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.Bleed.Effect"));
+			owner->GetAbilityComponent()->ForceEndAbility(
+				FGameplayTag::RequestGameplayTag("Common.StatusEffect.Bleed.Effect"));
 			break;
 		case EStatusEffect::PETRIFACTION:
 			SetPetrifactionAcc(0);
 			owner->GetMesh()->bPauseAnims = false;
-			owner->GetAbilityComponent()->ForceEndAbility(FGameplayTag::RequestGameplayTag("Common.StatusEffect.Petrifaction.Effect"));
+			owner->GetAbilityComponent()->ForceEndAbility(
+				FGameplayTag::RequestGameplayTag("Common.StatusEffect.Petrifaction.Effect"));
 			owner->RestoreStatusEffectMaterial();
 			owner->ClearLookInput();
 			owner->ClearMoveInput();
@@ -351,7 +356,7 @@ void UAttributeComponent::InitAttributePerPoint()
 
 			AttributePerPointMap[EAttributeType::Strength].Add(
 				TPair<EAttributeType, float>(EAttributeType::Strength, 1));
-		
+
 			AttributePerPointMap[EAttributeType::Strength].Add(
 				TPair<EAttributeType, float>(EAttributeType::PhysicalAttack,
 				                             AttributePerPoint.PhysicalAttackPerStrength));
@@ -442,84 +447,107 @@ void UAttributeComponent::InitAttributePerPoint()
 
 void UAttributeComponent::InitDefaultAttribute()
 {
-	if (AttributeInitTable && GetOwner())
+	if (AttributeInitTable)
 	{
-		FString contextString;
+		if (auto pawn = GetOwner())
+		{
+			FString contextString;
 
-		const FAttributeInit* init = nullptr;
-		
-		if (GetOwner()->IsA<APlayerCharacter>())
-		{
-			init = AttributeInitTable->FindRow<FAttributeInit>("1", contextString);
-		}
-		else if (GetOwner()->IsA<ABaseMonster>())
-		{
-			if(auto monster = GetOwner<ABaseMonster>()){
-				if(!monster->GetMonsterTag().IsValid())
+			const FAttributeInit* init = nullptr;
+
+			if (pawn->IsA<APlayerCharacter>())
+			{
+				init = AttributeInitTable->FindRow<FAttributeInit>("1", contextString);
+			}
+			else if (pawn->IsA<ABaseMonster>())
+			{
+				if (auto monster = GetOwner<ABaseMonster>())
 				{
-					//UE_LOGFMT(LogActorComponent, Error, "{0} {1}: 몬스터에 할당된 태그가 유효하지 않습니다.", __FUNCTION__,GetOwner()->GetActorNameOrLabel());
+					if (!monster->GetMonsterTag().IsValid())
+					{
+						//UE_LOGFMT(LogActorComponent, Error, "{0} {1}: 몬스터에 할당된 태그가 유효하지 않습니다.", __FUNCTION__,GetOwner()->GetActorNameOrLabel());
+						return;
+					}
+					init = AttributeInitTable->FindRow<FAttributeInit>(
+						monster->GetMonsterTag().GetTagName(), contextString);
+				}
+			}
+			else if (pawn->IsA<ANPCBase>())
+			{
+				const auto& tag = Cast<ANPCBase>(pawn)->GetNPCTag();
+				if (!tag.IsValid())
+				{
 					return;
 				}
+
 				init = AttributeInitTable->FindRow<FAttributeInit>(
-					monster->GetMonsterTag().GetTagName(), contextString);
+					tag.GetTagName(), contextString);
 			}
+
+			if (init == nullptr)
+			{
+				UE_LOGFMT(LogActorComponent, Error, "{0} : 기본 디폴트 스텟을 가져오지 못했습니다.", GetOwner()->GetActorNameOrLabel());
+				return;
+			}
+
+
+			InitStrength(init->Strength);
+			InitDexterity(init->Dexterity);
+			InitIntelligence(init->Intelligence);
+			InitWillpower(init->Willpower);
+
+
+			InitMaxHP(
+				init->MaxHP + GetStrength() + GetDexterity() + (GetWillpower() * AttributePerPoint.MaxHPPerWillpower));
+			InitMaxMP(
+				init->MaxMP + (GetIntelligence() * AttributePerPoint.MaxMPPerIntelligence) + (GetWillpower() *
+					AttributePerPoint.MaxMPPerWillpower));
+			InitMaxSP(
+				init->MaxSP + GetDexterity() + (GetWillpower() *
+					AttributePerPoint.MaxSPPerWillpower));
+
+
+			InitActionSpeed(
+				init->ActionSpeed + (GetDexterity() * AttributePerPoint.ActionSpeedPerDexterity) + (GetWillpower() *
+					+AttributePerPoint.ActionSpeedPerWillpower));
+
+
+			InitHP(GetMaxHP());
+			InitSP(GetMaxSP());
+			InitMP(GetMaxMP());
+
+
+			InitPhysicalAttack(
+				init->PhysicalAttack + (GetStrength() * AttributePerPoint.PhysicalAttackPerStrength) + (
+					GetDexterity() * AttributePerPoint.PhysicalAttackPerDexterity));
+			InitMagicalAttack(
+				init->MagicalAttack + (GetDexterity() * AttributePerPoint.MagicalAttackPerDexterity) + (
+					GetIntelligence() * AttributePerPoint.MagicalAttackPerIntelligence));
+
+			InitPhysicalDefense(
+				init->PhysicalDefense + (GetWillpower() * AttributePerPoint.PhysicalDefensePerWillpower));
+			InitMagicalDefense(
+				init->MagicalDefense + (GetWillpower() * AttributePerPoint.MagicalDefensePerWillpower));
+
+			InitEndurance(init->Endurance + (GetWillpower() * AttributePerPoint.EndurancePerWillpower));
+
+			InitPoisonResist(init->PoisonResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
+			InitDeadlyPoisonResist(init->DeadlyPoisonResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
+			InitBurnResist(init->BurnResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
+			InitChillResist(init->ChillResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
+			InitBleedResist(init->BleedResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
+			InitPetrifactionResist(init->PetrifactionResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
+
+			InitMoveSpeed(init->MoveSpeed);
+
+			//기억슬롯 초기화, 1개보다 없으면 무조건 1개를 줍니다.
+			int32 memorySlot = static_cast<int>(GetIntelligence()) / 10;
+			if (memorySlot <= 0)
+			{
+				memorySlot = 1;
+			}
+			InitMemorySlot(memorySlot);
 		}
-
-		if (init == nullptr)
-		{
-			UE_LOGFMT(LogActorComponent, Error, "{0} : 기본 디폴트 스텟을 가져오지 못했습니다.", GetOwner()->GetActorNameOrLabel());
-			return;
-		}
-
-
-		InitStrength(init->Strength);
-		InitDexterity(init->Dexterity);
-		InitIntelligence(init->Intelligence);
-		InitWillpower(init->Willpower);
-
-
-		InitMaxHP(
-			init->MaxHP + GetStrength() + GetDexterity() + (GetWillpower() * AttributePerPoint.MaxHPPerWillpower));
-		InitMaxMP(
-			init->MaxMP + (GetIntelligence() * AttributePerPoint.MaxMPPerIntelligence) + (GetWillpower() *
-				AttributePerPoint.MaxMPPerWillpower));
-		InitMaxSP(
-			init->MaxSP + GetDexterity() + (GetWillpower() *
-				AttributePerPoint.MaxSPPerWillpower));
-
-
-		InitActionSpeed(
-			init->ActionSpeed + (GetDexterity() * AttributePerPoint.ActionSpeedPerDexterity) + (GetWillpower() *
-				+AttributePerPoint.ActionSpeedPerWillpower));
-
-
-		InitHP(GetMaxHP());
-		InitSP(GetMaxSP());
-		InitMP(GetMaxMP());
-
-
-		InitPhysicalAttack(
-			init->PhysicalAttack + (GetStrength() * AttributePerPoint.PhysicalAttackPerStrength) + (
-				GetDexterity() * AttributePerPoint.PhysicalAttackPerDexterity));
-		InitMagicalAttack(
-			init->MagicalAttack + (GetDexterity() * AttributePerPoint.MagicalAttackPerDexterity) + (
-				GetIntelligence() * AttributePerPoint.MagicalAttackPerIntelligence));
-
-		InitPhysicalDefense(
-			init->PhysicalDefense + (GetWillpower() * AttributePerPoint.PhysicalDefensePerWillpower));
-		InitMagicalDefense(
-			init->MagicalDefense + (GetWillpower() * AttributePerPoint.MagicalDefensePerWillpower));
-
-		InitEndurance(init->Endurance + (GetWillpower() * AttributePerPoint.EndurancePerWillpower));
-
-		InitPoisonResist(init->PoisonResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
-		InitDeadlyPoisonResist(init->DeadlyPoisonResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
-		InitBurnResist(init->BurnResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
-		InitChillResist(init->ChillResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
-		InitBleedResist(init->BleedResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
-		InitPetrifactionResist(init->PetrifactionResist + (GetWillpower() * AttributePerPoint.ResistPerWillpower));
-
-		InitMoveSpeed(init->MoveSpeed);
 	}
 }
 
@@ -564,6 +592,15 @@ void UAttributeComponent::AddLevelUpPoint(EAttributePointType AttributePointType
 				Intelligence.LevelUp(Point);
 				MaxMP.LevelUp(AttributePerPoint.MaxMPPerIntelligence * Point);
 				MagicalAttack.LevelUp(AttributePerPoint.MagicalAttackPerIntelligence * Point);
+
+				{
+					int32 memorySlot = GetIntelligence() / 10;
+					if (memorySlot <= 0)
+					{
+						memorySlot = 1;
+					}
+					MemorySlot.Init(memorySlot + 1);
+				}
 				break;
 			case EAttributePointType::WILL:
 				WillpowerPoint.Init(WillpowerPoint.GetBase() + Point);
@@ -632,7 +669,7 @@ void UAttributeComponent::InitProgressWidget() const
 void UAttributeComponent::BroadcastHPEvent(float Damage) const
 {
 	OnChangeHPValue.Broadcast(GetHP(), GetMaxHP());
-	if(Damage > 0)
+	if (Damage > 0)
 	{
 		OnDamagedHP.Broadcast(Damage);
 	}
@@ -665,7 +702,8 @@ void UAttributeComponent::BroadcastMaxSPEvent() const
 
 void UAttributeComponent::OnUpdateStatusEffectEvent(EStatusEffect StatusEffect, float Value, float ResistValue)
 {
-	UE_LOGFMT(LogTemp, Log, "{0}를 {1}만큼 증가시킴, 저항치 {2}",StaticEnum<EStatusEffect>()->GetValueAsString(StatusEffect),Value,ResistValue);
+	UE_LOGFMT(LogTemp, Log, "{0}를 {1}만큼 증가시킴, 저항치 {2}", StaticEnum<EStatusEffect>()->GetValueAsString(StatusEffect),
+	          Value, ResistValue);
 	if (Value <= 0.f)
 	{
 		if (DecreaseAccTasks.Contains(StatusEffect))
@@ -784,7 +822,7 @@ void UAttributeComponent::OnUpdateStatusEffectEvent(EStatusEffect StatusEffect, 
 
 void UAttributeComponent::OnUpdateExpEvent(float AddExp)
 {
-	if(auto instance = USaveGameHelperLibrary::GetSoulLikeInstance(this))
+	if (auto instance = USaveGameHelperLibrary::GetSoulLikeInstance(this))
 	{
 		instance->SaveAttributeExp(GetEXPAttribute());
 	}

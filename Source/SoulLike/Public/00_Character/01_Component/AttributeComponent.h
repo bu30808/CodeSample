@@ -571,7 +571,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attribute")
 	FAttribute MoveSpeed;
 	ATTRIBUTE_GET_SET(MoveSpeed)
-
+	
+	//********************기술 슬롯*******************
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Attribute")
+	FAttribute MemorySlot;
+	ATTRIBUTE_GET_SET(MemorySlot)
 public:
 	//위젯에서 호출됩니다. 바인딩된 이벤트를 한번 내부에서 호출해서 프로그래스바를 갱신합니다.
 	void InitProgressWidget() const;

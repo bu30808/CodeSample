@@ -123,7 +123,7 @@ void ASoulLikeGameMode::OnDeadMonsterEvent(AActor* Who, AActor* DeadBy, EDeadRea
 			DeadBy = UGameplayStatics::GetPlayerCharacter(this, 0);
 		}
 
-		Cast<APlayerCharacter>(DeadBy)->SetPlayerStateBy(EPlayerCharacterState::Peaceful, Who);
+		Cast<APlayerCharacter>(DeadBy)->SetPlayerStateBy(ECombatState::Peaceful, Who);
 	}
 }
 

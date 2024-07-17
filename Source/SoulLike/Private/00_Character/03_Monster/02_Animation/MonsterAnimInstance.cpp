@@ -5,7 +5,6 @@
 
 #include "KismetAnimationLibrary.h"
 #include "00_Character/BaseCharacter.h"
-#include "00_Character/03_Monster/BaseMonster.h"
 #include "00_Character/03_Monster/00_Controller/MonsterAIController.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "Blueprint/AIBlueprintHelperLibrary.h"
@@ -17,7 +16,7 @@ void UMonsterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	if (Character.IsValid())
 	{
-		if (auto monster = Cast<ABaseMonster>(Character))
+		if (auto monster = Cast<ABaseCharacter>(Character))
 		{
 			bIsDead = monster->IsDead();
 			if (bIsDead == false)
@@ -31,7 +30,7 @@ void UMonsterAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 					}
 				}
 
-				MonsterState = monster->GetMonsterState();
+				CombatState = monster->GetCombatState();
 			}
 		}
 	}

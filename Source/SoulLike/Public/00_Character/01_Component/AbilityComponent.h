@@ -28,7 +28,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnRemoveCue, const FGameplayTag&, C
 
 DECLARE_DYNAMIC_DELEGATE(FAdditionalOnEndAbility);
 
-/*DECLARE_DYNAMIC_DELEGATE_TwoParams(FOnUpdateCueLocation, TArray<FAbilityCueInformation>&, Cues,const FVector&,Location);*/
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangeAbilityQuickSlot, const FAbilityInformation&,AbilityInformation);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFirstUpdateMainAbilityQuickSlot,const FAbilityInformation&,AbilityInformation);
 
 
 UCLASS(Blueprintable)
@@ -339,4 +340,33 @@ public:
 
 	virtual void DestroyComponent(bool bPromoteChildren) override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+protected:
+	//지금 표시중인 인덱스
+	UPROPERTY(VisibleAnywhere, meta=(ClampMin = -1, ClampMax = 9))
+	int32 CurAbilityQuickSlotIndex = -1;
+	
+	UPROPERTY(VisibleAnywhere)
+	TArray<FGameplayTag> AbilityQuickSlotTags = {
+		FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag,
+		FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag,
+		FGameplayTag::EmptyTag, FGameplayTag::EmptyTag
+	};
+
+public:
+	UPROPERTY()
+	FOnChangeAbilityQuickSlot OnChangeAbilityQuickSlot;
+	UPROPERTY()
+	FOnFirstUpdateMainAbilityQuickSlot OnFirstUpdateMainAbilityQuickSlot;
+	
+	const TArray<FGameplayTag>& GetAbilityQuickSlot(){return AbilityQuickSlotTags;}
+	bool IsRegistered(const FGameplayTag& AbilityTag);
+	//어빌리티 퀵슬롯에서 비어있지 않은 가장 첫 슬롯을 찾아 할당합니다.
+	void AddQuickSlotAbility(const FGameplayTag& AbilityTag);
+	void OverrideAbilityQuickSlotArray(const TArray<FGameplayTag>& AbilitySlotArray){AbilityQuickSlotTags = AbilitySlotArray;}
+	void InitAbilityQuickSlotIndex();
+
+	void UseAbilityQuickSlot();
+	void NextAbilityQuickSlot();
+	void ClearMainAbiltiyQuickSlot();
 };

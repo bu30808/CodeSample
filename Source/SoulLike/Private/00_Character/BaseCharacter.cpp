@@ -11,9 +11,11 @@
 #include "00_Character/01_Component/FootStepComponent.h"
 #include "00_Character/01_Component/InventoryComponent.h"
 #include "02_Ability/AbilityEffect.h"
+#include "03_Widget/02_Monster/HealthBarWidget.h"
 #include "96_Library/AbilityHelperLibrary.h"
 #include "96_Library/MathHelperLibrary.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/WidgetComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
@@ -671,6 +673,70 @@ void ABaseCharacter::RestoreStatusEffectMaterial()
 void ABaseCharacter::DeactivateMightyAbility()
 {
 	UAbilityHelperLibrary::DeactivateMightyAbility(this);
+}
+
+void ABaseCharacter::UpdateHealthBar(float Value, float MaxValue)
+{
+	if (HealthBarWidgetComponent->IsValidLowLevel() == false)
+	{
+		return;
+	}
+
+	if (IsDead())
+	{
+		return;
+	}
+
+	if (HealthBarWidgetComponent->GetUserWidgetObject())
+	{
+		if (auto widget = Cast<UHealthBarWidget>(HealthBarWidgetComponent->GetUserWidgetObject()))
+		{
+			widget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+			FTimerDelegate hiddenTimerDel = FTimerDelegate::CreateUObject(
+				widget, &UUserWidget::SetVisibility, ESlateVisibility::Collapsed);
+			GetWorldTimerManager().SetTimer(HealthBarVisibleTimerHandle, hiddenTimerDel, 3.f, false);
+
+			widget->UpdateProgress(Value, MaxValue);
+		}
+		else
+		{
+			UE_LOGFMT(LogTemp, Error, "{0} {1}", __FUNCTION__, __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOGFMT(LogTemp, Error, "{0} {1}", __FUNCTION__, __LINE__);
+	}
+}
+
+void ABaseCharacter::UpdateDamagedHealthBar(float Damage)
+{
+	if (HealthBarWidgetComponent->IsValidLowLevel() == false)
+	{
+		return;
+	}
+
+	if (IsDead())
+	{
+		return;
+	}
+
+	if (HealthBarWidgetComponent->GetUserWidgetObject())
+	{
+		if (auto widget = Cast<UHealthBarWidget>(HealthBarWidgetComponent->GetUserWidgetObject()))
+		{
+			widget->ShowDamage(Damage);
+		}
+		else
+		{
+			UE_LOGFMT(LogTemp, Error, "{0} {1}", __FUNCTION__, __LINE__);
+		}
+	}
+	else
+	{
+		UE_LOGFMT(LogTemp, Error, "{0} {1}", __FUNCTION__, __LINE__);
+	}
 }
 
 void ABaseCharacter::CreateBodyMaterialInstance()

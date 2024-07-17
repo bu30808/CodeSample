@@ -113,7 +113,7 @@ public:
 	//강화에 필요한 정보를 설정합니다.
 	void SetEnhancementInfo(const FInventoryItem& Item);
 	//아이템 정보 표시
-	void ShowItemInformation(UInventoryData* Data);
+	void ShowItemInformation(class UInventoryData* Data);
 	//오브 및 프레그먼트 정보 표시
 	void ShowItemInformation(UOrbData* Data);
 

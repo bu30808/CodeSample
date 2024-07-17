@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "GenericTeamAgentInterface.h"
+#include "00_Character/BaseCharacter.h"
 #include "UObject/Object.h"
 #include "AIConHelperLibrary.generated.h"
 
@@ -17,7 +19,7 @@ class SOULLIKE_API UAIConHelperLibrary : public UObject
 
 public:
 	UFUNCTION(BlueprintCallable)
-	static void ChangePlayerState(AActor* AIConOrMonster, AActor* Player, EPlayerCharacterState NewState);
+	static void ChangePlayerState(AActor* AIConOrMonster, AActor* Player, ECombatState NewState);
 
 	
 	/**
@@ -27,4 +29,6 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable,BlueprintPure)
 	static AActor* GetBlackboardValueNamedTarget(AActor* BlackboardOwner);
+	
+	static ETeamAttitude::Type CheckTeam(AActor* Checker, const AActor& Other);
 };

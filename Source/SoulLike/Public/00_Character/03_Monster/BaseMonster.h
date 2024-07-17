@@ -26,20 +26,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBlackboardTargetIsNotValid,class 
  */
 
 UENUM(BlueprintType)
-enum class EMonsterState : uint8
-{
-	// 평화 상태
-	Peaceful UMETA(DisplayName = "평화"),
-	// 적을 인식하고, 전투로 진입한 상태
-	Aggressive UMETA(DisplayName = "전투"),
-	//적을 인식했지만 전투는 아닌 상태
-	Beware UMETA(DisplayName = "경계"),
-	//가드중인 상태
-	Guard UMETA(DisplayName = "방어"),
-	MAX
-};
-
-UENUM(BlueprintType)
 enum class EMonsterType :uint8
 {
 	//야수
@@ -141,9 +127,6 @@ protected:
 	UFUNCTION()
 	void OnDestroyedEvent(AActor* DestroyedActor);
 	/**********************************************컴포넌트*********************************************************/
-protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
-	class UWidgetComponent* HealthBarWidgetComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	class UItemDropComponent* ItemDropComponent;
 	//보스몬스터 전용
@@ -170,12 +153,6 @@ public:
 	void RestoreSavedState(const FCharacterSave& SavedState);
 
 protected:
-	FTimerHandle HealthBarVisibleTimerHandle;
-
-	UFUNCTION()
-	void UpdateHealthBar(float Value, float MaxValue);
-	UFUNCTION()
-	void UpdateDamagedHealthBar(float Damage);
 
 	//레그돌에서 복구할 때 사용할 컴포넌트 기본 트렌스폼
 	FTransform DefaultMeshTr;
@@ -230,9 +207,7 @@ protected:
 	bool bLockOnAble = true;
 
 	/**********************************************상태*********************************************************/
-	//적을 인식했는지 저장하는 변수입니다.
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient)
-	EMonsterState MonsterState;
+
 	//몬스터 기본정보를 저장하는 데이터 에셋입니다.
 	UPROPERTY(EditAnywhere, BlueprintReadOnly,Category="Default")
 	class UMonsterDataAsset* MonsterDataAsset;
@@ -260,10 +235,8 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	EMonsterType GetMonsterType() { return MonsterDataAsset->MonsterType; }
 
-	UFUNCTION(BlueprintCallable)
-	void SetMonsterState(EMonsterState NewState);
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	EMonsterState GetMonsterState() { return MonsterState; }
+	
+	virtual void SetCombatState(ECombatState NewState) override;
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool ShouldForceCombatState();

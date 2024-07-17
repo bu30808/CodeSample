@@ -23,8 +23,7 @@ void UMerchantListWidget::CreateMerchandiseList(UMerchantComponent* MerchantComp
 	ListView_Purchase->ClearListItems();
 
 	MerchantNPC = MerchantComponent->GetOwner<ANPCBase>();
-
-	UE_LOGFMT(LogTemp, Log, "상점 아이템 리스트 생성2");
+	
 	const TMap<FGuid, FMerchandiseItem>& merchandiseItem = MerchantComponent->GetMerchandiseItem();
 	for (auto iter : merchandiseItem)
 	{
@@ -46,7 +45,7 @@ void UMerchantListWidget::CreateMerchandiseList(UMerchantComponent* MerchantComp
 		{
 			data->MerchandiseAbility = iter.Value;
 			data->MerchantListWidget = this;
-			UE_LOGFMT(LogTemp, Log, "상점 어빌리티 추가 : {0}", iter.Value.MerchandiseAbilityData.Tag.ToString());
+			UE_LOGFMT(LogTemp, Log, "상점 어빌리티 추가 : {0} {1}", iter.Value.MerchandiseAbilityData.Tag.ToString(),iter.Value.GetAbilityReqDescription().ToString());
 
 			MerchantData.Add(data);
 			ListView_Purchase->AddItem(data);
@@ -127,15 +126,7 @@ bool UMerchantListWidget::PlayerSellItemOrAbility(UInventoryData* InventoryData)
 		OnPlayerSellItem.Broadcast(Cast<UItemData>(InventoryData)->InventoryItem);
 		return true;
 	}
-
-	if (InventoryData->IsA<UAbilityData>())
-	{
-		UE_LOGFMT(LogTemp, Log, "드롭된 어빌리티 버튼 정보 : {0}",
-		          Cast<UAbilityData>(InventoryData)->AbilityInformation.AbilityTag.ToString());
-		OnPlayerSellAbility.Broadcast(Cast<UAbilityData>(InventoryData)->AbilityInformation);
-		return true;
-	}
-
+	
 	return false;
 }
 
@@ -163,7 +154,6 @@ void UMerchantListWidget::OnSellItemToPlayerEvent(APlayerCharacter* Player, cons
 void UMerchantListWidget::OnSellAbilityToPlayerEvent(APlayerCharacter* Player)
 {
 	UpdatePlayerExp(Player);
-	UpdateRepurchaseList();
 }
 
 

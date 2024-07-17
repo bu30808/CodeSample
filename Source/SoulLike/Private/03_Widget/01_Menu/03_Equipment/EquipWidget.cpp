@@ -42,15 +42,6 @@ void UEquipWidget::NativePreConstruct()
 		}
 	}
 	
-	for (auto i = 0; i < UniformGridPanel_Ability->GetChildrenCount(); i++)
-	{
-		if (auto widget = Cast<UAbilityQuickSlotButtonWidget>(UniformGridPanel_Consume->GetChildAt(i)))
-		{
-			widget->OnRemoveAlreadyRegisteredSlotAbility.AddUniqueDynamic(this,&UEquipWidget::OnRemoveAlreadyRegisteredSlotAbilityEvent);
-			widget->SetIndex(i);
-		}
-	}
-	
 
 	if (VerticalBox)
 	{
@@ -237,11 +228,6 @@ TArray<UWidget*> UEquipWidget::GetAllConsumeQuickSlots()
 	return UniformGridPanel_Consume->GetAllChildren();
 }
 
-TArray<UWidget*> UEquipWidget::GetAllAbilityQuickSlots()
-{
-	return UniformGridPanel_Ability->GetAllChildren();
-}
-
 void UEquipWidget::LoadItemQuickSlots(const TMap<int32, FGuid>& QuickSlotItemSavedMap)
 {
 	UE_LOGFMT(LogUMG,Log,"{0} {1} 퀵슬롯 정보를 불러와 복구합니다.",__FUNCTION__,__LINE__);
@@ -255,17 +241,6 @@ void UEquipWidget::LoadItemQuickSlots(const TMap<int32, FGuid>& QuickSlotItemSav
 			button->RestoreSlotFromUniqueID(itemID);
 		}
 	}
-}
-
-void UEquipWidget::LoadAbilityQuickSlots(const TMap<int32, FGameplayTag>& AbilityQuick)
-{
-	UE_LOGFMT(LogUMG,Error,"LoadAbilityQuickSlots : 아직 작성되지 않은 부분입니다.");
-	/*for (auto iter : AbilityQuick)
-	{
-		const auto& index = iter.Key;
-		Cast<UQuickSlotButtonWidget>(UniformGridPanel_Ability->GetChildAt(index))->
-			RestoreSlotFromAbilityTag(iter.Value);
-	}*/
 }
 
 int32 UEquipWidget::OnRemoveAlreadyRegisteredSlotItemEvent(UItemData* Data)
@@ -294,27 +269,3 @@ int32 UEquipWidget::OnRemoveAlreadyRegisteredSlotItemEvent(UItemData* Data)
 	return -1;
 }
 
-void UEquipWidget::OnRemoveAlreadyRegisteredSlotAbilityEvent(UAbilityData* Data)
-{
-	UE_LOGFMT(LogUMG,Log,"이미 다른 퀵슬롯에 등록된 어빌리티 정보를 찾아 제거합니다.");
-	if (Data->IsValidLowLevel())
-	{
-		auto c = UniformGridPanel_Consume->GetAllChildren();
-		for (auto w : c)
-		{
-			if (auto button = Cast<UItemQuickSlotButtonWidget>(w))
-			{
-				if(auto otherButtonData = button->GetSlotData<UAbilityData>())
-				{
-					if(otherButtonData->AbilityInformation.AbilityTag.MatchesTagExact(Data->AbilityInformation.AbilityTag))
-					{
-						UE_LOGFMT(LogUMG,Log,"발견");
-						button->ClearSlot();
-						return;
-					}
-					
-				}
-			}
-		}
-	}
-}

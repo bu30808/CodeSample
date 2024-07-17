@@ -25,7 +25,8 @@ class UInventoryData : public UObject
 	GENERATED_BODY()
 
 public:
-	TWeakObjectPtr<class UItemButtonWidget> OwnItemButtonWidget;
+	UPROPERTY(Transient)
+	TWeakObjectPtr<class UUserWidget> OwnItemButtonWidget;
 };
 
 
@@ -107,7 +108,7 @@ protected:
 
 
 	void OnEntryWidgetGeneratedEvent(UUserWidget& UserWidget);
-
+	
 	virtual void NativeConstruct() override;
 	UFUNCTION()
 	void OnClickedCloseButton();
@@ -160,6 +161,9 @@ protected:
 
 	UFUNCTION()
 	void OnAddItemEvent(class ABaseCharacter* UsedBy, const FInventoryItem& ItemInfo, AItemActor* ItemActor);
+	
+	UFUNCTION()
+	void OnAddAbilityItemEvent(ABaseCharacter* GetBy, const FAbilityInformation& AbilityInfo, AItemActor* ItemActor);
 	UFUNCTION()
 	void OnRemoveItemEvent(ABaseCharacter* Player, const FGuid& ItemUniqueID);
 	UFUNCTION()
@@ -172,7 +176,7 @@ protected:
 	void OnRemoveAbilityEvent(const FGameplayTag& AbilityTag);
 
 	bool IsAlreadyContain(const FInventoryItem& ItemInfo) const;
-
+	bool IsAlreadyContain(const FAbilityInformation& AbilityInfo) const;
 
 	bool IsOrbItem(const FInventoryItem& ItemInfo) const;
 

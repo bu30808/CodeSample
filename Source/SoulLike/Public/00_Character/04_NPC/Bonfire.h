@@ -72,7 +72,7 @@ protected:
 
 public:
 	UFUNCTION()
-	void OnChangePlayerStateEvent(EPlayerCharacterState State);
+	void OnChangePlayerStateEvent(ECombatState State);
 
 	UFUNCTION(BlueprintCallable)
 	void ActivateBonfire(class APlayerCharacter* Player);

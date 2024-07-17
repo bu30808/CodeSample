@@ -59,6 +59,7 @@ void UItemListWidget::NativeConstruct()
 		if (auto invenComp = Owner->GetInventoryComponent())
 		{
 			invenComp->OnAddItem.AddUniqueDynamic(this, &UItemListWidget::OnAddItemEvent);
+			invenComp->OnAddAbilityItem.AddUniqueDynamic(this, &UItemListWidget::OnAddAbilityItemEvent);
 			invenComp->OnRemoveItem.AddUniqueDynamic(this, &UItemListWidget::OnRemoveItemEvent);
 			invenComp->OnInventoryWidgetUpdate.AddUniqueDynamic(this, &UItemListWidget::OnInventoryUpdateEvent);
 			OnAddListViewWidget.AddUniqueDynamic(invenComp, &UInventoryComponent::OnItemButtonWidgetGeneratedEvent);
@@ -171,9 +172,11 @@ void UItemListWidget::CreateItemList_Ring()
 
 void UItemListWidget::CreateItemList_Ability()
 {
+	UE_LOGFMT(LogTemp,Log,"CreateItemList_Ability");
 	ListView_Item->ClearListItems();
 	for (auto iter : ListViewAbilities)
 	{
+		UE_LOGFMT(LogTemp,Log,"어빌리티 리스트 생성 : {0}",iter.Key.ToString());
 		ListView_Item->AddItem(iter.Value);
 	}
 
@@ -232,6 +235,7 @@ void UItemListWidget::CreateInventoryItemList()
 		{
 			if (a->GetAbilityInformation().bRegisterInventory)
 			{
+				UE_LOGFMT(LogTemp,Log,"CreateInventoryItemList : {0}",a->GetAbilityInformation().AbilityTag.ToString());
 				OnAddAbilityEvent(a->GetAbilityInformation());
 			}
 		}
@@ -370,6 +374,16 @@ void UItemListWidget::OnAddItemEvent(class ABaseCharacter* UsedBy, const FInvent
 	}
 }
 
+void UItemListWidget::OnAddAbilityItemEvent(ABaseCharacter* GetBy, const FAbilityInformation& AbilityInfo,
+                                            AItemActor* ItemActor)
+{
+	UE_LOGFMT(LogTemp,Log,"어빌리티 아이템 추가 이벤트 호출 : {0}",AbilityInfo.AbilityName.ToString());
+	if (!IsAlreadyContain(AbilityInfo))
+	{
+		OnAddAbilityEvent(AbilityInfo);
+	}
+}
+
 void UItemListWidget::OnRemoveItemEvent(ABaseCharacter* Player, const FGuid& ItemUniqueID)
 {
 	if (ListViewItems.Contains(ItemUniqueID))
@@ -400,7 +414,7 @@ void UItemListWidget::OnAddAbilityEvent(const FAbilityInformation& AbilityInform
 	{
 		if (const auto data = NewObject<UAbilityData>())
 		{
-			//UE_LOGFMT(LogTemp,Log,"인벤토리 위젯에 어빌리티 추가됨 : {0}",AbilityInformation.AbilityTag.ToString());
+			UE_LOGFMT(LogTemp,Log,"인벤토리 위젯에 어빌리티 추가됨 : {0}",AbilityInformation.AbilityTag.ToString());
 			data->AbilityInformation = AbilityInformation;
 
 			ListView_Item->AddItem(data);
@@ -421,6 +435,11 @@ void UItemListWidget::OnRemoveAbilityEvent(const FGameplayTag& AbilityTag)
 bool UItemListWidget::IsAlreadyContain(const FInventoryItem& ItemInfo) const
 {
 	return ListViewItems.Contains(ItemInfo.UniqueID);
+}
+
+bool UItemListWidget::IsAlreadyContain(const FAbilityInformation& AbilityInfo) const
+{
+	return ListViewAbilities.Contains(AbilityInfo.AbilityTag);
 }
 
 void UItemListWidget::HiddenEquipment() const

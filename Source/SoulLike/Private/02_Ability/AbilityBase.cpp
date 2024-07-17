@@ -21,6 +21,31 @@ class UAttackChainSubsystem;
 DEFINE_LOG_CATEGORY(LogAbility)
 
 
+FText FAbilityInformation::GetAbilityReqDescription() const
+{
+	if(AbilityRequirement)
+	{
+		return FText::FromString(AbilityRequirement.GetDefaultObject()->GetNeedAttributeToString());
+	}
+
+	return FText::FromString(TEXT("요구 조건 없음"));
+}
+
+bool FAbilityInformation::IsAttributeEnough(AActor* Owner) const
+{
+	if(AbilityRequirement==nullptr)
+	{
+		return true;
+	}
+	
+	if(auto pawn = Cast<ABaseCharacter>(Owner))
+	{
+		return AbilityRequirement.GetDefaultObject()->CheckAttribute(pawn);
+	}
+
+	return true;
+}
+
 void UAbilityDamageTalent::SelfBind()
 {
 	if (!IsRooted())

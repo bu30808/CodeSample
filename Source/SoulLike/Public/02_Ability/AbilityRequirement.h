@@ -20,6 +20,11 @@ class SOULLIKE_API UAbilityRequirement : public UObject
 #endif
 
 protected:
+	UAbilityRequirement();
+	
+	//이 기술을 사용하기 위해 필요한 능력치 조건입니다. 없으면 반드시 성공합니다.
+	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = true), Category="Effect")
+	TMap<EAttributeType,int32> NeedAttribute;
 	//이 기술을 사용하기 위해 필요한 코스트 정보. 없으면 코스트 체크에 반드시 성공합니다.
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = true), Category="Effect")
 	TSubclassOf<class UAbilityEffect> Cost;
@@ -59,6 +64,13 @@ protected:
 
 public:
 	/**
+	 * 어빌리티를 사용하기 위한 능력치가 충분한지 확인합니다.
+	 * @param AbilityOwner 
+	 * @return 
+	 */
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	bool CheckAttribute(class ABaseCharacter* AbilityOwner);
+	/**
 	 * @brief 어빌리티를 발동 가능한지 확인합니다.
 	 * @param abilityOwner 어빌리티를 사용하는 대상
 	 * @return 사용 가능하면 참.
@@ -75,6 +87,7 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, BlueprintNativeEvent)
 	bool IsCostEnough(class ABaseCharacter* AbilityOwner);
 	virtual bool IsCostEnough_Implementation(class ABaseCharacter* AbilityOwner);
+
 
 protected:
 	/**
@@ -122,4 +135,8 @@ public:
 
 	const TSubclassOf<UAbilityEffect>& GetCost() const { return Cost; }
 	const TSubclassOf<UAbilityEffect>& GetCooldown() const { return Cooldown; }
+
+	//어빌리티의 사용 조건을 문자열로 변경해 리턴합니다.
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	FString GetNeedAttributeToString();
 };

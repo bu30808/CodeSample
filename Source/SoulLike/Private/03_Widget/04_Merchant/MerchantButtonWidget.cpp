@@ -65,35 +65,32 @@ void UMerchantButtonWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 
 				UWidgetHelperLibrary::SetToolTipWidget(
 					this, merchandiseItemListData->MerchandiseItem.GetFormattedDescription());
-				/*Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(
-					merchandiseItemListData->MerchandiseItem.GetFormattedDescription());*/
 			}
 		}
 	}
 
-	/*if (ListItemObject->IsA<UMerchandiseAbilityListData>())
+	if (ListItemObject->IsA<UMerchandiseAbilityListData>())
 	{
 		Data = Cast<UMerchandiseAbilityListData>(ListItemObject);
 		if (auto merchandiseAbilityListData = Cast<UMerchandiseAbilityListData>(Data))
 		{
-			if(merchandiseAbilityListData->MerchandiseAbility.GetAbilityInformation() !=nullptr){
+			if(const auto abilityData = merchandiseAbilityListData->MerchandiseAbility.GetAbilityInformation()){
 				
-				Image_Item->SetBrushFromSoftTexture(
-					merchandiseAbilityListData->MerchandiseAbility.GetAbilityInformation()->AbilityImage);
-				TextBlock_ItemName->SetText(
-					FText::FromString(merchandiseAbilityListData->MerchandiseAbility.GetAbilityInformation()->AbilityName));
+				Image_Item->SetBrushFromSoftTexture(abilityData->AbilityImage);
+				TextBlock_ItemName->SetText(abilityData->AbilityName);
 
 				TextBlock_Count->SetText(
 					FText::AsNumber(merchandiseAbilityListData->MerchandiseAbility.MerchandiseAbilityData.Count));
 				TextBlock_Price->SetText(
 					FText::AsNumber(merchandiseAbilityListData->MerchandiseAbility.MerchandiseAbilityData.Price));
 
-				Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(
-					merchandiseAbilityListData->MerchandiseAbility.GetAbilityDescription());
+				
+				const auto& description = FText::Format(FText::FromString("{0}\n\n{1}"),merchandiseAbilityListData->MerchandiseAbility.GetAbilityDescription(),merchandiseAbilityListData->MerchandiseAbility.GetAbilityReqDescription());
+				Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(description);
 				
 			}
 		}
-	}*/
+	}
 }
 
 bool UMerchantButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,

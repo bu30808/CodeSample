@@ -115,6 +115,21 @@ enum class ECharacterState : uint8
 };
 
 UENUM(BlueprintType)
+enum class ECombatState : uint8
+{
+	// 평화 상태
+	Peaceful UMETA(DisplayName = "평화"),
+	// 적을 인식하고, 전투로 진입한 상태
+	Combat UMETA(DisplayName = "전투"),
+	//적을 인식했지만 전투는 아닌 상태
+	Beware UMETA(DisplayName = "경계"),
+	//가드중인 상태
+	Guard UMETA(DisplayName = "방어"),
+	MAX
+};
+
+
+UENUM(BlueprintType)
 enum class EDeadReason : uint8
 {
 	DiedFromHPDepletion UMETA(DisplayName = "HP Depletion"),   // HP가 0이 되어서 사망
@@ -172,6 +187,9 @@ public:
 
 	/**************************컴포넌트*************************/
 protected:
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<class UWidgetComponent> HealthBarWidgetComponent;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UAttributeComponent* AttributeComponent;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
@@ -186,7 +204,6 @@ protected:
 	class UTimelineComponent* DeadDissolveTimeLineComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
 	class UAbilityTalentComponent* AbilityTalentComponent;
-
 
 	/*UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Components, meta = (AllowPrivateAccess = "true"))
 	class UNavigationInvokerComponent* NavigationInvokerComponent;*/
@@ -327,15 +344,21 @@ protected:
 
 
 	/**************************상태정보*************************/
-protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Transient)
 	ECharacterState CharacterState;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Transient)
+	ECombatState CombatState;
 
 public:
+	UFUNCTION(BlueprintCallable,BlueprintPure)
 	ECharacterState GetCharacterState() const { return CharacterState; }
+	UFUNCTION(BlueprintCallable)
 	virtual void SetCharacterState(ECharacterState NewState);
 
-
+	UFUNCTION(BlueprintCallable,BlueprintPure)
+	ECombatState GetCombatState() const{return CombatState;}
+	UFUNCTION(BlueprintCallable)
+	virtual void SetCombatState(ECombatState NewState){ CombatState = NewState;}
 	/**************************무브먼트*************************/
 protected:
 	//이동속도 변경을 위한 변수입니다.
@@ -434,4 +457,11 @@ public:
 	//모든 대상이 사망처리되었을때, 딱한번 재생되는 사운드 큐
 	UPROPERTY(EditAnywhere)
 	class USoundBase* DeadCue;
+
+	FTimerHandle HealthBarVisibleTimerHandle;
+
+	UFUNCTION()
+	void UpdateHealthBar(float Value, float MaxValue);
+	UFUNCTION()
+	void UpdateDamagedHealthBar(float Damage);
 };

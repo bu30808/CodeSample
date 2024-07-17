@@ -20,7 +20,6 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Damage.h"
 #include "Perception/AISenseConfig_Sight.h"
-#include "Perception/AISense_Hearing.h"
 #include "Perception/AISense_Sight.h"
 
 DEFINE_LOG_CATEGORY(LogAICon)
@@ -112,7 +111,7 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 
 				if (ShouldForceCombatState())
 				{
-					Cast<APlayerCharacter>(Target)->SetPlayerStateBy(EPlayerCharacterState::Combat, GetPawn());
+					Cast<APlayerCharacter>(Target)->SetPlayerStateBy(ECombatState::Combat, GetPawn());
 				}
 
 				if (!IsBehaviorTreeRunning())
@@ -133,11 +132,11 @@ void AMonsterAIController::OnTargetPerceptionUpdatedEvent(AActor* Target, FAISti
 						{
 							if (sense.GetDefaultObject()->IsA<UAISense_Damage>())
 							{
-								GetPawn<ABaseMonster>()->SetMonsterState(EMonsterState::Aggressive);
+								GetPawn<ABaseMonster>()->SetCombatState(ECombatState::Combat);
 							}
 							else
 							{
-								GetPawn<ABaseMonster>()->SetMonsterState(EMonsterState::Beware);
+								GetPawn<ABaseMonster>()->SetCombatState(ECombatState::Beware);
 							}
 
 							if (UKismetSystemLibrary::DoesImplementInterface(
@@ -163,9 +162,9 @@ void AMonsterAIController::OnTargetPerceptionForgottenEvent(AActor* Target)
 		{
 			UE_LOGFMT(LogAICon, Warning, "{0}이 타겟을 잊었습니다. : {1}", GetNameSafe(GetPawn()), Target->GetName());
 			bbComp->SetValueAsObject("Target", nullptr);
-			GetPawn<ABaseMonster>()->SetMonsterState(EMonsterState::Peaceful);
+			GetPawn<ABaseMonster>()->SetCombatState(ECombatState::Peaceful);
 
-			UAIConHelperLibrary::ChangePlayerState(this, Target, EPlayerCharacterState::Peaceful);
+			UAIConHelperLibrary::ChangePlayerState(this, Target, ECombatState::Peaceful);
 		}
 	}
 }
@@ -284,34 +283,7 @@ void AMonsterAIController::OverrideTeamId(const FGenericTeamId& NewTeamID)
 
 ETeamAttitude::Type AMonsterAIController::GetTeamAttitudeTowards(const AActor& Other) const
 {
-	if (const APawn* OtherPawn = Cast<APawn>(&Other))
-	{
-		// DEFAULT BEHAVIOR---------------------------------------------------
-		/*if (const IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController()))
-		{
-			return Super::GetTeamAttitudeTowards(*OtherPawn->GetController());
-		}*/
-
-		//OR CUSTOM BEHAVIOUR--------------------------------------------------
-		if (const IGenericTeamAgentInterface* TeamAgent = Cast<IGenericTeamAgentInterface>(OtherPawn->GetController()))
-		{
-			//Create an alliance with Team with ID 10 and set all the other teams as Hostiles:
-			FGenericTeamId OtherTeamID = TeamAgent->GetGenericTeamId();
-
-			if (OtherTeamID == 10)
-			{
-				return ETeamAttitude::Neutral;
-			}
-
-			if (OtherTeamID == GetGenericTeamId())
-			{
-				//UE_LOGFMT(LogAICon, Log, "Other Team ID: {0}, My Team ID: {1} , return Friendly", OtherTeamID.GetId(), GetGenericTeamId().GetId());
-				return ETeamAttitude::Friendly;
-			}
-		}
-	}
-
-	return ETeamAttitude::Hostile;
+	return UAIConHelperLibrary::CheckTeam(GetPawn(),Other);
 }
 
 void AMonsterAIController::ResetBlackboard()

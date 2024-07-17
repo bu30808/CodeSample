@@ -207,71 +207,91 @@ FGuid UInventoryComponent::AddItem(AItemActor* ItemActor, bool bShowPickUpWidget
 	{
 		ItemActor->SetActorEnableCollision(false);
 		ItemActor->SetActorHiddenInGame(true);
-
-		if (const auto info = ItemActor->GetItemInformation())
+		
+		if(ItemActor->IsA<AAbilityItemActor>())
 		{
-			UE_LOGFMT(LogInventory, Log, "{0} {1}, 아이템 추가 : {2}",__FUNCTION__,__LINE__,info->Item_Name.ToString());
-			FGuid guid;
-			const int32& itemCount = ItemActor->GetItemCount();
-
-			switch (info->Item_Type)
+			if(const auto info = Cast<AAbilityItemActor>(ItemActor)->GetAbilityInformation())
 			{
-			case EItemType::NONE:
-				break;
-			case EItemType::EQUIPMENT:
-				guid = AddNewItemToInventory(info, ItemActor, itemCount);
-				break;
-			case EItemType::ABILITY:
-				break;
-			case EItemType::CONSUME:
-			case EItemType::ENHANCEMENT:
-			case EItemType::KEY:
-			case EItemType::ETC:
+				auto abInfo = info->AbilityClass.GetDefaultObject()->GetAbilityInformation();
+				UE_LOGFMT(LogInventory, Log, "{0} {1}, 어빌리티 아이템 추가 : {2}",__FUNCTION__,__LINE__,abInfo.AbilityName.ToString());
+
+				if(bShowPickUpWidget)
 				{
-					if (info->bStackable)
+					OnGetItem.Broadcast(abInfo.AbilityImage, abInfo.AbilityName, 1);
+				}
+				GetOwner<ABaseCharacter>()->GetAbilityComponent()->GiveAbility(info->AbilityClass);
+				OnAddAbilityItem.Broadcast(GetOwner<ABaseCharacter>(), abInfo, ItemActor);
+				OnSaveFieldItemState.Broadcast(GetOwner<APlayerCharacter>(), ItemActor);
+
+				return FGuid();
+			}
+		}else
+		{
+			if (const auto info = ItemActor->GetItemInformation())
+			{
+				UE_LOGFMT(LogInventory, Log, "{0} {1}, 아이템 추가 : {2}",__FUNCTION__,__LINE__,info->Item_Name.ToString());
+				FGuid guid;
+				const int32& itemCount = ItemActor->GetItemCount();
+
+				switch (info->Item_Type)
+				{
+				case EItemType::NONE:
+					break;
+				case EItemType::EQUIPMENT:
+					guid = AddNewItemToInventory(info, ItemActor, itemCount);
+					break;
+				case EItemType::ABILITY:
+					break;
+				case EItemType::CONSUME:
+				case EItemType::ENHANCEMENT:
+				case EItemType::KEY:
+				case EItemType::ETC:
 					{
-						const auto existItem = HasItem(info->Item_Tag);
-						if (existItem && existItem->CanStack(itemCount))
+						if (info->bStackable)
 						{
-							existItem->ItemCount += itemCount;
-							guid = existItem->UniqueID;
-						}
-						else
-						{
-							//TODO 보관함을 구현하려면 이 부분을 보관함으로 아이템을 전송하는 코드로 바꾸면 됩니다.
-							guid = AddNewItemToInventory(info, ItemActor, itemCount);
+							const auto existItem = HasItem(info->Item_Tag);
+							if (existItem && existItem->CanStack(itemCount))
+							{
+								existItem->ItemCount += itemCount;
+								guid = existItem->UniqueID;
+							}
+							else
+							{
+								//TODO 보관함을 구현하려면 이 부분을 보관함으로 아이템을 전송하는 코드로 바꾸면 됩니다.
+								guid = AddNewItemToInventory(info, ItemActor, itemCount);
+							}
 						}
 					}
+					break;
 				}
-				break;
-			}
 
-			if (Inventory.Contains(guid))
-			{
-				OnAddItem.Broadcast(GetOwner<ABaseCharacter>(), Inventory[guid], ItemActor);
-				if (bShowPickUpWidget)
+				if (Inventory.Contains(guid))
 				{
-					OnGetItem.Broadcast(info->Item_Image, info->Item_Name, itemCount);
-				}
+					OnAddItem.Broadcast(GetOwner<ABaseCharacter>(), Inventory[guid], ItemActor);
+					if (bShowPickUpWidget)
+					{
+						OnGetItem.Broadcast(info->Item_Image, info->Item_Name, itemCount);
+					}
 				
 				
-				OnInventoryWidgetUpdate.Broadcast(guid, Inventory[guid].ItemCount);
-				OnItemQuickSlotUpdate.Broadcast(guid, Inventory[guid].ItemCount);
-			}
-			else
-			{
-				auto& frag = GetFragment(guid);
-				OnAddItem.Broadcast(GetOwner<ABaseCharacter>(), frag, ItemActor);
-				if (bShowPickUpWidget)
-				{
-					OnGetItem.Broadcast(frag.GetItemInformation()->Item_Image, frag.GetItemInformation()->Item_Name,
-					                    itemCount);
+					OnInventoryWidgetUpdate.Broadcast(guid, Inventory[guid].ItemCount);
+					OnItemQuickSlotUpdate.Broadcast(guid, Inventory[guid].ItemCount);
 				}
-			}
-			OnSaveFieldItemState.Broadcast(GetOwner<APlayerCharacter>(), ItemActor);
-			ItemActor->Destroy();
+				else
+				{
+					auto& frag = GetFragment(guid);
+					OnAddItem.Broadcast(GetOwner<ABaseCharacter>(), frag, ItemActor);
+					if (bShowPickUpWidget)
+					{
+						OnGetItem.Broadcast(frag.GetItemInformation()->Item_Image, frag.GetItemInformation()->Item_Name,
+											itemCount);
+					}
+				}
+				OnSaveFieldItemState.Broadcast(GetOwner<APlayerCharacter>(), ItemActor);
+				ItemActor->Destroy();
 
-			return guid;
+				return guid;
+			}
 		}
 		UE_LOGFMT(LogInventory, Error, "가져온 아이템 정보가 유효하지 않습니다.");
 	}
@@ -602,15 +622,6 @@ void UInventoryComponent::AddQuickSlotItem(UItemData* Data, int32 Index)
 	}
 }
 
-void UInventoryComponent::AddQuickSlotAbility(UInventoryData* Data, int32 Index)
-{
-	if (Data->IsA<UAbilityData>())
-	{
-		AbilityQuickSlotTags[Index] = Cast<UAbilityData>(Data)->AbilityInformation.AbilityTag;
-		CurAbilityQuickSlotIndex = Index;
-		OnUpdateMainAbilityQuickSlot.Broadcast(Cast<UAbilityData>(Data)->AbilityInformation.AbilityTag, false, Index);
-	}
-}
 
 void UInventoryComponent::RemoveQuickSlotItem(UItemData* Data, int32 Index)
 {
@@ -629,19 +640,6 @@ void UInventoryComponent::RemoveQuickSlotItem(UItemData* Data, int32 Index)
 		{
 			ItemQuickSlotUniqueIDs[Index] = FGuid();
 		}
-	}
-}
-
-void UInventoryComponent::RemoveQuickSlotAbility(UInventoryData* Data, int32 Index)
-{
-	if (Data->IsA<UAbilityData>())
-	{
-		if (Index == CurAbilityQuickSlotIndex)
-		{
-			OnUpdateMainAbilityQuickSlot.
-				Broadcast(Cast<UAbilityData>(Data)->AbilityInformation.AbilityTag, true, Index);
-		}
-		AbilityQuickSlotTags[Index] = FGameplayTag::EmptyTag;
 	}
 }
 
@@ -682,42 +680,10 @@ void UInventoryComponent::NextConsumeQuickSlot()
 	}
 }
 
-void UInventoryComponent::NextAbilityQuickSlot()
-{
-	//빈 슬롯이 아닐 때까지 인덱스를 늘립니다.
-	for (auto i = CurAbilityQuickSlotIndex + 1; i < 10; i++)
-	{
-		if (AbilityQuickSlotTags[i].IsValid())
-		{
-			UKismetSystemLibrary::PrintString(this,TEXT("발견 : ") + FString::FormatAsNumber(i));
-			CurAbilityQuickSlotIndex = i;
-			OnUpdateMainAbilityQuickSlot.Broadcast(
-				AbilityQuickSlotTags[CurAbilityQuickSlotIndex], false, CurAbilityQuickSlotIndex);
-			return;
-		}
-	}
-
-	for (auto i = 0; i < CurAbilityQuickSlotIndex; i++)
-	{
-		if (AbilityQuickSlotTags[i].IsValid())
-		{
-			CurAbilityQuickSlotIndex = i;
-			UKismetSystemLibrary::PrintString(this,TEXT("발견 : ") + FString::FormatAsNumber(i));
-			OnUpdateMainAbilityQuickSlot.Broadcast(
-				AbilityQuickSlotTags[CurAbilityQuickSlotIndex], false, CurAbilityQuickSlotIndex);
-			return;
-		}
-	}
-}
 
 bool UInventoryComponent::IsRegistered(const FGuid& ID) const
 {
 	return ItemQuickSlotUniqueIDs.Contains(ID);
-}
-
-bool UInventoryComponent::IsRegistered(const FGameplayTag& Tag) const
-{
-	return AbilityQuickSlotTags.Contains(Tag);
 }
 
 void UInventoryComponent::UseConsumeQuickSlot()
@@ -727,14 +693,6 @@ void UInventoryComponent::UseConsumeQuickSlot()
 	}
 }
 
-void UInventoryComponent::UseAbilityQuickSlot()
-{
-	if(AbilityQuickSlotTags.IsValidIndex(CurAbilityQuickSlotIndex))
-	{
-		GetOwner<ABaseCharacter>()->GetAbilityComponent()->ActivateAbility(AbilityQuickSlotTags[CurAbilityQuickSlotIndex],
-																		   GetOwner());
-	}
-}
 
 void UInventoryComponent::OnItemButtonWidgetGeneratedEvent(UUserWidget* UserWidget)
 {
@@ -768,19 +726,15 @@ void UInventoryComponent::OnItemButtonWidgetGeneratedEvent(UUserWidget* UserWidg
 
 			if (data->IsA<UAbilityData>())
 			{
-				const auto& abilityData = Cast<UAbilityData>(data)->AbilityInformation;
-				button->SetEquipped(IsRegistered(abilityData.AbilityTag));
+				if(auto abComp = GetOwner<ABaseCharacter>()->GetAbilityComponent())
+				{
+					const auto& abilityData = Cast<UAbilityData>(data)->AbilityInformation;
+					button->SetEquipped(abComp->IsRegistered(abilityData.AbilityTag));
+				}
 			}
 		}
 	}
 }
-
-
-
-
-
-
-
 
 
 bool UInventoryComponent::HasKey(const FGameplayTag KeyTag)

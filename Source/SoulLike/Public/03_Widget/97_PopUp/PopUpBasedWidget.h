@@ -25,9 +25,9 @@ protected:
 
 	virtual void NativeConstruct() override;
 
+public:
 	UFUNCTION()
 	virtual void OnVisibilityChangedEvent(ESlateVisibility InVisibility);
-public:
 	UFUNCTION()
 	void SetFocusOnThisWidget();
 };

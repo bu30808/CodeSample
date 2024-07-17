@@ -228,8 +228,8 @@ void ABaseMonster::PostInitializeComponents()
 
 		DefaultHealthBarTr = HealthBarWidgetComponent->GetRelativeTransform();
 	}
-	AttributeComponent->OnChangeHPValue.AddUniqueDynamic(this, &ABaseMonster::UpdateHealthBar);
-	AttributeComponent->OnDamagedHP.AddUniqueDynamic(this,&ABaseMonster::UpdateDamagedHealthBar);
+	AttributeComponent->OnChangeHPValue.AddUniqueDynamic(this, &ABaseCharacter::UpdateHealthBar);
+	AttributeComponent->OnDamagedHP.AddUniqueDynamic(this,&ABaseCharacter::UpdateDamagedHealthBar);
 	
 	if (auto aiCon = Cast<AMonsterAIController>(GetController()))
 	{
@@ -307,7 +307,7 @@ void ABaseMonster::OnEndPlayEvent(AActor* Actor, EEndPlayReason::Type EndPlayRea
 	}
 
 	Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(this, 0))->SetPlayerStateBy(
-		EPlayerCharacterState::Peaceful, this);
+		ECombatState::Peaceful, this);
 }
 
 void ABaseMonster::OnDestroyedEvent(AActor* DestroyedActor)
@@ -331,70 +331,6 @@ void ABaseMonster::RestoreSavedState(const FCharacterSave& SavedState)
 				EnableRagdoll();
 				RunDeactivateTimer();
 			}
-	}
-}
-
-void ABaseMonster::UpdateHealthBar(float Value, float MaxValue)
-{
-	if (HealthBarWidgetComponent->IsValidLowLevel() == false)
-	{
-		return;
-	}
-
-	if (IsDead())
-	{
-		return;
-	}
-
-	if (HealthBarWidgetComponent->GetUserWidgetObject())
-	{
-		if (auto widget = Cast<UHealthBarWidget>(HealthBarWidgetComponent->GetUserWidgetObject()))
-		{
-			widget->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-
-			FTimerDelegate hiddenTimerDel = FTimerDelegate::CreateUObject(
-				widget, &UUserWidget::SetVisibility, ESlateVisibility::Collapsed);
-			GetWorldTimerManager().SetTimer(HealthBarVisibleTimerHandle, hiddenTimerDel, 3.f, false);
-
-			widget->UpdateProgress(Value, MaxValue);
-		}
-		else
-		{
-			UE_LOGFMT(LogTemp, Error, "{0} {1}", __FUNCTION__, __LINE__);
-		}
-	}
-	else
-	{
-		UE_LOGFMT(LogTemp, Error, "{0} {1}", __FUNCTION__, __LINE__);
-	}
-}
-
-void ABaseMonster::UpdateDamagedHealthBar(float Damage)
-{
-	if (HealthBarWidgetComponent->IsValidLowLevel() == false)
-	{
-		return;
-	}
-
-	if (IsDead())
-	{
-		return;
-	}
-
-	if (HealthBarWidgetComponent->GetUserWidgetObject())
-	{
-		if (auto widget = Cast<UHealthBarWidget>(HealthBarWidgetComponent->GetUserWidgetObject()))
-		{
-			widget->ShowDamage(Damage);
-		}
-		else
-		{
-			UE_LOGFMT(LogTemp, Error, "{0} {1}", __FUNCTION__, __LINE__);
-		}
-	}
-	else
-	{
-		UE_LOGFMT(LogTemp, Error, "{0} {1}", __FUNCTION__, __LINE__);
 	}
 }
 
@@ -594,7 +530,7 @@ void ABaseMonster::OnDeadEvent(AActor* Who, AActor* DeadBy, EDeadReason DeadReas
 					Cast<ABaseCharacter>(DeadBy), Cast<ABaseCharacter>(Who));
 			}
 
-			UAIConHelperLibrary::ChangePlayerState(Who, DeadBy, EPlayerCharacterState::Peaceful);
+			UAIConHelperLibrary::ChangePlayerState(Who, DeadBy, ECombatState::Peaceful);
 
 			if (AnimationHelperComponent->CanApplyRagdoll())
 			{
@@ -611,7 +547,7 @@ void ABaseMonster::OnDeadBossEvent(AActor* Who, AActor* DeadBy, EDeadReason Dead
 	if (UKismetSystemLibrary::DoesImplementInterface(this, UBossMonsterInterface::StaticClass()))
 	{
 		IBossMonsterInterface::Execute_RemoveBossWidget(this, this, DeadBy);
-		UAIConHelperLibrary::ChangePlayerState(Who, DeadBy, EPlayerCharacterState::Peaceful);
+		UAIConHelperLibrary::ChangePlayerState(Who, DeadBy, ECombatState::Peaceful);
 		ItemDropComponent->BossDropItem(Cast<ABaseCharacter>(DeadBy));
 		USaveGameHelperLibrary::SaveKillBoss(this, Cast<ABaseCharacter>(DeadBy));
 
@@ -668,15 +604,15 @@ void ABaseMonster::OnDeadMontageEndedEvent(UAnimMontage* Montage, bool bInterrup
 	}
 }
 
-void ABaseMonster::SetMonsterState(EMonsterState NewState)
+void ABaseMonster::SetCombatState(ECombatState NewState)
 {
-	MonsterState = NewState;
+	Super::SetCombatState(NewState);
 	//블랙보드값 업데이트
 	if (auto aiCon = Cast<AAIController>(GetController()))
 	{
 		if (auto bbComp = UAIBlueprintHelperLibrary::GetBlackboard(this))
 		{
-			bbComp->SetValueAsEnum("MonsterState", static_cast<uint8>(MonsterState));
+			bbComp->SetValueAsEnum("MonsterState", static_cast<uint8>(CombatState));
 		}
 	}
 }
@@ -806,7 +742,7 @@ void ABaseMonster::TriggerHitAnimation_Implementation(UAbilityEffectAdditionalIn
 			}*/
 		}
 
-		if (MonsterState == EMonsterState::Guard)
+		if (CombatState == ECombatState::Guard)
 		{
 			AnimationHelperComponent->PlayGuardHitMontage();
 		}

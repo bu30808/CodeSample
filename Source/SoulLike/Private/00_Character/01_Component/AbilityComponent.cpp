@@ -4,6 +4,7 @@
 #include "00_Character/01_Component/AbilityComponent.h"
 
 #include "TimerManager.h"
+#include "00_Character/01_Component/InventoryComponent.h"
 #include "02_Ability/AbilityBase.h"
 #include "02_Ability/AbilityEffect.h"
 #include "96_Library/AbilityHelperLibrary.h"
@@ -464,16 +465,6 @@ bool UAbilityComponent::IsInvincible()
 	return AppliedEffectTags.HasTag(FGameplayTag::RequestGameplayTag("Common.Passive.Invincibility"));
 }
 
-/*
-void UAbilityComponent::ForceEndAllAbility()
-{
-	for(auto iter : AvailableAbilities)
-	{
-		iter->EndAbility();
-	}
-}
-*/
-
 
 AAbilityCue* UAbilityComponent::ApplyCue(FAbilityCueInformation CueInformation)
 {
@@ -733,4 +724,128 @@ void UAbilityComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 	UnRootAppliedEffects();
 	UnRootAppliedTalents();
 	Super::EndPlay(EndPlayReason);
+}
+
+bool UAbilityComponent::IsRegistered(const FGameplayTag& AbilityTag)
+{
+	return AbilityQuickSlotTags.Contains(AbilityTag);
+}
+
+void UAbilityComponent::AddQuickSlotAbility(const FGameplayTag& AbilityTag)
+{
+
+/*
+	*if (Data != nullptr)
+		{
+			ItemQuickSlotUniqueIDs[Index] = Cast<UItemData>(Data)->InventoryItem.UniqueID;
+	
+			//빈 퀵슬롯에 처음 등록했을 때,
+			if(CurItemQuickSlotIndex == -1)
+			{
+				CurItemQuickSlotIndex = Index;
+				//메인위젯의 퀵슬롯을 이 번호 아이템을 표시하도록 업데이트 합니다.
+				OnFirstUpdateMainItemQuickSlot.Broadcast(Data,Index);
+			}
+			//세이브 파일에 퀵슬롯 상태를 저장합니다.
+			OnAddItemQuickSlot.Broadcast(Data,Index);
+		}
+		else
+		{
+			UKismetSystemLibrary::PrintString(this,TEXT("퀵슬롯 데이터가 유효하지 않아 처리할 수 없습니다."));
+		}
+ */
+
+	//모든 슬롯이 비어있던 상태인가요?
+	bool bIsAllSlotIsEmpty = true;
+	for(auto iter : AbilityQuickSlotTags)
+	{
+		if(iter.IsValid())
+		{
+			bIsAllSlotIsEmpty = false;
+			break;
+		}
+	}
+
+	//모든 슬롯이 비어있었다면, 슬롯 상태를 갱신합니다.
+	if(bIsAllSlotIsEmpty)
+	{
+		OnFirstUpdateMainAbilityQuickSlot.Broadcast(GetAbilityByTag(AbilityTag)->GetAbilityInformation());
+	}
+	
+	for(auto i = 0; i< AbilityQuickSlotTags.Num() ;i++)
+	{
+		if(AbilityQuickSlotTags[i].IsValid()==false)
+		{
+			AbilityQuickSlotTags[i] = AbilityTag;
+			return;
+		}
+	}
+
+	
+}
+
+void UAbilityComponent::InitAbilityQuickSlotIndex()
+{
+	CurAbilityQuickSlotIndex = -1;
+	NextAbilityQuickSlot();
+}
+
+void UAbilityComponent::UseAbilityQuickSlot()
+{
+	if(AbilityQuickSlotTags.IsValidIndex(CurAbilityQuickSlotIndex))
+	{
+		const auto& tag = AbilityQuickSlotTags[CurAbilityQuickSlotIndex];
+		if(tag.IsValid())
+		{
+			ActivateAbility(tag,GetOwner());
+		}
+	}
+}
+
+void UAbilityComponent::NextAbilityQuickSlot()
+{
+	UE_LOGFMT(LogInventory, Log, "다음 퀵슬롯으로 전환시도");
+	
+	//빈 슬롯이 아닐 때까지 인덱스를 늘립니다.
+	for (auto i = CurAbilityQuickSlotIndex + 1; i < 10; i++)
+	{
+		if(AbilityQuickSlotTags.IsValidIndex(i))
+		{
+			const auto& curTag = AbilityQuickSlotTags[i];
+			if (curTag.IsValid())
+			{
+				CurAbilityQuickSlotIndex = i;
+				if (HasAbility(curTag))
+				{
+					UE_LOGFMT(LogInventory, Log, "다음 퀵슬롯 타겟 발견 : {0}", GetAbilityByTag(curTag)->GetAbilityInformation().AbilityName.ToString());
+					OnChangeAbilityQuickSlot.Broadcast(GetAbilityByTag(curTag)->GetAbilityInformation());
+				}
+				return;
+			}
+		}
+	}
+
+	for (auto i = 0; i < CurAbilityQuickSlotIndex; i++)
+	{
+		if(AbilityQuickSlotTags.IsValidIndex(i))
+		{
+			const auto& curTag = AbilityQuickSlotTags[i];
+			if (curTag.IsValid())
+			{
+				CurAbilityQuickSlotIndex = i;
+				if (HasAbility(curTag))
+				{
+					UE_LOGFMT(LogInventory, Log, "다음 퀵슬롯 타겟 발견 : {0}", GetAbilityByTag(curTag)->GetAbilityInformation().AbilityName.ToString());
+					OnChangeAbilityQuickSlot.Broadcast(GetAbilityByTag(curTag)->GetAbilityInformation());
+				}
+				return;
+			}
+		}
+	}
+	
+}
+
+void UAbilityComponent::ClearMainAbiltiyQuickSlot()
+{
+	OnChangeAbilityQuickSlot.Broadcast(FAbilityInformation());
 }
