@@ -607,6 +607,18 @@ void USoulLikeInstance::OnRemoveItemQuickSlotEvent(const UItemData* Data, int32 
 	SaveGameInstanceToSlot(instance);
 }
 
+void USoulLikeInstance::OnAddAbilityQuickSlotEvent(const TArray<FGameplayTag>& AbilityQuickSlotTags)
+{
+	if (!IsUseGameSave())
+	{
+		return;
+	}
+
+	auto instance = GetSaveGameInstance();
+	instance->SaveAbilityQuickSlot(AbilityQuickSlotTags);
+	SaveGameInstanceToSlot(instance);
+}
+
 void USoulLikeInstance::ClearSave()
 {
 	if (!IsUseGameSave())
@@ -769,7 +781,7 @@ void USoulLikeInstance::OnSaveLevelItemPlacementStateEvent(ABaseCharacter* GetBy
 	}
 }
 
-void USoulLikeInstance::OnAddItemEvent(ABaseCharacter* UsedBy, const FInventoryItem& ItemInfo,
+void USoulLikeInstance::OnAddItemEvent(ABaseCharacter* GetBy, const FInventoryItem& ItemInfo,
                                        class AItemActor* GotItemActor)
 {
 	UE_LOGFMT(LogSave,Log,"{0} {1} : 추가된 아이템정보를 세이브파일에 저장합니다 : {2}",__FUNCTION__,__LINE__,ItemInfo.GetItemInformation()->Item_Name.ToString());
@@ -784,9 +796,25 @@ void USoulLikeInstance::OnAddItemEvent(ABaseCharacter* UsedBy, const FInventoryI
 		return;
 	}
 
-	auto player = Cast<APlayerCharacter>(UsedBy);
+	auto player = Cast<APlayerCharacter>(GetBy);
 	auto instance = GetSaveGameInstance();
 	instance->SaveAddedItem(ItemInfo);
+	SaveGameInstanceToSlot(instance);
+}
+
+void USoulLikeInstance::OnAddAbilityItemEvent(ABaseCharacter* GetBy, const FAbilityInformation& AbilityItemInfo,
+	AItemActor* GotItemActor)
+{
+	UE_LOGFMT(LogSave,Log,"{0} {1} : 추가된 어빌리티 아이템정보를 세이브파일에 저장합니다 : {2}",__FUNCTION__,__LINE__,AbilityItemInfo.AbilityName.ToString());
+	if (bBlockSave)
+	{
+		UE_LOGFMT(LogSave,Log,"{0} {1} : 세이브 금지 상태라 저장할 수 없습니다.",__FUNCTION__,__LINE__);
+		return;
+	}
+		
+	auto player = Cast<APlayerCharacter>(GetBy);
+	auto instance = GetSaveGameInstance();
+	instance->SaveAddedAbility(AbilityItemInfo);
 	SaveGameInstanceToSlot(instance);
 }
 
@@ -1149,6 +1177,36 @@ void USoulLikeInstance::SaveNPCDestoryed(ANPCBase* NPC)
 	}
 }
 
+void USoulLikeInstance::OnSellItemToPlayerEvent(APlayerCharacter* InteractPlayer, ANPCBase* Seller,
+                                                const FMerchandiseItem& MerchandiseItem)
+{
+	if (!IsUseGameSave())
+	{
+		return;
+	}
+
+	if (const auto instance = GetSaveGameInstance())
+	{
+		instance->SaveMerchantItem(Seller,MerchandiseItem);
+		SaveGameInstanceToSlot(instance);
+	}
+}
+
+void USoulLikeInstance::OnSellAbilityToPlayerEvent(APlayerCharacter* InteractPlayer, ANPCBase* Seller,
+                                                   const FMerchandiseAbility& MerchandiseAbility)
+{
+	if (!IsUseGameSave())
+	{
+		return;
+	}
+
+	if (const auto instance = GetSaveGameInstance())
+	{
+		instance->SaveMerchantAbility(Seller,MerchandiseAbility);
+		SaveGameInstanceToSlot(instance);
+	}
+}
+
 void USoulLikeInstance::LoadNPCState(ANPCBase* NPC)
 {
 	if (!IsUseGameSave())
@@ -1160,6 +1218,43 @@ void USoulLikeInstance::LoadNPCState(ANPCBase* NPC)
 	{
 		instance->LoadNPC(NPC);
 	}
+}
+
+TMap<FGameplayTag, FMerchandiseItem> USoulLikeInstance::LoadNPCSellItemState(const FGameplayTag& NPCTag)
+{
+	if (!IsUseGameSave())
+	{
+		return TMap<FGameplayTag, FMerchandiseItem>();
+	}
+	
+	if (const auto instance = GetSaveGameInstance())
+	{
+		if(instance->WorldData.NPCState.Contains(NPCTag))
+		{
+			return instance->WorldData.NPCState[NPCTag].SellItemState;
+		}
+	}
+
+	return TMap<FGameplayTag, FMerchandiseItem>();
+	
+}
+
+TMap<FGameplayTag, FMerchandiseAbility> USoulLikeInstance::LoadNPCSellAbilityState(const FGameplayTag& NPCTag)
+{
+	if (!IsUseGameSave())
+	{
+		return TMap<FGameplayTag, FMerchandiseAbility>();
+	}
+	
+	if (const auto instance = GetSaveGameInstance())
+	{
+		if(instance->WorldData.NPCState.Contains(NPCTag))
+		{
+			return instance->WorldData.NPCState[NPCTag].SellAbilityState;
+		}
+	}
+
+	return TMap<FGameplayTag, FMerchandiseAbility>();
 }
 
 bool USoulLikeInstance::IsActivatedBonfire(const ABonfire* Bonfire)

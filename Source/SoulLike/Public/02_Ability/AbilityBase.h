@@ -182,6 +182,9 @@ class SOULLIKE_API UAbilityDefenceTalent : public UAbilityTalent
 	//달리는 속도 증가
 	FOnIncreaseRunSpeed OnIncreaseRunSpeed;
 
+	FOnIncreaseMoveSpeed OnIncreaseMoveSpeed;
+	FOnDecreaseMoveSpeed OnDecreaseMoveSpeed;
+
 	//회피 SP 소모량 감소
 	FOnDecreaseAbilitySP OnDecreaseDodgeSP;
 	//회피거리 증가
@@ -227,7 +230,11 @@ protected:
 
 	//이동속도 증가
 	UFUNCTION(BlueprintImplementableEvent)
+	float OnIncreaseRunSpeedEvent(const float Original);
+	UFUNCTION(BlueprintImplementableEvent)
 	float OnIncreaseMoveSpeedEvent(float OriginalSpeed);
+	UFUNCTION(BlueprintImplementableEvent)
+	float OnDecreaseMoveSpeedEvent(const float Original);
 
 	//회피 SP 감소
 	UFUNCTION(BlueprintImplementableEvent)
@@ -373,10 +380,14 @@ protected:
 	UPROPERTY(EditAnywhere, meta=(EditCondition ="bUseChainSystem"))
 	TArray<float> ChainValue;
 
+	//이 값이 참이면, 어빌리티 정보를 이용해 아이콘을 만들어 버프아이콘을 표시합니다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	bool bShouldAddBuffIcon = false;
 public:
-	bool GetUseChainSystem() const { return bUseChainSystem; };
+	bool GetUseChainSystem() const { return bUseChainSystem; }
 	const FGameplayTag& GetChainTag() const { return ChainTag; };
-
+	void AddBuffIcon();
+	void RemoveBuffIcon() const;
 protected:
 	//사용자 자신에게 적용할 이팩트 정보들
 	UPROPERTY(BlueprintReadOnly, EditAnywhere, meta = (AllowPrivateAccess = true), Category="Effect")
@@ -607,7 +618,9 @@ protected:
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
 	void ApplyEffect();
 	virtual void ApplyEffect_Implementation();
-
+	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
+	void OnEffectEndEvent();
+	virtual void OnEffectEndEvent_Implementation();
 	UFUNCTION(BlueprintCallable)
 	void ApplySelfEffect(ABaseCharacter* Character);
 	UFUNCTION(BlueprintCallable)

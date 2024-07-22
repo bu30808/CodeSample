@@ -28,7 +28,7 @@ bool UAbilityRequirement::CheckAttribute(ABaseCharacter* AbilityOwner)
 	{
 		for(auto iter : NeedAttribute)
 		{
-			const auto& att =  attComp->GetAttributeByType(iter.Key)->GetBase();
+			const auto& att =  attComp->GetAttributeByType(iter.Key)->GetCurrent();
 			if(att < iter.Value)
 			{
 				return false;

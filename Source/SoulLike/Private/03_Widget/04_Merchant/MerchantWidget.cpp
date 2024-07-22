@@ -31,7 +31,6 @@ void UMerchantWidget::NativePreConstruct()
 	if (UMG_MerchantList)
 	{
 		UMG_MerchantList->OnPlayerSellItem.AddUniqueDynamic(this, &UMerchantWidget::OnPlayerSellItemEvent);
-		UMG_MerchantList->OnPlayerSellAbility.AddUniqueDynamic(this, &UMerchantWidget::OnPlayerSellAbilityEvent);
 	}
 }
 
@@ -70,7 +69,7 @@ void UMerchantWidget::SetOwnerNPC(ANPCBase* NPC)
 	CheckWidget->SetOwnerNPC(MerchantNPC.Get());
 }
 
-void UMerchantWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponent)
+void UMerchantWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponent, const TMap<FGameplayTag, FMerchandiseItem>& ItemState, const TMap<FGameplayTag, FMerchandiseAbility>& AbilityState)
 {
 	if (MerchantNPC.IsValid() && UKismetSystemLibrary::DoesImplementInterface(
 		MerchantNPC.Get(), UMerchantInterface::StaticClass()))
@@ -85,7 +84,7 @@ void UMerchantWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponen
 
 		if (UMG_MerchantList)
 		{
-			UMG_MerchantList->CreateMerchandiseList(MerchantComponent);
+			UMG_MerchantList->CreateMerchandiseList(MerchantComponent,ItemState,AbilityState);
 		}
 	}
 }
@@ -162,10 +161,6 @@ void UMerchantWidget::OnPlayerBuyAbilityEvent(const FMerchandiseAbility& Merchan
 	}
 }
 
-void UMerchantWidget::OnPlayerSellAbilityEvent(const FAbilityInformation& AbilityInformation)
-{
-	//퀵슬롯에 올라간 어빌리티를 판매하려는지 확인합니다.
-}
 
 void UMerchantWidget::OnClickedCloseButton()
 {

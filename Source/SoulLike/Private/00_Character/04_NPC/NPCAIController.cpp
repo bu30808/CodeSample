@@ -21,7 +21,7 @@ ANPCAIController::ANPCAIController()
 
 	PerceptionComponent->GetSenseConfig<UAISenseConfig_Sight>()->SetMaxAge(0);
 	
-	SetGenericTeamId(FGenericTeamId(static_cast<uint8>(ETeam::Player)));
+	SetGenericTeamId(FGenericTeamId(ETeamAttitude::Neutral));
 }
 
 // Called when the game starts or when spawned

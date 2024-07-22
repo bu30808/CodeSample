@@ -41,6 +41,13 @@ public:
 	UPROPERTY(BlueprintReadWrite)
 	FVector NPCLocation;
 
+	//판매 아이템 상태 저장, 변경된 데이터만 저장합니다.
+	UPROPERTY(BlueprintReadWrite)
+	TMap<FGameplayTag,FMerchandiseItem> SellItemState;
+	//판매 어빌리티 상태 저장, 변경된 데이터만 저장합니다.
+	UPROPERTY(BlueprintReadWrite)
+	TMap<FGameplayTag,FMerchandiseAbility> SellAbilityState;
+
 	FNPCState(){ }
 
 	FNPCState(class ANPCBase* NPC);
@@ -227,7 +234,6 @@ public:
 	//인터페이스
 	virtual void SellItemToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter, FGuid ItemUniqueID, int32 TradeCount) override;
 	virtual void SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter, FMerchandiseAbility MerchandiseAbility, int32 TradeCount) override;
-	virtual void BuyAbilityFromPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter, FMerchandiseAbility MerchandiseAbility, int32 BuyCount) override;
 	virtual void BuyItemFromPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter, FGuid ItemUniqueID, int32 BuyCount) override;
 	virtual void UpdateExpWidget(APlayerCharacter* Player, const int32& AddExp) override;
 	virtual UMerchantComponent* GetMerchantComponent() override;

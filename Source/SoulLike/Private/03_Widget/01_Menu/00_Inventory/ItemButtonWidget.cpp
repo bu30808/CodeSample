@@ -8,6 +8,7 @@
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/01_Component/AbilityComponent.h"
 #include "00_Character/01_Component/InventoryComponent.h"
+#include "02_Ability/AbilityRequirement.h"
 #include "03_Widget/SimpleToolTipWidget.h"
 #include "03_Widget/01_Menu/00_Inventory/ItemListWidget.h"
 #include "03_Widget/01_Menu/00_Inventory/ItemMenuWidget.h"
@@ -182,7 +183,8 @@ void UItemButtonWidget::ProcessInventoryData(UObject* ListItemObject)
 		InventoryData->OwnItemButtonWidget = this;
 
 		OnPlayerBuyItemFromNPC = data->OnPlayerBuyItemFromNPC;
-
+		OnPlayerBuyAbilityFromNPC = data->OnPlayerBuyAbilityFromNPC;
+		
 		if (const auto info = data->InventoryItem.GetItemInformation())
 		{
 			Image_Item->SetBrushFromSoftTexture(info->Item_Image);
@@ -219,8 +221,7 @@ void UItemButtonWidget::ProcessAbilityData(UObject* ListItemObject)
 		TextBlock_ItemName->SetText(info.AbilityName);
 		TextBlock_Count->SetText(FText::AsNumber(1));
 
-		UWidgetHelperLibrary::SetToolTipWidget(this, info.AbilityDescription);
-
+		UWidgetHelperLibrary::SetAbilityToolTipWidget(this,info);
 		if (auto abComp = GetOwningPlayerPawn<ABaseCharacter>()->GetAbilityComponent())
 		{
 			SetEquipped(abComp->IsRegistered(data->AbilityInformation.AbilityTag));
@@ -287,12 +288,14 @@ bool UItemButtonWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDro
 				UE_LOGFMT(LogTemp, Log, "상점 아이템 버튼 드롭됨!!");
 				if (data->IsA<UMerchandiseItemListData>())
 				{
+					UE_LOGFMT(LogTemp, Log, "아이템");
 					OnPlayerBuyItemFromNPC.Broadcast(Cast<UMerchandiseItemListData>(data)->MerchandiseItem);
 					return true;
 				}
 
 				if (data->IsA<UMerchandiseAbilityListData>())
 				{
+					UE_LOGFMT(LogTemp, Log, "어빌리티");
 					OnPlayerBuyAbilityFromNPC.Broadcast(Cast<UMerchandiseAbilityListData>(data)->MerchandiseAbility);
 					return true;
 				}

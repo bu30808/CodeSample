@@ -3,6 +3,8 @@
 
 #include "00_Character/01_Component/UROComponent.h"
 
+#include "Logging/StructuredLog.h"
+
 
 // Sets default values for this component's properties
 UUROComponent::UUROComponent()
@@ -21,24 +23,48 @@ void UUROComponent::BeginPlay()
 	Super::BeginPlay();
 
 	// ...
-
-	if (m_pLOD_FrameRate.Num() <= 0) return;
-
-	UActorComponent* pCpt = GetOwner()->GetComponentByClass(USkinnedMeshComponent::StaticClass());
-	if (pCpt != nullptr)
+	if (auto pawn = GetOwner())
 	{
-		if(USkinnedMeshComponent* pSKMesh = Cast<USkinnedMeshComponent>(pCpt))
+		if (m_pLOD_FrameRate.Num() > 0)
 		{
-			pSKMesh->bEnableUpdateRateOptimizations = true;
-			pSKMesh->AnimUpdateRateParams->bShouldUseLodMap = true;
-
-			for (int i = 0; i < m_pLOD_FrameRate.Num(); i++)
+			if (UActorComponent* actorComponent = pawn->GetComponentByClass(USkinnedMeshComponent::StaticClass()))
 			{
-				pSKMesh->AnimUpdateRateParams->LODToFrameSkipMap.Add(i, m_pLOD_FrameRate[i]);
+				if (USkinnedMeshComponent* skinnedMeshComponent = Cast<USkinnedMeshComponent>(actorComponent))
+				{
+					skinnedMeshComponent->bEnableUpdateRateOptimizations = true;
+					if(auto param = skinnedMeshComponent->AnimUpdateRateParams)
+					{
+						param->bShouldUseLodMap = true;
+						for (int i = 0; i < m_pLOD_FrameRate.Num(); i++)
+						{
+							skinnedMeshComponent->AnimUpdateRateParams->LODToFrameSkipMap.Add(i, m_pLOD_FrameRate[i]);
+						}
+					}
+					
+				}
 			}
 		}
 	}
-	
+	else
+	{
+		UE_LOGFMT(LogTemp, Error, "오너를 가져올 수 없어 URO를 적용할 수 없습니다.");
+	}
+
+	/*
+	if (m_pLOD_FrameRate.Num() > 0)
+	{
+		if (UActorComponent* actorComponent = GetOwner()->GetComponentByClass(USkinnedMeshComponent::StaticClass()))
+		{
+			if(USkinnedMeshComponent* skinnedMeshComponent = Cast<USkinnedMeshComponent>(actorComponent))
+			{
+				skinnedMeshComponent->bEnableUpdateRateOptimizations = true;
+				skinnedMeshComponent->AnimUpdateRateParams->bShouldUseLodMap = true;
+
+				for (int i = 0; i < m_pLOD_FrameRate.Num(); i++)
+				{
+					skinnedMeshComponent->AnimUpdateRateParams->LODToFrameSkipMap.Add(i, m_pLOD_FrameRate[i]);
+				}
+			}
+		}
+	}*/
 }
-
-

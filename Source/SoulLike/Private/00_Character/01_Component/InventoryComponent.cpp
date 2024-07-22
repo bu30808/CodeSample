@@ -160,6 +160,7 @@ void UInventoryComponent::BeginPlay()
 	{
 		OnSaveFieldItemState.AddUniqueDynamic(instance, &USoulLikeInstance::OnSaveLevelItemPlacementStateEvent);
 		OnAddItem.AddUniqueDynamic(instance, &USoulLikeInstance::OnAddItemEvent);
+		OnAddAbilityItem.AddUniqueDynamic(instance,&USoulLikeInstance::OnAddAbilityItemEvent);
 		OnRemoveItem.AddUniqueDynamic(instance, &USoulLikeInstance::OnRemoveItemEvent);
 		OnUseItem.AddUniqueDynamic(instance, &USoulLikeInstance::OnUseItemEvent);
 		OnUnEquipItem.AddUniqueDynamic(instance, &USoulLikeInstance::OnUnEquipItemEvent);
@@ -220,6 +221,7 @@ FGuid UInventoryComponent::AddItem(AItemActor* ItemActor, bool bShowPickUpWidget
 					OnGetItem.Broadcast(abInfo.AbilityImage, abInfo.AbilityName, 1);
 				}
 				GetOwner<ABaseCharacter>()->GetAbilityComponent()->GiveAbility(info->AbilityClass);
+				AbilityInventory.Add(abInfo.AbilityTag,abInfo);
 				OnAddAbilityItem.Broadcast(GetOwner<ABaseCharacter>(), abInfo, ItemActor);
 				OnSaveFieldItemState.Broadcast(GetOwner<APlayerCharacter>(), ItemActor);
 

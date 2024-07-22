@@ -18,6 +18,8 @@ class UBaseMerchandiseListData : public UObject
 public:
 	UPROPERTY(Transient)
 	TWeakObjectPtr<class UMerchantListWidget> MerchantListWidget;
+	UPROPERTY(Transient)
+	TWeakObjectPtr<class ANPCBase> MerchantNPC;
 };
 
 UCLASS()
@@ -74,8 +76,7 @@ public:
 
 	void SetOwnerNPC(class ANPCBase* NPC);
 	
-	void CreateMerchandiseList(class UMerchantComponent* MerchantComponent);
-
+	void CreateMerchandiseList(UMerchantComponent* MerchantComponent, const TMap<FGameplayTag, FMerchandiseItem>& ItemState, const TMap<FGameplayTag, FMerchandiseAbility>& AbilityState);
 	//플레이어가 NPC에게 아이템을 구매할때 호출됩니다.
 	UFUNCTION()
 	void OnPlayerBuyItemEvent(const FMerchandiseItem& Merchandise);
@@ -86,9 +87,6 @@ public:
 	//플레이어가 NPC에게 어빌리티를 구매할때 호출됩니다.
 	UFUNCTION()
 	void OnPlayerBuyAbilityEvent(const FMerchandiseAbility& MerchandiseAbility);
-	//플레이어가 NPC에게 어빌리티를 판매할 때 호출됩니다.
-	UFUNCTION()
-	void OnPlayerSellAbilityEvent(const FAbilityInformation& AbilityInformation);
 
 	UFUNCTION()
 	void OnClickedCloseButton();

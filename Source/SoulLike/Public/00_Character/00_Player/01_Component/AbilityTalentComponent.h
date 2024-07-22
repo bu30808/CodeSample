@@ -34,6 +34,9 @@ DECLARE_DYNAMIC_DELEGATE_RetVal_ThreeParams(float, FOnIncreaseGotHitDamage, cons
 
 //달리는 속도 증가
 DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseRunSpeed, const float, Original);
+//이동속도 증감
+DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnIncreaseMoveSpeed, const float, Original);
+DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnDecreaseMoveSpeed, const float, Original);
 
 //SP 소모 감소
 DECLARE_DYNAMIC_DELEGATE_RetVal_OneParam(float, FOnDecreaseAbilitySP, const float, Origianl);
@@ -160,8 +163,11 @@ public:
 
 	//이동 속도 적용
 	UFUNCTION(BlueprintCallable)
-	float CalculateModifiedMoveSpeedWithTraits(float OriginalSpeed);
+	float CalculateModifiedRunSpeedWithTraits(float OriginalSpeed);
 
+	UFUNCTION(BlueprintCallable)
+	float CalculateModifiedWalkSpeedWithTraits(float OriginalSpeed);
+	
 	//회피 SP 적용
 	UFUNCTION(BlueprintCallable)
 	float CalculateModifiedDodgeSPWithTraits(float OriginalStamina);
@@ -242,7 +248,11 @@ private:
 	//달리는 속도 증가
 	UPROPERTY()
 	TMap<class UAbilityTalent*, FOnIncreaseRunSpeed> OnIncreaseRunSpeed;
-
+	UPROPERTY()
+	TMap<class UAbilityTalent*, FOnIncreaseMoveSpeed>  OnIncreaseMoveSpeed;
+	UPROPERTY()
+	TMap<class UAbilityTalent*, FOnDecreaseMoveSpeed>  OnDecreaseMoveSpeed;
+	
 	//회피 SP감소
 	UPROPERTY()
 	TMap<class UAbilityTalent*, FOnDecreaseAbilitySP> OnDecreaseDodgeSP;
@@ -325,5 +335,4 @@ private:
 	//회피 최소 SP요구량 설정
 	UPROPERTY()
 	FOnDodgeMinimumSP OnDodgeMinimumSP;
-	
 };

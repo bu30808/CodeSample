@@ -32,6 +32,8 @@ class ASoulLikeGameMode : public AGameModeBase
 public:
 	ASoulLikeGameMode();
 
+	virtual void BeginPlay() override;
+
 	//플레이어가 휴식하면 리스폰 시킬 몬스터로 추가합니다.
 	void AddToRespawnMonster(ABaseMonster* BaseMonster);
 	//리스폰할 목록에서 제거합니다.
@@ -73,6 +75,8 @@ UCLASS(minimalapi)
 class ATESTGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
+protected:
+	virtual void BeginPlay() override;
 };
 #endif
 

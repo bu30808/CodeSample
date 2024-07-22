@@ -86,7 +86,7 @@ UItemManagerSubsystem::UItemManagerSubsystem()
 	///Script/Engine.DataTable'/Game/Blueprints/04_Item/Ability/DT_AbilityItem.DT_AbilityItem'
 
 	static ConstructorHelpers::FObjectFinder<UDataTable> abilityItemTable(TEXT(
-	"Script/Engine.DataTable'/Game/Blueprints/04_Item/Ability/DT_AbilityItem.DT_AbilityItem'"));
+	"Script/Engine.DataTable'/Game/Blueprints/04_Item/Ability/DT_AbilityItemInfo.DT_AbilityItemInfo'"));
 	if (abilityItemTable.Succeeded())
 	{
 		AbilityItemTable = abilityItemTable.Object;

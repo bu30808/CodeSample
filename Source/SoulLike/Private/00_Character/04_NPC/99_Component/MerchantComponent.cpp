@@ -111,7 +111,6 @@ void UMerchantComponent::BeginPlay()
 	{
 		OnBuyItemFromPlayer.AddUniqueDynamic(instance, &USoulLikeInstance::OnNPCBuyItemFromPlayerEvent);
 	}
-
 	
 }
 
@@ -144,11 +143,6 @@ void UMerchantComponent::CreateSellItemList(UDataTable* ItemTable)
 			UE_LOGFMT(LogTemp, Log, "상품 아이템 추가 : {0}", m->Tag.ToString());
 			AddMerchandise(*m);
 		}
-
-		/*for(auto iter : MerchandiseItem)
-		{
-			UE_LOGFMT(LogTemp,Log,"저장된 상품 체크 : {0} {1}",iter.Value.GetItemInformation()->Item_Name.ToString(),iter.Value.GetItemInformation()->Item_Image.LoadSynchronous()->GetName());
-		}*/
 	}
 }
 
@@ -198,7 +192,16 @@ void UMerchantComponent::ShowMerchantWidget(const ABaseCharacter* InteractPlayer
 {
 	CreateMerchantWidget(InteractPlayer);
 	if(MerchantWidget.IsValid()){
-		MerchantWidget->CreateMerchandiseList(this);
+
+
+		if(auto instance = GetWorld()->GetGameInstance<USoulLikeInstance>())
+		{
+			if(auto npc = GetOwner<ANPCBase>()){
+				const auto& itemState = instance->LoadNPCSellItemState(npc->GetNPCTag());
+				const auto& abilityState = instance->LoadNPCSellAbilityState(npc->GetNPCTag());
+				MerchantWidget->CreateMerchandiseList(this,itemState,abilityState);
+			}
+		}
 	}
 }
 
@@ -249,12 +252,6 @@ void UMerchantComponent::AddRepurchaseItem(const FInventoryItem& Item, int32 Buy
 	                                                   FMerchandiseItemData(tag, itemActor, price, BuyCount)));
 }
 
-void UMerchantComponent::AddRepurchaseAbility(const FMerchandiseAbility& Ability)
-{
-	auto tag = Ability.MerchandiseAbilityData.Tag;
-	UE_LOGFMT(LogTemp, Warning, "재구매 어빌리티를 추가합니다 : {0}", tag.ToString());
-	RepurchaseMerchandiseAbility.Add(tag, Ability);
-}
 
 bool UMerchantComponent::IsMerchandiseItem(FGuid ItemUniqueID)
 {
@@ -322,19 +319,10 @@ bool UMerchantComponent::IsMerchandiseAbility(FGameplayTag AbilityTag)
 	return MerchandiseAbility.Contains(AbilityTag);
 }
 
-bool UMerchantComponent::IsRepurchaseMerchandiseAbility(FGameplayTag AbilityTag)
-{
-	return RepurchaseMerchandiseAbility.Contains(AbilityTag);
-}
 
 const FMerchandiseAbility& UMerchantComponent::GetMerchandiseAbility(FGameplayTag AbilityTag)
 {
 	return MerchandiseAbility[AbilityTag];
-}
-
-const FMerchandiseAbility& UMerchantComponent::GetRepurchaseMerchandiseAbility(FGameplayTag AbilityTag)
-{
-	return RepurchaseMerchandiseAbility[AbilityTag];
 }
 
 bool UMerchantComponent::DecreaseMerchandiseAbilityCount(FGameplayTag AbilityTag, int32 Count)
@@ -347,28 +335,5 @@ bool UMerchantComponent::DecreaseMerchandiseAbilityCount(FGameplayTag AbilityTag
 			return true;
 		}
 	}
-	return false;
-}
-
-bool UMerchantComponent::DecreaseRepurchaseMerchandiseAbilityCount(FGameplayTag AbilityTag, int32 Count)
-{
-	if (RepurchaseMerchandiseAbility.Contains(AbilityTag))
-	{
-		if (RepurchaseMerchandiseAbility[AbilityTag].MerchandiseAbilityData.Count >= Count)
-		{
-			RepurchaseMerchandiseAbility[AbilityTag].MerchandiseAbilityData.Count -= Count;
-
-			if (RepurchaseMerchandiseAbility[AbilityTag].MerchandiseAbilityData.Count == 0)
-			{
-				RepurchaseMerchandiseAbility.Remove(AbilityTag);
-			}
-			return true;
-		}
-	}
-	else
-	{
-		UE_LOGFMT(LogTemp, Error, "재구매 어빌리티를 찾을 수 없습니다.: {0} ", AbilityTag.ToString());
-	}
-
 	return false;
 }

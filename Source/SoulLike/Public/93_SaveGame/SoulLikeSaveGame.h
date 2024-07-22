@@ -151,6 +151,33 @@ public:
 };
 
 USTRUCT(BlueprintType)
+struct FAbilitySave
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(BlueprintReadOnly)
+	FString AbilityClassPath;
+
+	//아이템을 구분짓는 유니크 아이디
+	UPROPERTY(BlueprintReadOnly)
+	FGameplayTag AbilityTag;
+
+	FAbilitySave()
+	{
+	}
+
+	FAbilitySave(FGameplayTag Tag, const FString& Path): AbilityClassPath(Path), AbilityTag(Tag)
+	{
+	}
+
+	bool operator==(const FGameplayTag& Tag) const
+	{
+		return AbilityTag.MatchesTagExact(Tag);
+	}
+};
+
+USTRUCT(BlueprintType)
 struct FFieldItemDataLayers
 {
 	GENERATED_BODY()
@@ -213,29 +240,6 @@ public:
 	
 };
 
-/*USTRUCT(BlueprintType)
-struct FLastSavePoint
-{
-	GENERATED_BODY()
-
-public:
-	//이 포인트가 있던 레벨 이름
-	UPROPERTY(BlueprintReadOnly)
-	FString LevelName;
-	//마지막 위치정보
-	UPROPERTY(BlueprintReadOnly)
-	FVector SavedLocation;
-	UPROPERTY(BlueprintReadOnly)
-	FString SavedBonfireSafeName;
-	UPROPERTY(BlueprintReadOnly)
-	float SkyTime;
-	UPROPERTY(BlueprintReadOnly)
-	class UDataAsset* Weather;
-
-	//화톳불 이동 후, 이동한 화톳불에 대한 정보
-	FLastSavePoint& operator=(const FBonfireInformation& TeleportedBonfire);
-};*/
-
 USTRUCT(BlueprintType)
 struct FSoulTombCreateContext
 {
@@ -264,6 +268,9 @@ public:
 	//파편 정보
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FItemSave> Fragments;
+	//어빌리티 정보
+	UPROPERTY(BlueprintReadOnly)
+	TArray<FAbilitySave> InventoryAbility;
 	//장착중인 아이템 아이디
 	UPROPERTY(BlueprintReadOnly)
 	TArray<FGuid> EquippedItemID;
@@ -276,7 +283,10 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	TMap<int32, FGuid> ItemQuickSlotMap;
 	UPROPERTY(BlueprintReadOnly)
-	TMap<int32, FGameplayTag> AbilityQuickSlotMap;
+	TArray<FGameplayTag> AbilityQuickSlot = {
+		FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag,
+		FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag, FGameplayTag::EmptyTag,
+		FGameplayTag::EmptyTag, FGameplayTag::EmptyTag};
 	
 
 	//장비의 강화수치를 저장하는 변수입니다.
@@ -295,6 +305,7 @@ public:
 	//신력구슬 상태
 	UPROPERTY(BlueprintReadOnly)
 	FOrbMatrixSave OrbMatrix;
+
 };
 
 USTRUCT(BlueprintType)
@@ -369,6 +380,10 @@ public:
 	//이 값으로 재시작시 몬스터 상태정보를 복구합니다.
 	UPROPERTY()
 	TMap<FName, FCharacterSave> LastMonsterState;
+
+	//NPC 상태정보
+	UPROPERTY()
+	TMap<FGameplayTag, FNPCState> NPCState;
 };
 
 UCLASS()
@@ -397,7 +412,9 @@ public:
 	void RestoreDataLayer(APlayerCharacter* Player, const TMap<FName, EDataLayerRuntimeState>& LayerStateMap, UDataTable* LayerTable);
 	void RestoreDataLayer(APlayerCharacter* Player, const FName& LayerToLoadRowName, UDataTable* LayerTable);
 	void RestoreDataLayer(TObjectPtr<APlayerCharacter> Player, const FBonfireInformation& BonfireInformation, UDataTable* LayerTable);
-	
+
+	void LoadInventoryItem(UInventoryComponent* InventoryComponent, const FPlayerInventoryData& InventoryData);
+	void LoadInventoryAbility(UInventoryComponent* InventoryComponent, const FPlayerInventoryData& InventoryData);
 	void LoadInventory(UInventoryComponent* InventoryComponent, const FPlayerInventoryData& InventoryData);
 	void LoadAttribute(UAttributeComponent* AttributeComponent, const FPlayerData& PlayerData, bool bIsRespawn);
 	void RestoreQuickSlotState(const TObjectPtr<APlayerCharacter>& Player, const FPlayerInventoryData& InventoryData);
@@ -469,6 +486,7 @@ public:
 
 	//아이템을 획득하면 호출됩니다.
 	void SaveAddedItem(const FInventoryItem& ItemInfo);
+	void SaveAddedAbility(const FAbilityInformation& AbilityInformation);
 	//아이템을 사용하면 호출됩니다.
 	void SaveUsedItem(APlayerCharacter* UsedBy, const FInventoryItem& ItemInfo);
 	//아이템이 지워지면 호출됩니다.
@@ -502,18 +520,20 @@ public:
 
 	void SaveAddItemQuickSlot(const class UItemData* Data, int32 SelectedIndex);
 	void SaveRemovedItemQuickSlot(const UItemData* Data, int32 RemovedIndex);
+	void SaveAbilityQuickSlot(const TArray<FGameplayTag>& AbilityQuickSlotTags);
 
 	//상자의 열림 상태 및 내부 아이템 획득 상황을 저장합니다.
 	void SaveChest(class AChest* Chest, bool bEaredChestItem);
 
+	//아이템 판매후 재고상태를 저장합니다.
+	void SaveMerchantItem(ANPCBase* Seller, const FMerchandiseItem& MerchandiseItem);
+	void SaveMerchantAbility(ANPCBase* Seller, const FMerchandiseAbility& MerchandiseAbility);
 	
-
-
-	UPROPERTY()
-	TMap<FGameplayTag, FNPCState> NPCState;
+	
 	//NPC관련 정보를 저장합니다.
 	void SaveNPC(class ANPCBase* NPC, bool bIsDestroyed);
 	void LoadNPC(class ANPCBase* NPC);
+	
 
 
 	UPROPERTY()

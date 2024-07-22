@@ -132,7 +132,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	TMap<FGuid, FInventoryItem> Inventory;
-
+	//필드에서 아이템 형식으로 획득한 어빌리티를 저장하는 맵
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
+	TMap<FGameplayTag,FAbilityInformation> AbilityInventory;
 	//EItemType::EQUIPMENT인 모든 장착중인 장비를 저장하는 배열입니다.
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta=(AllowPrivateAccess="true"))
 	TArray<FGuid> EquippedEquipments;

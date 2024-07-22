@@ -49,7 +49,7 @@
 #include "00_Character/00_Player/01_Component/JumpMovementComponent.h"
 #include "00_Character/00_Player/01_Component/LadderMovementComponent.h"
 #include "00_Character/00_Player/01_Component/TeleportBonfireComponent.h"
-#include "04_Item/05_Ability/AbilityItemActor.h"
+
 #include "91_Sky/DynamicSkyActor.h"
 #include "92_Tools/WorldStreamingSourceActor.h"
 #include "96_Library/DataLayerHelperLibrary.h"
@@ -253,7 +253,7 @@ void APlayerCharacter::CreateBodyMaterialInstance()
 		BodyMaterialInstance.Add(FurComponent->CreateDynamicMaterialInstance(0));
 	}
 	const auto& index = GetMesh()->GetMaterials().Num();
-	for (int32 i = 0; i < 4; i++)
+	for (int32 i = 0; i < index; i++)
 	{
 		BodyMaterialInstance.Add(GetMesh()->CreateDynamicMaterialInstance(i));
 	}
@@ -324,8 +324,7 @@ void APlayerCharacter::OnAfterLoadStartLayerEvent()
 
 void APlayerCharacter::LoadGame()
 {
-	if (auto pc = GetController<AUserController>())
-	{
+	
 		if (auto instance = Cast<USoulLikeInstance>(UGameplayStatics::GetGameInstance(this)))
 		{
 			instance->OnFinishLoadGame.AddUniqueDynamic(this, &APlayerCharacter::OnFinishLoadGame);
@@ -351,13 +350,12 @@ void APlayerCharacter::LoadGame()
 				LoadStartLayer();
 			}
 		}
-	}
+	
 }
 
 void APlayerCharacter::SetGravityAroundPlayer(bool bActivate)
 {
-	const auto worldSetting = GetWorldSettings();
-	if (worldSetting)
+	if (const auto worldSetting = GetWorldSettings())
 	{
 		GetCapsuleComponent()->SetEnableGravity(!bActivate);
 		if (!bActivate)
@@ -1183,7 +1181,7 @@ void APlayerCharacter::ChangeMovementState(EMovementState Type, float Multiplier
 
 	MovementType = Type;
 
-	const auto calculatedSpeed = AbilityTalentComponent->CalculateModifiedMoveSpeedWithTraits(
+	const auto calculatedSpeed = AbilityTalentComponent->CalculateModifiedRunSpeedWithTraits(
 		AttributeComponent->GetMoveSpeed());
 
 	switch (Type)
@@ -1376,7 +1374,7 @@ bool APlayerCharacter::IsExecutable(ABaseMonster* Monster, const FVector& HitLoc
 			if (IExecutionInterface::Execute_GetIsExecutionable(Monster) && !Monster->IsMighty())
 			{
 				//플레이어가 몬스터의 후방에 위치하는지 확인합니다.
-				if (UMathHelperLibrary::PointToDirection(Monster, HitLocation, 90, 75, 75) == EDirection::Back)
+				if (UMathHelperLibrary::PointToDirection(Monster, HitLocation, 90, 90, 90) == EDirection::Back)
 				{
 					//Z축을 검사합니다. Z축이 일정 이상 차이나면 불가능합니다.
 					//UE_LOGFMT(LogTemp,Log,"내 Z축 : {0} / 몬스터 Z축 : {1}",GetMesh()->GetComponentLocation().Z,Monster->GetMesh()->GetComponentLocation().Z);

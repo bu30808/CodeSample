@@ -62,8 +62,7 @@ ETeamAttitude::Type UAIConHelperLibrary::CheckTeam(AActor* Checker, const AActor
 			{
 				//Create an alliance with Team with ID 10 and set all the other teams as Hostiles:
 				FGenericTeamId OtherTeamID = otherTeamAgent->GetGenericTeamId();
-
-				if (OtherTeamID == 10)
+				if (OtherTeamID == ETeamAttitude::Neutral)
 				{
 					return ETeamAttitude::Neutral;
 				}

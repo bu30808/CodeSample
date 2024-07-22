@@ -595,12 +595,19 @@ void UAttributeComponent::AddLevelUpPoint(EAttributePointType AttributePointType
 
 				{
 					int32 memorySlot = GetIntelligence() / 10;
+					UE_LOGFMT(LogTemp,Log,"새 지능수치로 재 계산한 기억슬롯 갯수 : {0}",memorySlot);
 					if (memorySlot <= 0)
 					{
 						memorySlot = 1;
+						UE_LOGFMT(LogTemp,Log,"기억슬롯 보정 : {0}",memorySlot);
+					}else
+					{
+						memorySlot+=1;
 					}
-					MemorySlot.Init(memorySlot + 1);
+				
+					MemorySlot.Init(memorySlot);
 				}
+				
 				break;
 			case EAttributePointType::WILL:
 				WillpowerPoint.Init(WillpowerPoint.GetBase() + Point);

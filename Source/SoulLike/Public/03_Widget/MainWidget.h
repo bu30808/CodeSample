@@ -136,4 +136,16 @@ public:
 	void OpenOrb();
 	UFUNCTION()
 	void OpenOption();
+
+protected:
+	UPROPERTY(meta=(BindWidget))
+	class UHorizontalBox* HorizontalBox_Buff;
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UBuffIconWidget> BuffIconWidgetClass;
+private:
+	UPROPERTY(Transient)
+	TMap<FGameplayTag,class UUserWidget*> BuffMap;
+public:
+	void AddBuffIcon(const FAbilityInformation& AbilityInformation);
+	void RemoveBuffIcon(const FGameplayTag& Tag);
 };

@@ -71,25 +71,55 @@ FLastSavePoint& FLastSavePoint::operator=(const FBonfireInformation& TeleportedB
 }*/
 
 
+void UGameLoadHandler::LoadInventoryItem(UInventoryComponent* InventoryComponent, const FPlayerInventoryData& InventoryData)
+{
+	InventoryComponent->Inventory.Empty();
+
+	for (auto iter : InventoryData.InventoryItem)
+	{
+
+		TSubclassOf<AItemActor> subclass = LoadClass<AItemActor>(InventoryComponent->GetWorld(),
+		                                                         *iter.ItemClassPath);
+		const auto& item = FInventoryItem(InventoryComponent->GetOwner(), subclass, iter.ItemCount, iter.UniqueID,
+		                                  true);
+			
+		UE_LOGFMT(LogSave,Log,"인벤토리에 복구할 아이템을 추가합니다 : {0}",item.GetItemInformation()->Item_Name.ToString());
+		InventoryComponent->Inventory.Emplace(iter.UniqueID, item);
+		InventoryComponent->OnAddItem.Broadcast(InventoryComponent->GetOwner<ABaseCharacter>(), item, nullptr);
+	}
+}
+
+void UGameLoadHandler::LoadInventoryAbility(UInventoryComponent* InventoryComponent,
+	const FPlayerInventoryData& InventoryData)
+{
+	InventoryComponent->AbilityInventory.Empty();
+	if(auto abComp = InventoryComponent->GetOwner<ABaseCharacter>()->GetAbilityComponent())
+	{
+		for(auto iter : InventoryData.InventoryAbility)
+		{
+			if(TSubclassOf<UAbilityBase> subclass = LoadClass<UAbilityBase>(InventoryComponent->GetWorld(),*iter.AbilityClassPath))
+			{
+				const auto& abilityInfo = FAbilityInformation(subclass.GetDefaultObject()->GetAbilityInformation());
+
+				UE_LOGFMT(LogSave,Log,"인벤토리에 복구할 어빌리티를 추가합니다 : {0}",abilityInfo.AbilityName.ToString());
+				InventoryComponent->AbilityInventory.Emplace(abilityInfo.AbilityTag,abilityInfo);
+				//InventoryComponent->OnAddAbilityItem.Broadcast(InventoryComponent->GetOwner<ABaseCharacter>(),abilityInfo,nullptr);
+				abComp->GiveAbility(subclass);
+			}else
+			{
+				UE_LOGFMT(LogSave,Error,"불러올 어빌리티 경로가 잘못된거 같네요. : {0}",iter.AbilityClassPath);
+			}
+		}
+	}
+}
+
 void UGameLoadHandler::LoadInventory(UInventoryComponent* InventoryComponent, const FPlayerInventoryData& InventoryData)
 {
 	//저장된 인벤토리를 복구합니다.
 	if (auto world = InventoryComponent->GetWorld())
 	{
-		InventoryComponent->Inventory.Empty();
-
-		for (auto iter : InventoryData.InventoryItem)
-		{
-
-			TSubclassOf<AItemActor> subclass = LoadClass<AItemActor>(InventoryComponent->GetWorld(),
-																	 *iter.ItemClassPath);
-			const auto& item = FInventoryItem(InventoryComponent->GetOwner(), subclass, iter.ItemCount, iter.UniqueID,
-											  true);
-			
-			UE_LOGFMT(LogSave,Log,"인벤토리에 복구할 아이템을 추가합니다 : {0}",item.GetItemInformation()->Item_Name.ToString());
-			InventoryComponent->Inventory.Emplace(iter.UniqueID, item);
-			InventoryComponent->OnAddItem.Broadcast(InventoryComponent->GetOwner<ABaseCharacter>(), item, nullptr);
-		}
+		//인벤토리 아이템을 복구합니다.
+		LoadInventoryItem(InventoryComponent, InventoryData);
 
 #if WITH_EDITOR
 		for(auto iter : InventoryComponent->Inventory)
@@ -102,7 +132,10 @@ void UGameLoadHandler::LoadInventory(UInventoryComponent* InventoryComponent, co
 	{
 		UE_LOGFMT(LogSave, Error, "인벤토리를 복구하려 했으나, 월드를 가져올 수 없습니다!!");
 	}
-			
+
+	//인벤토리 어빌리티를 복구합니다.
+	LoadInventoryAbility(InventoryComponent,InventoryData);
+	
 	//파편을 복구합니다.
 	LoadFragment(InventoryComponent, InventoryData.Fragments);
 			
@@ -160,11 +193,15 @@ void UGameLoadHandler::RestoreQuickSlotState(const TObjectPtr<APlayerCharacter>&
 					
 				}
 				
-				for (const auto& iter : InventoryData.AbilityQuickSlotMap)
+				abComp->AbilityQuickSlotTags = InventoryData.AbilityQuickSlot;
+				if(abComp->AbilityQuickSlotTags.IsValidIndex(0))
 				{
-					//TODO - 추후 등록 가능한 어빌리티가 생기면 작성해야 합니다.
+					const auto& firstTag = abComp->AbilityQuickSlotTags[0];
+					if(firstTag.IsValid())
+					{
+						abComp->OnFirstUpdateMainAbilityQuickSlot.Broadcast(abComp->GetAbilityByTag(firstTag)->GetAbilityInformation());
+					}
 				}
-	
 			}
 		}
 	}
@@ -1024,8 +1061,8 @@ void USoulLikeSaveGame::SaveAddedItem(const FInventoryItem& ItemInfo)
 	{
 		const auto& classPath = ItemInfo.GetItemInformation()->ItemActorObject->GetPathName();
 		PlayerData.InventoryData.Fragments.Add(FItemSave(uniqueID, classPath, ItemInfo.ItemCount));
-		UE_LOGFMT(LogSave, Log, "SaveAddedItem : 다음 인벤토리 파편을 저장합니다 : {0}",
-		          ItemInfo.GetItemInformation()->Item_Name.ToString());
+		UE_LOGFMT(LogSave, Log, "SaveAddedItem : 다음 인벤토리 파편을 저장합니다 : {0} {1}",
+		          ItemInfo.GetItemInformation()->Item_Name.ToString(),classPath);
 		//변경된 메트릭스 저장
 		SaveOrbMatrix(ItemInfo.GetSpawndItemActor()->GetOwner<APlayerCharacter>());
 		return;
@@ -1042,19 +1079,33 @@ void USoulLikeSaveGame::SaveAddedItem(const FInventoryItem& ItemInfo)
 	{
 		const auto& classPath = ItemInfo.GetItemInformation()->ItemActorObject->GetPathName();
 		const auto& count = ItemInfo.ItemCount;
-		UE_LOGFMT(LogSave, Log, "SaveAddedItem : 다음 인벤토리 아이템을 저장합니다 : {0}",
-		          ItemInfo.GetItemInformation()->Item_Name.ToString());
+		UE_LOGFMT(LogSave, Log, "SaveAddedItem : 다음 인벤토리 아이템을 저장합니다 : {0} {1}",
+		          ItemInfo.GetItemInformation()->Item_Name.ToString(),classPath);
 		PlayerData.InventoryData.InventoryItem.Emplace(FItemSave(uniqueID, classPath, count));
 	}
-	/*UE_LOGFMT(LogSave, Log, "인벤토리에 추가된 아이템을 저장합니다 : {0}, {1} {2}", ItemInfo.GetItemInformation()->Item_Name,
-	          ItemInfo.ItemCount, uniqueID);
 
-	UE_LOGFMT(LogSave, Log, "------------------저장된 배열--------------------------");
-	for (auto iter : InventoryItem)
+}
+
+void USoulLikeSaveGame::SaveAddedAbility(const FAbilityInformation& AbilityInformation)
+{
+	const auto& tag = AbilityInformation.AbilityTag;
+	if(tag.IsValid())
 	{
-		UE_LOGFMT(LogSave, Log, "인벤토리 아이템 리스트 : {0}, {1}", iter.UniqueID, iter.ItemCount);
+		if (PlayerData.InventoryData.InventoryAbility.Contains(tag))
+		{
+			//DO NOTHING
+			UE_LOGFMT(LogSave,Log,"이미 해당 어빌리티는 저장되어 있습니다 : {0}",tag.ToString());
+			return;
+		}
+	
+		const auto& classPath = AbilityInformation.AbilityClass->GetPathName();
+		UE_LOGFMT(LogSave, Log, "SaveAddedAbility : 다음 인벤토리 어빌리티를 저장합니다 : {0} {1}",
+				 AbilityInformation.AbilityName.ToString(),classPath);
+		PlayerData.InventoryData.InventoryAbility.Emplace(FAbilitySave(tag, classPath));
+	}else
+	{
+		UE_LOGFMT(LogSave,Error,"저장하려는 어빌리티의 태그정보가 유효하지 않습니다!!!");
 	}
-	UE_LOGFMT(LogSave, Log, "-------------------------------------------------------");*/
 }
 
 void USoulLikeSaveGame::SaveUsedItem(APlayerCharacter* UsedBy, const FInventoryItem& ItemInfo)
@@ -1276,7 +1327,7 @@ void USoulLikeSaveGame::Clear()
 	WorldData.PickUppedItems.Empty();
 
 	PlayerData.InventoryData.ItemQuickSlotMap.Empty();
-	PlayerData.InventoryData.AbilityQuickSlotMap.Empty();
+	PlayerData.InventoryData.AbilityQuickSlot.Empty();
 }
 
 void USoulLikeSaveGame::SaveActivateBonfire(ABonfire* Bonfire)
@@ -1418,6 +1469,11 @@ void USoulLikeSaveGame::SaveRemovedItemQuickSlot(const UItemData* Data, int32 Re
 	PlayerData.InventoryData.ItemQuickSlotMap.Remove(RemovedIndex);
 }
 
+void USoulLikeSaveGame::SaveAbilityQuickSlot(const TArray<FGameplayTag>& AbilityQuickSlotTags)
+{
+	PlayerData.InventoryData.AbilityQuickSlot = AbilityQuickSlotTags;
+}
+
 
 void USoulLikeSaveGame::SaveChest(AChest* Chest, bool bEaredChestItem)
 {
@@ -1448,6 +1504,38 @@ void USoulLikeSaveGame::SaveChest(AChest* Chest, bool bEaredChestItem)
 				//뭐 열림 여부만 저장되면 되는거라 모든 정보를 다 저장할 필요는 없지만, 혹시 몰루니깐
 				WorldData.EarnedChestItems[levelName].Information.Add(FActorSave(Chest,safeName,Chest->GetClass(),Chest->GetTransform()));
 			}
+		}
+	}
+}
+
+void USoulLikeSaveGame::SaveMerchantItem(ANPCBase* Seller, const FMerchandiseItem& MerchandiseItem)
+{
+	const auto& tag = Seller->GetNPCTag();
+	if(tag.IsValid())
+	{
+		if(tag.IsValid())
+		{
+			if(!WorldData.NPCState.Contains(tag))
+			{
+				WorldData.NPCState.Add(tag,FNPCState(Seller,false));
+			}
+			WorldData.NPCState[tag].SellItemState.Add(MerchandiseItem.MerchandiseData.Tag,MerchandiseItem);
+		}
+	}
+}
+
+void USoulLikeSaveGame::SaveMerchantAbility(ANPCBase* Seller, const FMerchandiseAbility& MerchandiseAbility)
+{
+	const auto& tag = Seller->GetNPCTag();
+	if(tag.IsValid())
+	{
+		if(tag.IsValid())
+		{
+			if(!WorldData.NPCState.Contains(tag))
+			{
+				WorldData.NPCState.Add(tag,FNPCState(Seller,false));
+			}
+			WorldData.NPCState[tag].SellAbilityState.Add(MerchandiseAbility.GetAbilityInformation()->AbilityTag,MerchandiseAbility);
 		}
 	}
 }
@@ -1490,15 +1578,15 @@ void USoulLikeSaveGame::SaveNPC(ANPCBase* NPC, bool bIsDestroyed)
 	const auto& tag = NPC->GetNPCTag();
 	if(tag.IsValid())
 	{
-		if(!NPCState.Contains(tag))
+		if(!WorldData.NPCState.Contains(tag))
 		{
-			NPCState.Add(tag,FNPCState(NPC,bIsDestroyed));
+			WorldData.NPCState.Add(tag,FNPCState(NPC,bIsDestroyed));
 			return;
 		}
 
-		NPCState[tag].Update(NPC);
+		WorldData.NPCState[tag].Update(NPC);
 
-		UE_LOGFMT(LogSave,Log,"NPC 상태 저장 : {0} {1} {2} {3}",NPCState[tag].bHasMet,NPCState[tag].bJoinBasement,NPCState[tag].SafeName,NPCState[tag].NPCLocation.ToString());
+		UE_LOGFMT(LogSave,Log,"NPC 상태 저장 : {0} {1} {2} {3}",WorldData.NPCState[tag].bHasMet,WorldData.NPCState[tag].bJoinBasement,WorldData.NPCState[tag].SafeName,WorldData.NPCState[tag].NPCLocation.ToString());
 	}
 }
 
@@ -1507,19 +1595,19 @@ void USoulLikeSaveGame::LoadNPC(ANPCBase* NPC)
 	const auto& tag = NPC->GetNPCTag();
 	if(tag.IsValid())
 	{
-		if(NPCState.Contains(tag))
+		if(WorldData.NPCState.Contains(tag))
 		{	
-			if(NPCState[tag].bHasMet)
+			if(WorldData.NPCState[tag].bHasMet)
 			{
 				NPC->SetMetNPC(false);
 			}
 		
-			if(NPCState[tag].bJoinBasement)
+			if(WorldData.NPCState[tag].bJoinBasement)
 			{
 				NPC->SetJoinNPCAtBasement(false);
 			}
 			
-			if(NPCState[tag].bIsDestroyed)
+			if(WorldData.NPCState[tag].bIsDestroyed)
 			{
 				UE_LOGFMT(LogSave,Warning,"{0} NPC는 제거된 상태로 저장되었습니다. Destroy합니다.",tag.ToString());
 				NPC->Destroyed();
@@ -1527,8 +1615,8 @@ void USoulLikeSaveGame::LoadNPC(ANPCBase* NPC)
 			}
 			
 
-			UE_LOGFMT(LogSave,Log,"NPC 상태 로드 : {0} {1} {2} {3}",NPCState[tag].bHasMet,NPCState[tag].bJoinBasement,NPCState[tag].SafeName,NPCState[tag].NPCLocation.ToString());
-			NPC->OnLoadNPCState.Broadcast(NPCState[tag]);
+			UE_LOGFMT(LogSave,Log,"NPC 상태 로드 : {0} {1} {2} {3}",WorldData.NPCState[tag].bHasMet,WorldData.NPCState[tag].bJoinBasement,WorldData.NPCState[tag].SafeName,WorldData.NPCState[tag].NPCLocation.ToString());
+			NPC->OnLoadNPCState.Broadcast(WorldData.NPCState[tag]);
 		}
 	}
 }

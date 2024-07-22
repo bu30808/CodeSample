@@ -14,6 +14,7 @@ DECLARE_LOG_CATEGORY_EXTERN(LogEffect, Log, All);
 DECLARE_LOG_CATEGORY_EXTERN(LogTalent, Log, All);
 
 DECLARE_DYNAMIC_DELEGATE(FOnEffectExpired);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEffectEnd);
 
 //이 이팩트와 같은 태그를 가진 이팩트가 이미 적용중일 때 어떻게 할 것인가 결정합니다.
 UENUM(BlueprintType)
@@ -377,7 +378,11 @@ protected:
 	//보통 어빌리티 내부에서 바인드 됩니다.
 	UPROPERTY(Transient)
 	FOnEffectExpired OnEffectExpired;
-
+public:
+	//이팩트가 종료될떄 호출되는 이벤트
+	UPROPERTY(Transient)
+	FOnEffectEnd OnEffectEnd;
+protected:
 	//이 이팩트로 생성된 큐를 저장하는 변수
 	//재 사용 가능한 큐도 저장됩니다.
 	//주로 일회성 큐를 즉시 제거하기 위해 사용합니다.

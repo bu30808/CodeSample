@@ -364,6 +364,7 @@ void UItemListWidget::OnAddItemEvent(class ABaseCharacter* UsedBy, const FInvent
 		if (const auto data = NewObject<UItemData>())
 		{
 			data->OnPlayerBuyItemFromNPC = OnPlayerBuyItemFromNPC;
+			data->OnPlayerBuyAbilityFromNPC = OnPlayerBuyAbilityFromNPC;
 			data->InventoryItem = ItemInfo;
 
 			ListView_Item->AddItem(data);

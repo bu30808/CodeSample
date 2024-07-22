@@ -14,6 +14,7 @@
 #include "00_Character/00_Player/01_Component/AbilityTalentComponent.h"
 #include "00_Character/01_Component/AnimationHelperComponent.h"
 #include "00_Character/01_Component/AttributeComponent.h"
+#include "03_Widget/MainWidget.h"
 #include "99_Subsystem/AttackChainSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -184,8 +185,20 @@ void UAbilityDefenceTalent::SelfBind()
 
 	if (OnIncreaseRunSpeed.IsBound() == false)
 	{
-		OnIncreaseRunSpeed.BindDynamic(this, &UAbilityDefenceTalent::OnIncreaseMoveSpeedEvent);
+		OnIncreaseRunSpeed.BindDynamic(this, &UAbilityDefenceTalent::OnIncreaseRunSpeedEvent);
 	}
+
+	if (OnIncreaseMoveSpeed.IsBound() == false)
+	{
+		OnIncreaseMoveSpeed.BindDynamic(this, &UAbilityDefenceTalent::OnIncreaseMoveSpeedEvent);
+	}
+
+	if (OnDecreaseMoveSpeed.IsBound() == false)
+	{
+		OnDecreaseMoveSpeed.BindDynamic(this, &UAbilityDefenceTalent::OnDecreaseMoveSpeedEvent);
+	}
+
+	
 
 	if (OnDecreaseDodgeSP.IsBound() == false)
 	{
@@ -258,6 +271,9 @@ void UAbilityDefenceTalent::Bind(UAbilityTalentComponent* ATComp)
 
 		ATComp->OnIncreaseGotHitDamage.Emplace(this, OnIncreaseGotHitDamage);
 		ATComp->OnIncreaseRunSpeed.Emplace(this, OnIncreaseRunSpeed);
+		ATComp->OnIncreaseMoveSpeed.Emplace(this, OnIncreaseMoveSpeed);
+		ATComp->OnDecreaseMoveSpeed.Emplace(this, OnDecreaseMoveSpeed);
+		
 
 		ATComp->OnDecreaseDodgeSP.Emplace(this, OnDecreaseDodgeSP);
 		for (auto iter : ATComp->OnDecreaseDodgeSP)
@@ -322,6 +338,17 @@ void UAbilityDefenceTalent::UnBind(UAbilityTalentComponent* ATComp)
 		{
 			ATComp->OnIncreaseRunSpeed[this].Unbind();
 		}
+
+		if (ATComp->OnIncreaseMoveSpeed.Contains(this))
+		{
+			ATComp->OnIncreaseMoveSpeed[this].Unbind();
+		}
+
+		if (ATComp->OnDecreaseMoveSpeed.Contains(this))
+		{
+			ATComp->OnDecreaseMoveSpeed[this].Unbind();
+		}
+		
 		if (ATComp->OnDecreaseDodgeSP.Contains(this))
 		{
 			ATComp->OnDecreaseDodgeSP[this].Unbind();
@@ -440,6 +467,34 @@ void UAbilityFreeTalent::UnBind(UAbilityTalentComponent* ATComp)
 	}
 }
 
+
+void UAbilityBase::AddBuffIcon()
+{
+	if(bShouldAddBuffIcon)
+	{
+		if(AbilityOwner!=nullptr)
+		{
+			if(auto player = Cast<APlayerCharacter>(AbilityOwner))
+			{
+				player->GetMainWidget()->AddBuffIcon(GetAbilityInformation());
+			}
+		}
+	}
+}
+
+void UAbilityBase::RemoveBuffIcon() const
+{
+	if(bShouldAddBuffIcon)
+	{
+		if(AbilityOwner!=nullptr)
+		{
+			if(auto player = Cast<APlayerCharacter>(AbilityOwner))
+			{
+				player->GetMainWidget()->RemoveBuffIcon(AbilityTag);
+			}
+		}
+	}
+}
 
 UAnimMontage* UAbilityBase::GetNextMontage()
 {
@@ -567,6 +622,7 @@ void UAbilityBase::TryActivateAbility_Implementation(UObject* AdditionalInfo)
 		ApplyEffect();
 		ApplyCues();
 		SetAbilityOwnerState();
+		AddBuffIcon();
 		ActivateAbility(AdditionalInfo);
 	}
 	else
@@ -619,6 +675,7 @@ void UAbilityBase::EndAbility_Implementation()
 	bAlreadyEndAbility = true;
 	UE_LOGFMT(LogAbility, Warning, "어빌리티 종료 : {0}", AbilityTag.ToString());
 
+	RemoveBuffIcon();
 	UnBindDeadEvent();
 	MontageIndex = 0;
 	UnBindMontageEvent();
@@ -671,6 +728,7 @@ void UAbilityBase::ApplyEffect_Implementation()
 			{
 				if (auto copy = DuplicateObject(e.GetDefaultObject(), this))
 				{
+					copy->OnEffectEnd.AddUniqueDynamic(this,&UAbilityBase::OnEffectEndEvent);
 					SelfEffectInstance.Emplace(copy);
 				}
 				//SelfEffectInstance.Emplace(e.GetDefaultObject());
@@ -686,6 +744,7 @@ void UAbilityBase::ApplyEffect_Implementation()
 			{
 				if (auto copy = DuplicateObject(e.GetDefaultObject(), this))
 				{
+					copy->OnEffectEnd.AddUniqueDynamic(this,&UAbilityBase::OnEffectEndEvent);
 					TargetEffectInstance.Emplace(copy);
 				}
 				//TargetEffectInstance.Emplace(e.GetDefaultObject());
@@ -697,6 +756,14 @@ void UAbilityBase::ApplyEffect_Implementation()
 		{
 			ApplyTargetEffect(Cast<ABaseCharacter>(AbilityTarget.Get()));
 		}
+	}
+}
+
+void UAbilityBase::OnEffectEndEvent_Implementation()
+{
+	if(bShouldAddBuffIcon)
+	{
+		RemoveBuffIcon();
 	}
 }
 

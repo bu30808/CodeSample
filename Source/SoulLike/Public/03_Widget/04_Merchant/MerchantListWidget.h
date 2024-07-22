@@ -67,7 +67,7 @@ public:
 	virtual void NativeConstruct() override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	                          UDragDropOperation* InOperation) override;
-	void CreateMerchandiseList(class UMerchantComponent* MerchantComponent);
+	void CreateMerchandiseList(UMerchantComponent* MerchantComponent, const TMap<FGameplayTag, FMerchandiseItem>& ItemState, const TMap<FGameplayTag, FMerchandiseAbility>& AbilityState);
 
 	UFUNCTION()
 	void OnClickedRepurchaseButton();
@@ -81,12 +81,11 @@ public:
 
 	UFUNCTION()
 	void UpdateRepurchaseList();
-	UFUNCTION()
-	void OnBuyAbilityFromPlayerEvent(APlayerCharacter* Player);
+
 	UFUNCTION()
 	void OnBuyItemFromPlayerEvent(APlayerCharacter* Player, const FGuid& ItemID);
 	UFUNCTION()
-	void OnSellItemToPlayerEvent(APlayerCharacter* Player, const FGuid& ItemID);
+	void OnSellItemToPlayerEvent(APlayerCharacter* Player, ANPCBase* Seller, const FMerchandiseItem& MerchandiseItem);
 	UFUNCTION()
-	void OnSellAbilityToPlayerEvent(APlayerCharacter* Player);
+	void OnSellAbilityToPlayerEvent(APlayerCharacter* Player, ANPCBase* Seller, const FMerchandiseAbility& MerchandiseAbility);
 };

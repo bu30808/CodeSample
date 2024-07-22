@@ -10,7 +10,6 @@
 #include "03_Widget/04_Merchant/MerchantWidget.h"
 #include "03_Widget/99_Drag/DragAndDropOperation.h"
 #include "03_Widget/99_Drag/DraggableWidget.h"
-#include "97_Interface/00_NPC/MerchantInterface.h"
 #include "Components/Button.h"
 #include "Components/ListView.h"
 #include "Components/TextBlock.h"
@@ -18,7 +17,7 @@
 #include "Logging/StructuredLog.h"
 
 
-void UMerchantListWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponent)
+void UMerchantListWidget::CreateMerchandiseList(UMerchantComponent* MerchantComponent, const TMap<FGameplayTag, FMerchandiseItem>& ItemState, const TMap<FGameplayTag, FMerchandiseAbility>& AbilityState)
 {
 	ListView_Purchase->ClearListItems();
 
@@ -31,8 +30,18 @@ void UMerchantListWidget::CreateMerchandiseList(UMerchantComponent* MerchantComp
 		{
 			data->MerchandiseItem = iter.Value;
 			data->MerchantListWidget = this;
+			data->MerchantNPC = MerchantNPC;
 			UE_LOGFMT(LogTemp, Log, "상점 아이템 추가 : {0}, {1}", iter.Value.MerchandiseData.Tag.ToString(), data->MerchandiseItem.GetItemInformation()->Item_Image.LoadSynchronous()->GetName());
 
+			if(ItemState.Contains(iter.Value.MerchandiseData.Tag))
+			{
+				auto originalSpawnItemActor = 	data->MerchandiseItem.GetSpawndItemActor();
+				data->MerchandiseItem = ItemState[iter.Value.MerchandiseData.Tag];
+				data->MerchandiseItem.OverrideSpawnedItemActor(originalSpawnItemActor);
+				data->MerchandiseItem.MerchantNPC = MerchantNPC;
+				UE_LOGFMT(LogTemp, Log, "저장된 판매 정보로 덮어씁니다. : {0}, {1}", iter.Value.MerchandiseData.Tag.ToString(), data->MerchandiseItem.MerchandiseData.Count);
+			}
+			
 			MerchantData.Add(data);
 			ListView_Purchase->AddItem(data);
 		}
@@ -45,7 +54,17 @@ void UMerchantListWidget::CreateMerchandiseList(UMerchantComponent* MerchantComp
 		{
 			data->MerchandiseAbility = iter.Value;
 			data->MerchantListWidget = this;
+			data->MerchantNPC = MerchantNPC;
+			
 			UE_LOGFMT(LogTemp, Log, "상점 어빌리티 추가 : {0} {1}", iter.Value.MerchandiseAbilityData.Tag.ToString(),iter.Value.GetAbilityReqDescription().ToString());
+			if(AbilityState.Contains(iter.Key))
+			{
+				data->MerchandiseAbility = AbilityState[iter.Key];
+				data->MerchandiseAbility.MerchantNPC = MerchantNPC;
+
+				UE_LOGFMT(LogTemp, Log, "저장된 판매 정보로 덮어씁니다. : {0}, {1}", iter.Value.MerchandiseAbilityData.Tag.ToString(), data->MerchandiseAbility.MerchandiseAbilityData.Count);
+			}
+			
 
 			MerchantData.Add(data);
 			ListView_Purchase->AddItem(data);
@@ -94,21 +113,7 @@ void UMerchantListWidget::CreateRepurchaseList()
 				ListView_Repurchase->AddItem(data);
 			}
 		}
-
-		{
-			const auto& abilities = MerchantNPC->GetMerchantComponent()->
-				GetRepurchaseAbility();
-			for (auto iter : abilities)
-			{
-				auto data = NewObject<UMerchandiseAbilityListData>();
-				data->MerchandiseAbility = iter.Value;
-
-				UE_LOGFMT(LogTemp, Log, "재구매 리스트에 어빌리티 추가 : {0}", iter.Value.MerchandiseAbilityData.Tag.ToString());
-
-				MerchantRepurchaseData.Add(data);
-				ListView_Repurchase->AddItem(data);
-			}
-		}
+		
 	}
 }
 
@@ -135,23 +140,18 @@ void UMerchantListWidget::UpdateRepurchaseList()
 	CreateRepurchaseList();
 }
 
-void UMerchantListWidget::OnBuyAbilityFromPlayerEvent(APlayerCharacter* Player)
-{
-	UpdatePlayerExp(Player);
-}
-
 void UMerchantListWidget::OnBuyItemFromPlayerEvent(APlayerCharacter* Player, const FGuid& ItemID)
 {
 	UpdatePlayerExp(Player);
 }
 
-void UMerchantListWidget::OnSellItemToPlayerEvent(APlayerCharacter* Player, const FGuid& ItemID)
+void UMerchantListWidget::OnSellItemToPlayerEvent(APlayerCharacter* Player, ANPCBase* Seller, const FMerchandiseItem& MerchandiseItem)
 {
 	UpdatePlayerExp(Player);
 	UpdateRepurchaseList();
 }
 
-void UMerchantListWidget::OnSellAbilityToPlayerEvent(APlayerCharacter* Player)
+void UMerchantListWidget::OnSellAbilityToPlayerEvent(APlayerCharacter* Player, ANPCBase* Seller, const FMerchandiseAbility& MerchandiseAbility)
 {
 	UpdatePlayerExp(Player);
 }

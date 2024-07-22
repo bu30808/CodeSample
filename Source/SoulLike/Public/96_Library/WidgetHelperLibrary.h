@@ -44,6 +44,8 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	static void SetToolTipWidget(UUserWidget* TargetWidget, const FText& Msg);
+	UFUNCTION(BlueprintCallable)
+	static void SetAbilityToolTipWidget(UUserWidget* TargetWidget, const FAbilityInformation& AbilityInformation);
 
 	static FString EnhancementTagToDecoString(const FGameplayTag& Key);
 

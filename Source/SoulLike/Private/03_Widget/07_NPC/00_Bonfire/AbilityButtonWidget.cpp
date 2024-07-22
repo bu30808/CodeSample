@@ -14,7 +14,7 @@ void UAbilityButtonWidget::SetInfo(const FAbilityInformation& Info)
 	AbilityInformation = Info;
 	Image->SetBrushFromSoftTexture(Info.AbilityImage);
 	if(AbilityInformation.AbilityTag.IsValid()){
-		UWidgetHelperLibrary::SetToolTipWidget(this,FText::Format(FText::FromString("{0}\n\n{1}"),AbilityInformation.AbilityDescription,AbilityInformation.GetAbilityReqDescription()));
+		UWidgetHelperLibrary::SetAbilityToolTipWidget(this,Info);
 	}
 }
 

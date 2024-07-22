@@ -38,7 +38,10 @@ class UItemData : public UInventoryData
 public:
 	UPROPERTY(Transient)
 	FInventoryItem InventoryItem;
+	UPROPERTY(Transient)
 	FOnPlayerBuyItemFromNPC OnPlayerBuyItemFromNPC;
+	UPROPERTY(Transient)
+	FOnPlayerBuyAbilityFromNPC OnPlayerBuyAbilityFromNPC;
 };
 
 

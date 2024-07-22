@@ -231,6 +231,8 @@ void UAbilityEffect::EndEffect_Implementation(ABaseCharacter* Target)
 
 	if (Target != nullptr && Target->GetController() != nullptr)
 	{
+		OnEffectEnd.Broadcast();
+		
 		if (EffectApplyType == EEffectApplyType::Stack)
 		{
 			if (Stack.Num() > 0)

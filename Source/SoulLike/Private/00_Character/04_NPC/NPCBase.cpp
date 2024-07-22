@@ -161,6 +161,10 @@ void ANPCBase::PostInitializeComponents()
 					// 액터에 커스텀 액터 컴포넌트 생성
 					MerchantComponent = NewObject<UMerchantComponent>(this, TEXT("MerchantComponent"));
 					MerchantComponent->RegisterComponent();
+					if(auto instance = GetGameInstance<USoulLikeInstance>()){
+						MerchantComponent->OnSellItemToPlayer.AddUniqueDynamic(instance,&USoulLikeInstance::OnSellItemToPlayerEvent);
+						MerchantComponent->OnSellAbilityToPlayer.AddUniqueDynamic(instance,&USoulLikeInstance::OnSellAbilityToPlayerEvent);
+					}
 				}
 
 				OnLoadedItemList(MerchantItemPath.LoadSynchronous());
@@ -608,32 +612,8 @@ void ANPCBase::SellItemToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerChar
 		PlayerCharacter->GetInventoryComponent()->AddItem(sellItem, false);
 
 		PlayerCharacter->GetAttributeComponent()->OnCharacterInformationUpdate.Broadcast();
-		MComp->OnSellItemToPlayer.Broadcast(PlayerCharacter, ItemUniqueID);
-	}
-}
-
-void ANPCBase::BuyAbilityFromPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter,
-                                              FMerchandiseAbility MerchandiseAbility, int32 BuyCount)
-{
-	class UMerchantComponent* MComp =Merchant->GetMerchantComponent();
-
-	if (auto abComp = PlayerCharacter->GetAbilityComponent())
-	{
-		if (abComp->HasAbility(MerchandiseAbility.MerchandiseAbilityData.Tag))
-		{
-			abComp->RemoveAbility(MerchandiseAbility.MerchandiseAbilityData.Tag);
-			UE_LOGFMT(LogActor, Log, "플레이어에게 {0}을 구매했습니다.", MerchandiseAbility.MerchandiseAbilityData.Tag.ToString());
-			//비용 지불
-			auto attComp = PlayerCharacter->GetAttributeComponent();
-			attComp->SetEXP(attComp->GetEXP() + MerchandiseAbility.MerchandiseAbilityData.Price * BuyCount);
-			UpdateExpWidget(PlayerCharacter, MerchandiseAbility.MerchandiseAbilityData.Price * BuyCount);
-
-			attComp->OnCharacterInformationUpdate.Broadcast();
-			MComp->OnBuyAbilityFromPlayer.Broadcast(PlayerCharacter);
-
-			//재구매 리스트에 추가함.
-			MComp->AddRepurchaseAbility(MerchandiseAbility);
-		}
+		MComp->OnSellItemToPlayer.Broadcast(PlayerCharacter, this, MComp->GetMerchandiseItem()[ItemUniqueID]);
+		
 	}
 }
 
@@ -644,15 +624,12 @@ void ANPCBase::SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerC
 
 	auto abilityTag = MerchandiseAbility.MerchandiseAbilityData.Tag;
 	UE_LOGFMT(LogTemp, Log, "NPC가 플레이어에게 어빌리티를 파려고 합니다 : {0}, {1} 개", abilityTag.ToString(), TradeCount);
-	if (MComp->IsMerchandiseAbility(abilityTag) || MComp->
-		IsRepurchaseMerchandiseAbility(abilityTag))
+	if (MComp->IsMerchandiseAbility(abilityTag))
 	{
 		const bool bIsMerchandise = MComp->IsMerchandiseAbility(abilityTag);
 
-		// 판매 또는 재구매하는 아이템 정보를 가져옵니다.
-		const auto& merchandise = bIsMerchandise
-			                          ? MComp->GetMerchandiseAbility(abilityTag)
-			                          : MComp->GetRepurchaseMerchandiseAbility(abilityTag);
+		// 판매 아이템 정보를 가져옵니다.
+		const auto& merchandise = MComp->GetMerchandiseAbility(abilityTag);
 
 		// 구입하려는 갯수가 충분한지 확인합니다.
 		if (merchandise.MerchandiseAbilityData.bSellInfinite == false)
@@ -684,15 +661,8 @@ void ANPCBase::SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerC
 				return;
 			}
 		}
-		else
-		{
-			if (MComp->DecreaseRepurchaseMerchandiseAbilityCount(abilityTag, TradeCount) == false)
-			{
-				UE_LOGFMT(LogTemp, Error, "재구매 상품의 카운트를 줄이는데 실패했습니다.");
-				return;
-			}
-		}
-
+	
+		
 		PlayerCharacter->GetAttributeComponent()->SetEXP(
 			PlayerCharacter->GetAttributeComponent()->GetEXP() - TotalPrice);
 
@@ -701,8 +671,10 @@ void ANPCBase::SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerC
 		//어빌리티를 넘깁니다.
 		PlayerCharacter->GetAbilityComponent()->GiveAbility(
 			merchandise.MerchandiseAbilityData.AbilityObject.LoadSynchronous());
+		PlayerCharacter->GetInventoryComponent()->OnAddAbilityItem.Broadcast(PlayerCharacter, *merchandise.GetAbilityInformation(), nullptr);
 		PlayerCharacter->GetAttributeComponent()->OnCharacterInformationUpdate.Broadcast();
-		MComp->OnSellAbilityToPlayer.Broadcast(PlayerCharacter);
+		
+		MComp->OnSellAbilityToPlayer.Broadcast(PlayerCharacter,this,MComp->GetMerchandiseAbility()[abilityTag]);
 	}
 }
 
@@ -718,7 +690,6 @@ UMerchantComponent* ANPCBase::GetMerchantComponent()
 {
 	return MerchantComponent;
 }
-
 
 void ANPCBase::SetActorHiddenInGame(bool bNewHidden)
 {

@@ -75,7 +75,6 @@ public:
 
 	void SetPlayer(APlayerCharacter* PlayerCharacter){CurrentPlayer = PlayerCharacter;}
 
-
 	UPROPERTY()
 	int32 SaveIndex = 0;
 
@@ -185,6 +184,9 @@ public:
 	UFUNCTION()
 	void OnRemoveItemQuickSlotEvent(const class UItemData* Data, int32 SlotIndex);
 
+	UFUNCTION()
+	void OnAddAbilityQuickSlotEvent(const TArray<FGameplayTag>& AbilityQuickSlotTags);
+
 	UFUNCTION(BlueprintCallable)
 	void ClearSave();
 	UFUNCTION(BlueprintCallable)
@@ -205,7 +207,9 @@ public:
 	void OnSaveLevelItemPlacementStateEvent(ABaseCharacter* GetBy, AItemActor* GotItemActor);
 	//아이템을 획득하면 저장
 	UFUNCTION()
-	void OnAddItemEvent(ABaseCharacter* UsedBy, const FInventoryItem& ItemInfo, class AItemActor* GotItemActor);
+	void OnAddItemEvent(ABaseCharacter* GetBy, const FInventoryItem& ItemInfo, class AItemActor* GotItemActor);
+	UFUNCTION()
+	void OnAddAbilityItemEvent(ABaseCharacter* GetBy, const FAbilityInformation& AbilityItemInfo, AItemActor* GotItemActor);
 	//아이템을 사용하면 저장
 	UFUNCTION()
 	void OnUseItemEvent(ABaseCharacter* UsedBy, const FInventoryItem& ItemInfo);
@@ -293,13 +297,20 @@ public:
 	
 	void SaveNPCDestoryed(class ANPCBase* NPC);
 
+	UFUNCTION()
+	void OnSellItemToPlayerEvent(APlayerCharacter* InteractPlayer, ANPCBase* Seller, const FMerchandiseItem& MerchandiseItem);
+	UFUNCTION()
+	void OnSellAbilityToPlayerEvent(APlayerCharacter* InteractPlayer, ANPCBase* Seller, const FMerchandiseAbility& MerchandiseAbility);
+	
 	
 	/**
 	 * 저장된 NPC정보를 읽어와 복구합니다.
 	 * @param NPC
 	 */
 	void LoadNPCState(class ANPCBase* NPC);
-	
+
+	TMap<FGameplayTag, FMerchandiseItem> LoadNPCSellItemState(const FGameplayTag& NPCTag);
+	TMap<FGameplayTag,FMerchandiseAbility> LoadNPCSellAbilityState(const FGameplayTag& NPCTag);
 
 	friend class USaveGameHelperLibrary;
 

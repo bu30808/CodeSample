@@ -24,7 +24,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnRegisterItem, class APlayerCha
 
 DECLARE_DELEGATE_RetVal_OneParam(int32,FOnRemoveAlreadyRegisteredSlotItem, class UItemData* Data);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAlreadyRegisteredAbilityDropped, const FGameplayTag&,AbilityTag);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDroppedAbility, const FGameplayTag&,AbilityTag);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDroppedAbility, const FAbilityInformation&,AbilityInformation);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnClearSlot, const FGameplayTag&,AbilityTag);
 /**
@@ -189,6 +189,7 @@ class SOULLIKE_API UAbilityQuickSlotButtonWidget : public UQuickSlotButtonWidget
 {
 	GENERATED_BODY()
 
+	friend class URegisterAbilityWidget;
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnAlreadyRegisteredAbilityDropped OnAlreadyRegisteredAbilityDropped;

@@ -45,7 +45,7 @@ protected:
 
 
 	virtual void NativeConstruct() override;
-
+	
 	virtual void NativeOnListItemObjectSet(UObject* ListItemObject) override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent,
 	                          UDragDropOperation* InOperation) override;
@@ -53,6 +53,12 @@ protected:
 
 	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
+
+	UFUNCTION()
+	void OnSellAbilityToPlayerEvent(APlayerCharacter* InteractPlayer, ANPCBase* Seller, const FMerchandiseAbility&
+	                                MerchandiseAbility);
+	UFUNCTION()
+	void OnSellItemToPlayerEvent(APlayerCharacter* InteractPlayer, ANPCBase* Seller, const FMerchandiseItem& MerchandiseItem);
 
 public:
 	UBaseMerchandiseListData* GetMerchandiseData() const { return Data.Get(); }

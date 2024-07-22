@@ -5,6 +5,7 @@
 
 #include "00_Character/BaseCharacter.h"
 #include "00_Character/01_Component/AttributeComponent.h"
+#include "03_Widget/BuffIconWidget.h"
 #include "03_Widget/01_Menu/NavigationWidget.h"
 #include "03_Widget/01_Menu/00_Inventory/InventoryWidget.h"
 #include "03_Widget/01_Menu/03_Equipment/EquipWidget.h"
@@ -22,6 +23,7 @@
 #include "Components/Button.h"
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
+#include "Components/HorizontalBox.h"
 #include "Components/VerticalBox.h"
 #include "Logging/StructuredLog.h"
 
@@ -341,5 +343,28 @@ void UMainWidget::OpenOption()
 		{
 			UMG_Option->SetVisibility(ESlateVisibility::Visible);
 		}
+	}
+}
+
+void UMainWidget::AddBuffIcon(const FAbilityInformation& AbilityInformation)
+{
+	if(BuffIconWidgetClass)
+	{
+		if(auto icon = CreateWidget<UBuffIconWidget>(GetOwningPlayer(),BuffIconWidgetClass))
+		{
+			icon->SetIconInfo(AbilityInformation);
+			BuffMap.Add(AbilityInformation.AbilityTag, icon);
+			HorizontalBox_Buff->AddChild(icon);
+		}
+		
+	}
+}
+
+void UMainWidget::RemoveBuffIcon(const FGameplayTag& Tag)
+{
+	if(BuffMap.Contains(Tag))
+	{
+		BuffMap[Tag]->RemoveFromParent();
+		BuffMap.Remove(Tag);
 	}
 }

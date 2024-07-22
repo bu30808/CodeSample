@@ -33,8 +33,8 @@ public:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	void SetWeather(class UDataAsset* Weather);
-	UFUNCTION(BlueprintImplementableEvent)
+	UFUNCTION(BlueprintImplementableEvent,BlueprintCallable)
 	class UDataAsset* GetWeather();
 };

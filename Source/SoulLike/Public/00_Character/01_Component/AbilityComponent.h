@@ -30,7 +30,7 @@ DECLARE_DYNAMIC_DELEGATE(FAdditionalOnEndAbility);
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangeAbilityQuickSlot, const FAbilityInformation&,AbilityInformation);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnFirstUpdateMainAbilityQuickSlot,const FAbilityInformation&,AbilityInformation);
-
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAddAbilityQuickSlot, const TArray<FGameplayTag>&,AbilityQuickSlot);
 
 UCLASS(Blueprintable)
 class UAbilityAdditionalInformation : public UObject
@@ -65,6 +65,8 @@ UCLASS(ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))
 class SOULLIKE_API UAbilityComponent : public UActorComponent
 {
 	GENERATED_BODY()
+
+	friend class UGameLoadHandler;
 
 public:
 	// Sets default values for this component's properties
@@ -358,11 +360,14 @@ public:
 	FOnChangeAbilityQuickSlot OnChangeAbilityQuickSlot;
 	UPROPERTY()
 	FOnFirstUpdateMainAbilityQuickSlot OnFirstUpdateMainAbilityQuickSlot;
+	//어빌리티 퀵슬롯에 어빌리티가 추가되면 호출됩니다.
+	UPROPERTY()
+	FOnAddAbilityQuickSlot OnAddAbilityQuickSlot;
 	
 	const TArray<FGameplayTag>& GetAbilityQuickSlot(){return AbilityQuickSlotTags;}
 	bool IsRegistered(const FGameplayTag& AbilityTag);
 	//어빌리티 퀵슬롯에서 비어있지 않은 가장 첫 슬롯을 찾아 할당합니다.
-	void AddQuickSlotAbility(const FGameplayTag& AbilityTag);
+	int32 AddQuickSlotAbility(const FGameplayTag& AbilityTag);
 	void OverrideAbilityQuickSlotArray(const TArray<FGameplayTag>& AbilitySlotArray){AbilityQuickSlotTags = AbilitySlotArray;}
 	void InitAbilityQuickSlotIndex();
 

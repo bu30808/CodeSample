@@ -357,6 +357,8 @@ void UMainItemQuickSlotButtonWidget::ClearSlot()
 
 
 
+
+
 void UMainAbilityQuickSlotButtonWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -381,7 +383,6 @@ void UMainAbilityQuickSlotButtonWidget::OnFirstUpdateMainAbilityQuickSlotEvent(
 	Image->SetBrushFromSoftTexture(AbilityInformation.AbilityImage);
 }
 
-
 void UMainAbilityQuickSlotButtonWidget::OnChangeAbilityQuickSlotEvent(const FAbilityInformation& AbilityInformation)
 {
 
@@ -395,13 +396,15 @@ void UMainAbilityQuickSlotButtonWidget::OnChangeAbilityQuickSlotEvent(const FAbi
 	Image->SetBrushFromSoftTexture(AbilityInformation.AbilityImage);
 }
 
-
 void UMainAbilityQuickSlotButtonWidget::ClearSlot()
 {
 	Super::ClearSlot();
 
 	MemorisedTag = FGameplayTag::EmptyTag;
 }
+
+
+
 
 
 
@@ -438,13 +441,8 @@ bool UAbilityQuickSlotButtonWidget::NativeOnDrop(const FGeometry& InGeometry, co
 						UE_LOGFMT(LogUMG, Log, "이미 다른 퀵슬롯에 등록되어진 아이템을 드롭했습니다.");
 						OnAlreadyRegisteredAbilityDropped.Broadcast(button->GetAbilityData().AbilityTag);
 					}
-					auto newData = NewObject<UAbilityData>();
-					newData->OwnItemButtonWidget = button;
-					newData->AbilityInformation = button->GetAbilityData();
-					Init(newData);
-				
 					//어빌리티 퀵슬롯에서 비어있지 않은 가장 첫 슬롯을 찾아 할당해야 합니다.
-					OnDroppedAbility.Broadcast(button->GetAbilityData().AbilityTag);
+					OnDroppedAbility.Broadcast(button->GetAbilityData());
 				}else
 				{
 					FText msg = FText::FromString(TEXT("이 기술을 사용하기 위한 능력치가 모자랍니다."));
@@ -522,6 +520,10 @@ void UAbilityQuickSlotButtonWidget::Init(UInventoryData* Data, bool bIsLoaded)
 			TextBlock_Count->SetText(FText::GetEmpty());
 			Image->SetBrushFromSoftTexture(abilityData->AbilityInformation.AbilityImage);
 			Image->SetColorAndOpacity(FLinearColor(1,1,1,1));
+			
+			if(abilityData->AbilityInformation.AbilityTag.IsValid()){
+				UWidgetHelperLibrary::SetToolTipWidget(this,FText::Format(FText::FromString("{0}\n\n{1}\n\n\n{2}"),abilityData->AbilityInformation.AbilityName,abilityData->AbilityInformation.AbilityDescription,abilityData->AbilityInformation.GetAbilityReqDescription()));
+			}
 			return;
 		}
 	}

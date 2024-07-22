@@ -260,12 +260,24 @@ void URegisterAbilityWidget::OnAlreadyRegisteredAbilityDroppedEvent(const FGamep
 	}
 }
 
-void URegisterAbilityWidget::OnDroppedAbilityEvent(const FGameplayTag& AbilityTag)
+void URegisterAbilityWidget::OnDroppedAbilityEvent(const FAbilityInformation& AbilityInformation)
 {
 	//어빌리티 퀵슬롯에서 비어있지 않은 가장 첫 슬롯을 찾아 할당해야 합니다.
 	if (auto abComp = GetOwningPlayerPawn<ABaseCharacter>()->GetAbilityComponent())
 	{
-		abComp->AddQuickSlotAbility(AbilityTag);
+		const auto& slotIndex = abComp->AddQuickSlotAbility(AbilityInformation.AbilityTag);
+
+		if(auto slot = Cast<UAbilityQuickSlotButtonWidget>(WrapBox_MemorySlot->GetChildAt(slotIndex)))
+		{
+			if(slot->GetIndex() == slotIndex)
+			{
+				UE_LOGFMT(LogTemp,Log,"이 퀵슬롯을 초기화 합니다.");
+				auto newData = NewObject<UAbilityData>();
+				newData->OwnItemButtonWidget = slot;
+				newData->AbilityInformation = AbilityInformation;
+				slot->Init(newData);
+			}
+		}
 	}
 }
 

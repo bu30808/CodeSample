@@ -158,8 +158,7 @@ void AAbilityCue::PlayCue_Implementation(const FAbilityCueInformation& CueInform
 		{
 			UE_LOGFMT(LogTemp, Log, "{0} {1}", __FUNCTION__, __LINE__);
 			AttachToActor(CueInformation.AttachTarget.Get(),
-			              FAttachmentTransformRules(EAttachmentRule::SnapToTarget, EAttachmentRule::KeepWorld,
-			                                        EAttachmentRule::KeepWorld, true));
+			               FAttachmentTransformRules(EAttachmentRule::SnapToTarget, false));
 		}
 		else
 		{

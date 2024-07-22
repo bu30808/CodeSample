@@ -6,6 +6,7 @@
 #include "00_Character/03_Monster/BaseMonster.h"
 #include "96_Library/DataLayerHelperLibrary.h"
 #include "98_GameInstance/SoulLikeInstance.h"
+#include "99_Subsystem/TransitionPortalSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Logging/StructuredLog.h"
 #include "UObject/ConstructorHelpers.h"
@@ -18,6 +19,16 @@ DEFINE_LOG_CATEGORY(LogSoulLikeGameMode)
 ASoulLikeGameMode::ASoulLikeGameMode()
 {
 	PrimaryActorTick.bCanEverTick = false;
+}
+
+void ASoulLikeGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if(auto system = UTransitionPortalSubsystem::GetSubsystem(this))
+	{
+		system->Init();
+	}
 }
 
 void ASoulLikeGameMode::AddToRespawnMonster(ABaseMonster* BaseMonster)
@@ -205,6 +216,16 @@ void ASoulLikeGameMode::SaveMonsterState(ABaseMonster* BaseMonster)
 	else
 	{
 		UE_LOGFMT(LogSave, Error, "이미 해당 몬스터의 상태정보가 저장되어 있습니다. : {0}", safeName);
+	}
+}
+
+void ATESTGameMode::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if(auto system = UTransitionPortalSubsystem::GetSubsystem(this))
+	{
+		system->Init();
 	}
 }
 

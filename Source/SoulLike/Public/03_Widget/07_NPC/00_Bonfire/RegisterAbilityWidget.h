@@ -48,7 +48,7 @@ protected:
 	UFUNCTION()
 	void OnAlreadyRegisteredAbilityDroppedEvent(const FGameplayTag& AbilityTag);
 	UFUNCTION()
-	void OnDroppedAbilityEvent(const FGameplayTag& AbilityTag);
+	void OnDroppedAbilityEvent(const FAbilityInformation& AbilityInformation);
 	UFUNCTION()
 	void OnClearAbilityQuickSlotEvent(const FGameplayTag& AbilityTag);
 };

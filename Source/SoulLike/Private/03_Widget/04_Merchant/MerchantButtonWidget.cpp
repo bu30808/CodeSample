@@ -26,6 +26,8 @@ void UMerchantButtonWidget::NativeConstruct()
 	{
 		SetToolTip(CreateWidget(GetOwningPlayer(), ToolTipWidgetObject));
 	}
+
+	
 }
 
 void UMerchantButtonWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
@@ -39,6 +41,12 @@ void UMerchantButtonWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 			Data = Cast<UMerchandiseItemListData>(ListItemObject);
 			if (const auto itemData = merchandiseItemListData->MerchandiseItem.GetItemInformation())
 			{
+
+				if(auto mComp = merchandiseItemListData->MerchandiseItem.MerchantNPC->GetMerchantComponent())
+				{
+					mComp->OnSellItemToPlayer.AddUniqueDynamic(this,&UMerchantButtonWidget::OnSellItemToPlayerEvent);
+				}
+				
 				if (itemData->Item_Image)
 				{
 					Image_Item->SetBrushFromSoftTexture(
@@ -75,6 +83,11 @@ void UMerchantButtonWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 		if (auto merchandiseAbilityListData = Cast<UMerchandiseAbilityListData>(Data))
 		{
 			if(const auto abilityData = merchandiseAbilityListData->MerchandiseAbility.GetAbilityInformation()){
+
+				if(auto mComp = merchandiseAbilityListData->MerchandiseAbility.MerchantNPC->GetMerchantComponent())
+				{
+					mComp->OnSellAbilityToPlayer.AddUniqueDynamic(this,&UMerchantButtonWidget::OnSellAbilityToPlayerEvent);
+				}
 				
 				Image_Item->SetBrushFromSoftTexture(abilityData->AbilityImage);
 				TextBlock_ItemName->SetText(abilityData->AbilityName);
@@ -83,11 +96,10 @@ void UMerchantButtonWidget::NativeOnListItemObjectSet(UObject* ListItemObject)
 					FText::AsNumber(merchandiseAbilityListData->MerchandiseAbility.MerchandiseAbilityData.Count));
 				TextBlock_Price->SetText(
 					FText::AsNumber(merchandiseAbilityListData->MerchandiseAbility.MerchandiseAbilityData.Price));
-
 				
-				const auto& description = FText::Format(FText::FromString("{0}\n\n{1}"),merchandiseAbilityListData->MerchandiseAbility.GetAbilityDescription(),merchandiseAbilityListData->MerchandiseAbility.GetAbilityReqDescription());
-				Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(description);
-				
+				//const auto& description = FText::Format(FText::FromString("{0}\n\n{1}\n\n{2}"),merchandiseAbilityListData->MerchandiseAbility.GetAbilityInformation()->AbilityName,merchandiseAbilityListData->MerchandiseAbility.GetAbilityDescription(),merchandiseAbilityListData->MerchandiseAbility.GetAbilityReqDescription());
+				//Cast<USimpleToolTipWidget>(GetToolTip())->SetDescriptionText(description);
+				UWidgetHelperLibrary::SetAbilityToolTipWidget(this,*merchandiseAbilityListData->MerchandiseAbility.GetAbilityInformation());
 			}
 		}
 	}
@@ -127,4 +139,30 @@ void UMerchantButtonWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent
 {
 	Super::NativeOnMouseLeave(InMouseEvent);
 	Image_Background->SetBrushTintColor(NormalColor);
+}
+
+void UMerchantButtonWidget::OnSellAbilityToPlayerEvent(APlayerCharacter* InteractPlayer, ANPCBase* Seller, const FMerchandiseAbility&
+                                                       MerchandiseAbility)
+{
+	if(Data!=nullptr && Data->IsA<UMerchandiseAbilityListData>()){
+		if(Cast<UMerchandiseAbilityListData>(Data)->MerchandiseAbility.GetAbilityInformation()->AbilityTag.MatchesTagExact(MerchandiseAbility.GetAbilityInformation()->AbilityTag))
+		{
+			TextBlock_Count->SetText(FText::AsNumber(MerchandiseAbility.MerchandiseAbilityData.Count));
+		}
+	}
+}
+
+void UMerchantButtonWidget::OnSellItemToPlayerEvent(APlayerCharacter* InteractPlayer, ANPCBase* Seller, const FMerchandiseItem& MerchandiseItem)
+{
+	if(Data!=nullptr && Data->IsA<UMerchandiseItemListData>())
+	{
+		const auto& item = Cast<UMerchandiseItemListData>(Data)->MerchandiseItem;
+		if(item.UniqueID == MerchandiseItem.UniqueID)
+		{
+			if(!item.MerchandiseData.bSellInfinite)
+			{
+				TextBlock_Count->SetText(FText::AsNumber(MerchandiseItem.MerchandiseData.Count));
+			}
+		}
+	}
 }

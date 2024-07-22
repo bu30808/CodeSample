@@ -12,15 +12,6 @@
 enum class EEquipType : uint8;
 enum class EItemType : uint8;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnBuyItemFromPlayer, class APlayerCharacter*, InteractPlayer,
-                                             const FGuid&, ItemID);
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSellItemToPlayer, class APlayerCharacter*, InteractPlayer, const FGuid&,
-                                             ItemID);
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBuyAbilityFromPlayer, class APlayerCharacter*, InteractPlayer);
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSellAbilityToPlayer, class APlayerCharacter*, InteractPlayer);
 
 USTRUCT()
 struct FBaseMerchandiseData : public FTableRowBase
@@ -130,6 +121,7 @@ public:
 	const FItemInformation* GetItemInformation() const;
 	FText GetFormattedDescription() const;
 	class AItemActor* GetSpawndItemActor() const { return SpawndItemActor.Get(); }
+	void OverrideSpawnedItemActor(AItemActor* ItemActor){SpawndItemActor = ItemActor;}
 };
 
 USTRUCT(BlueprintType)
@@ -156,6 +148,14 @@ public:
 	FText GetAbilityReqDescription() const;
 };
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnBuyItemFromPlayer, class APlayerCharacter*, InteractPlayer,
+											 const FGuid&, ItemID);
+
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnSellAbilityToPlayer, class APlayerCharacter*, InteractPlayer,class ANPCBase*, Seller,const FMerchandiseAbility&, MerchandiseAbilityData);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnSellItemToPlayer, class APlayerCharacter*, InteractPlayer,class ANPCBase*, Seller,const FMerchandiseItem&,MerchandiseItemData);
+
 /**
  * 거래 기능에 필요한 기능들을 모아놓은 컴포넌트입니다.
  */
@@ -177,9 +177,6 @@ protected:
 	//재구매 리스트
 	UPROPERTY(VisibleAnywhere, Transient)
 	TMap<FGuid, FMerchandiseItem> RepurchaseMerchandiseItem;
-	//어빌리티 재구매 리스트
-	UPROPERTY(VisibleAnywhere, Transient)
-	TMap<FGameplayTag, FMerchandiseAbility> RepurchaseMerchandiseAbility;
 
 
 	//상점 위젯
@@ -201,9 +198,7 @@ public:
 	FOnBuyItemFromPlayer OnBuyItemFromPlayer;
 	//플레이어에게 아이템을 판 후 호출되는 델리게이트
 	FOnSellItemToPlayer OnSellItemToPlayer;
-
-	//플레이어에게 어빌리티를 구입 한 후 호출되는 델리게이트
-	FOnBuyAbilityFromPlayer OnBuyAbilityFromPlayer;
+	
 	//플레이어에게 어빌리티를 판 후 호출되는 델리게이트
 	FOnSellAbilityToPlayer OnSellAbilityToPlayer;
 
@@ -227,11 +222,7 @@ public:
 
 	//플레이어가 판매한 아이템을 재구매 리스트에 추가합니다.
 	void AddRepurchaseItem(const FInventoryItem& Item, int32 BuyCount);
-	void AddRepurchaseAbility(const FMerchandiseAbility& Ability);
-
-
 	const TMap<FGuid, FMerchandiseItem>& GetRepurchaseItems() { return RepurchaseMerchandiseItem; }
-	const TMap<FGameplayTag, FMerchandiseAbility>& GetRepurchaseAbility() { return RepurchaseMerchandiseAbility; }
 
 	//MerchandiseItem 있는 아이템인지 확인합니다.
 	bool IsMerchandiseItem(FGuid ItemUniqueID);
@@ -244,12 +235,9 @@ public:
 	bool DecreaseRepurchaseMerchandiseItemCount(FGuid ItemUniqueID, int32 Count);
 
 
-	//판매 가능한 어빌리티상품인지 확인함.
+	//판매 가능한 어빌리티상품인지 확인함.s
 	bool IsMerchandiseAbility(FGameplayTag AbilityTag);
-	bool IsRepurchaseMerchandiseAbility(FGameplayTag AbilityTag);
-
+	
 	const FMerchandiseAbility& GetMerchandiseAbility(FGameplayTag AbilityTag);
-	const FMerchandiseAbility& GetRepurchaseMerchandiseAbility(FGameplayTag AbilityTag);
 	bool DecreaseMerchandiseAbilityCount(FGameplayTag AbilityTag, int32 Count);
-	bool DecreaseRepurchaseMerchandiseAbilityCount(FGameplayTag AbilityTag, int32 Count);
 };

@@ -115,6 +115,13 @@ void UWidgetHelperLibrary::SetToolTipWidget(UUserWidget* TargetWidget, const FTe
 	}
 }
 
+void UWidgetHelperLibrary::SetAbilityToolTipWidget(UUserWidget* TargetWidget,
+	const FAbilityInformation& AbilityInformation)
+{
+	SetToolTipWidget(TargetWidget,
+	FText::Format(FText::FromString("{0}\n\n{1}\n\n{2}"),AbilityInformation.AbilityName,AbilityInformation.AbilityDescription,AbilityInformation.GetAbilityReqDescription()));
+}
+
 FString UWidgetHelperLibrary::EnhancementTagToDecoString(const FGameplayTag& Key)
 {
 	if (Key.ToString().Contains("BreathOfTheForest"))

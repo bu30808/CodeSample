@@ -39,11 +39,7 @@ public:
 	//해당 ID를 가진 아이템을 Count만큼 판매합니다
 	UFUNCTION()
 	virtual void SellItemToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter, FGuid ItemUniqueID, int32 TradeCount) = 0;
-
-	//해당 AbilityTag를 가진 어빌리티를 BuyCount만큼 구입합니다.
-	UFUNCTION()
-	virtual void BuyAbilityFromPlayer(ANPCBase* Merchant, class APlayerCharacter* PlayerCharacter, FMerchandiseAbility
-	                          MerchandiseAbility, int32 BuyCount = 1) = 0;
+	
 	//해당 AbilityTag를 가진 어빌리티를 Count만큼 판매합니다
 	UFUNCTION()
 	virtual void SellAbilityToPlayer(ANPCBase* Merchant, APlayerCharacter* PlayerCharacter,

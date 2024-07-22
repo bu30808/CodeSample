@@ -75,10 +75,6 @@ void UMerchandiseCheckWidget::TradeAbility() const
 			interface->SellAbilityToPlayer(MerchantNPC.Get(), GetOwningPlayerPawn<APlayerCharacter>(),
 			                               TradeMerchandiseAbility, TradeCount);
 			break;
-		case EPlayerTradeToNPCType::Sell:
-			interface->BuyAbilityFromPlayer(MerchantNPC.Get(), GetOwningPlayerPawn<APlayerCharacter>(),
-			                                TradeMerchandiseAbility, TradeCount);
-			break;
 		default: ;
 		}
 	}

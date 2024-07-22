@@ -298,7 +298,7 @@ float UAbilityTalentComponent::CalculateModifiedIncreaseGotHitDamageWithTraits(A
 	return 0;
 }
 
-float UAbilityTalentComponent::CalculateModifiedMoveSpeedWithTraits(float OriginalSpeed)
+float UAbilityTalentComponent::CalculateModifiedRunSpeedWithTraits(float OriginalSpeed)
 {
 	auto speed = OriginalSpeed;
 	for (auto iter : OnIncreaseRunSpeed)
@@ -306,6 +306,28 @@ float UAbilityTalentComponent::CalculateModifiedMoveSpeedWithTraits(float Origin
 		if (iter.Value.IsBound())
 		{
 			speed += iter.Value.Execute(OriginalSpeed);
+		}
+	}
+
+	return speed;
+}
+
+float UAbilityTalentComponent::CalculateModifiedWalkSpeedWithTraits(float OriginalSpeed)
+{
+	auto speed = OriginalSpeed;
+	for (auto iter : OnIncreaseMoveSpeed)
+	{
+		if (iter.Value.IsBound())
+		{
+			speed += iter.Value.Execute(OriginalSpeed);
+		}
+	}
+
+	for (auto iter : OnDecreaseMoveSpeed)
+	{
+		if (iter.Value.IsBound())
+		{
+			speed -= iter.Value.Execute(OriginalSpeed);
 		}
 	}
 

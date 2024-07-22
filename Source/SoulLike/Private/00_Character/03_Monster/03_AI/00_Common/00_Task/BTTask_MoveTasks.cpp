@@ -459,7 +459,7 @@ void UBTTask_MoveAlongSpline::ApplyFocusSetting(ACharacter* character)
 		character->bUseControllerRotationYaw = true;
 		character->GetCharacterMovement()->bOrientRotationToMovement = false;
 		character->GetCharacterMovement()->bUseControllerDesiredRotation = true;
-		
+		AICon->SetActorTickEnabled(true);
 	}
 			
 }
@@ -469,6 +469,7 @@ void UBTTask_MoveAlongSpline::RestoreOriginalValues(ACharacter* character)
 	if(bUseSmoothFocus)
 	{
 		AICon->K2_ClearFocus();
+		AICon->SetActorTickEnabled(false);
 	}
 	
 	Cast<AMonsterAIController>(AICon)->SetSmoothFocusInterpSpeed(OriginalSmoothFocusInterpSpeed);
@@ -556,7 +557,7 @@ void UBTTask_MoveAlongSpline::MoveToNextPoint()
 				MoveFinish();
 				return;
 			}
-		//	UE_LOGFMT(LogAICon,Log,"{0}번 포인트로 이동합니다",CurMoveSplinePoint);
+			UE_LOGFMT(LogAICon,Log,"{0}번 포인트로 이동합니다",CurMoveSplinePoint);
 			const FVector& nextPoint = SplineComp->GetLocationAtSplinePoint(
 				CurMoveSplinePoint, ESplineCoordinateSpace::World);
 			CurMoveSplinePoint--;
@@ -569,7 +570,7 @@ void UBTTask_MoveAlongSpline::MoveToNextPoint()
 				MoveFinish();
 				return;
 			}
-			//UE_LOGFMT(LogAICon,Log,"{0}번 포인트로 이동합니다",CurMoveSplinePoint);
+			UE_LOGFMT(LogAICon,Log,"{0}번 포인트로 이동합니다",CurMoveSplinePoint);
 			const FVector& nextPoint = SplineComp->GetLocationAtSplinePoint(
 				CurMoveSplinePoint, ESplineCoordinateSpace::World);
 			CurMoveSplinePoint++;
